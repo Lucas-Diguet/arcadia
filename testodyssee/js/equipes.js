@@ -16,6 +16,12 @@ export const EQUIPES = [
     sac: { 'super-potion': 10, 'hyper-potion': 5, revive: 5, 'full-heal': 5, 'great-ball': 10, 'ultra-ball': 5, 'escape-rope': 3 },
   },
   {
+    id: 'didier', nom: 'Donjon de Didier', note: 'niv. 45, Ténèbres et Spectre',
+    badges: 6, argent: 20000,
+    pokemon: [[197, 45], [229, 45], [248, 45], [94, 45], [65, 44], [59, 44]],
+    sac: { 'hyper-potion': 10, 'max-potion': 3, revive: 5, 'full-heal': 5, 'ultra-ball': 5, 'escape-rope': 2 },
+  },
+  {
     id: 'fin', nom: 'Fin de jeu', note: 'niv. 60, 8 badges',
     badges: 8, argent: 50000,
     pokemon: [[149, 60], [248, 60], [131, 60], [212, 60], [94, 60], [154, 60]],

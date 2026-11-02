@@ -14,6 +14,10 @@ import { Donjons } from './donjon/jeu.js';
 import { DONJONS } from './donjons/index.js';
 import { listerLieux } from './lieux.js';
 import { EQUIPES, partieTest } from './equipes.js';
+import { installerContenu } from './contenu.js';
+import { ASSETS } from '../../odyssee/js/assets.js';
+
+installerContenu(ASSETS);
 
 const H = window.HubBridge;
 const canvas = document.getElementById('gl'), uiRoot = document.getElementById('ui'), loading = document.getElementById('loading');
@@ -74,6 +78,7 @@ async function boot() {
     if (mode === 'game') { await ui.fade(true, 250); }
     mode = 'menu-open';
     game.hud.root.style.display = 'none';
+    if (game.state) donjons.sortir();
     game.state = null;
     for (;;) {
       const r = await ecranChoix(ui, sound, lieux);
@@ -93,7 +98,7 @@ async function boot() {
   const direct = QS.get('lieu') && Object.values(lieux).flat().find((l) => l.map === QS.get('lieu') || l.map === 'labo:' + QS.get('lieu') || l.nom === QS.get('lieu'));
   if (direct) {
     const nomHub = H && H.embedded && H.players.find((p) => String(p.id) === String(H.info.myId))?.name;
-    const state = partieTest(game, { nom: (QS.get('nom') || nomHub || 'Testeur').slice(0, 10), genre: QS.get('genre') === 'f' ? 'f' : 'm', equipe: QS.get('equipe') || 'debut', lieu: direct });
+    const state = partieTest(game, { nom: (QS.get('nom') || nomHub || 'Testeur').slice(0, 10), genre: QS.get('genre') === 'f' ? 'f' : 'm', equipe: QS.get('equipe') || direct.equipe || 'debut', lieu: direct });
     mode = 'game'; await game.start(state);
   } else await choisir();
 }
@@ -113,7 +118,8 @@ async function ecranChoix(ui, sound, lieux) {
       const cat = cats[c][0], liste = lieux[cat];
       const i = await ui.list({ title: cats[c][1], items: liste.map((l) => ({ label: l.nom, right: l.note || '' })).concat([{ label: 'Retour' }]), cls: 'title-menu testody-menu testody-long', cancel: liste.length, parent: scr, start: Math.max(0, liste.findIndex((l) => l.nom === prev.lieu)) });
       if (i >= liste.length) continue;
-      const e = await ui.list({ title: 'Quelle équipe ?', items: EQUIPES.map((q) => ({ label: q.nom, right: q.note })).concat([{ label: 'Retour' }]), cls: 'title-menu testody-menu', cancel: EQUIPES.length, parent: scr, start: Math.max(0, EQUIPES.findIndex((q) => q.id === prev.equipe)) });
+      const conseil = liste[i].equipe || prev.equipe;
+      const e = await ui.list({ title: 'Quelle équipe ?', items: EQUIPES.map((q) => ({ label: q.nom, right: q.note + (q.id === liste[i].equipe ? ' · conseillée' : '') })).concat([{ label: 'Retour' }]), cls: 'title-menu testody-menu', cancel: EQUIPES.length, parent: scr, start: Math.max(0, EQUIPES.findIndex((q) => q.id === conseil)) });
       if (e >= EQUIPES.length) continue;
       const g = await ui.list({ title: 'Ton personnage', items: [{ label: 'Garçon' }, { label: 'Fille' }, { label: 'Retour' }], cls: 'title-menu testody-menu', cancel: 2, parent: scr, start: prev.genre === 'f' ? 1 : 0 });
       if (g === 2) continue;

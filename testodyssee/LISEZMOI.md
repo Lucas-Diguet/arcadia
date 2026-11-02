@@ -13,11 +13,16 @@ testodyssee/
 ├── js/jeu.js             le jeu d'Odyssée sans sauvegarde, avec « Changer de lieu » dans le menu
 ├── js/lieux.js           lieux proposés : donjons du labo, puis villes, routes et grottes d'Odyssée
 ├── js/equipes.js         équipes prêtes (niveau, badges, sac, toutes les CS)
-├── js/donjons/           un fichier par donjon (crypte.js) et la liste (index.js)
+├── js/contenu.js         Pokémon et objets exclusifs du labo (Spectre de Pierre Chartier, Panini de Châteauroux)
+├── js/donjons/           un fichier par donjon (crypte.js, didier.js) et la liste (index.js)
+├── js/combat/
+│   ├── raid.js           combat à plusieurs contre un boss, barre de vie à blocs (sans écran, testé sous Node)
+│   └── vue.js            ce combat dans l'écran de combat d'Odyssée, encadré des équipiers
 └── js/donjon/
     ├── plan.js           le plan en texte devient une carte d'Odyssée
     ├── etat.js           règles partagées du groupe (sans écran, testées sous Node)
-    └── jeu.js            PNJ, portes, combats, dalles, panneau, échanges avec l'hôte du salon
+    ├── jeu.js            PNJ, portes, combats, dalles, panneau, échanges avec l'hôte du salon
+    └── mecaniques.js     questions, clés et serrures, ascenseur, journal, organisation du combat contre le boss
 ```
 
 ## Tester
@@ -49,6 +54,11 @@ Le donjon se dessine en texte, une lettre par case :
 | `0` à `9` | porte scellée ; elle s'ouvre quand la salle qui porte ce numéro est terminée |
 | lettres de `pnj` | un PNJ (gardien, adversaire, boss), une seule fois chacun |
 | lettres de `decor` | décor qui bloque le passage (`brasero`, `colonne`, `squelette`, `gargouille`, `caverock`…) |
+| lettres de `objets` | objet qu'on utilise : panneau (`type: 'panneau'`, plusieurs cases côte à côte font un grand panneau) ou ascenseur |
+
+Un ascenseur (`type: 'ascenseur'`) mène à l'ascenseur dont la lettre est `vers` ; on arrive sur la case libre à côté.
+Avec `salle` et `serrures`, il reste fermé tant que cette salle n'est pas terminée. Deux parties du plan qui ne se
+touchent pas (comme le bureau de Pierre) ne se rejoignent que par un ascenseur.
 
 Les décors disponibles sont ceux d'Odyssée : la liste `deco`, `nature` et `mobilier` de `odyssee/js/data/sprites.js`.
 Une lettre inconnue arrête le labo avec un message qui donne sa ligne et sa colonne.
@@ -63,6 +73,8 @@ Une lettre inconnue arrête le labo avec un message qui donne sa ligne et sa col
 | `combat` | tous ses adversaires (`pnj: ['a', 'b', 'c']`) sont battus. Un adversaire ne se combat que par un joueur à la fois |
 | `dalles` | assez de joueurs se tiennent sur les dalles en même temps : autant que de joueurs présents, au plus le nombre de dalles |
 | `boss` | ses PV partagés tombent à zéro. Chaque combat retire au boss les PV qu'on lui a infligés. PV du boss = PV normaux × (joueurs + 1) |
+| `serrures` | chacun de ses PNJ donne une clé à qui le bat, et toutes les clés sont dans les serrures (de l'ascenseur). Une clé pas encore posée retourne à son PNJ si son porteur quitte le donjon |
+| `raid` | le boss est battu dans un combat à plusieurs. Il commence quand tous les joueurs présents dans le donjon lui ont parlé |
 
 `porte` est le numéro de la porte qui s'ouvre à la fin de la salle. `repere` sert aux salles sans PNJ (`'S'` pour
 l'entrée, `'o'` pour les dalles) : c'est par là que le labo trouve les cases de la salle, dont il se sert pour afficher
@@ -74,9 +86,29 @@ son nom en y entrant.
 a: { id: 'ame1', cls: 'Âme', nom: 'errante', sprite: 'medium', dir: 'down', equipe: [[92, 18], [353, 19]] },
 ```
 
+`quiz: 'delta'` fait du PNJ un questionneur : il pose la question `questions.delta` (4 réponses, la bonne en premier,
+mélangées à l'affichage). Bonne réponse : combat, puis la clé `cle` s'il est battu. Mauvaise réponse : toute l'équipe
+tombe à la moitié de ses PV, puis à 1 PV, puis plus rien. `raid: true, espece, niveau` : boss du combat à plusieurs.
+
 `cls` et `nom` donnent « Âme errante envoie Fantominus ! ». `sprite` est l'apparence sur la carte (liste `chars` de
 `sprites.js`), `bs` le dessin en combat s'il est différent. `equipe` : numéros des Pokémon et niveaux. `gardien: true`
 pour le PNJ qui ouvre le donjon, `boss: true` pour le boss.
+
+### Le journal
+
+`journal` liste les sous-quêtes du donjon (une par salle à suivre), affichées dans le menu JOURNAL avec les objets de
+quête du joueur (les clés). Tout ce qui est dans le journal reste dans le donjon.
+
+### Le combat à plusieurs
+
+Chaque joueur a un Pokémon en jeu ; le boss agit une fois par tour contre un joueur tiré au sort. Ses PV sont
+multipliés par le nombre de joueurs et découpés en 3 blocs : un coup ne casse jamais plus d'un bloc, et chaque bloc
+cassé donne +1 en Vitesse au boss. Un joueur dont l'équipe est K.O. attend la fin du combat des autres. L'hôte calcule
+tout (`js/combat/raid.js`) ; l'écran de chaque joueur rejoue les tours (`js/combat/vue.js`).
+
+### Pokémon et objets exclusifs
+
+Dans `js/contenu.js` : une espèce (numéro à partir de 2001, son image dans `img/`) ou un objet (son icône dans `img/`).
 
 ## Ajouter un nouveau type de salle
 

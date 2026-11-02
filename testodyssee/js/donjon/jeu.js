@@ -11,6 +11,8 @@ import { itemName } from '../../../odyssee/js/core/items.js';
 import { el, esc } from '../../../odyssee/js/ui/ui.js';
 import { nouvelEtat, appliquer, battu, prisPar, requisDalles } from './etat.js';
 import { construireCarte, fermer, ouvrir } from './plan.js';
+import { Mecaniques } from './mecaniques.js';
+import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 
 const newRid = () => Math.random().toString(36).slice(2, 10);
@@ -23,11 +25,13 @@ export class Donjons {
     this.attentes = new Map();
     this.recu = new Set();
     this.taches = [];
+    this.erreurs = {}; this.raids = {}; this.equipesRaid = {};
     this.wasHost = this.hote;
     for (const d of defs) {
       const m = construireCarte(d);
       game.world.maps[d.carte] = m;
       this.poserPnj(d, m);
+      this.poserObjets(d, m);
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -53,8 +57,8 @@ export class Donjons {
       const p = d.pnj[k];
       m.npc({
         id: `${d.id}:${p.id}`, x, y, dir: p.dir || 'down', sprite: p.sprite, move: 'static',
-        when: () => (p.gardien ? true : p.boss ? !this.etats[d.id].fini : !battu(this.etats[d.id], d, k)),
-        talk: async (api, n) => (p.gardien ? this.gardien(d) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
+        when: () => (p.gardien || p.quiz ? true : p.boss || p.raid ? !this.etats[d.id].fini : !battu(this.etats[d.id], d, k)),
+        talk: async () => (p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
       });
     }
   }
@@ -83,7 +87,7 @@ export class Donjons {
       vu.faites.add(s.id);
       if (ici && s.type !== 'boss') this.taches.push(() => this.porteOuverte(d, s));
     }
-    if (e.fini && !vu.fini) { vu.fini = true; if (ici) this.taches.push(() => this.victoire(d)); }
+    if (e.fini && !vu.fini) { vu.fini = true; if (ici && !d.salles.some((s) => s.type === 'raid')) this.taches.push(() => this.victoire(d)); }
     this.majPanneau();
   }
   async porteOuverte(d, s) {
@@ -130,6 +134,7 @@ export class Donjons {
   }
   traiter(id, qui, m) {
     const d = this.defs.get(id); if (!d || !m || typeof m.a !== 'string') return { ok: false, why: 'inconnu' };
+    if (m.a === 'pret' && validParty(m.party)) (this.equipesRaid[id] ||= {})[String(qui)] = m.party;
     const r = appliquer(d, this.etats[id], qui, m, this.options(d, m));
     if (r.change) this.diffuser(id);
     return { ok: r.ok, why: r.why };
@@ -142,6 +147,8 @@ export class Donjons {
     if (!m || typeof m.t !== 'string' || !m.t.startsWith('dj') || String(from) === this.moi) return;
     if (m.t === 'dj' && this.hote) { const r = this.traiter(m.id, String(from), m.m); this.H.send(from, { t: 'djR', rid: m.rid, ...r }); return; }
     if (m.t === 'dj?' && this.hote) { for (const id of this.defs.keys()) this.H.send(from, { t: 'djE', id, e: this.etats[id] }); return; }
+    if (m.t === 'djRA' && this.hote) { this.actionRaid(String(from), m.id, m.action); return; }
+    if (m.t === 'djRaid' && String(from) === String(this.H.info.hostId)) { this.recevoirRaid(m); return; }
     if (m.t === 'djR') { const f = this.attentes.get(m.rid); if (f) { this.attentes.delete(m.rid); f({ ok: !!m.ok, why: m.why }); } return; }
     if (m.t === 'djE' && !this.hote && String(from) === String(this.H.info.hostId) && this.defs.has(m.id) && m.e) {
       const cur = this.etats[m.id];
@@ -157,10 +164,19 @@ export class Donjons {
         const e = this.etats[id], partis = new Set();
         for (const S of Object.values(e.salles)) for (const q of Object.values(S.pris)) if (!ids.has(q)) partis.add(q);
         for (const q of partis) this.traiter(id, q, { a: 'parti' });
+        for (const S of Object.values(e.salles)) for (const q of [...Object.values(S.cles).map((c) => c.a), ...S.prets]) if (!ids.has(q)) this.traiter(id, q, { a: 'parti' });
         if (!this.wasHost) this.diffuser(id);
       }
     }
+    if (this.hote) for (const R of Object.values(this.raids)) for (const q of R.ids) if (!ids.has(q)) this.retirerRaid(q);
+    // l'hôte est parti pendant un combat : il s'arrête pour ceux qui le jouaient
+    if (this.miroir && !this.hote && !ids.has(String(this.miroirHote))) this.miroir.recevoir({ parti: true });
     this.wasHost = this.hote;
+  }
+  dansUnDonjon() { const g = this.game; return !!g.state && [...this.defs.values()].some((q) => g.mapObj?.id === q.carte); }
+  /** on quitte un donjon (autre lieu, changement de lieu) : les objets de quête disparaissent */
+  sortir(d) {
+    for (const q of d ? [d] : this.defs.values()) this.demande(q.id, { a: 'sortie' });
   }
 
   /* ---------------- à chaque image ---------------- */
@@ -173,9 +189,13 @@ export class Donjons {
     }
     if (this.hote) {
       this.dallesT = (this.dallesT || 0) - dt;
-      if (this.dallesT <= 0) { this.dallesT = 0.25; for (const d of this.defs.values()) this.verifierDalles(d); }
+      if (this.dallesT <= 0) { this.dallesT = 0.25; for (const d of this.defs.values()) { this.verifierDalles(d); this.verifierRaid(d); } }
     }
     this.panT = (this.panT || 0) - dt;
+    if (g.state && g.mapObj !== this.carteVue) {
+      const avant = this.carteVue && [...this.defs.values()].find((q) => q.carte === this.carteVue.id);
+      if (avant && g.mapObj.id !== avant.carte) this.sortir(avant);
+    }
     if (g.state && (g.mapObj !== this.carteVue || this.panT <= 0)) { this.carteVue = g.mapObj; this.panT = 0.5; this.majPanneau(); }
     if (this.taches.length && g.state && !g.busy && !g.player.move && g.input.free && !g.bv.alive) {
       const f = this.taches.shift(); g.busy = true;
@@ -203,6 +223,8 @@ export class Donjons {
       else if (s.type === 'combat') txt = `${S.battus.length}/${s.pnj.length} vaincus`;
       else if (s.type === 'dalles') txt = S.faite ? 'faite' : `dalles ${S.dalles}/${requisDalles(P.dalles.length, Math.max(1, this.presents(d)))}`;
       else if (s.type === 'boss') txt = e.boss ? `${e.boss.pv}/${e.boss.max} PV` : '—';
+      else if (s.type === 'serrures') txt = `serrures ${Object.values(S.cles).filter((c) => c.mise).length}/${s.pnj.length}`;
+      else if (s.type === 'raid') txt = S.combat ? 'combat en cours' : `prêts ${S.prets.length}`;
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
     }
     const html = `<div class="dj-t">${esc(d.nom)}</div>${lignes.join('')}`;
@@ -281,3 +303,5 @@ export class Donjons {
     await g.warp({ map: d.carte, x, y, dir: 'up' }, 'exit');
   }
 }
+
+Object.assign(Donjons.prototype, Mecaniques);

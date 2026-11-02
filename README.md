@@ -173,6 +173,7 @@ Le labo d'Odyssée : on choisit un lieu et une équipe prête, et on y apparaît
 - **Lieux** : les donjons en test, et toutes les villes, routes et grottes d'Odyssée
 - **Équipes prêtes** : début (niv. 20), milieu (niv. 35) ou fin de jeu (niv. 60), avec leurs badges et toutes les CS
 - **Crypte des Murmures** : un premier donjon à faire en groupe. Le gardien ouvre la crypte, chaque esprit ne se combat que par un joueur à la fois, la Salle des Dalles demande tout le groupe en même temps, et Ossarion a des PV partagés
+- **Donjon de Didier** : trois Adeptes de l'X gardent les clés de l'ascenseur et posent chacun une question sur les grecs (delta, gamma, vega). Une erreur coûte des PV à toute l'équipe. En haut, le Spectre de Pierre Chartier se combat à trois contre un, avec une barre de vie en trois blocs
 - Faire un donjon (il se dessine en texte) : [testodyssee/LISEZMOI.md](testodyssee/LISEZMOI.md)
 
 ## Pour les développeurs

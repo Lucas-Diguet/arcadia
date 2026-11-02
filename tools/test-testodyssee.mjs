@@ -1,8 +1,10 @@
 // tools/test-testodyssee.mjs — TestOdyssée : plans des donjons et règles partagées du groupe.
 // node tools/test-testodyssee.mjs
 import { DONJONS } from '../testodyssee/js/donjons/index.js';
-import { construireCarte, lirePlan, regionDe, ouvrir } from '../testodyssee/js/donjon/plan.js';
-import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles } from '../testodyssee/js/donjon/etat.js';
+import { construireCarte, lirePlan, regionDe, ouvrir, aCote } from '../testodyssee/js/donjon/plan.js';
+import { installerContenu } from '../testodyssee/js/contenu.js';
+import { Raid } from '../testodyssee/js/combat/raid.js';
+import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, clesDe, serrures } from '../testodyssee/js/donjon/etat.js';
 import { createMon } from '../odyssee/js/core/mon.js';
 import { SPECIES } from '../odyssee/js/data/species.js';
 import { ITEMS } from '../odyssee/js/core/items.js';
@@ -11,6 +13,7 @@ import { listerLieux } from '../testodyssee/js/lieux.js';
 import { EQUIPES } from '../testodyssee/js/equipes.js';
 import { walkable } from '../odyssee/js/world/tiles.js';
 
+installerContenu();
 let fails = 0, checks = 0;
 const ok = (c, msg) => { checks++; if (!c) { fails++; console.log('ÉCHEC :', msg); } };
 const compte = (seen) => { let n = 0; for (const v of seen) n += v; return n; };
@@ -32,7 +35,9 @@ for (const d of DONJONS) {
   const ferme = compte(m.reach(...P.depart));
   ok(ferme === regionDe(m, P, d.salles[0]).filter(([x, y]) => walkable(m.get(x, y))).length, `${d.id} : portes fermées, seule l'entrée est accessible (${ferme})`);
   for (const l of Object.values(P.portes)) for (const [x, y] of l) ok(ouvrir(m, x, y), `${d.id} : la porte en ${x},${y} s'ouvre`);
+  // on part de l'entrée et de chaque arrivée d'ascenseur
   const seen = m.reach(...P.depart);
+  for (const [c, o] of Object.entries(d.objets || {})) if (o.type === 'ascenseur') { const s2 = m.reach(...aCote(m, P, c)); for (let i = 0; i < seen.length; i++) seen[i] |= s2[i]; }
   const sol = P.sol.filter(([x, y]) => walkable(m.get(x, y)));
   ok(sol.every(([x, y]) => seen[y * m.w + x]), `${d.id} : portes ouvertes, tout le sol est accessible`);
   for (const [k, [[x, y]]] of Object.entries(P.pnj)) ok([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen[(y + dy) * m.w + x + dx]), `${d.id} : on peut parler à ${k}`);
@@ -80,6 +85,74 @@ const run = e.run;
 appliquer(d, e, C, { a: 'recommencer' });
 ok(e.run === run + 1 && !e.fini && !e.salles.entree.faite && !e.boss, 'recommencer : tout se referme');
 ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
+
+
+/* ---------------- donjon de Didier : clés, serrures, boss à plusieurs ---------------- */
+{
+  const D = DONJONS.find((q) => q.id === 'didier'), e = nouvelEtat(D);
+  ok(appliquer(D, e, A, { a: 'prendre', pnj: 'x' }).ok && !appliquer(D, e, B, { a: 'prendre', pnj: 'x' }).ok, 'un seul joueur à la fois face à un Adepte');
+  ok(appliquer(D, e, A, { a: 'cle', pnj: 'x' }).ok && clesDe(D, e, A).join() === 'x' && prisPar(e, D, 'x') === null, 'A reçoit la clé du delta');
+  ok(!appliquer(D, e, B, { a: 'prendre', pnj: 'x' }).ok, 'un Adepte qui a donné sa clé ne se combat plus');
+  ok(!appliquer(D, e, C, { a: 'inserer' }).ok, 'sans clé, rien à mettre dans les serrures');
+  appliquer(D, e, B, { a: 'prendre', pnj: 'y' }); appliquer(D, e, B, { a: 'cle', pnj: 'y' });
+  appliquer(D, e, B, { a: 'sortie' });
+  ok(!e.salles.s1.cles.y && clesDe(D, e, B).length === 0, 'B quitte le donjon : sa clé retourne à l\'Adepte');
+  appliquer(D, e, B, { a: 'cle', pnj: 'y' }); appliquer(D, e, C, { a: 'cle', pnj: 'z' });
+  ok(appliquer(D, e, A, { a: 'inserer' }).ok && serrures(D, e) === 1 && !e.salles.s1.faite, 'une serrure remplie sur trois');
+  ok(!appliquer(D, e, B, { a: 'pret' }).ok, 'le boss attend que l\'ascenseur soit ouvert');
+  appliquer(D, e, B, { a: 'inserer' }); appliquer(D, e, C, { a: 'inserer' });
+  ok(e.salles.s1.faite && serrures(D, e) === 3, 'trois clés : l\'ascenseur se déverrouille');
+  appliquer(D, e, B, { a: 'sortie' });
+  ok(serrures(D, e) === 3, 'une clé posée reste posée');
+  ok(appliquer(D, e, A, { a: 'pret' }).ok && appliquer(D, e, B, { a: 'pret' }).ok && e.salles.boss.prets.length === 2, 'deux joueurs prêts devant le boss');
+  appliquer(D, e, B, { a: 'pasPret' });
+  ok(e.salles.boss.prets.join() === A, 'un joueur peut se retirer avant le combat');
+  appliquer(D, e, A, { a: 'raid', etape: 'debut' });
+  ok(e.salles.boss.combat && !appliquer(D, e, A, { a: 'pasPret' }).change, 'combat lancé : plus de retrait');
+  appliquer(D, e, A, { a: 'raid', etape: 'fin', result: 'lose' });
+  ok(!e.salles.boss.combat && !e.fini && !e.salles.boss.prets.length, 'défaite : le boss attend une nouvelle tentative');
+  appliquer(D, e, A, { a: 'raid', etape: 'debut' }); appliquer(D, e, A, { a: 'raid', etape: 'fin', result: 'win', vainqueurs: [A, B] });
+  ok(e.fini && e.salles.boss.faite && e.vainqueurs.join() === '1,2', 'victoire : donjon terminé');
+  ok(D.questions && Object.values(D.pnj).filter((p) => p.quiz).every((p) => D.questions[p.quiz]?.r.length === 4), 'chaque Adepte a une question à 4 réponses');
+}
+{
+  // combat à plusieurs : trois joueurs contre le Spectre, barre à trois blocs
+  const rnd = (seed) => { let x = seed >>> 0; return () => { x = (x * 1664525 + 1013904223) >>> 0; return x / 4294967296; }; };
+  let fins = { win: 0, lose: 0 }, depasse = 0, vitesse = 0, blocs = 0, bloque = 0;
+  for (let k = 0; k < 120; k++) {
+    const R = rnd(k + 3), n = 1 + (k % 3);
+    const boss = createMon(2001, 48, { rng: R }); boss.stats[0] *= n; boss.hp = boss.stats[0];
+    const joueurs = Array.from({ length: n }, (_, i) => ({ id: String(i + 1), nom: ['Lucas', 'Amiel', 'Éva'][i], party: [createMon(197, 30 + (k % 20), { rng: R }), createMon(94, 35, { rng: R })] }));
+    const raid = new Raid({ joueurs, boss: { mon: boss, cls: '', nom: 'Pierre Chartier' }, rng: R });
+    const seg = boss.stats[0] / 3;
+    raid.start();
+    let t = 0;
+    while (raid.state !== 'over' && t++ < 400) {
+      for (const id of raid.attendus()) {
+        const j = joueurs.find((q) => q.id === id);
+        const evs = raid.action(id, raid.state === 'switch' ? { type: 'switch', idx: j.party.findIndex((m) => m.hp > 0) } : k % 17 === 0 && t === 2 && id === '1' ? { type: 'forfeit' } : { type: 'move', idx: Math.floor(R() * 4) });
+        for (const e of evs || []) {
+          if (e.t === 'hp' && e.side === 1 && e.from - e.hp > Math.ceil(seg)) depasse++;
+          if (e.t === 'bloc') blocs++;
+        }
+      }
+    }
+    if (raid.state !== 'over') bloque++;
+    fins[raid.result] = (fins[raid.result] || 0) + 1;
+    vitesse += raid.manches[0].sides[1].v.st[5];
+  }
+  ok(!bloque, `les combats à plusieurs se terminent (${bloque} bloqués)`);
+  ok(depasse === 0, `un coup ne casse jamais plus d'un bloc (${depasse})`);
+  ok(blocs > 0 && vitesse > 0, `les blocs cassés augmentent la Vitesse du boss (${blocs} blocs)`);
+  ok(fins.win > 0 && fins.lose > 0, `victoires et défaites possibles (${JSON.stringify(fins)})`);
+  // un joueur qui part pendant le combat ne bloque pas les autres
+  const boss = createMon(2001, 48); boss.stats[0] *= 2; boss.hp = boss.stats[0];
+  const raid = new Raid({ joueurs: [{ id: '1', nom: 'Lucas', party: [createMon(197, 60)] }, { id: '2', nom: 'Amiel', party: [createMon(94, 60)] }], boss: { mon: boss, nom: 'Pierre' } });
+  raid.start();
+  ok(raid.action('1', { type: 'move', idx: 0 }) === null, 'on attend le choix de tout le monde');
+  raid.retirer('2', 'Amiel a quitté le combat.');
+  ok(raid.avancer() && raid.turn === 1, 'le départ d\'un joueur débloque le tour');
+}
 
 /* ---------------- lieux et équipes ---------------- */
 const world = buildWorld();

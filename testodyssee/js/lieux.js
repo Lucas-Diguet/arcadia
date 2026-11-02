@@ -18,7 +18,7 @@ export function listerLieux(world, donjons) {
   const W = world.maps.monde, out = { labo: [], villes: [], routes: [], grottes: [] };
   for (const d of donjons) {
     const m = world.maps[d.carte], [x, y] = m.donjon.plan.depart;
-    out.labo.push({ nom: d.nom, note: d.niveau, map: d.carte, x, y, dir: 'up' });
+    out.labo.push({ nom: d.nom, note: d.niveau, map: d.carte, x, y, dir: 'up', equipe: d.equipe });
   }
   for (const t of Object.values(world.towns)) {
     const [x, y] = t.centerDoor ? pres(W, t.centerDoor[0], t.centerDoor[1] + 1) : pres(W, t.x + (t.w >> 1), t.y + (t.h >> 1));

@@ -106,6 +106,9 @@ Ajouter `[skip changelog]` dans le message d'un commit purement technique pour q
   sans DOM). `node tools/test-testodyssee.mjs` vérifie les plans (tout est accessible portes ouvertes, rien portes fermées), les règles
   du groupe et les lieux d'apparition : à lancer quand on touche aux donjons, et quand on touche aux cartes d'Odyssée.
   `tools/salon-test.html?jeu=testodyssee&n=3` ouvre plusieurs joueurs dans une seule page en jouant le rôle du Hub (marche pour tout jeu du site).
+  Donjon de Didier : questions, clés et ascenseur à serrures, journal du donjon (`testodyssee/js/donjon/mecaniques.js`), et combat à plusieurs
+  contre un boss calculé par l'hôte (`testodyssee/js/combat/raid.js`, barre de vie à blocs façon PokéRogue) que chaque écran rejoue
+  dans l'écran de combat d'Odyssée par `runPvp` (`testodyssee/js/combat/vue.js`). Pokémon et objets exclusifs du labo : `testodyssee/js/contenu.js`.
 - Island Rush (battle royale, `royale/`) : l'île vient d'une graine (`royale/engine/map.js`, île officielle `ILE`), `royale/carte.html`
   la montre en 2D. `node tools/test-royale.mjs` vérifie l'île sur plusieurs graines, le déplacement (portes, escaliers, murs, nage),
   une partie (butin, combat, construction), les copies des invités et le relais d'hôte, la prédiction : à lancer quand on touche

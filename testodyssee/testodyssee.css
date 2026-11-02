@@ -12,3 +12,20 @@
 .dj-l { display: flex; justify-content: space-between; gap: calc(var(--px) * 8); }
 .dj-l b { font-weight: 600; }
 .dj-l.ok { opacity: .55; }
+
+/* combat à plusieurs : barre de vie du boss en blocs, encadré des équipiers */
+.raid .bhud.foe .bh-hp i { position: relative; }
+.raid-sep { position: absolute; top: 0; bottom: 0; width: calc(var(--bp) * 1); margin-left: calc(var(--bp) * -0.5); background: #182028; }
+.raid-blocs { display: flex; gap: calc(var(--bp) * 2); justify-content: flex-end; margin-top: calc(var(--bp) * 2); }
+.raid-blocs b { width: calc(var(--bp) * 9); height: calc(var(--bp) * 4); border-radius: calc(var(--bp) * 1); background: #b8bcc4; border: calc(var(--bp) * 0.5) solid #485058; }
+.raid-blocs b.on { background: linear-gradient(#c890ff, #8a50d8); }
+.raid-equipe { position: absolute; left: calc(var(--bp) * 6); top: calc(var(--bp) * 62); display: flex; flex-direction: column; gap: calc(var(--bp) * 2); z-index: 3; }
+.raid-eq { display: flex; align-items: center; gap: calc(var(--bp) * 3); padding: calc(var(--bp) * 1.5) calc(var(--bp) * 5) calc(var(--bp) * 1.5) calc(var(--bp) * 2); background: rgba(251, 251, 244, .92); border: calc(var(--bp) * 1) solid #384030; border-radius: calc(var(--bp) * 4); font-size: calc(var(--bp) * 6.5); min-width: calc(var(--bp) * 70); }
+.raid-eq img { width: calc(var(--bp) * 18); height: calc(var(--bp) * 18); image-rendering: pixelated; object-fit: contain; }
+.raid-eq > div { flex: 1; display: grid; grid-template-columns: 1fr auto; row-gap: calc(var(--bp) * 1); }
+.raid-eq span { opacity: .7; }
+.raid-eq i { grid-column: 1 / 3; height: calc(var(--bp) * 3); background: #485058; border-radius: calc(var(--bp) * 2); overflow: hidden; display: block; }
+.raid-eq u { display: block; height: 100%; transition: width .4s; }
+.raid-eq.out { opacity: .45; filter: grayscale(1); }
+.raid-eq.hit { animation: raid-hit .45s; }
+@keyframes raid-hit { 0%, 100% { transform: none; } 25% { transform: translateX(calc(var(--bp) * -2)); } 75% { transform: translateX(calc(var(--bp) * 2)); } }

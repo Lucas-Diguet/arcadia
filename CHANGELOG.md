@@ -1,5 +1,15 @@
 # Journal des versions — Arcadia
 
+## 3.58 — 2 novembre 2026
+- **TestOdyssée** — nouveau donjon : le donjon de Didier, à faire à trois.
+  - Un grand panneau accueille les aventuriers, et un ascenseur à trois serrures attend au centre de la salle.
+  - Trois Adeptes de l'X posent chacun une question sur les grecs de la finance. Bonne réponse : un combat, puis une clé. Mauvaise réponse : tes Pokémon perdent la moitié de leurs PV, puis tout sauf 1 PV.
+  - Nouveau journal du donjon dans le menu : la sous-quête « Débloquer l'ascenseur » et tes clés. Les clés restent dans le donjon : si tu en sors, elles retournent à leur Adepte.
+  - En haut, un boss masqué. Quand tout le monde lui a parlé, il se révèle, et le combat se joue à trois contre un contre le Spectre de Pierre Chartier.
+  - Sa barre de vie a trois blocs : un coup n'en casse jamais plus d'un, et chaque bloc cassé le rend plus rapide.
+  - Récompense : un Panini de Châteauroux pour chacun.
+  - Nouvelle équipe prête, conseillée pour ce donjon (niv. 45).
+
 ## 3.57 — 2 novembre 2026
 - **TestOdyssée** — nouveau jeu : le labo d'Odyssée. Choisis un lieu et une équipe prête, et tu y apparais directement, seul ou à plusieurs.
   - Tous les lieux d'Odyssée sont proposés : villes, routes, grottes et lieux annexes, en plus des donjons en test.

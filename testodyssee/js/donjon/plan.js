@@ -10,6 +10,8 @@ export const LEGENDE = {
   'o': 'dalle à tenir',
   '0-9': 'porte scellée (s\'ouvre quand la salle qui la porte est terminée)',
 };
+// décor par défaut des objets du plan (def.objets)
+const DECOR_OBJET = { ascenseur: 'console' };
 
 const PORTE = 'caverock';
 
@@ -18,7 +20,7 @@ export function lirePlan(def) {
   const rows = def.plan.map((r) => r.replace(/\s+$/, ''));
   const w = Math.max(...rows.map((r) => r.length)) + 2, h = rows.length + 2;
   const at = (x, y) => (y >= 1 && y <= rows.length ? rows[y - 1][x - 1] ?? '#' : '#') || '#';
-  const out = { w, h, depart: null, portes: {}, dalles: [], pnj: {}, decor: [], sol: [] };
+  const out = { w, h, depart: null, portes: {}, dalles: [], pnj: {}, decor: [], sol: [], objets: {} };
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = x === 0 || x === w - 1 ? '#' : at(x, y);
     if (c === '#' || c === ' ') continue;
@@ -27,6 +29,7 @@ export function lirePlan(def) {
     else if (c === 'o') out.dalles.push([x, y]);
     else if (/[0-9]/.test(c)) (out.portes[c] ||= []).push([x, y]);
     else if (def.pnj?.[c]) (out.pnj[c] ||= []).push([x, y]);
+    else if (def.objets?.[c]) (out.objets[c] ||= []).push([x, y]);
     else if (def.decor?.[c]) out.decor.push([def.decor[c], x, y]);
     else if (c !== '.') throw new Error(`Plan de ${def.id} : lettre inconnue « ${c} » (ligne ${y}, colonne ${x})`);
   }
@@ -42,6 +45,13 @@ export function construireCarte(def) {
   m.edge = T.CAVEWALL;
   for (const [x, y] of P.sol) m.set(x, y, T.CAVE);
   for (const [k, x, y] of P.decor) m.prop(k, x, y);
+  for (const [c, l] of Object.entries(P.objets)) {
+    const o = def.objets[c];
+    for (const [x, y] of l) {
+      if (o.type === 'panneau') m.sign(x, y, o.texte || '...');
+      else m.prop(o.decor || DECOR_OBJET[o.type] || 'statue', x, y);
+    }
+  }
   for (const [x, y] of P.dalles) m.deco.push({ k: 'carpet', x, y });
   for (const l of Object.values(P.portes)) for (const [x, y] of l) fermer(m, x, y);
   m.donjon = { def, plan: P };
@@ -88,4 +98,12 @@ export function ouvrir(m, x, y) {
   m.under.delete(x + ',' + y);
   m.deco = m.deco.filter((d) => !(d.x === x && d.y === y));
   return true;
+}
+
+/** case libre à côté d'un objet (sous lui de préférence) : là où l'on arrive en prenant l'ascenseur */
+export function aCote(m, P, c) {
+  const [x, y] = P.objets[c][0];
+  const sol = new Set(P.sol.map(([a, b]) => a + ',' + b));
+  for (const [dx, dy] of [[0, 1], [-1, 0], [1, 0], [0, -1]]) if (sol.has((x + dx) + ',' + (y + dy)) && !P.decor.some(([, a, b]) => a === x + dx && b === y + dy)) return [x + dx, y + dy];
+  return P.depart;
 }
