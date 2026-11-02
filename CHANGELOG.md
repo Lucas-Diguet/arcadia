@@ -1,5 +1,12 @@
 # Journal des versions — Arcadia
 
+## 3.57 — 2 novembre 2026
+- **TestOdyssée** — nouveau jeu : le labo d'Odyssée. Choisis un lieu et une équipe prête, et tu y apparais directement, seul ou à plusieurs.
+  - Tous les lieux d'Odyssée sont proposés : villes, routes, grottes et lieux annexes, en plus des donjons en test.
+  - Trois équipes prêtes : début d'aventure (niv. 20), milieu (niv. 35) et fin de jeu (niv. 60), avec leurs badges et toutes les CS.
+  - Rien n'est sauvegardé : ta partie d'Odyssée ne craint rien.
+  - Premier donjon, la Crypte des Murmures, à faire en groupe : le fossoyeur ouvre la crypte quand tout le monde est là, chaque esprit ne se combat que par un joueur à la fois, la Salle des Dalles demande tout le groupe en même temps, et les PV d'Ossarion sont partagés. Un panneau montre l'avancée de chaque salle.
+
 ## 3.56 — 2 novembre 2026
 - **Site Noir** — nouveau jeu : de l'horreur à la première personne, un monstre contre trois ou quatre enquêteurs, en 15 minutes environ
   - Enquêteurs : une lampe, une batterie, trois cases. Fouillez les meubles pour trouver le badge, la clé et les fusibles, relancez le générateur, prenez l'ascenseur et remontez avec au moins une preuve.

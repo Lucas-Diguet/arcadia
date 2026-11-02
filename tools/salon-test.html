@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Salon d'essai</title>
+<style>
+  body { margin: 0; background: #111; color: #ddd; font: 13px system-ui, sans-serif; }
+  header { padding: 6px 10px; display: flex; gap: 12px; align-items: center; }
+  header code { color: #ffcb05; }
+  .grid { display: grid; gap: 4px; padding: 4px; height: calc(100vh - 40px); box-sizing: border-box; }
+  .cell { position: relative; border: 2px solid #333; }
+  .cell.focus { border-color: #ffcb05; }
+  .cell b { position: absolute; left: 6px; top: 4px; z-index: 2; background: #000a; padding: 1px 6px; border-radius: 4px; pointer-events: none; }
+  iframe { width: 100%; height: 100%; border: 0; display: block; }
+</style>
+</head>
+<body>
+<header>Salon d'essai : un jeu du site ouvert pour plusieurs joueurs dans la même page, sans serveur.
+  Exemple : <code>tools/salon-test.html?jeu=testodyssee&amp;n=3&amp;params=lieu%3Dcrypte</code>. Clique dans un cadre pour jouer ce joueur.</header>
+<div class="grid" id="grid"></div>
+<script>
+// Joue le rôle du Hub (index.html) auprès de chaque cadre : init, liste des joueurs, messages entre joueurs.
+// Le joueur 1 est l'hôte ; ?quitte=1 le fait partir au bout de 20 s (pour essayer le changement d'hôte).
+const qs = new URLSearchParams(location.search);
+const jeu = qs.get('jeu') || 'testodyssee', n = Math.max(1, Math.min(6, +qs.get('n') || 3)), extra = qs.get('params') || '';
+const NOMS = ['Lucas', 'Amiel', 'Nico', 'Gab', 'Léa', 'Sam'], COUL = ['#e05050', '#4a88e0', '#40b060', '#e0a020', '#a060d0', '#30b0b0'];
+let players = Array.from({ length: n }, (_, i) => ({ id: i + 1, name: NOMS[i], color: COUL[i] }));
+let hostId = 1;
+const ready = {}, frames = new Map();
+const grid = document.getElementById('grid');
+grid.style.gridTemplateColumns = `repeat(${n > 2 ? 2 : n}, 1fr)`;
+const roleOf = (id) => (id === hostId ? 'host' : 'guest');
+const post = (id, o) => frames.get(id)?.contentWindow?.postMessage({ dd: 'hub', ...o }, '*');
+const roster = () => { for (const p of players) post(p.id, { k: 'roster', players, ready, hostId, role: roleOf(p.id) }); };
+for (const p of players) {
+  const cell = document.createElement('div'); cell.className = 'cell';
+  cell.innerHTML = `<b style="color:${p.color}">${p.name}${p.id === hostId ? ' (hôte)' : ''}</b>`;
+  const f = document.createElement('iframe');
+  f.src = `../${jeu}/?hub=1&role=${roleOf(p.id)}&game=${jeu}${extra ? '&' + extra : ''}`;
+  f.addEventListener('focus', () => { document.querySelectorAll('.cell').forEach((c) => c.classList.toggle('focus', c === cell)); });
+  cell.addEventListener('pointerdown', () => f.focus());
+  cell.appendChild(f); grid.appendChild(cell); frames.set(p.id, f);
+}
+addEventListener('message', (e) => {
+  const d = e.data; if (!d || d.dd !== 'hub') return;
+  const from = [...frames].find(([, f]) => f.contentWindow === e.source)?.[0]; if (!from) return;
+  if (d.k === 'hello') post(from, { k: 'init', info: { role: roleOf(from), myId: from, hostId, code: 'ESSAI', game: jeu, settings: {}, players, ready } });
+  else if (d.k === 'ready') { ready[from] = jeu; roster(); }
+  else if (d.k === 'send') {
+    const to = d.to === 'host' ? [hostId] : d.to === 'all' ? players.map((p) => p.id).filter((id) => id !== from) : [Number(d.to)];
+    for (const id of to) post(id, { k: 'msg', from, m: d.m });
+  }
+});
+if (qs.get('quitte')) setTimeout(() => {
+  const gone = hostId; players = players.filter((p) => p.id !== gone); hostId = players[0]?.id;
+  frames.get(gone)?.parentElement.remove(); frames.delete(gone); delete ready[gone];
+  roster();
+}, 20000);
+window.__salon = { players: () => players, frames, roster };
+</script>
+</body>
+</html>

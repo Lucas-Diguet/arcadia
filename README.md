@@ -167,6 +167,14 @@ Bagarre de pantins mous au-dessus du vide (`mollo/`). Le dernier debout gagne la
   `?debug` expose `__mollo.run(2)`, qui fait avancer le jeu de 2 s image par image ; `?autostart`, `?seed`, `?arene=four`, `?hazards=0`, `?items=0`.
 - Graphismes : personnages et décors dessinés dans le code (`mollo/view/pantin.js`, `scene.js`), textures au canvas. Musique et sons synthétisés (WebAudio).
 
+## TestOdyssée
+Le labo d'Odyssée : on choisit un lieu et une équipe prête, et on y apparaît directement, seul ou à plusieurs. Rien n'est sauvegardé.
+
+- **Lieux** : les donjons en test, et toutes les villes, routes et grottes d'Odyssée
+- **Équipes prêtes** : début (niv. 20), milieu (niv. 35) ou fin de jeu (niv. 60), avec leurs badges et toutes les CS
+- **Crypte des Murmures** : un premier donjon à faire en groupe. Le gardien ouvre la crypte, chaque esprit ne se combat que par un joueur à la fois, la Salle des Dalles demande tout le groupe en même temps, et Ossarion a des PV partagés
+- Faire un donjon (il se dessine en texte) : [testodyssee/LISEZMOI.md](testodyssee/LISEZMOI.md)
+
 ## Pour les développeurs
 - Site statique (GitHub Pages), sans étape de build.
 - `?local` dans l'adresse : réseau simulé entre onglets du même navigateur, pratique pour tester à plusieurs.

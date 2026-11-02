@@ -192,6 +192,16 @@ window.HUB_GAMES = [
     cover: 'odyssee/img/affiche.jpg', // affiche 960 × 540 : vraie image du jeu, grand titre et bandeau
   },
   {
+    id: 'testodyssee',
+    title: 'TestOdyssée',
+    tag: 'Le labo d\'Odyssée',
+    desc: 'Choisis un lieu d\'Odyssée ou un donjon en test et une équipe prête, et tu y apparais directement, seul ou à plusieurs : la Crypte des Murmures se fait en groupe, salle après salle, jusqu\'à son boss aux PV partagés.',
+    url: 'testodyssee/',
+    minPlayers: 1, maxPlayers: 6,
+    accent: '#8a64c0',
+    cover: 'testodyssee/img/affiche.jpg', // affiche 960 × 540 : vraie image du jeu, grand titre et bandeau
+  },
+  {
     id: 'minigolf',
     title: 'Mini-Golf Party',
     tag: 'Parcours déjantés',
@@ -293,6 +303,9 @@ window.HUB_GAME_INFO = {
   odyssee: { genre: 'aventure', time: 'Longue aventure',
     keys: [['Flèches / ZQSD', 'Marcher'], ['Maj', 'Courir'], ['Espace', 'Parler, valider'], ['U', 'Afficher / replier le HUD'], ['Échap', 'Menu']],
     tips: ['Ta partie est sauvegardée en ligne avec ton compte.', 'Parle aux autres joueurs pour échanger ou combattre.', 'Les CS ouvrent des recoins cachés le long des routes.'] },
+  testodyssee: { genre: 'aventure', time: '10–30 min',
+    keys: [['Flèches / ZQSD', 'Marcher'], ['Maj', 'Courir'], ['Espace', 'Parler, valider'], ['U', 'Afficher / replier le HUD'], ['Échap', 'Menu (changer de lieu)']],
+    tips: ['Rien n\'est sauvegardé : ta partie d\'Odyssée ne craint rien.', 'Dans la crypte, chaque esprit ne se combat que par un joueur à la fois : partagez-vous les salles.', 'Les PV d\'Ossarion comptent pour tout le groupe : chacun peut l\'affronter à son tour.'] },
   minigolf: { genre: 'sport', time: '10–20 min',
     keys: [['Souris', 'Tourner la caméra, viser'], ['Clic maintenu + reculer', 'Doser la puissance'], ['Molette', 'Zoom'], ['V', 'Vue du trou']],
     tips: ['Sur la glace, un tout petit coup suffit.', 'Les accélérateurs comptent dans ta puissance : dose moins.', 'V montre le trou avant de jouer.'] },

@@ -296,6 +296,20 @@
       ]
     },
     {
+      "id": "testodyssee",
+      "title": "TestOdyssée",
+      "maxPlayers": 6,
+      "engine": "Moteur d'Odyssée (fausse 3D) + HubBridge (positions, état des donjons tenu par l'hôte)",
+      "crashReasons": [
+        "Plan de donjon mal dessiné (lettre inconnue, arrivée S manquante) : le labo ne démarre pas",
+        "Sprites PokeAPI indisponibles (réseau bloqué) : les remplaçants dessinés s'affichent"
+      ],
+      "expulsionReasons": [
+        "EXP_PEER_LEFT_MIDGAME : un joueur quitte pendant un donjon (ses adversaires engagés se libèrent)",
+        "EXP_HOST_MIGRATION_RESET : changement d'hôte (le nouvel hôte reprend l'état du donjon qu'il connaît)"
+      ]
+    },
+    {
       "id": "mollo",
       "title": "Mollo !",
       "maxPlayers": 6,

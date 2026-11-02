@@ -8,6 +8,8 @@ import { monName, expProgress } from '../core/mon.js';
 import { BADGES } from '../world/region.js';
 import { hpCol, statusTag, partyScreen, summaryScreen, mapScreen, cardScreen } from './screens.js';
 
+// adresse des icônes à partir de ce fichier : le HUD sert aussi hors du dossier d'Odyssée (TestOdyssée)
+const HUD_IMG = new URL('../../img/hud/', import.meta.url).href;
 const gender = (m) => (m.gender === 'm' ? '<span class="g m">♂</span>' : m.gender === 'f' ? '<span class="g f">♀</span>' : '');
 
 export class Hud {
@@ -200,11 +202,11 @@ export class Hud {
         </div>
         <div class="hud-stats" data-act="card" title="Cliquer pour ouvrir la Carte de Dresseur">
           <div class="hud-stat-item">
-            <img class="hud-stat-ico" src="img/hud/coin.png" alt="">
+            <img class="hud-stat-ico" src="${HUD_IMG}coin.png" alt="">
             <span class="hud-money">${st.money.toLocaleString('fr-FR')} ₽</span>
           </div>
           <div class="hud-stat-item">
-            <img class="hud-stat-ico" src="img/hud/trophy.png" alt="">
+            <img class="hud-stat-ico" src="${HUD_IMG}trophy.png" alt="">
             <span class="hud-badge-cnt">${bCount}/8</span>
           </div>
         </div>
@@ -212,16 +214,16 @@ export class Hud {
       </div>
       <div class="hud-actions">
         <button type="button" class="hud-btn${st.party.length ? '' : ' off'}" data-act="party" tabindex="-1" title="Équipe">
-          <img src="img/hud/team.png" alt=""><span>ÉQUIPE</span>
+          <img src="${HUD_IMG}team.png" alt=""><span>ÉQUIPE</span>
         </button>
         <button type="button" class="hud-btn" data-act="bag" tabindex="-1" title="Sac">
-          <img src="img/hud/bag.png" alt=""><span>SAC</span>
+          <img src="${HUD_IMG}bag.png" alt=""><span>SAC</span>
         </button>
         <button type="button" class="hud-btn" data-act="map" tabindex="-1" title="Carte (Touche C)">
-          <img src="img/hud/map.png" alt=""><span>CARTE</span>
+          <img src="${HUD_IMG}map.png" alt=""><span>CARTE</span>
         </button>
         <button type="button" class="hud-btn save" data-act="save" tabindex="-1" title="Sauvegarder la partie">
-          <img src="img/hud/save.png" alt=""><span>SAUVER</span>
+          <img src="${HUD_IMG}save.png" alt=""><span>SAUVER</span>
         </button>
       </div>
     `;

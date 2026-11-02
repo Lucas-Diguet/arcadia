@@ -1,7 +1,7 @@
 # Consignes pour les assistants de code (Claude, Codex, Copilot, Cursor, Gemini…) et les contributeurs
 
 Ce dépôt est **Arcadia** (anciennement « Game Hub »), le salon de jeux d'Amiel : un site statique (GitHub Pages, sans étape de build) qui réunit plusieurs
-jeux multijoueurs dans le navigateur — Duo Drift, DavidSimulator, Tête de Calcul, Bastion Clash, Outbreak, Fil Rouge, Cyber Kart GP, Convoy Storm, Birdie Party, Mini-Golf Party, Island Rush, Odyssée et Mollo !.
+jeux multijoueurs dans le navigateur — Duo Drift, DavidSimulator, Tête de Calcul, Bastion Clash, Outbreak, Fil Rouge, Cyber Kart GP, Convoy Storm, Birdie Party, Mini-Golf Party, Island Rush, Odyssée, TestOdyssée et Mollo !.
 
 ## À chaque modification poussée sur `main` : journal + version
 
@@ -30,12 +30,12 @@ Filet de sécurité : si un push sur `main` ne touche pas `CHANGELOG.md`, l'acti
 (`tools/changelog-auto.mjs`) et monte la version. Elle est moins bien écrite qu'une entrée faite à la main :
 préférer l'écrire soi-même. Pour qu'elle soit lisible, écrire des messages de commit clairs, par exemple
 `feat(calcul): mode Éclair` ou `fix(david): la caméra qui suit ne se désactive plus`
-(portées reconnues : `drift`, `david`, `calcul`, `bastion`, `outbreak`, `filrouge`, `kart`, `convoy`, `golf`, `minigolf`, `royale`, `odyssee`, `mollo`, `sitenoir`, `hub`, `server`).
+(portées reconnues : `drift`, `david`, `calcul`, `bastion`, `outbreak`, `filrouge`, `kart`, `convoy`, `golf`, `minigolf`, `royale`, `odyssee`, `testodyssee`, `mollo`, `sitenoir`, `hub`, `server`).
 Ajouter `[skip changelog]` dans le message d'un commit purement technique pour qu'il n'apparaisse pas.
 
 ## Repères
 
-- Chaque jeu vit dans son dossier (`drift/`, `david/`, `calcul/`, `bastion/`, `outbreak/`, `filrouge/`, `kart/`, `convoy/`, `golf/`, `minigolf/`, `royale/`, `odyssee/`, `mollo/`, `sitenoir/`) et tourne dans une iframe du Hub ;
+- Chaque jeu vit dans son dossier (`drift/`, `david/`, `calcul/`, `bastion/`, `outbreak/`, `filrouge/`, `kart/`, `convoy/`, `golf/`, `minigolf/`, `royale/`, `odyssee/`, `testodyssee/`, `mollo/`, `sitenoir/`) et tourne dans une iframe du Hub ;
   le Hub (`index.html`, `hub/`) gère le salon, le classement entre potes et le pont `shared/bridge.js`.
 - Multijoueur : relais WebSocket (`shared/net.js`, serveur dans `server/`). `?local` dans l'adresse simule le réseau
   entre onglets du même navigateur pour tester à plusieurs.
@@ -99,6 +99,13 @@ Ajouter `[skip changelog]` dans le message d'un commit purement technique pour q
   et créatures à 16 px) vivent sur la branche `atelier` du fork ; `main` ne garde que le jeu.
   Rendu : les sprites sont dessinés à l'écran pixel pour pixel, ancrés à leurs pieds
   (shader `screenSprite` de `odyssee/js/render/world3d.js`), les bâtiments prennent la profondeur de leur façade.
+- TestOdyssée (`testodyssee/`, mode d'emploi dans `testodyssee/LISEZMOI.md`) : le labo d'Odyssée. On choisit un lieu (donjon du labo,
+  ville, route ou grotte d'Odyssée) et une équipe prête, et on y apparaît directement ; rien n'est sauvegardé. Il réutilise le moteur et
+  les images d'Odyssée sans les copier (`odyssee/js/art.js` charge les images pour les deux jeux). Les donjons se dessinent en texte
+  (`testodyssee/js/donjons/`) ; l'état d'un donjon est partagé par le groupe et tenu par l'hôte du salon (`testodyssee/js/donjon/etat.js`,
+  sans DOM). `node tools/test-testodyssee.mjs` vérifie les plans (tout est accessible portes ouvertes, rien portes fermées), les règles
+  du groupe et les lieux d'apparition : à lancer quand on touche aux donjons, et quand on touche aux cartes d'Odyssée.
+  `tools/salon-test.html?jeu=testodyssee&n=3` ouvre plusieurs joueurs dans une seule page en jouant le rôle du Hub (marche pour tout jeu du site).
 - Island Rush (battle royale, `royale/`) : l'île vient d'une graine (`royale/engine/map.js`, île officielle `ILE`), `royale/carte.html`
   la montre en 2D. `node tools/test-royale.mjs` vérifie l'île sur plusieurs graines, le déplacement (portes, escaliers, murs, nage),
   une partie (butin, combat, construction), les copies des invités et le relais d'hôte, la prédiction : à lancer quand on touche
