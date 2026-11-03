@@ -197,6 +197,7 @@ export const Mecaniques = {
     // mode test : on peut passer le combat (compté comme gagné)
     if (g.modeTest && await ui.yesNo('Mode test : passer ce combat (compté comme gagné) ?')) {
       await this.demande(d.id, { a: 'raid', salle: salle.id, pnj: k, etape: 'fin', result: 'win', vainqueurs: [this.moi] });
+      if (salle === d.salles[d.salles.length - 1]) await this.trophee(d);
       if (salle === d.salles[d.salles.length - 1]) for (const [k, n] of Object.entries(d.recompense?.objets || {})) { g.give(k, n); g.sound.sfx('item'); await ui.say(`${g.state.name} reçoit ${n > 1 ? n + ' × ' : ''}${itemName(k)} !`); }
       return;
     }
@@ -253,6 +254,7 @@ export const Mecaniques = {
     } else if (res === 'win') {
       g.sound.play('victory');
       await ui.say(p.apres || d.textes.apres, { speaker: p.nom });
+      await this.trophee(d);
       for (const [k, n] of Object.entries(d.recompense?.objets || {})) { g.give(k, n); g.sound.sfx('item'); await ui.say(`${g.state.name} reçoit ${n > 1 ? n + ' × ' : ''}${itemName(k)} !\nIl est rangé dans le Sac.`); }
       for (const m of g.state.party) healFull(m);
       g.updateZone();

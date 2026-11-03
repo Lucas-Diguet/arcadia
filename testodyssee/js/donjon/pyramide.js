@@ -255,6 +255,7 @@ export const Pyramide = {
       return;
     }
     await ui.say(msg.etape === 'seul' ? [d.textes.seulSommet, d.textes.gagneSommet] : d.textes.gagneSommet, { speaker: titre });
+    await this.trophee(d);
     for (const [k2, n] of Object.entries(d.recompense?.objets || {})) { g.give(k2, n); g.sound.sfx('item'); await ui.say(`${g.state.name} reçoit ${n > 1 ? n + ' × ' : ''}${itemName(k2)} !\nIl est rangé dans le Sac.`); }
     const dehors = g.world.maps[d.carte].outside;
     await g.warp({ map: dehors.map, x: dehors.x, y: dehors.y, dir: 'down' }, 'exit');

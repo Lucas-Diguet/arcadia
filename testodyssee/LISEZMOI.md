@@ -304,6 +304,26 @@ comme gagné), et le journal du Sanctuaire donne tous les nombres et le code de 
 
 Dans `js/contenu.js` : une espèce (numéro à partir de 2001, son image dans `img/`) ou un objet (son icône dans `img/`).
 
+## L'île privée
+
+`js/ile/modele.js` (sans DOM : forme de l'île, catalogue, trophées, règles de pose, construction de la carte) et
+`js/ile/jeu.js` (dans le jeu). Chaque joueur a son île, la même forme pour tout le monde (plaine et plage). Dans le
+labo, elle est gardée dans ce navigateur, sous le nom du joueur (`testodyssee-ile:<nom>`) : on la retrouve d'une
+session à l'autre. On y va par « Mon île » dans la liste des lieux ; le capitaine du ponton ramène au choix des lieux.
+
+- La donnée : `{ nom, biome, fixes: { maison, mairie, musee }, travaux: [{ a, x, y }], donjons, musee }`. La carte est
+  reconstruite à partir d'elle à chaque visite et après chaque changement (format des retouches d'Odyssée, comme le
+  Domaine).
+- Mode construction (menu CONSTRUIRE sur l'île, ou l'adjointe de la mairie) : on survole l'île, on pose case par case
+  ce qu'on a choisi dans le catalogue (Nature, Mobilier, Bâtiments, Sols, Trophées), on déplace (la maison, la mairie
+  et le musée aussi) ou on range. Tout est gratuit pendant les tests. Règles (`posable`) : seulement sur l'herbe,
+  pas sur un autre objet, le débarcadère libre, et toujours un chemin du ponton aux portes de la maison, de la mairie
+  et du musée.
+- Trophées : une statue par badge de la partie et par donjon du labo fini (`trophee` du donjon, à la remise des
+  récompenses). Un seul exemplaire : posée sur l'île, exposée sur un des huit socles du musée, ou en attente.
+- Mairie : l'adjointe ouvre le mode construction, liste les trophées, renomme l'île, la remet à zéro (les trophées
+  restent).
+
 ## Ajouter un nouveau type de salle
 
 1. Une règle dans `appliquer()` de `js/donjon/etat.js`, avec ses tests dans `tools/test-testodyssee.mjs`.

@@ -12,6 +12,8 @@ import { SPECIES } from '../odyssee/js/data/species.js';
 import { ITEMS } from '../odyssee/js/core/items.js';
 import { buildWorld } from '../odyssee/js/world/region.js';
 import { listerLieux } from '../testodyssee/js/lieux.js';
+import * as ILE_M from '../testodyssee/js/ile/modele.js';
+const { construire: construireIle, nouvelleIle } = ILE_M;
 import { EQUIPES } from '../testodyssee/js/equipes.js';
 import { walkable, T } from '../odyssee/js/world/tiles.js';
 import { cle, explorerGlace, faisceau, resoudreReflet, cheminGlace } from '../testodyssee/js/donjon/casse-tetes.js';
@@ -654,11 +656,51 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   ok(G.avancer() && G.turn === 1, 'combat de groupe : le départ d\'un joueur débloque le tour');
 }
 
+/* ---------------- île privée ---------------- */
+{
+  const M = ILE_M, ile = M.nouvelleIle('Île de Test'), maps = {};
+  const m = M.construire(maps, ile);
+  ok(maps[M.ILE] && maps[`${M.ILE}:mairie`] && maps[`${M.ILE}:musee`] && maps[`${M.ILE}:maison`], 'île : la carte et ses trois intérieurs');
+  ok(walkable(m.get(...M.ARRIVEE)) && M.cheminLibre(ile), 'île : du débarcadère, on rejoint la maison, la mairie et le musée');
+  ok(JSON.stringify(M.forme()) === JSON.stringify(M.forme()) && M.construire({}, M.nouvelleIle('Autre'), { seul: true }).t.join() === M.construire({}, M.nouvelleIle('Encore'), { seul: true }).t.join(), 'île : la même forme pour tout le monde');
+  // les règles de pose
+  const [mx, my] = ile.fixes.maison, porte = M.portes(ile)[0];
+  ok(!M.posable(ile, { a: 'arbre', x: 2, y: 2 }).ok, 'île : rien dans l\'eau');
+  ok(!M.posable(ile, { a: 'arbre', x: mx + 1, y: my + 1 }).ok, 'île : rien sur un bâtiment');
+  ok(!M.posable(ile, { a: 'arbre', x: M.ARRIVEE[0], y: M.ARRIVEE[1] }).ok, 'île : le débarcadère reste libre');
+  ok(M.posable(ile, { a: 'chemin', x: porte[0], y: porte[1] }).ok, 'île : on peut paver devant une porte');
+  // entourer la porte de la maison d'arbres : le dernier qui fermerait le passage est refusé
+  const essai = M.nouvelleIle('Mur');
+  const [px, py] = M.portes(essai)[0];
+  for (const [x, y] of [[px - 1, py], [px + 1, py], [px - 1, py + 1], [px + 1, py + 1], [px - 1, py + 2], [px + 1, py + 2]]) M.poser(essai, { a: 'arbre', x, y });
+  ok(M.cheminLibre(essai) && !M.posable(essai, { a: 'arbre', x: px, y: py + 1 }).ok && /chemin/.test(M.posable(essai, { a: 'arbre', x: px, y: py + 1 }).why), 'île : on ne peut pas couper le chemin vers un bâtiment');
+  // un sol remplace l'ancien, un bâtiment occupe toute son emprise
+  const s2 = M.nouvelleIle('Sols'); M.poser(s2, { a: 'chemin', x: 20, y: 20 }); M.poser(s2, { a: 'paves', x: 20, y: 20 });
+  ok(s2.travaux.length === 1 && s2.travaux[0].a === 'paves', 'île : un sol remplace le sol de la case');
+  M.poser(s2, { a: 'house', x: 10, y: 18 });
+  ok(!M.posable(s2, { a: 'banc', x: 12, y: 20 }).ok && M.articleEn(s2, 13, 21) === 1, 'île : un bâtiment occupe son emprise et la case devant sa porte');
+  // trophées : badges et donjons finis, un exemplaire chacun
+  const st = { badges: [true, true, false, false, false, false, false, false] };
+  const t0 = M.debloques(ile, st);
+  ile.donjons.push('pyramide');
+  ok(t0.length === 2 && M.debloques(ile, st).includes('pyramide'), 'île : les trophées viennent des badges et des donjons finis');
+  M.poser(ile, { a: 'tr:pyramide', x: 22, y: 20 });
+  ok(M.trophePlace(ile, 'pyramide') === 'ile' && !M.posable(ile, { a: 'tr:pyramide', x: 24, y: 20 }).ok, 'île : un trophée posé ne se pose pas deux fois');
+  ok(DONJONS.every((d) => M.TROPHEES.some((t) => t.donjon === d.id)) && M.TROPHEES.every((t) => SPECIES[t.sp]), 'île : une statue pour chaque donjon du labo');
+  ok(M.CATALOGUE.every((a) => a.t != null || a.p || a.s || a.b || a.tr), 'île : chaque article du catalogue sait se poser');
+  // déplacer un bâtiment fixe : il ne bloque plus sa place pendant qu'on le porte
+  const d2 = M.nouvelleIle('Déplacer'); d2.cache = 'mairie';
+  const [ax, ay] = d2.fixes.mairie;
+  ok(M.posable(d2, { a: 'arbre', x: ax + 1, y: ay + 1 }).ok && M.posable(d2, { fixe: 'mairie', x: ax - 4, y: ay + 6 }).ok, 'île : on déplace la mairie ailleurs sur l\'herbe');
+  ok(M.etatIle(JSON.parse(JSON.stringify(ile))).travaux.length === ile.travaux.length && M.etatIle(null).fixes.maison, 'île : la donnée se relit telle quelle');
+}
+
 /* ---------------- lieux et équipes ---------------- */
 const world = buildWorld();
 for (const dd of DONJONS) { const cs = dd.plan ? [construireCarte(dd)] : construireSalles(dd); for (const c of cs) world.maps[c.id] = c; const e = relierExterieur(dd, cs[0]); if (e) world.maps[e.id] = e; }
+construireIle(world.maps, nouvelleIle('Test'));
 const lieux = listerLieux(world, DONJONS);
-ok(lieux.labo.length === DONJONS.length && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
+ok(lieux.labo.length === DONJONS.length + 1 && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
 for (const l of Object.values(lieux).flat()) {
   const m = world.maps[l.map];
   ok(m && walkable(m.get(l.x, l.y)) && !m.warpAt(l.x, l.y), `on apparaît sur une case libre : ${l.nom}`);

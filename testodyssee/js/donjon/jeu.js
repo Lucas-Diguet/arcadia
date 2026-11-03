@@ -136,6 +136,7 @@ export class Donjons {
   async victoire(d) {
     const g = this.game, st = g.state, e = this.etats[d.id], R = d.recompense || {};
     g.sound.play('victory');
+    await this.trophee(d);
     await g.ui.say(d.textes.victoire);
     const noms = e.vainqueurs.map((q) => this.nomDe(q));
     const boss = Object.values(d.pnj).find((p) => p.boss);
@@ -147,6 +148,13 @@ export class Donjons {
     const [x, y] = g.world.maps[d.carte].donjon.plan.depart;
     await g.warp({ map: d.carte, x, y, dir: 'up' }, 'exit');
     g.updateZone();
+  }
+
+  /** un donjon fini : sa statue rejoint les trophées de l'île du joueur */
+  async trophee(d) {
+    const t = this.game.ile?.debloquer(d.id); if (!t) return;
+    this.game.sound.sfx('badge');
+    await this.game.ui.say(`Nouveau trophée pour ton île : ${t.nom} !\nTu peux la poser sur ton île ou l'exposer au musée.`);
   }
 
   /* ---------------- demandes ---------------- */

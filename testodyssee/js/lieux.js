@@ -3,6 +3,7 @@
 import { T, walkable } from '../../odyssee/js/world/tiles.js';
 import { nearestWalkable } from '../../odyssee/js/world/mapgen.js';
 import { texteJoueurs } from './donjon/plan.js';
+import { ILE, ARRIVEE } from './ile/modele.js';
 
 const libre = (m, x, y) => walkable(m.get(x, y)) && ![T.DOOR, T.CAVEDOOR, T.MAT, T.STAIRS].includes(m.get(x, y)) && !m.warpAt(x, y) && !m.npcs.some((n) => n.x === x && n.y === y);
 
@@ -24,6 +25,8 @@ export function listerLieux(world, donjons) {
     if (E) out.labo.push({ nom: d.nom, note, map: E.carte.id, x: E.porte[0], y: E.porte[1] + 2, dir: 'up', equipe: d.equipe });
     else { const [x, y] = m.donjon.plan.depart; out.labo.push({ nom: d.nom, note, map: d.carte, x, y, dir: 'up', equipe: d.equipe }); }
   }
+  // l'île privée : chacun la sienne, gardée dans ce navigateur
+  out.labo.push({ nom: 'Mon île', note: 'île privée, à construire', map: ILE, x: ARRIVEE[0], y: ARRIVEE[1], dir: 'up', equipe: 'milieu', ile: true });
   for (const t of Object.values(world.towns)) {
     const [x, y] = t.centerDoor ? pres(W, t.centerDoor[0], t.centerDoor[1] + 1) : pres(W, t.x + (t.w >> 1), t.y + (t.h >> 1));
     out.villes.push({ nom: t.name, map: 'monde', x, y, dir: 'down' });

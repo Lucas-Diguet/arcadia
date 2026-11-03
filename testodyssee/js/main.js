@@ -14,6 +14,7 @@ import { Donjons } from './donjon/jeu.js';
 import { DONJONS } from './donjons/index.js';
 import { listerLieux } from './lieux.js';
 import { EQUIPES, partieTest } from './equipes.js';
+import { Ile } from './ile/jeu.js';
 import { installerContenu, DECOR } from './contenu.js';
 import { brancherObjets } from './objets.js';
 import { brancherRendu } from './rendu.js';
@@ -51,6 +52,7 @@ async function boot() {
   const view = new WorldView(renderer, art.chars, { sprites: art.sprites, dens: art.dens, suiveurs: art.suiveurs });
   const game = new TestGame({ view, ui, input, sound, world });
   const donjons = game.donjons = new Donjons(game, DONJONS, H);
+  game.ile = new Ile(game);
   const lieux = listerLieux(world, DONJONS);
   window.__testody = { game, world, view, donjons, lieux };
 
@@ -74,6 +76,7 @@ async function boot() {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (mode === 'game') game.tick(dt);
     donjons.tick(dt);
+    if (mode === 'game') game.ile.tick(dt);
     requestAnimationFrame(loop);
   };
   const premier = world.maps[DONJONS[0].carte];

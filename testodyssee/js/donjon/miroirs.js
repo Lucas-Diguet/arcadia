@@ -301,6 +301,7 @@ export const Miroirs = {
       const res = await this.combat({ cls: 'Mime', nom: 'Copycat', bs: 'copycat_combat' }, copieSoignee(g.state.party));
       if (res !== 'win') { await ui.say(d.textes.copycatGagne); this.placerReflet(d); await this.defaite(d); return true; }
       await ui.say(d.textes.copycatBattu, { speaker: 'Copycat' });
+      await this.trophee(d);
       for (const [k, n] of Object.entries(d.recompense.objets)) { g.give(k, n); g.sound.sfx('item'); await ui.say(`${g.state.name} reçoit ${n > 1 ? n + ' × ' : ''}${itemName(k)} !`); }
       await this.maj(d, this.zoneReflet(d).s.id, {}, { faite: true, fini: true });
       g.sound.play('victory');

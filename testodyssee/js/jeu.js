@@ -2,6 +2,7 @@
 // n'est jamais touchée) et le menu propose de changer de lieu.
 import { Game } from '../../odyssee/js/game.js';
 import { partyScreen, dexScreen, mapScreen, optionsScreen } from '../../odyssee/js/ui/screens.js';
+import { ILE } from './ile/modele.js';
 
 const CLE_TEST = 'testodyssee-mode-test';
 
@@ -28,6 +29,11 @@ export class TestGame extends Game {
     const avant = [m.floor, m.battleBg]; m.floor = 'clair'; m.battleBg = 'league';
     try { return await super.runBattle(o); } finally { [m.floor, m.battleBg] = avant; }
   }
+  /** l'île privée se reconstruit à partir de la donnée du joueur quand on y arrive */
+  setMap(id) {
+    if (this.ile && this.state && (id === ILE || id?.startsWith(ILE + ':')) && (!this.world.maps[id] || this.ile.pour !== this.ile.cle)) this.ile.preparer();
+    return super.setMap(id);
+  }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
   async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }
   async onStep(mv) { await super.onStep(mv); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); } }
@@ -38,6 +44,7 @@ export class TestGame extends Game {
     const opts = [['ÉQUIPE', 'party'], ['SAC', 'bag'], ['POKéDEX', 'dex']];
     if (this.canField('vol')) opts.push(['VOL', 'fly']);
     if (this.donjons?.dansUnDonjon()) opts.push(['JOURNAL', 'journal'], ['QUITTER LE DONJON', 'quitter']);
+    if (this.ile?.sur()) opts.push(['CONSTRUIRE', 'construire']);
     if (this.modeTest && this.donjons?.sallesDuDonjon().length > 1) opts.push(['ALLER À UNE SALLE', 'salle']);
     if (this.donjons?.dansLeReflet()) opts.push(['REVENIR AU DÉBUT DE LA SALLE', 'debut']);
     opts.push(['CARTE', 'map'], ['CHANGER DE LIEU', 'lieu'], [this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON', 'test'], ['OPTIONS', 'opt'], ['FERMER', 'close']);
@@ -54,6 +61,7 @@ export class TestGame extends Game {
         else if (k === 'fly') { if (this.player.surf || !this.mapObj.outdoor) { await this.ui.say('On ne peut pas s\'envoler d\'ici.'); continue; } if (await this.fly()) break; }
         else if (k === 'map') await mapScreen(this);
         else if (k === 'journal') await this.donjons.journal();
+        else if (k === 'construire') { this.busy = false; await this.ile.construction(); break; }
         else if (k === 'test') {
           this.modeTest = !this.modeTest; opts[r][0] = this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON';
           await this.ui.say(this.modeTest ? 'Mode test activé : tu peux entrer seul partout, aller dans n\'importe quelle salle d\'un donjon et passer les combats.' : 'Mode test désactivé.');

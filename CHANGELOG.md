@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 3.95 — 3 novembre 2026
+- **TestOdyssée** — Nouveau : ton île privée. Choisis « Mon île » dans la liste des lieux : elle t'attend avec sa maison, sa mairie et son musée, et elle est gardée d'une session à l'autre.
+  - Le mode construction (menu CONSTRUIRE, ou l'adjointe de la mairie) : on pose arbres, fleurs, bancs, lampadaires, maisons, chemins et pavés case par case, on déplace et on range. Tout est gratuit pendant les tests.
+  - Le chemin vers la maison, la mairie et le musée reste toujours libre.
+  - Chaque badge et chaque donjon du labo terminé te donne une statue, à poser sur l'île ou à exposer au musée.
+
 ## 3.94 — 3 novembre 2026
 - **TestOdyssée** — Nouveau donjon : la Mine Effondrée, de 2 à 4 joueurs, avec une équipe de niveau 35.
   - Un joueur reste au poste de contrôle : il voit le plan de chaque niveau et où sont ses coéquipiers, ouvre les barrières et fait descendre la cage. Certaines barrières en referment une autre.
