@@ -124,6 +124,8 @@ Ajouter `[skip changelog]` dans le message d'un commit purement technique pour q
   Sanctuaire des Trois Voies (à trois, `testodyssee/js/donjons/voies.js`, mécaniques `testodyssee/js/donjon/voies.js`) : chemins séparés (`apres`, `suivante`,
   salle `voies`), codes tirés par l'hôte (`preparer`), plusieurs combats à blocs dans un donjon (un par salle `raid`), combats de groupe
   contre un dresseur (salle `groupe`, moteur `testodyssee/js/combat/groupe.js`, n joueurs contre n Pokémon en jeu, cible choisie par chacun).
+  Pyramide de l'Ascension (3 ou 4 joueurs, `testodyssee/js/donjons/pyramide.js`, mécaniques `testodyssee/js/donjon/pyramide.js`) : étages (`etage`) à dresseurs
+  seuls et duos (à deux joueurs), objets partagés, escalier tiré par l'hôte, fontaine, grottes par porte, arènes (`arene`) et sommet (`sommet`) en duel entre joueurs.
 - Island Rush (battle royale, `royale/`) : l'île vient d'une graine (`royale/engine/map.js`, île officielle `ILE`), `royale/carte.html`
   la montre en 2D. `node tools/test-royale.mjs` vérifie l'île sur plusieurs graines, le déplacement (portes, escaliers, murs, nage),
   une partie (butin, combat, construction), les copies des invités et le relais d'hôte, la prédiction : à lancer quand on touche

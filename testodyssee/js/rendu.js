@@ -4,8 +4,10 @@ import * as THREE from 'three';
 import { WorldView } from '../../odyssee/js/render/world3d.js';
 import { T } from '../../odyssee/js/world/tiles.js';
 
-// textures d'Odyssée reprises pour le style clair
+// textures d'Odyssée reprises pour les styles de donjon : clair (miroirs), sable (pyramide)
 const CLAIR = { sol: 'floor_musee', mur: 'wall_mart', haut: ['snow', 'floor_lab', 'floor_mart'], glace: 'floor_gymWater', fond: '#e8eef8' };
+const STYLES = { clair: CLAIR, sable: { sol: ['floor_sand', 'gl_sable', 'floor_gymRock'], mur: ['wall_gym'], haut: ['floor_gymRock', 'cavetop'], fond: '#1a1008', relief: true } };
+const cellule = (A, k) => (Array.isArray(k) ? k.map((q) => A[q]).find(Boolean) : A[k]);
 const SOLS = new Set([T.CAVE, T.BLOCK, T.CAVEWALL, T.CAVEDOOR, T.FLOOR]);
 
 export function brancherRendu() {
@@ -14,22 +16,25 @@ export function brancherRendu() {
   P.groundCell = function (x, y) {
     const m = this.map, A = this.A.cells;
     if (m.glace?.has(x + ',' + y)) return { c: A[CLAIR.glace] };
-    if (m.style === 'clair' && SOLS.has(m.get(x, y)) && this.decoAt.get(x + ',' + y)?.k !== 'exitlight') return { c: A[CLAIR.sol] };
+    const st = STYLES[m.style];
+    if (st && SOLS.has(m.get(x, y)) && this.decoAt.get(x + ',' + y)?.k !== 'exitlight') { const c = cellule(A, st.sol); if (c) return { c }; }
     return sol.call(this, x, y);
   };
   // murs de grotte dessinés avec les textures claires, le temps de construire le morceau de carte
   const morceau = P.buildChunk;
   P.buildChunk = function (i, j) {
-    if (this.map?.style !== 'clair') return morceau.call(this, i, j);
+    const st = STYLES[this.map?.style];
+    if (!st) return morceau.call(this, i, j);
     const A = this.A.cells, avant = { cavewall: A.cavewall, cavetop: A.cavetop };
-    A.cavewall = A[CLAIR.mur]; A.cavetop = CLAIR.haut.map((k) => A[k]).find(Boolean) || avant.cavetop;
+    A.cavewall = cellule(A, st.mur) || avant.cavewall; A.cavetop = cellule(A, st.haut) || avant.cavetop;
     try { return morceau.call(this, i, j); } finally { Object.assign(A, avant); }
   };
   const carte = P.setMap;
   P.setMap = function (map) {
     carte.call(this, map);
     // style clair : murs droits et blancs, sans les gradins de roche des grottes d'Odyssée
-    if (map.style === 'clair') { this.tiers = null; this.scene.background = new THREE.Color(CLAIR.fond); }
+    const st = STYLES[map.style];
+    if (st) { if (!st.relief) this.tiers = null; this.scene.background = new THREE.Color(st.fond); }
   };
 }
 

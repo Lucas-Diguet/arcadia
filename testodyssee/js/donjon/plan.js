@@ -86,7 +86,7 @@ export function construireSalles(def) {
   const cartes = def.salles.map((s, i) => {
     const id = i ? `${def.carte}:${s.id}` : def.carte;
     s.carte = id;
-    const m = construireCarte({ ...def, carte: id, plan: s.plan, salles: [] });
+    const m = construireCarte({ ...def, carte: id, plan: s.plan, salles: [], style: 'style' in s ? s.style : def.style });
     m.zone(0, 0, m.w - 1, m.h - 1, { name: s.nom, music: s.musique || def.musique || 'cave', salle: s.id });
     m.salle = s.id;
     if (s.sombre) m.dark = 'arene';   // dans le noir, même avec Flash
@@ -175,6 +175,7 @@ export function texteJoueurs(def) {
   const j = def.joueurs || { mode: 'groupe', n: 1 };
   if (j.mode === 'solo') return 'Donjon solo';
   if (j.mode === 'exact') return `Donjon à ${j.n} joueurs`;
+  if (j.mode === 'entre') return j.max === j.min + 1 ? `Donjon à ${j.min} ou ${j.max} joueurs` : `Donjon de ${j.min} à ${j.max} joueurs`;
   return `Donjon solo ou en groupe (${j.n} joueurs recommandés)`;
 }
 /** le panneau d'entrée, dehors à côté de la porte : nom, phrase, nombre de joueurs (une page chacun) */

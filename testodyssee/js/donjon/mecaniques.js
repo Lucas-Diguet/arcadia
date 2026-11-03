@@ -151,14 +151,14 @@ export const Mecaniques = {
     await this.combatRaid(d, p, msg, salle);
   },
   async combatRaid(d, p, intro, salle) {
-    const g = this.game, ui = g.ui, cle = `${d.id}|${salle.id}`;
-    g.sound.play('legend'); g.view.shake = 0.4; await ui.flash(2, '#ffffff', 70);
+    const g = this.game, ui = g.ui, cle = intro.id || `${d.id}|${salle.id}`, duo = salle.type === 'etage';
+    if (!duo) { g.sound.play('legend'); g.view.shake = 0.4; await ui.flash(2, '#ffffff', 70); }
     if (p.cri || d.textes.cri) await ui.say(p.cri || d.textes.cri, { speaker: p.nom });
     this.miroirHote = this.H?.info.hostId;
     const Miroir = intro.groupe ? GroupeMiroir : CombatMiroir;
     const miroir = this.miroir = new Miroir({ moi: this.moi, party: g.state.party, intro, boss: intro.boss });
     const envoyer = (action) => { if (this.hote) this.actionRaid(this.moi, cle, action); else this.H.send('host', { t: 'djRA', id: cle, action }); };
-    const curtain = await g.encounterIntro('legend'); curtain.remove();
+    const curtain = await g.encounterIntro(duo ? 'trainer' : 'legend'); curtain.remove();
     g.musicLock = true;
     const defaire = (intro.groupe ? brancherGroupe : brancher)(g.bv, miroir, this.moi);
     let res;
@@ -173,7 +173,7 @@ export const Mecaniques = {
     this.miroir = null;
     g.sound.stopMusic(0.1); g.sound.current = null; g.updateZone();
     const dernier = salle === d.salles[d.salles.length - 1];
-    if (res === 'win' && salle.type === 'groupe') {
+    if (res === 'win' && (salle.type === 'groupe' || duo)) {
       g.sound.play('victory');
       if (p.apres) await ui.say(p.apres, { speaker: `${p.cls} ${p.nom}`.trim() });
       g.updateZone();
@@ -244,7 +244,8 @@ export const Mecaniques = {
     this.diffuserRaid(id, { etape: 'tour', evs, photo: raid.photo() });
     if (raid.state === 'over') {
       delete this.raids[id];
-      this.traiter(R.d, this.moi, { a: 'raid', salle: R.salle, pnj: R.pnj, etape: 'fin', result: raid.result, vainqueurs: R.ids });
+      if (R.fin) R.fin(raid.result);
+      else this.traiter(R.d, this.moi, { a: 'raid', salle: R.salle, pnj: R.pnj, etape: 'fin', result: raid.result, vainqueurs: R.ids });
     }
   },
   retirerRaid(qui) {

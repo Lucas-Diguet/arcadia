@@ -13,6 +13,11 @@
 //   raid    : le combat contre le boss se lance quand tous les joueurs présents dans sa salle sont prêts (l'hôte en décide)
 //   groupe  : ses dresseurs (s.pnj) se combattent l'un après l'autre, à tous les joueurs présents contre plusieurs Pokémon
 //   voies   : chaque porte (s.voies) ne laisse passer qu'un seul joueur ; libre pour le reste
+//   etage   : comme combat, mais certains dresseurs ne sont là qu'à 3 ou qu'à 4 joueurs (def.pnj[k].pour, compté aux
+//             dalles : e.nb) ; les duos (def.pnj[k].duo) se combattent à deux joueurs (actions couple*) ; objets de
+//             soin partagés (ramasse)
+//   arene   : duel entre les deux joueurs arrivés par ses portes (s.portes, lettres des portes de la salle des voies) ;
+//             seul, on affronte le reflet d'un autre joueur (actions duel*). sommet : duel entre les gagnants des arènes
 //
 // Chemins qui se séparent : s.apres (salles à terminer avant celle-ci) remplace l'ordre de la liste.
 
@@ -25,6 +30,8 @@ export function nouvelEtat(def, o = {}) {
     salles,
     boss: o.bossPv ? { pv: o.bossPv * (joueurs + 1), max: o.bossPv * (joueurs + 1) } : null,
     vainqueurs: [],
+    nb: null,      // joueurs comptés aux dalles (donjons à nombre variable)
+    dehors: [],    // joueurs éliminés ou sortis (la pyramide ne les attend plus)
   };
   // ce que le donjon tire au sort à chaque descente (codes…) : l'hôte le tire, les autres reçoivent son état
   if (def.preparer) e.secret = def.preparer(o.rng || Math.random);
@@ -43,6 +50,21 @@ export function ouverte(def, e, salleId) {
   return false;
 }
 export const battu = (e, def, pnj) => { const s = salleDe(def, pnj); return !!s && e.salles[s.id].battus.includes(pnj); };
+/** dresseurs d'une salle pour le nombre de joueurs compté aux dalles (3 tant qu'on ne sait pas) */
+export const pourNb = (e) => (e.nb >= 4 ? 4 : 3);
+export const actifs = (def, e, s) => (s.pnj || []).filter((k) => !def.pnj[k]?.pour || def.pnj[k].pour === pourNb(e));
+/** joueurs attendus dans une arène : ceux qui ont pris ses portes, sauf les éliminés */
+export function attendusArene(def, e, s) {
+  const sv = def.salles.find((q) => q.type === 'voies'); if (!sv) return [];
+  const V = e.salles[sv.id].donnees.voies || {};
+  return [...new Set(s.portes.map((l) => V[l]).filter(Boolean))].filter((q) => !e.dehors.includes(q));
+}
+/** joueurs attendus au sommet : les gagnants des arènes encore là */
+export function attendusSommet(def, e) {
+  return def.salles.filter((q) => q.type === 'arene').map((q) => e.salles[q.id].donnees.gagnant).filter((q) => q && !e.dehors.includes(q));
+}
+/** une arène dont l'issue n'est pas encore connue (quelqu'un y est encore attendu) */
+export const areneEnCours = (def, e) => def.salles.some((q) => q.type === 'arene' && !e.salles[q.id].faite && attendusArene(def, e, q).length);
 export const prisPar = (e, def, pnj) => { const s = salleDe(def, pnj); return s ? e.salles[s.id].pris[pnj] ?? null : null; };
 
 /**
@@ -80,13 +102,13 @@ export function appliquer(def, e, qui, m, o = {}) {
       return res(true, true);
     }
     case 'gagne': {
-      const s = salleDe(def, m.pnj); if (!s || s.type !== 'combat') return res(false, false, 'inconnu');
+      const s = salleDe(def, m.pnj); if (!s || (s.type !== 'combat' && s.type !== 'etage')) return res(false, false, 'inconnu');
       const S = e.salles[s.id];
       if (S.battus.includes(m.pnj)) return res(false, false, 'battu');
       if (S.pris[m.pnj] && S.pris[m.pnj] !== qui) return res(false, false, 'occupe');
       delete S.pris[m.pnj];
       S.battus.push(m.pnj);
-      if (s.pnj.every((p) => S.battus.includes(p))) S.faite = true;
+      if ((s.type === 'etage' ? actifs(def, e, s) : s.pnj).every((p) => S.battus.includes(p))) S.faite = true;
       return res(true, true);
     }
     case 'degats': {
@@ -105,7 +127,7 @@ export function appliquer(def, e, qui, m, o = {}) {
       if (!s || e.salles[s.id].faite || !ouverte(def, e, s.id)) return res(false, false);
       const S = e.salles[s.id], n = Math.max(0, m.n | 0);
       let change = S.dalles !== n; S.dalles = n;
-      if (m.requis > 0 && n >= m.requis) { S.faite = true; change = true; }
+      if (m.requis > 0 && n >= m.requis) { S.faite = true; change = true; if (def.joueurs?.mode === 'entre') e.nb = n; }
       return res(true, change);
     }
     case 'cle': {
@@ -165,12 +187,76 @@ export function appliquer(def, e, qui, m, o = {}) {
       if (m.fini) e.fini = true;
       return res(true, true);
     }
+    case 'ramasse': {
+      // objet de soin partagé : le premier qui le prend l'a, il disparaît pour les autres
+      const S = e.salles[m.salle]; if (!S || typeof m.objet !== 'string') return res(false, false, 'inconnu');
+      const R = (S.donnees.ramasses ||= []);
+      if (R.includes(m.objet)) return res(false, false, 'deja');
+      R.push(m.objet);
+      return res(true, true);
+    }
+    case 'couple': case 'coupleAnnule': {
+      // duo de dresseurs : on attend un partenaire (m.test : on y va seul)
+      const s = salleDe(def, m.pnj); if (!s || s.type !== 'etage' || !def.pnj[m.pnj]?.duo) return res(false, false, 'inconnu');
+      const S = e.salles[s.id], A = (S.donnees.attente ||= {}), l = A[m.pnj] || [];
+      if (m.a === 'coupleAnnule') { if (!l.includes(qui) || S.pris[m.pnj]) return res(true, false); A[m.pnj] = l.filter((q) => q !== qui); return res(true, true); }
+      if (!ouverte(def, e, s.id)) return res(false, false, 'ferme');
+      if (S.battus.includes(m.pnj)) return res(false, false, 'battu');
+      if (S.pris[m.pnj]) return res(false, false, 'occupe');
+      if (l.includes(qui)) return res(true, false);
+      if (l.length >= 2) return res(false, false, 'complet');
+      // on n'attend qu'un duo à la fois
+      for (const [k, q] of Object.entries(A)) if (k !== m.pnj && q.includes(qui)) A[k] = q.filter((x) => x !== qui);
+      A[m.pnj] = [...l, qui];
+      if (m.test) (S.donnees.seul ||= {})[m.pnj] = true;
+      return res(true, true);
+    }
+    case 'coupleDebut': case 'coupleFin': {
+      // décidé par l'hôte : le combat du duo commence (m.ids), ou finit (m.result)
+      const s = salleDe(def, m.pnj); if (!s || s.type !== 'etage') return res(false, false, 'inconnu');
+      const S = e.salles[s.id], A = (S.donnees.attente ||= {});
+      if (m.a === 'coupleDebut') { S.pris[m.pnj] = 'duo'; delete A[m.pnj]; return res(true, true); }
+      delete S.pris[m.pnj];
+      if (m.result === 'win' && !S.battus.includes(m.pnj)) S.battus.push(m.pnj);
+      if (actifs(def, e, s).every((p) => S.battus.includes(p))) S.faite = true;
+      return res(true, true);
+    }
+    case 'duelPret': case 'duelAnnule': {
+      const s = def.salles.find((q) => q.id === m.salle && (q.type === 'arene' || q.type === 'sommet')); if (!s) return res(false, false, 'inconnu');
+      const S = e.salles[s.id];
+      if (S.faite) return res(false, false, 'fini');
+      const dedans = S.prets.includes(qui);
+      if (m.a === 'duelPret' && !dedans) { S.prets.push(qui); return res(true, true); }
+      if (m.a === 'duelAnnule' && dedans && !S.combat) { S.prets = S.prets.filter((q) => q !== qui); return res(true, true); }
+      return res(true, false);
+    }
+    case 'duelDebut': case 'duelFin': {
+      // décidé par l'hôte (début), puis annoncé par les combattants (fin : m.gagnant, null si personne)
+      const s = def.salles.find((q) => q.id === m.salle && (q.type === 'arene' || q.type === 'sommet')); if (!s) return res(false, false, 'inconnu');
+      const S = e.salles[s.id];
+      if (m.a === 'duelDebut') { S.combat = true; S.donnees.ids = m.ids || []; return res(true, true); }
+      if (S.faite) return res(true, false);
+      S.combat = false; S.prets = []; S.faite = true;
+      const ids = S.donnees.ids || [qui];
+      S.donnees.gagnant = m.gagnant ? String(m.gagnant) : null;
+      for (const q of ids) if (q !== S.donnees.gagnant && !e.dehors.includes(q)) e.dehors.push(q);
+      if (s.type === 'sommet') { e.fini = true; if (S.donnees.gagnant) e.vainqueurs = [S.donnees.gagnant]; }
+      return res(true, true);
+    }
+    case 'equipe': return res(true, false);   // l'équipe du joueur, gardée par l'hôte (reflets des arènes)
+    case 'elimine': {
+      if (e.dehors.includes(qui)) return res(true, false);
+      e.dehors.push(qui);
+      return res(true, true);
+    }
     case 'parti': case 'sortie': {
       let change = false;
+      if (def.joueurs?.mode === 'entre' && !e.dehors.includes(qui) ) { e.dehors.push(qui); change = true; }
       for (const S of Object.values(e.salles)) {
         for (const [p, q] of Object.entries(S.pris)) if (q === qui) { delete S.pris[p]; change = true; }
         for (const [p, c] of Object.entries(S.cles)) if (c.a === qui && !c.mise) { delete S.cles[p]; change = true; }
         if (!S.combat && S.prets.includes(qui)) { S.prets = S.prets.filter((q) => q !== qui); change = true; }
+        for (const [k, l] of Object.entries(S.donnees.attente || {})) if (l.includes(qui)) { S.donnees.attente[k] = l.filter((q) => q !== qui); change = true; }
       }
       return res(true, change);
     }
@@ -191,6 +277,7 @@ export const requisDalles = (nbDalles, presents) => Math.max(1, Math.min(nbDalle
 export function requisSalle(def, salle, nbDalles, presents) {
   if (salle.requis) return salle.requis;
   if (def.joueurs?.mode === 'exact') return def.joueurs.n;
+  if (def.joueurs?.mode === 'entre') return Math.max(def.joueurs.min, Math.min(def.joueurs.max, nbDalles, presents));
   return requisDalles(nbDalles, presents);
 }
 

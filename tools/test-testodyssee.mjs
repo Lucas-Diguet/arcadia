@@ -5,7 +5,7 @@ import { construireCarte, construireSalles, passageSuivant, lirePlan, regionDe, 
 import { installerContenu } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
 import { Groupe } from '../testodyssee/js/combat/groupe.js';
-import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures } from '../testodyssee/js/donjon/etat.js';
+import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures, actifs, attendusArene, attendusSommet, areneEnCours } from '../testodyssee/js/donjon/etat.js';
 import { createMon } from '../odyssee/js/core/mon.js';
 import { MOVES } from '../odyssee/js/data/moves.js';
 import { SPECIES } from '../odyssee/js/data/species.js';
@@ -276,10 +276,74 @@ for (const d of DONJONS) {
   ok(e0.secret?.portes?.s?.length === 8, 'voies : l\'état d\'une descente porte ses codes');
 }
 
+
+/* ---------------- Pyramide de l'Ascension ---------------- */
+{
+  const d = DONJONS.find((q) => q.id === 'pyramide'), cartes = construireSalles(d), M = Object.fromEntries(cartes.map((m) => [m.salle, m]));
+  const V4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], S = (id) => d.salles.find((q) => q.id === id);
+  ok(texteJoueurs(d) === 'Donjon à 3 ou 4 joueurs' && M.s1.donjon.plan.dalles.length === 4, 'pyramide : quatre dalles, à 3 ou 4 joueurs');
+  ok(requisSalle(d, S('s1'), 4, 1) === 3 && requisSalle(d, S('s1'), 4, 3) === 3 && requisSalle(d, S('s1'), 4, 4) === 4 && requisSalle(d, S('s1'), 4, 6) === 4, 'pyramide : les dalles demandent autant de joueurs que présents, entre 3 et 4');
+  // chaque salle : de l'entrée on atteint la sortie (passage N, escaliers, portes), les dresseurs, les objets, la fontaine
+  for (const m of cartes) {
+    const P = m.donjon.plan;
+    for (const l of Object.values(P.portes)) for (const [x, y] of l) ouvrir(m, x, y);
+    if (P.suivante) passageSuivant(m, true);
+    const vu = m.reach(...P.depart), at = (x, y) => vu[y * m.w + x], pres = ([x, y]) => V4.some(([dx, dy]) => at(x + dx, y + dy));
+    if (P.suivante) ok(at(...P.suivante), `pyramide : ${m.salle}, on va de l'entrée à la sortie`);
+    for (const [k, [[x, y]]] of Object.entries(P.pnj)) ok(pres([x, y]), `pyramide : ${m.salle}, on peut parler à ${k}`);
+    for (const [c, l] of Object.entries(P.objets)) for (const p of l) ok(d.objets[c].type === 'escalier' ? at(...p) : pres(p) || at(...p), `pyramide : ${m.salle}, on atteint l'objet ${c}`);
+  }
+  // étages : le bon nombre de dresseurs et de Pokémon à 3 et à 4 joueurs, et 3 ou 4 emplacements pour l'escalier
+  const e = nouvelEtat(d);
+  const compter = (id, nb) => { e.nb = nb; const l = actifs(d, e, S(id)); return { duos: l.filter((k) => d.pnj[k].duo).map((k) => d.pnj[k].equipe.length), seuls: l.filter((k) => !d.pnj[k].duo).map((k) => d.pnj[k].equipe.length) }; };
+  const egal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  ok(egal(compter('s2', 3), { duos: [4, 4], seuls: [4, 4] }) && egal(compter('s2', 4), { duos: [4, 4, 4, 4], seuls: [] }), 'pyramide : premier étage, 2 duos et 2 dresseurs à 3 joueurs, 4 duos à 4 joueurs (4 Pokémon chacun)');
+  ok(egal(compter('s3', 3), { duos: [6, 6, 6], seuls: [5, 5, 5, 5, 5] }) && egal(compter('s3', 4), { duos: [6, 6, 6, 6, 6, 6], seuls: [] }), 'pyramide : deuxième étage, 3 duos et 5 dresseurs à 3 joueurs, 6 duos à 4 joueurs');
+  ok(M.s2.donjon.plan.objets.E.length === 3 && M.s3.donjon.plan.objets.E.length === 4, 'pyramide : 3 puis 4 emplacements possibles pour l\'escalier');
+  ok(!M.s2.donjon.plan.suivante && !M.s3.donjon.plan.suivante && !M.s3.donjon.plan.sortie, 'pyramide : on quitte les étages par l\'escalier, et on ne redescend pas');
+  const tirages = new Set(); for (let k = 0; k < 40; k++) { const q = nouvelEtat(d); tirages.add(q.secret.escaliers.s3); }
+  ok(tirages.size === 4, 'pyramide : l\'escalier change de place d\'une ascension à l\'autre');
+  for (const p of Object.values(d.pnj)) for (const [sp, lvl] of p.equipe || []) ok(SPECIES[sp] && lvl >= 28 && lvl <= 36, `pyramide : ${p.cls} ${p.nom}, ${sp} niveau ${lvl}`);
+  // les grottes : une par porte, chacune mène à son arène
+  const vers = (a) => M[a].donjon.versSuivante?.map;
+  ok(['a', 'b', 'c', 'd'].every((v) => vers('s5' + v) === M['s6' + v].id && vers('s6' + v) === M['s7' + v].id), 'pyramide : chaque chemin a ses trois grottes');
+  ok(vers('s7a') === M.s8a.id && vers('s7b') === M.s8a.id && vers('s7c') === M.s8b.id && vers('s7d') === M.s8b.id, 'pyramide : portes I et II vers l\'Arène du Levant, III et IV vers celle du Couchant');
+  ok(Object.values(S('s4').voies).every((id) => M[id]) && d.salles.filter((q) => q.rencontres).length === 12, 'pyramide : quatre portes, douze grottes avec des Pokémon sauvages');
+  // règles : dalles, nombre de joueurs, objets partagés, duos
+  const A = '1', B = '2', C = '3', D = '4';
+  const q = nouvelEtat(d);
+  appliquer(d, q, A, { a: 'dalles', salle: 's1', n: 4, requis: 4 });
+  ok(q.salles.s1.faite && q.nb === 4 && actifs(d, q, S('s2')).length === 4, 'pyramide : les dalles comptent les joueurs');
+  const r1 = appliquer(d, q, A, { a: 'ramasse', salle: 's2', objet: '$:0' }), r2 = appliquer(d, q, B, { a: 'ramasse', salle: 's2', objet: '$:0' });
+  ok(r1.ok && !r2.ok && r2.why === 'deja', 'pyramide : un objet ramassé disparaît pour les autres');
+  const c1 = appliquer(d, q, A, { a: 'couple', pnj: 'A' }), c2 = appliquer(d, q, B, { a: 'couple', pnj: 'A' }), c3 = appliquer(d, q, C, { a: 'couple', pnj: 'A' });
+  ok(c1.ok && c2.ok && !c3.ok && q.salles.s2.donnees.attente.A.join() === '1,2', 'pyramide : un duo se combat à deux joueurs');
+  appliquer(d, q, A, { a: 'coupleDebut', pnj: 'A' });
+  ok(!appliquer(d, q, C, { a: 'couple', pnj: 'A' }).ok && !q.salles.s2.donnees.attente.A, 'pyramide : un duo en plein combat n\'attend plus personne');
+  appliquer(d, q, A, { a: 'coupleFin', pnj: 'A', result: 'win' });
+  for (const k of actifs(d, q, S('s2')).filter((x) => x !== 'A')) { appliquer(d, q, A, { a: 'couple', pnj: k, test: true }); appliquer(d, q, A, { a: 'coupleDebut', pnj: k }); appliquer(d, q, A, { a: 'coupleFin', pnj: k, result: 'win' }); }
+  ok(q.salles.s2.faite && ouverte(d, q, 's3'), 'pyramide : tous les duos battus, l\'étage est fini');
+  // arènes et sommet : les portes décident de qui s'affronte
+  appliquer(d, q, A, { a: 'voie', salle: 's4', voie: 'w' }); appliquer(d, q, B, { a: 'voie', salle: 's4', voie: 'x' }); appliquer(d, q, C, { a: 'voie', salle: 's4', voie: 'y' });
+  ok(attendusArene(d, q, S('s8a')).join() === '1,2' && attendusArene(d, q, S('s8b')).join() === '3', 'pyramide : deux joueurs dans une arène, un seul dans l\'autre');
+  appliquer(d, q, B, { a: 'elimine' });
+  ok(attendusArene(d, q, S('s8a')).join() === '1', 'pyramide : un joueur éliminé dans sa grotte n\'est plus attendu dans l\'arène');
+  appliquer(d, q, A, { a: 'duelDebut', salle: 's8a', ids: [A] }); appliquer(d, q, A, { a: 'duelFin', salle: 's8a', gagnant: A });
+  ok(areneEnCours(d, q) && attendusSommet(d, q).join() === '1', 'pyramide : le sommet attend l\'issue de l\'autre arène');
+  appliquer(d, q, C, { a: 'duelDebut', salle: 's8b', ids: [C] }); appliquer(d, q, C, { a: 'duelFin', salle: 's8b', gagnant: null });
+  ok(!areneEnCours(d, q) && q.dehors.includes(C) && attendusSommet(d, q).join() === '1', 'pyramide : perdre contre le reflet, c\'est redescendre');
+  appliquer(d, q, A, { a: 'duelDebut', salle: 's9', ids: [A] }); appliquer(d, q, A, { a: 'duelFin', salle: 's9', gagnant: A });
+  ok(q.fini && q.vainqueurs.join() === '1', 'pyramide : le sommet a son vainqueur');
+  const q2 = nouvelEtat(d);
+  for (const [k, v] of [[A, 'w'], [B, 'x'], [C, 'y'], [D, 'z']]) appliquer(d, q2, k, { a: 'voie', salle: 's4', voie: v });
+  appliquer(d, q2, A, { a: 'duelDebut', salle: 's8a', ids: [A, B] }); appliquer(d, q2, B, { a: 'duelFin', salle: 's8a', gagnant: A }); appliquer(d, q2, A, { a: 'duelFin', salle: 's8a', gagnant: B });
+  ok(q2.salles.s8a.donnees.gagnant === A && q2.dehors.includes(B) && !q2.dehors.includes(A), 'pyramide : le duel d\'arène a un seul gagnant, le perdant redescend');
+}
+
 /* ---------------- panneau d'entrée (standard de tous les donjons) ---------------- */
 ok(texteJoueurs({ joueurs: { mode: 'solo' } }) === 'Donjon solo' && texteJoueurs({ joueurs: { mode: 'exact', n: 4 } }) === 'Donjon à 4 joueurs' && /solo ou en groupe \(3 joueurs recommandés\)/.test(texteJoueurs({ joueurs: { mode: 'groupe', n: 3 } })), 'panneau : les trois façons de dire le nombre de joueurs');
 for (const d of DONJONS) {
-  ok(d.entree && d.joueurs && ['solo', 'groupe', 'exact'].includes(d.joueurs.mode), `${d.id} : phrase et nombre de joueurs du panneau d'entrée`);
+  ok(d.entree && d.joueurs && ['solo', 'groupe', 'exact', 'entre'].includes(d.joueurs.mode), `${d.id} : phrase et nombre de joueurs du panneau d'entrée`);
   const m = d.plan ? construireCarte(d) : construireSalles(d)[0], dehors = relierExterieur(d, m);
   const [px, py] = dehors ? m.donjon.exterieur.porte : [0, 0];
   const panneaux = dehors ? [...dehors.signs].filter(([, t]) => t.startsWith(d.nom + '\n')) : [];

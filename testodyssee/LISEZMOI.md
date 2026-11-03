@@ -87,6 +87,7 @@ joueurs (`joueurs`). `exterieur()` renvoie sa place (`panneau: [x, y]`) ; le lab
 | `{ mode: 'solo' }` | Donjon solo | fait pour être seul : chacun a le sien (`solo: true`) |
 | `{ mode: 'groupe', n: 3 }` | Donjon solo ou en groupe (3 joueurs recommandés) | une seule partie pour le groupe, rien ne bloque |
 | `{ mode: 'exact', n: 4 }` | Donjon à 4 joueurs | des mécaniques demandent tout le monde ; la salle de dalles de l'entrée demande alors 4 joueurs sur les dalles (`requis` d'une salle pour un autre nombre) |
+| `{ mode: 'entre', min: 3, max: 4 }` | Donjon à 3 ou 4 joueurs | les dalles demandent autant de joueurs que présents (entre 3 et 4) et notent ce nombre (`e.nb`) : des dresseurs peuvent n'être là qu'à 3 ou qu'à 4 (`pour`) |
 
 La même indication s'affiche dans la liste des lieux, après le niveau (`niveau`).
 
@@ -226,6 +227,32 @@ retour possible.
 Un combat à plusieurs (`raid`, ou `groupe` : moteur `js/combat/groupe.js`, autant de Pokémon adverses en jeu que de
 joueurs, `places` pour en fixer le nombre) se lance quand tous les joueurs présents sur la carte de sa salle sont prêts : il peut
 y en avoir plusieurs dans un donjon, et seul celui de la dernière salle termine le donjon.
+
+### La Pyramide de l'Ascension
+
+`js/donjons/pyramide.js` (salles), `js/donjon/pyramide.js` (mécaniques), à 3 ou 4 joueurs, équipe de niveau 35. Rien
+ne soigne en montant sauf la fontaine ; perdre un combat, n'importe où, ramène dehors (`elimine`). Les objets de soin
+du Sac (poches Soins et Baies) sont mis de côté en entrant et rendus en sortant ; ce qu'on trouve dedans y reste.
+
+1. **Salle des Dalles** : quatre dalles, autant de joueurs que présents (3 ou 4).
+2. et 3. **Étages** (`type: 'etage'`) : dresseurs seuls et duos (`duo: true`), certains seulement à 3 ou à 4 joueurs
+   (`pour: 3` / `pour: 4`). Un duo se combat à deux joueurs (moteur `js/combat/groupe.js`, deux Pokémon adverses en
+   jeu) : le premier appelle, les autres joueurs de la salle sont prévenus, le premier qui répond fait équipe.
+   Objets de soin au sol partagés (`type: 'soin'` : le premier qui le prend l'a). Tous les dresseurs battus, l'escalier
+   apparaît sur un des emplacements `E` (3 puis 4), tiré par l'hôte à chaque ascension (`preparer`).
+4. **Salle de la Fontaine** : la fontaine soigne l'équipe et efface les objets de soin du Sac ; quatre portes, une par
+   joueur (`porteP`, actions `voie` comme les Trois Voies).
+5. à 7. **Grottes** : trois par porte, chacun les siennes : deux dresseurs par grotte, objets (chacun les siens),
+   Pokémon sauvages rares (`rencontres`, `taux`) qu'on ne peut pas fuir.
+8. **Arènes** (`type: 'arene'`, `portes` : les lettres des portes qui y mènent) : les portes I et II mènent au Levant,
+   III et IV au Couchant. Quand les joueurs attendus parlent au juge, l'hôte lance le duel : combat entre joueurs
+   d'Odyssée, équipes telles quelles. Le perdant redescend, le gagnant est soigné et monte. Seul dans son arène (à 3,
+   ou si l'autre a perdu en route) : le reflet de l'équipe d'un joueur de l'autre arène, à PV pleins.
+9. **Sommet** (`type: 'sommet'`, `couchant: true` : soleil couchant) : quand les deux arènes ont rendu leur verdict,
+   duel entre les gagnants. Le vainqueur reçoit le Symbole d'Or ; tous deux redescendent. Seul gagnant : le sommet
+   est à lui.
+
+Les déconnexions en cours d'ascension ne sont pas encore gérées (un joueur parti compte comme éliminé).
 
 ### Le mode test
 

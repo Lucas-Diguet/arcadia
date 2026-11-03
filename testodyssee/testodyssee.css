@@ -38,3 +38,7 @@
 
 /* Sanctuaire des Trois Voies : le coffre brille dans le noir */
 .testody-lueur { position: absolute; z-index: 13; width: calc(var(--px) * 46); height: calc(var(--px) * 46); margin: calc(var(--px) * -26) 0 0 calc(var(--px) * -23); border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255, 236, 150, .75) 0%, rgba(255, 210, 90, .35) 35%, rgba(255, 200, 80, 0) 70%); mix-blend-mode: screen; }
+/* sommet de la pyramide : soleil couchant */
+.testody-couchant { position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(circle at 62% 9%, rgba(255, 214, 120, .95) 0, rgba(255, 190, 90, .9) 5%, rgba(255, 140, 50, .45) 8%, rgba(255, 120, 40, 0) 22%),
+    linear-gradient(180deg, rgba(255, 110, 40, .38) 0%, rgba(255, 150, 60, .16) 50%, rgba(120, 40, 20, .22) 100%); }

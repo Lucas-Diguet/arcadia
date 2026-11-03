@@ -14,6 +14,7 @@ import { construireCarte, construireSalles, relierExterieur, fermer, ouvrir, dec
 import { Mecaniques } from './mecaniques.js';
 import { Miroirs } from './miroirs.js';
 import { Voies } from './voies.js';
+import { Pyramide } from './pyramide.js';
 import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 
@@ -36,7 +37,7 @@ export class Donjons {
       for (const c of cartes) game.world.maps[c.id] = c;
       const dehors = relierExterieur(d, m);
       if (dehors) game.world.maps[dehors.id] = dehors;
-      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); }
+      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); }
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -70,10 +71,11 @@ export class Donjons {
         when: () => {
           const e = this.etats[d.id], sr = p.raid && d.salles.find((s) => s.type === 'raid' && s.pnj?.includes(k));
           if (p.gardien || p.quiz || p.toujours) return true;
+          if (!this.presentPyr(d, p)) return false;
           if (sr) return !e.salles[sr.id].faite;
           return p.boss || p.raid ? !e.fini : !battu(e, d, k);
         },
-        talk: async () => (p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid || p.groupe ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
+        talk: async () => (p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.arbitre ? this.arbitre(d, k) : p.duo ? this.duo(d, k) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid || p.groupe ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
       });
     }
   }
@@ -100,6 +102,7 @@ export class Donjons {
     }
     this.appliquerMiroirs(d);
     this.appliquerVoies(d);
+    this.appliquerPyramide(d);
     if (ici) g.refreshNpcs();
     const vu = this.vus[id];
     // premier état connu : ce qui est déjà fait ne rejoue pas de scène ; nouvelle descente : tout se rejoue
@@ -113,13 +116,13 @@ export class Donjons {
       // salles séparées : seulement pour qui est dans la salle
       if (ici && s.type !== 'boss' && (!s.carte || g.mapObj?.id === s.carte)) this.taches.push(() => this.porteOuverte(d, s));
     }
-    if (e.fini && !vu.fini) { vu.fini = true; if (ici && !d.solo && !d.salles.some((s) => s.type === 'raid')) this.taches.push(() => this.victoire(d)); }
+    if (e.fini && !vu.fini) { vu.fini = true; if (ici && !d.solo && !d.pyramide && !d.salles.some((s) => s.type === 'raid')) this.taches.push(() => this.victoire(d)); }
     this.majPanneau();
   }
   async porteOuverte(d, s) {
     const g = this.game;
     // ces salles racontent elles-mêmes leur fin
-    if (s.type === 'enigme' || s.type === 'reflet') return;
+    if (s.type === 'enigme' || s.type === 'reflet' || this.porteOuvertePyr(d, s)) return;
     if (s.type === 'lumiere') { g.sound.sfx('badge'); g.view.shake = 0.3; await g.ui.say(d.textes.porteOuverte); return; }
     g.sound.sfx('bang'); g.view.shake = 0.2;
     if (s.parchemin) { g.ui.toast(`${s.nom} : terminée ! Un parchemin est apparu.`, 2600); return; }
@@ -168,7 +171,7 @@ export class Donjons {
   }
   traiter(id, qui, m) {
     const d = this.defs.get(id); if (!d || !m || typeof m.a !== 'string') return { ok: false, why: 'inconnu' };
-    if (m.a === 'pret' && validParty(m.party)) (this.equipesRaid[id] ||= {})[String(qui)] = m.party;
+    if (validParty(m.party)) (this.equipesRaid[id] ||= {})[String(qui)] = m.party;
     const r = appliquer(d, this.etats[id], qui, m, this.options(d, m));
     if (r.change) this.diffuser(id);
     return { ok: r.ok, why: r.why };
@@ -183,6 +186,7 @@ export class Donjons {
     if (m.t === 'dj?' && this.hote) { for (const [id, d] of this.defs) if (!d.solo) this.H.send(from, { t: 'djE', id, e: this.etats[id] }); return; }
     if (m.t === 'djRA' && this.hote) { this.actionRaid(String(from), m.id, m.action); return; }
     if (m.t === 'djRaid' && String(from) === String(this.H.info.hostId)) { this.recevoirRaid(m); return; }
+    if (m.t === 'djPyr' && String(from) === String(this.H.info.hostId)) { this.recevoirPyr(m); return; }
     if (m.t === 'djR') { const f = this.attentes.get(m.rid); if (f) { this.attentes.delete(m.rid); f({ ok: !!m.ok, why: m.why }); } return; }
     if (m.t === 'djE' && !this.hote && String(from) === String(this.H.info.hostId) && this.defs.has(m.id) && !this.defs.get(m.id).solo && m.e) {
       const cur = this.etats[m.id];
@@ -233,7 +237,7 @@ export class Donjons {
   sortir(d) {
     const st = this.game.state;
     for (const q of d ? [d] : this.defs.values()) {
-      if (!q.solo) { this.demande(q.id, { a: 'sortie' }); continue; }
+      if (!q.solo) { this.sortiePyramide(q); this.demande(q.id, { a: 'sortie' }); continue; }
       // donjon solo : il se remet à zéro, et ses objets propres quittent le Sac
       this.demande(q.id, { a: 'recommencer' });
       if (st) for (const k of q.objetsDuDonjon || []) delete st.bag[k];
@@ -254,10 +258,13 @@ export class Donjons {
     }
     this.tickMiroirs(dt);
     this.tickVoies(dt);
+    this.tickPyramide(dt);
     this.panT = (this.panT || 0) - dt;
     if (g.state && g.mapObj !== this.carteVue) {
       const avant = this.carteVue && [...this.defs.values()].find((q) => this.estDans(q, this.carteVue.id));
       if (avant && !this.estDans(avant, g.mapObj.id)) this.sortir(avant);
+      const apres = [...this.defs.values()].find((q) => this.estDans(q, g.mapObj.id));
+      if (apres && apres !== avant) this.entreePyramide(apres).catch((e) => console.error(e));
     }
     if (g.state && (g.mapObj !== this.carteVue || this.panT <= 0)) { this.carteVue = g.mapObj; this.panT = 0.5; this.majPanneau(); }
     if (this.taches.length && g.state && !g.busy && !g.player.move && g.input.free && !g.bv.alive) {
@@ -284,6 +291,7 @@ export class Donjons {
     const voie = this.maVoie?.(d);
     for (const s of d.salles) {
       if (s.voie && s.voie !== voie) continue;
+      if (s.pourVoies && voie && !s.pourVoies.includes(voie)) continue;
       const S = e.salles[s.id];
       let txt = '';
       if (s.type === 'accueil') txt = S.faite ? 'ouverte' : 'parle au gardien';
@@ -300,6 +308,7 @@ export class Donjons {
       else if (s.type === 'reflet') txt = 'rejoins ton reflet';
       else if (s.type === 'voies') txt = voie ? d.voies[voie] : 'choisis ta porte';
       else if (s.type === 'menteurs') txt = 'trouve les sincères';
+      else if (this.textePyramide(d, s)) txt = this.textePyramide(d, s);
       if (s.type === 'voies' && !voie) { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       if (s.type === 'libre') { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
@@ -335,7 +344,7 @@ export class Donjons {
     const g = this.game, ui = g.ui, p = d.pnj[k], titre = `${p.cls} ${p.nom}`;
     const e = this.etats[d.id], pris = prisPar(e, d, k);
     if (pris && pris !== this.moi) { await ui.say(`${this.nomDe(pris)} l'affronte déjà !`); return; }
-    if (!(await ui.yesNo(`${titre} flotte devant toi.\nL'affronter ?`))) return;
+    if (!(await ui.yesNo(d.pyramide ? `${titre} te barre la route.\nL'affronter ?` : `${titre} flotte devant toi.\nL'affronter ?`))) return;
     const r = await this.demande(d.id, { a: 'prendre', pnj: k });
     if (!r.ok) {
       await ui.say(r.why === 'occupe' ? `${this.nomDe(prisPar(this.etats[d.id], d, k))} vient de l'engager !` : r.why === 'reseau' ? 'L\'hôte du salon ne répond pas...' : 'Il n\'y a plus personne à combattre ici.');
@@ -374,6 +383,8 @@ export class Donjons {
     return res;
   }
   async defaite(d) {
+    // pyramide : on est ramené dehors
+    if (d.pyramide) return this.elimine(d);
     // salles séparées : on revient à l'entrée de la salle où l'on est
     const g = this.game, carte = d.cartes?.includes(g.mapObj?.id) ? g.mapObj : g.world.maps[d.carte], [x, y] = carte.donjon.plan.depart;
     for (const m of g.state.party) healFull(m);
@@ -382,4 +393,4 @@ export class Donjons {
   }
 }
 
-Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies);
+Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide);

@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 3.90 — 3 novembre 2026
+- **TestOdyssée** — Nouveau donjon : la Pyramide de l'Ascension, à 3 ou 4 joueurs, avec une équipe de niveau 35.
+  - Rien ne soigne vos Pokémon en montant, sauf une fontaine à mi-chemin. Vos objets de soin sont mis de côté à l'entrée et rendus à la sortie.
+  - Deux étages de dresseurs, seuls ou en duo : pour un duo, on appelle un partenaire et le premier qui répond fait équipe. Les objets au sol sont à celui qui les prend le premier, et l'escalier apparaît à un endroit différent à chaque ascension.
+  - Une porte par joueur, puis trois grottes chacun, avec des Pokémon sauvages qu'on ne peut pas fuir.
+  - Deux arènes, où l'on s'affronte entre joueurs : le perdant redescend, le gagnant monte. Seul dans son arène, on affronte le reflet d'un autre joueur.
+  - Au sommet, le dernier duel désigne qui reçoit le Symbole d'Or.
+  - Perdre un combat dans la pyramide ramène au pied de celle-ci.
+
 ## 3.89 — 3 novembre 2026
 - **TestOdyssée** — Sanctuaire des Trois Voies : le Couloir des Sentinelles est ouvert. Trois sentinelles, l'une après l'autre, chacune à trois contre trois.
   - Après avoir choisi son attaque, on choisit le Pokémon adverse qu'on vise.
