@@ -10,7 +10,7 @@ import { createMon, healFull } from '../../../odyssee/js/core/mon.js';
 import { itemName } from '../../../odyssee/js/core/items.js';
 import { el, esc } from '../../../odyssee/js/ui/ui.js';
 import { nouvelEtat, appliquer, battu, prisPar, requisDalles } from './etat.js';
-import { construireCarte, relierExterieur, fermer, ouvrir, decorPorte } from './plan.js';
+import { construireCarte, construireSalles, relierExterieur, fermer, ouvrir, decorPorte, passageSuivant } from './plan.js';
 import { Mecaniques } from './mecaniques.js';
 import { Miroirs } from './miroirs.js';
 import { validParty } from '../../../odyssee/js/core/pvp.js';
@@ -29,13 +29,13 @@ export class Donjons {
     this.erreurs = {}; this.raids = {}; this.equipesRaid = {};
     this.wasHost = this.hote;
     for (const d of defs) {
-      const m = construireCarte(d);
-      game.world.maps[d.carte] = m;
+      // un donjon d'un seul tenant, ou une carte par salle (salles séparées)
+      const cartes = d.plan ? [construireCarte(d)] : construireSalles(d), m = cartes[0];
+      d.cartes = cartes.map((c) => c.id);
+      for (const c of cartes) game.world.maps[c.id] = c;
       const dehors = relierExterieur(d, m);
       if (dehors) game.world.maps[dehors.id] = dehors;
-      this.poserPnj(d, m);
-      this.poserObjets(d, m);
-      this.poserObjetsMiroirs(d, m);
+      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); }
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -69,15 +69,22 @@ export class Donjons {
 
   /** portes et PNJ suivent l'état ; joue les petites scènes quand une salle se termine */
   appliquerEtat(id) {
-    const d = this.defs.get(id), e = this.etats[id], g = this.game, m = g.world.maps[d.carte], P = m.donjon.plan;
-    const ici = g.state && g.mapObj === m;
+    const d = this.defs.get(id), e = this.etats[id], g = this.game;
+    const ici = this.estDans(d);
+    // salles séparées : le passage vers la salle suivante s'ouvre quand la salle est terminée (ou s'il y a une porte)
+    for (const s of d.salles) {
+      if (!s.carte) continue;
+      const m = g.world.maps[s.carte];
+      if (passageSuivant(m, e.salles[s.id].faite || s.type === 'libre' || !!s.porte) && g.mapObj === m) { const [x, y] = m.donjon.plan.suivante; g.view.decoAt.delete(x + ',' + y); const dd = m.deco.find((q) => q.x === x && q.y === y); if (dd) g.view.decoAt.set(x + ',' + y, dd); g.view.rebuildAt(x, y); }
+    }
     for (const s of d.salles) {
       if (!s.porte) continue;
+      const m = g.world.maps[s.carte || d.carte], P = m.donjon.plan;
       const cases = P.portes[s.porte] || [];
       for (const [i, [x, y]] of cases.entries()) {
         const k = x + ',' + y;
-        if (e.salles[s.id].faite) { if (ouvrir(m, x, y) && ici) { g.view.decoAt.delete(k); g.view.rebuildAt(x, y); } }
-        else if (m.get(x, y) !== T.BLOCK) { fermer(m, x, y, decorPorte(d, s.porte, i, cases.length)); if (ici) { g.view.decoAt.set(k, m.deco.find((q) => q.x === x && q.y === y)); g.view.rebuildAt(x, y); } }
+        if (e.salles[s.id].faite) { if (ouvrir(m, x, y) && g.mapObj === m) { g.view.decoAt.delete(k); g.view.rebuildAt(x, y); } }
+        else if (m.get(x, y) !== T.BLOCK) { fermer(m, x, y, decorPorte(d, s.porte, i, cases.length)); if (g.mapObj === m) { g.view.decoAt.set(k, m.deco.find((q) => q.x === x && q.y === y)); g.view.rebuildAt(x, y); } }
       }
     }
     this.appliquerMiroirs(d);
@@ -121,9 +128,11 @@ export class Donjons {
   }
 
   /* ---------------- demandes ---------------- */
+  /** le joueur (ou la carte mapId) est-il dans ce donjon ? */
+  estDans(d, mapId) { const id = mapId ?? (this.game.state ? this.game.mapObj?.id : null); return !!id && (d.cartes || [d.carte]).includes(id); }
   presents(d) {
-    const g = this.game; let n = g.state && g.mapObj?.id === d.carte ? 1 : 0;
-    for (const o of g.link?.others.values() || []) if (o.map === d.carte) n++;
+    const g = this.game; let n = this.estDans(d) ? 1 : 0;
+    for (const o of g.link?.others.values() || []) if (this.estDans(d, o.map)) n++;
     return n;
   }
   options(d, m) {
@@ -183,7 +192,7 @@ export class Donjons {
     if (this.miroir && !this.hote && !ids.has(String(this.miroirHote))) this.miroir.recevoir({ parti: true });
     this.wasHost = this.hote;
   }
-  dansUnDonjon() { const g = this.game; return !!g.state && [...this.defs.values()].some((q) => g.mapObj?.id === q.carte); }
+  dansUnDonjon() { return [...this.defs.values()].some((q) => this.estDans(q)); }
   /** on quitte un donjon (autre lieu, changement de lieu) : les objets de quête disparaissent */
   sortir(d) {
     const st = this.game.state;
@@ -210,8 +219,8 @@ export class Donjons {
     this.tickMiroirs(dt);
     this.panT = (this.panT || 0) - dt;
     if (g.state && g.mapObj !== this.carteVue) {
-      const avant = this.carteVue && [...this.defs.values()].find((q) => q.carte === this.carteVue.id);
-      if (avant && g.mapObj.id !== avant.carte) this.sortir(avant);
+      const avant = this.carteVue && [...this.defs.values()].find((q) => this.estDans(q, this.carteVue.id));
+      if (avant && !this.estDans(avant, g.mapObj.id)) this.sortir(avant);
     }
     if (g.state && (g.mapObj !== this.carteVue || this.panT <= 0)) { this.carteVue = g.mapObj; this.panT = 0.5; this.majPanneau(); }
     if (this.taches.length && g.state && !g.busy && !g.player.move && g.input.free && !g.bv.alive) {
@@ -230,7 +239,7 @@ export class Donjons {
   }
 
   majPanneau() {
-    const g = this.game, d = [...this.defs.values()].find((q) => g.state && g.mapObj?.id === q.carte);
+    const g = this.game, d = [...this.defs.values()].find((q) => this.estDans(q));
     if (!d) { this.panel.style.display = 'none'; return; }
     const e = this.etats[d.id], P = g.world.maps[d.carte].donjon.plan, lignes = [];
     for (const s of d.salles) {
@@ -319,10 +328,11 @@ export class Donjons {
     return res;
   }
   async defaite(d) {
-    const g = this.game, [x, y] = g.world.maps[d.carte].donjon.plan.depart;
+    // salles séparées : on revient à l'entrée de la salle où l'on est
+    const g = this.game, carte = d.cartes?.includes(g.mapObj?.id) ? g.mapObj : g.world.maps[d.carte], [x, y] = carte.donjon.plan.depart;
     for (const m of g.state.party) healFull(m);
     await g.ui.say(d.textes.perdu);
-    await g.warp({ map: d.carte, x, y, dir: 'up' }, 'exit');
+    await g.warp({ map: carte.id, x, y, dir: 'up' }, 'exit');
   }
 }
 

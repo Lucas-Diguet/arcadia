@@ -22,7 +22,7 @@ export function lirePlan(def) {
   const rows = def.plan.map((r) => r.replace(/\s+$/, ''));
   const w = Math.max(...rows.map((r) => r.length)) + 2, h = rows.length + 2;
   const at = (x, y) => (y >= 1 && y <= rows.length ? rows[y - 1][x - 1] ?? '#' : '#') || '#';
-  const out = { w, h, depart: null, sortie: null, portes: {}, dalles: [], pnj: {}, decor: [], sol: [], objets: {}, glace: new Set() };
+  const out = { w, h, depart: null, sortie: null, suivante: null, portes: {}, dalles: [], pnj: {}, decor: [], sol: [], objets: {}, glace: new Set() };
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = x === 0 || x === w - 1 ? '#' : at(x, y);
     if (c === '#' || c === ' ') continue;
@@ -31,6 +31,7 @@ export function lirePlan(def) {
     else if (def.objets?.[c]) (out.objets[c] ||= []).push([x, y]);
     else if (c === 'S') out.depart = [x, y];
     else if (c === 'D') out.sortie = [x, y];
+    else if (c === 'N') out.suivante = [x, y];
     else if (c === 'o' && !def.objets?.o) out.dalles.push([x, y]);
     else if (/[0-9]/.test(c)) (out.portes[c] ||= []).push([x, y]);
     else if (def.pnj?.[c]) (out.pnj[c] ||= []).push([x, y]);
@@ -49,6 +50,7 @@ export function construireCarte(def) {
   m.edge = T.CAVEWALL;
   for (const [x, y] of P.sol) m.set(x, y, T.CAVE);
   if (P.sortie) m.set(...P.sortie, T.CAVEWALL);   // fermée tant qu'aucun extérieur ne la relie
+  if (P.suivante) m.set(...P.suivante, T.CAVEWALL); // fermée tant que la salle n'est pas terminée
   for (const [k, x, y] of P.decor) m.prop(k, x, y);
   for (const [c, l] of Object.entries(P.objets)) {
     const o = def.objets[c];
@@ -73,6 +75,40 @@ export function construireCarte(def) {
     m.zone(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys), { name: s.nom, music: s.musique || def.musique || 'cave' });
   }
   return m;
+}
+
+/**
+ * donjon en salles séparées (chaque salle a son `plan`) : une carte par salle, comme les étages d'un bâtiment.
+ * La première garde l'identifiant du donjon (def.carte) ; N d'une salle mène à S de la suivante, D ramène devant
+ * le N de la précédente (D de la première : vers l'extérieur, voir relierExterieur). Renvoie les cartes dans l'ordre.
+ */
+export function construireSalles(def) {
+  const cartes = def.salles.map((s, i) => {
+    const id = i ? `${def.carte}:${s.id}` : def.carte;
+    s.carte = id;
+    const m = construireCarte({ ...def, carte: id, plan: s.plan, salles: [] });
+    m.zone(0, 0, m.w - 1, m.h - 1, { name: s.nom, music: s.musique || def.musique || 'cave', salle: s.id });
+    m.salle = s.id;
+    return m;
+  });
+  cartes.forEach((m, i) => {
+    const P = m.donjon.plan, suiv = cartes[i + 1], prec = cartes[i - 1];
+    if (suiv && P.suivante) m.donjon.versSuivante = { map: suiv.id, x: suiv.donjon.plan.depart[0], y: suiv.donjon.plan.depart[1], dir: 'up' };
+    if (prec && P.sortie) {
+      const [nx, ny] = prec.donjon.plan.suivante, [sx, sy] = P.sortie;
+      m.set(sx, sy, T.CAVEDOOR); m.warp(sx, sy, { map: prec.id, x: nx, y: ny + 1, dir: 'down' }); m.deco.push({ k: 'exitlight', x: sx, y: sy });
+    }
+  });
+  return cartes;
+}
+/** passage vers la salle suivante : ouvert (case de sortie éclairée) ou muré */
+export function passageSuivant(m, ouvert) {
+  const P = m.donjon.plan, w = m.donjon.versSuivante; if (!P.suivante || !w) return false;
+  const [x, y] = P.suivante, deja = m.get(x, y) === T.CAVEDOOR;
+  if (ouvert === deja) return false;
+  if (ouvert) { m.set(x, y, T.CAVEDOOR); m.warp(x, y, w); m.deco.push({ k: 'exitlight', x, y }); }
+  else { m.set(x, y, T.CAVEWALL); m.warps.delete(x + ',' + y); m.deco = m.deco.filter((d) => !(d.x === x && d.y === y)); }
+  return true;
 }
 
 /** cases d'une salle : tout ce qu'on atteint depuis son repère sans passer une porte */

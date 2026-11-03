@@ -95,7 +95,7 @@ export const Mecaniques = {
 
   /* ---------------- journal ---------------- */
   async journal() {
-    const g = this.game, d = [...this.defs.values()].find((q) => g.mapObj?.id === q.carte);
+    const g = this.game, d = [...this.defs.values()].find((q) => this.estDans(q));
     if (!d) { await g.ui.say('Le journal du donjon ne sert qu\'à l\'intérieur d\'un donjon.'); return; }
     const e = this.etats[d.id];
     const quetes = (d.journal || []).map((q) => {

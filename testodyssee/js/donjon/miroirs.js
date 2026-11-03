@@ -30,6 +30,8 @@ export const Miroirs = {
   },
   dm(d, salle) { return this.etats[d.id].salles[salle].donnees || {}; },
   salleDe(d, type) { return d.salles.find((s) => s.type === type); },
+  /** carte d'une salle (une carte par salle ; sinon la carte du donjon) */
+  carteDe(d, s) { return this.game.world.maps[s?.carte || d.carte]; },
   maj(d, salle, donnees, o = {}) { return this.demande(d.id, { a: 'maj', salle, donnees, ...o }); },
   /** décor d'une case (k = null : la case se libère) ; la vue suit si on est sur la carte */
   decor(m, x, y, k) {
@@ -44,9 +46,10 @@ export const Miroirs = {
   /** le décor de toute la carte selon l'état (aussi pour tout remettre en place quand on recommence) */
   appliquerMiroirs(d) {
     if (!estMiroirs(d)) return;
-    const m = this.game.world.maps[d.carte], P = m.donjon.plan;
     const s1 = this.salleDe(d, 'enigme'), D1 = this.dm(d, s1.id), fait1 = this.etats[d.id].salles[s1.id].faite;
     const D2 = this.dm(d, 's2'), D4 = this.dm(d, this.salleDe(d, 'lumiere').id);
+    for (const id of d.cartes || [d.carte]) {
+    const m = this.game.world.maps[id], P = m.donjon.plan;
     for (const [c, l] of Object.entries(P.objets)) {
       const o = d.objets[c];
       for (const [x, y] of l) {
@@ -58,6 +61,7 @@ export const Miroirs = {
         else if (o.type === 'brasier') this.decor(m, x, y, (D4.feux || 0) >= 5 ? 'brasier_on' : 'brasier');
         else if (o.type === 'soleil') this.decor(m, x, y, (D4.soleils || []).includes(k) ? 'soleil_on' : 'soleil');
       }
+    }
     }
     // le reflet revient à sa place quand le donjon recommence
     if (!this.reflet || this.reflet.run !== this.etats[d.id].run) this.placerReflet(d);
@@ -88,7 +92,7 @@ export const Miroirs = {
   async miroirMural(d, c) {
     const g = this.game, ui = g.ui, o = d.objets[c], s1 = this.salleDe(d, 'enigme'), D1 = this.dm(d, s1.id);
     if ((D1.brises || []).includes(c)) { await ui.say(d.textes.brise); return; }
-    if (!(await ui.yesNo(d.textes.miroirMur(o.reponse)))) return;
+    if (!(await ui.yesNo(d.textes.miroirMur))) return;
     if (o.juste) {
       g.sound.sfx('learn'); await ui.flash(1, '#ffffff', 120);
       await this.maj(d, s1.id, {}, { faite: true });
@@ -115,7 +119,7 @@ export const Miroirs = {
       return;
     }
     await ui.say(d.textes.piege);
-    const res = await this.combat({ cls: 'Miroir', nom: 'piégé', bs: 'miroir_piege' }, copieSoignee([g.state.party[0]]));
+    const res = await this.combat({ cls: 'Miroir', nom: 'piégé', bs: 'miroir_piege' }, copieSoignee([g.state.party.find((m) => m.hp > 0) || g.state.party[0]]));
     if (res !== 'win') { await this.defaite(d); return; }
     await this.maj(d, 's2', { pris: { ...(this.dm(d, 's2').pris || {}), [k]: 'piege' } });
     g.sound.sfx('hitstrong');
@@ -138,10 +142,14 @@ export const Miroirs = {
     let n = D4.feux || 0, tenus = D4.tenus || 0;
     if (n >= 5) { await ui.say(d.textes.brasier[5]); return; }
     if (!tenus) { await ui.say(d.textes.brasier[n]); return; }
-    while (tenus > 0 && n < 5) { n++; tenus--; g.sound.sfx('hitweak'); await ui.say(d.textes.jeter(n)); }
-    await this.maj(d, s.id, { feux: n, tenus });
-    if (n >= 5) { g.sound.sfx('bang'); g.view.shake = 0.3; await ui.flash(2, '#fff6c0', 90); }
-    await ui.say(d.textes.brasier[n]);
+    // un feu après l'autre : chaque stade du brasier a son texte
+    while (tenus > 0 && n < 5) {
+      n++; tenus--;
+      await this.maj(d, s.id, { feux: n, tenus });
+      g.sound.sfx('hitweak'); await ui.say(d.textes.jeter(n));
+      if (n >= 5) { g.sound.sfx('bang'); g.view.shake = 0.3; await ui.flash(2, '#fff6c0', 90); }
+      await ui.say(d.textes.brasier[n]);
+    }
     this.lumiere(d);
   },
   async miroirFixe(d, x, y) {
@@ -167,10 +175,10 @@ export const Miroirs = {
     await this.maj(d, 's4', { socles });
     this.lumiere(d);
   },
-  lettre(d, x, y) { const P = this.game.world.maps[d.carte].donjon.plan; return Object.entries(P.objets).find(([, l]) => l.some(([a, b]) => a === x && b === y))?.[0]; },
+  lettre(d, x, y) { const P = this.carteDe(d, this.salleDe(d, 'lumiere')).donjon.plan; return Object.entries(P.objets).find(([, l]) => l.some(([a, b]) => a === x && b === y))?.[0]; },
   /** les deux faisceaux du brasier allumé : cases traversées et soleils touchés */
   calculLumiere(d) {
-    const m = this.game.world.maps[d.carte], P = m.donjon.plan, D4 = this.dm(d, 's4');
+    const m = this.carteDe(d, this.salleDe(d, 'lumiere')), P = m.donjon.plan, D4 = this.dm(d, 's4');
     if ((D4.feux || 0) < 5) return { traits: [], soleils: [] };
     const miroirs = new Map();
     for (const [c, l] of Object.entries(P.objets)) for (const [x, y] of l) {
@@ -195,7 +203,7 @@ export const Miroirs = {
     const s = this.salleDe(d, 'lumiere'), D4 = this.dm(d, s.id), L = this.calculLumiere(d);
     this.lumiereVue = null;
     const avant = (D4.soleils || []).slice().sort().join('|'), apres = L.soleils.slice().sort().join('|');
-    const tous = L.soleils.length >= (this.game.world.maps[d.carte].donjon.plan.objets.L || []).length && L.soleils.length > 0;
+    const tous = L.soleils.length >= (this.carteDe(d, s).donjon.plan.objets.L || []).length && L.soleils.length > 0;
     if (avant !== apres || (tous && !this.etats[d.id].salles[s.id].faite)) {
       this.maj(d, s.id, { soleils: L.soleils }, tous ? { faite: true } : {}).then(() => {
         if (L.soleils.length > (D4.soleils || []).length) this.game.sound.sfx('pc');
@@ -205,6 +213,7 @@ export const Miroirs = {
   /** à chaque image : faisceaux dessinés (refaits quand la carte ou l'état change) */
   dessinerLumiere(d, dessiner = dessinerFaisceaux) {
     const v = this.game.view;
+    if (this.game.mapObj !== this.carteDe(d, this.salleDe(d, 'lumiere'))) { this.lumiereVue = null; return; }
     if (this.lumiereVue && v.__faisceauxRoot === v.root) return;
     this.lumiereVue = true;
     dessiner(v, this.calculLumiere(d).traits);
@@ -212,9 +221,10 @@ export const Miroirs = {
 
   /** après un pas dans la salle du brasier : rencontres de Feu (Feu Follet) et de Glace (Eau Fraîche, brasier éteint) */
   async rencontreMiroirs(d) {
-    const g = this.game, p = g.player, m = g.mapObj, s = this.salleDe(d, 'lumiere'), [x0, y0, x1, y1] = s.zone;
-    const dedans = p.x > x0 && p.x <= x1 + 1 && p.y > y0 && p.y <= y1 + 1;
-    if (!dedans || m.get(p.x, p.y) !== T.CAVE || g.bv.alive || Math.random() > 0.08) return;
+    const g = this.game, p = g.player, m = g.mapObj, s = this.salleDe(d, 'lumiere');
+    // plus aucune rencontre une fois le brasier allumé
+    if (m !== this.carteDe(d, s) || (this.dm(d, s.id).feux || 0) >= 5) return;
+    if (m.get(p.x, p.y) !== T.CAVE || g.bv.alive || Math.random() > 0.08) return;
     const tot = d.rencontres.reduce((a, e) => a + e[3], 0); let r = Math.random() * tot, e = d.rencontres[0];
     for (const x of d.rencontres) { r -= x[3]; if (r <= 0) { e = x; break; } }
     const wild = createMon(e[0], e[1] + Math.floor(Math.random() * (e[2] - e[1] + 1)), { met: d.nom });
@@ -237,25 +247,20 @@ export const Miroirs = {
   },
 
   /* ---------------- salle du reflet ---------------- */
-  zoneReflet(d) { const s = this.salleDe(d, 'reflet'), [x0, y0, x1, y1] = s.zone; return { s, x0: x0 + 1, y0: y0 + 1, x1: x1 + 1, y1: y1 + 1, ligne: s.ligne + 1 }; },
+  zoneReflet(d) { const s = this.salleDe(d, 'reflet'); return { s, m: this.carteDe(d, s), ligne: s.ligne + 1 }; },
   placerReflet(d) {
-    const [x, y] = this.game.world.maps[d.carte].donjon.plan.objets.K[0];
+    const [x, y] = this.zoneReflet(d).m.donjon.plan.objets.K[0];
     this.reflet = { x, y, move: null, run: this.etats[d.id].run, d };
   },
-  dansReflet(d, x, y) { const Z = this.zoneReflet(d); return x >= Z.x0 && x <= Z.x1 && y >= Z.y0 && y <= Z.y1; },
-  refletActif(d) { const g = this.game; return this.reflet && g.state && g.mapObj?.id === d.carte && !this.etats[d.id].salles[this.zoneReflet(d).s.id].faite; },
+  refletActif(d) { const g = this.game; return !!this.reflet && !!g.state && g.mapObj === this.zoneReflet(d).m && !this.etats[d.id].salles[this.zoneReflet(d).s.id].faite; },
   /** le joueur ne passe pas la ligne du miroir ; renvoie true si le pas est refusé */
-  barriereReflet(d, tx, ty) {
-    if (!this.refletActif(d)) return false;
-    const Z = this.zoneReflet(d), p = this.game.player;
-    return this.dansReflet(d, p.x, p.y) && this.dansReflet(d, tx, ty) && ty < Z.ligne;
-  },
+  barriereReflet(d, tx, ty) { return this.refletActif(d) && ty < this.zoneReflet(d).ligne; },
   /** le joueur vient de partir dans la direction dir : le reflet fait le pas symétrique */
-  refleterPas(d, dir, depart) {
-    if (!this.refletActif(d) || !this.dansReflet(d, ...depart)) return;
+  refleterPas(d, dir) {
+    if (!this.refletActif(d)) return;
     const g = this.game, m = g.mapObj, R = this.reflet, Z = this.zoneReflet(d), p = g.player;
     const [dx, dy] = DIRS[refleter(dir)], tx = R.x + dx, ty = R.y + dy;
-    const libre = m.in(tx, ty) && walkable(m.get(tx, ty)) && ty <= Z.ligne && this.dansReflet(d, tx, ty)
+    const libre = m.in(tx, ty) && walkable(m.get(tx, ty)) && ty <= Z.ligne
       && !(p.move && p.move.tx === tx && p.move.ty === ty) && !(p.x === tx && p.y === ty);
     R.dir = refleter(dir);
     if (!libre) return;
@@ -298,17 +303,20 @@ export const Miroirs = {
     await this.recommencerReflet(d);
   },
   async recommencerReflet(d) {
-    const g = this.game, s = this.zoneReflet(d).s, [x, y] = s.retour;
+    const g = this.game, m = this.zoneReflet(d).m, [x, y] = m.donjon.plan.depart;
     this.placerReflet(d);
-    await g.warp({ map: d.carte, x: x + 1, y: y + 1, dir: 'up' }, 'exit');
+    await g.warp({ map: m.id, x, y, dir: 'up' }, 'exit');
   },
 
   /* ---------------- branchements (jeu.js du labo et classe Donjons) ---------------- */
   /** le donjon des miroirs où se trouve le joueur, s'il y est */
-  miroirsIci() { const g = this.game; if (!g.state) return null; for (const d of this.defs.values()) if (estMiroirs(d) && g.mapObj?.id === d.carte) return d; return null; },
+  miroirsIci() { for (const d of this.defs.values()) if (estMiroirs(d) && this.estDans(d)) return d; return null; },
   tickMiroirs(dt) {
-    const d = this.miroirsIci();
-    if (!d) { if (this.game.view.actors.has('copycat')) this.game.view.removeActor('copycat'); return; }
+    const d = this.miroirsIci(), g = this.game;
+    // la salle du reflet se voit de plus haut
+    const vue = d && g.mapObj?.salle ? d.salles.find((s) => s.id === g.mapObj.salle)?.vue || 1 : 1;
+    if (g.state && vue !== this.vueVoulue) { this.vueVoulue = vue; g.onVue?.(vue); }
+    if (!d) { if (g.view.actors.has('copycat')) g.view.removeActor('copycat'); return; }
     if (this.salleDe(d, 'lumiere')) this.dessinerLumiere(d);
     if (this.salleDe(d, 'reflet')) this.dessinerReflet(dt);
   },
@@ -331,12 +339,12 @@ export const Miroirs = {
     g.sound.sfx('ledge');
     return true;
   },
-  apresDepart(dir, depart) { const d = this.miroirsIci(); if (d && this.salleDe(d, 'reflet')) this.refleterPas(d, dir, depart); },
+  apresDepart(dir) { const d = this.miroirsIci(); if (d && this.salleDe(d, 'reflet')) this.refleterPas(d, dir); },
   occupe(x, y) { return this.occupeReflet(x, y); },
   async interagir() { const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.parlerReflet(d); },
   async apresPas(mv) { const d = this.miroirsIci(); if (d && !mv?.glisse && this.salleDe(d, 'lumiere')) await this.rencontreMiroirs(d); },
   /** dans la salle du reflet : on peut revenir à l'entrée de la salle depuis le menu */
-  dansLeReflet() { const d = this.miroirsIci(), p = this.game.player; return !!d && !!this.salleDe(d, 'reflet') && this.refletActif(d) && this.dansReflet(d, p.x, p.y); },
+  dansLeReflet() { const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.refletActif(d); },
   async recommencerSalle() { const d = this.miroirsIci(); if (d) await this.recommencerReflet(d); },
   /** objets de quête du donjon des miroirs (journal) */
   objetsJournal(d) {

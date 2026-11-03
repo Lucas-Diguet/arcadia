@@ -1,5 +1,15 @@
 # Journal des versions — Arcadia
 
+## 3.62 — 3 novembre 2026
+- **TestOdyssée** — Donjon des Miroirs, deuxième version.
+  - Chaque salle est maintenant séparée : on change de salle comme on entre dans un bâtiment.
+  - Énigme : le bon miroir est à gauche, et les réponses sont sur le panneau, avec une flèche vers leur miroir.
+  - Les deux salles de glace sont quatre fois plus grandes, et bien plus difficiles.
+  - Le miroir piégé envoie une copie de ton premier Pokémon encore en forme.
+  - Salle du Brasier : beaucoup plus de Funécire, moins de Pokémon Glace, plus aucune rencontre une fois le brasier allumé, et chaque Feu Follet jeté affiche son texte.
+  - Le casse-tête de lumière est plus dur : plus de miroirs à tourner, plus de socles où se tromper.
+  - Salle du Reflet : un grand labyrinthe, vu de plus haut, et un Copycat qui a quelque chose à te dire.
+
 ## 3.61 — 3 novembre 2026
 - **TestOdyssée** — Nouveau donjon en solo : le Donjon des Miroirs, tout blanc, cinq salles.
   - Une énigme d'horloge vue dans un miroir : le mauvais miroir se brise et blesse ton équipe.

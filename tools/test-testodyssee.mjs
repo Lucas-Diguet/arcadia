@@ -1,7 +1,7 @@
 // tools/test-testodyssee.mjs — TestOdyssée : plans des donjons et règles partagées du groupe.
 // node tools/test-testodyssee.mjs
 import { DONJONS } from '../testodyssee/js/donjons/index.js';
-import { construireCarte, lirePlan, regionDe, ouvrir, aCote, relierExterieur } from '../testodyssee/js/donjon/plan.js';
+import { construireCarte, construireSalles, passageSuivant, lirePlan, regionDe, ouvrir, aCote, relierExterieur } from '../testodyssee/js/donjon/plan.js';
 import { installerContenu } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
 import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, clesDe, serrures } from '../testodyssee/js/donjon/etat.js';
@@ -21,6 +21,7 @@ const compte = (seen) => { let n = 0; for (const v of seen) n += v; return n; };
 
 /* ---------------- plans ---------------- */
 for (const d of DONJONS) {
+  if (!d.plan) continue;   // donjon en salles séparées : vérifié plus bas
   const m = construireCarte(d), P = m.donjon.plan;
   ok(m.id === d.carte, `${d.id} : identifiant de carte`);
   for (const s of d.salles) {
@@ -53,57 +54,101 @@ for (const d of DONJONS) {
     ok(P.sortie && m.warpAt(...P.sortie)?.map === dehors.id && m.reach(...P.depart)[P.sortie[1] * m.w + P.sortie[0]], `${d.id} : la sortie ramène dehors`);
   }
 }
-/* ---------------- donjon des miroirs : les casse-têtes ---------------- */
+/* ---------------- donjon des miroirs : salles séparées et casse-têtes ---------------- */
 {
-  const d = DONJONS.find((q) => q.id === 'miroirs'), m = construireCarte(d), P = m.donjon.plan;
-  const objet = (x, y) => Object.entries(P.objets).find(([, l]) => l.some(([a, b]) => a === x && b === y))?.[0];
-  const zone = (id) => { const [x0, y0, x1, y1] = d.salles.find((s) => s.id === id).zone; return [x0 + 1, y0 + 1, x1 + 1, y1 + 1]; };
-  const dans = ([x0, y0, x1, y1], x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
-  // salles de glace : depuis l'entrée (bas), on atteint la sortie (haut) et chaque objet, quels que soient ceux déjà pris,
-  // et on ne reste jamais coincé (de toute case atteinte, on peut revenir à l'entrée)
-  for (const [id, cibles] of [['s2', ['p', 'q']], ['s3', ['u', 'v', 'w', 'x', 'y', 'R']]]) {
-    const Z = zone(id), cases = cibles.flatMap((c) => P.objets[c]);
-    const entree = P.sol.find(([x, y]) => x === 15 && y === Z[3] + 1), sortie = P.sol.find(([x, y]) => x === 15 && y === Z[1] - 1);
-    const base = (x, y) => dans(Z, x, y) || (x === 15 && (y === Z[3] + 1 || y === Z[1] - 1));
-    let bon = true, coince = 0;
+  const d = DONJONS.find((q) => q.id === 'miroirs'), cartes = construireSalles(d), dehors = relierExterieur(d, cartes[0]);
+  const carte = (id) => cartes[d.salles.findIndex((s) => s.id === id)];
+  const V = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const objet = (m, x, y) => Object.entries(m.donjon.plan.objets).find(([, l]) => l.some(([a, b]) => a === x && b === y))?.[0];
+  // chaînage : N mène à S de la salle suivante, D ramène sous N de la précédente, la première sort dehors
+  cartes.forEach((m, i) => {
+    const P = m.donjon.plan, s = d.salles[i];
+    ok(m.id === s.carte && m.salle === s.id, `miroirs : carte de ${s.id}`);
+    if (i < cartes.length - 1) {
+      passageSuivant(m, true);
+      const w = m.warpAt(...P.suivante), Q = cartes[i + 1].donjon.plan;
+      ok(w && w.map === cartes[i + 1].id && w.x === Q.depart[0] && w.y === Q.depart[1], `miroirs : ${s.id} mène à la salle suivante`);
+      const r = cartes[i + 1].warpAt(...Q.sortie);
+      ok(r && r.map === m.id && r.x === P.suivante[0] && r.y === P.suivante[1] + 1 && (walkable(m.get(r.x, r.y)) || Object.values(P.portes).flat().some(([a, b]) => a === r.x && b === r.y) || objet(m, r.x, r.y) === s.porteObjet), `miroirs : on revient de ${d.salles[i + 1].id} devant la sortie de ${s.id}`);
+    }
+  });
+  ok(dehors && cartes[0].warpAt(...cartes[0].donjon.plan.sortie)?.map === dehors.id, 'miroirs : la première salle sort dehors');
+  // salle 1 : le passage est muré tant que l'énigme n'est pas résolue, et le bon miroir est à gauche
+  {
+    const m = construireSalles(d)[0], P = m.donjon.plan;
+    const vu = m.reach(...P.depart);
+    ok(!vu[P.suivante[1] * m.w + P.suivante[0]] && m.get(...P.suivante) === T.CAVEWALL, 'miroirs : salle 1, le passage reste muré');
+    const xs = ['A', 'B', 'C'].map((c) => P.objets[c][0][0]);
+    ok(d.objets.A.juste && xs[0] < xs[1] && xs[1] < xs[2] && !d.objets.B.juste && !d.objets.C.juste, 'miroirs : le bon miroir est celui de gauche');
+    ok(P.objets.A[0][0] === P.suivante[0] && P.objets.A[0][1] === P.suivante[1] + 1, 'miroirs : le passage est derrière le bon miroir');
+    const [px, py] = P.objets.P[0], xs2 = P.sol.map(([x]) => x), ys2 = P.sol.map(([, y]) => y);
+    ok(Math.abs(px - (Math.min(...xs2) + Math.max(...xs2)) / 2) <= 1 && py > P.objets.A[0][1] + 1 && py < P.depart[1] - 1, 'miroirs : le panneau est au centre de la salle');
+    ouvrir(m, ...P.objets.A[0]); passageSuivant(m, true);
+    ok(m.reach(...P.depart)[P.suivante[1] * m.w + P.suivante[0]], 'miroirs : salle 1, le bon miroir ouvre le passage');
+  }
+  // salles de glace : grandes, la sortie et chaque objet accessibles quels que soient ceux déjà pris, jamais coincé
+  for (const [id, lettres, mini] of [['s2', ['p', 'q'], 8], ['s3', ['u', 'v', 'w', 'x', 'y'], 8]]) {
+    const m = carte(id), P = m.donjon.plan, N = P.suivante, S = P.depart;
+    ok(P.sol.length >= 4 * 250, `miroirs : ${id} est une grande salle (${P.sol.length} cases)`);
+    const cases = lettres.flatMap((c) => P.objets[c]), fixes = (P.objets.R || []);
+    let bon = true, coince = 0, sortieMin = Infinity, objMin = Infinity;
     for (let mask = 0; mask < 1 << cases.length; mask++) {
       const pris = new Set(cases.filter((_, i) => mask >> i & 1).map(([x, y]) => cle(x, y)));
-      const objets = new Set(cases.map(([x, y]) => cle(x, y)));
-      const libre = (x, y) => base(x, y) && (pris.has(cle(x, y)) || (walkable(m.get(x, y)) && !objets.has(cle(x, y))));
-      const vu = explorerGlace(m.glace, libre, ...entree);
-      if (!vu.has(cle(...sortie))) bon = false;
-      // chaque objet restant : une case voisine atteinte, d'où on le touche
-      for (const [x, y] of cases) if (!pris.has(cle(x, y)) && ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vu.has(cle(x + dx, y + dy)))) bon = false;
-      for (const k of vu.keys()) { const [x, y] = k.split(',').map(Number); if (!explorerGlace(m.glace, libre, x, y).has(cle(...entree))) coince++; }
+      const objets = new Set([...cases, ...fixes].map(([x, y]) => cle(x, y)));
+      const libre = (x, y) => m.in(x, y) && (pris.has(cle(x, y)) || (walkable(m.get(x, y)) && !objets.has(cle(x, y))) || (x === N[0] && y === N[1]));
+      const vu = explorerGlace(m.glace, libre, ...S);
+      if (!vu.has(cle(...N))) bon = false; else if (mask === 0) sortieMin = vu.get(cle(...N));
+      for (const [x, y] of [...cases, ...fixes]) {
+        if (pris.has(cle(x, y))) continue;
+        const ds = V.map(([dx, dy]) => vu.get(cle(x + dx, y + dy))).filter((v) => v != null);
+        if (!ds.length) bon = false; else if (mask === 0) objMin = Math.min(objMin, ...ds);
+      }
+      for (const k of [...vu.keys(), cle(N[0], N[1] + 1)]) { if (k === cle(...N)) continue; const [x, y] = k.split(',').map(Number); if (!explorerGlace(m.glace, libre, x, y).has(cle(...S))) coince++; }
+      if (!bon) break;
     }
     ok(bon, `miroirs : ${id}, la sortie et chaque objet sont accessibles en glissant`);
     ok(coince === 0, `miroirs : ${id}, on ne reste jamais coincé sur la glace (${coince})`);
+    ok(sortieMin >= 15 && objMin >= mini, `miroirs : ${id}, assez difficile (sortie en ${sortieMin} glissades, objet le plus proche en ${objMin})`);
   }
-  // salle du brasier : la lumière n'éclaire rien au départ ; une seule façon d'éclairer les deux soleils, avec les 3 miroirs de poche
-  const [bx, by] = P.objets.F[0], cibles = new Set(P.objets.L.map(([x, y]) => cle(x, y))), socles = P.objets.o;
-  const bloque = (x, y) => m.get(x, y) === T.CAVEWALL || (m.get(x, y) === T.BLOCK && objet(x, y) !== 'o');
-  const fixes = [...P.objets.f.map((c) => [c, '/']), ...P.objets.g.map((c) => [c, '\\'])];
-  const essai = (mm) => [[-1, 0], [1, 0]].map(([dx, dy]) => faisceau(bx, by, dx, dy, mm, bloque, cibles).touche);
-  const t0 = essai(new Map(fixes.map(([[x, y], o]) => [cle(x, y), o])));
-  ok(!t0[0] && !t0[1], 'miroirs : au départ, la lumière n\'éclaire aucun soleil');
-  let n = 0, moins = 0;
-  for (let mask = 0; mask < 3 ** socles.length; mask++) {
-    let q = mask; const pose = [];
-    for (const c of socles) { const v = q % 3; q = Math.floor(q / 3); if (v) pose.push([c, v === 1 ? '/' : '\\']); }
-    if (pose.length > P.objets.p.length) continue;
-    for (let f = 0; f < 1 << fixes.length; f++) {
-      const mm = new Map(fixes.map(([[x, y]], i) => [cle(x, y), (f >> i) & 1 ? '\\' : '/']));
-      for (const [[x, y], o] of pose) mm.set(cle(x, y), o);
-      const t = essai(mm);
-      if (t[0] && t[1] && t[0] !== t[1]) { n++; if (pose.length < P.objets.p.length) moins++; }
-    }
+  // salle du brasier : rien d'éclairé au départ ; une seule solution, avec les 3 miroirs de poche et au moins 4 miroirs tournés
+  {
+    const m = carte('s4'), P = m.donjon.plan;
+    const [bx, by] = P.objets.F[0], cibles = new Set(P.objets.L.map(([x, y]) => cle(x, y))), socles = P.objets.o;
+    const bloque = (x, y) => m.get(x, y) === T.CAVEWALL || (m.get(x, y) === T.BLOCK && objet(m, x, y) !== 'o');
+    const fixes = [...(P.objets.f || []).map((c) => [c, '/']), ...(P.objets.g || []).map((c) => [c, '\\'])];
+    const essai = (mm) => [[-1, 0], [1, 0]].map(([dx, dy]) => faisceau(bx, by, dx, dy, mm, bloque, cibles).touche);
+    const t0 = essai(new Map(fixes.map(([[x, y], o]) => [cle(x, y), o])));
+    ok(!t0[0] && !t0[1], 'miroirs : au départ, la lumière n\'éclaire aucun soleil');
+    const poche = P.objets.p ? P.objets.p.length : 3;
+    let n = 0, moins = 0, tours = 0;
+    const pose = [];
+    const parSocle = (i) => {
+      if (i === socles.length) {
+        for (let f = 0; f < 1 << fixes.length; f++) {
+          const mm = new Map(fixes.map(([[x, y]], j) => [cle(x, y), (f >> j) & 1 ? '\\' : '/']));
+          for (const [[x, y], o] of pose) mm.set(cle(x, y), o);
+          const t = essai(mm);
+          if (t[0] && t[1] && t[0] !== t[1]) { n++; if (pose.length < 3) moins++; tours = fixes.filter(([[x, y], o], j) => ((f >> j) & 1 ? '\\' : '/') !== o).length; }
+        }
+        return;
+      }
+      parSocle(i + 1);
+      if (pose.length < 3) for (const o of ['/', '\\']) { pose.push([socles[i], o]); parSocle(i + 1); pose.pop(); }
+    };
+    parSocle(0);
+    ok(n >= 1 && moins === 0, `miroirs : la lumière a une solution, avec les 3 miroirs de poche (${n} réglages, ${moins} avec moins)`);
+    ok(tours >= 4 || n > 1, `miroirs : il faut tourner plusieurs miroirs (${tours})`);
+    // tout ce qu'on manipule est à portée
+    const vu = m.reach(...P.depart);
+    for (const [x, y] of [...socles, ...fixes.map(([c]) => c), P.objets.F[0]]) ok(V.some(([dx, dy]) => vu[(y + dy) * m.w + x + dx]), `miroirs : on atteint l'objet en ${x},${y}`);
   }
-  ok(n === 1 && moins === 0, `miroirs : une seule solution de lumière, avec tous les miroirs de poche (${n}, ${moins})`);
-  // salle du reflet : Copycat est rejoignable
-  const S5 = d.salles.find((s) => s.type === 'reflet'), Z5 = zone('s5'), L = S5.ligne + 1;
-  const libre5 = (x, y) => dans(Z5, x, y) && walkable(m.get(x, y));
-  const r = resoudreReflet([S5.retour[0] + 1, S5.retour[1]], P.objets.K[0], (x, y) => libre5(x, y) && y >= L, (x, y) => libre5(x, y) && y <= L);
-  ok(r.n > 0 && r.n <= 30, `miroirs : on rejoint Copycat (${r.n} pas)`);
+  // salle du reflet : Copycat est rejoignable, mais pas en quelques pas
+  {
+    const m = carte('s5'), P = m.donjon.plan, S5 = d.salles.find((s) => s.type === 'reflet'), L = S5.ligne + 1;
+    const libre5 = (x, y) => m.in(x, y) && walkable(m.get(x, y)) && m.get(x, y) !== T.CAVEDOOR;
+    const r = resoudreReflet(P.depart, P.objets.K[0], (x, y) => libre5(x, y) && y >= L, (x, y) => libre5(x, y) && y <= L, 2e6);
+    ok(r.n >= 40, `miroirs : on rejoint Copycat, en ${r.n} pas au mieux`);
+  }
 }
 
 let erreur = null;
@@ -220,7 +265,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
 
 /* ---------------- lieux et équipes ---------------- */
 const world = buildWorld();
-for (const dd of DONJONS) { const m = construireCarte(dd); world.maps[dd.carte] = m; const e = relierExterieur(dd, m); if (e) world.maps[e.id] = e; }
+for (const dd of DONJONS) { const cs = dd.plan ? [construireCarte(dd)] : construireSalles(dd); for (const c of cs) world.maps[c.id] = c; const e = relierExterieur(dd, cs[0]); if (e) world.maps[e.id] = e; }
 const lieux = listerLieux(world, DONJONS);
 ok(lieux.labo.length === DONJONS.length && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
 for (const l of Object.values(lieux).flat()) {

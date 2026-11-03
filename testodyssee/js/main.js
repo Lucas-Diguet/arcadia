@@ -54,13 +54,17 @@ async function boot() {
   const lieux = listerLieux(world, DONJONS);
   window.__testody = { game, world, view, donjons, lieux };
 
+  // vue : 1 normale, plus grand = de plus haut (on dessine plus de pixels, tout paraît plus petit)
+  let vue = 1;
   const resize = () => {
-    const scale = Math.max(1, Math.round(innerHeight / 400));
+    const base = Math.max(1, Math.round(innerHeight / 400));
+    const scale = vue === 1 ? base : base >= 2 ? Math.max(1, Math.round(base / vue)) : base / vue;
     renderer.setSize(Math.ceil(innerWidth / scale), Math.ceil(innerHeight / scale), false); view.resize(Math.ceil(innerWidth / scale), Math.ceil(innerHeight / scale));
     document.documentElement.style.setProperty('--px', Math.max(2, Math.round(innerHeight / 270)) + 'px');
     document.documentElement.style.setProperty('--bp', (innerHeight / 192) + 'px');
   };
   addEventListener('resize', resize); resize();
+  game.onVue = (k) => { vue = k; resize(); };
   const unlock = () => sound.init();
   addEventListener('keydown', unlock); addEventListener('pointerdown', unlock);
   ui.helpButton();
