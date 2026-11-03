@@ -50,3 +50,13 @@
   animation: raid-bandeau 1.5s ease-out forwards; }
 .raid-bandeau small { display: block; font-size: .42em; color: #fff; letter-spacing: 0; text-shadow: 0 calc(var(--bp) * 1) 0 #000; }
 @keyframes raid-bandeau { 0% { opacity: 0; transform: translate(-50%, -50%) scale(1.8); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%) scale(.96); } }
+/* poste de contrôle de la mine : le plan du niveau en direct */
+.mine-plan { position: absolute; left: calc(var(--px) * 4); top: calc(var(--px) * 4); z-index: 12; padding: calc(var(--px) * 2); max-width: 54vw; max-height: 90vh; display: flex; flex-direction: column; gap: calc(var(--px) * 1.5); }
+.mine-plan canvas { image-rendering: pixelated; width: 100%; height: auto; max-height: 80vh; object-fit: contain; border-radius: calc(var(--px) * 1); }
+.mine-titre { font-size: calc(var(--px) * 3.4); }
+.mine-leg i { display: inline-block; width: 1em; height: 1em; margin: 0 .25em 0 .6em; vertical-align: middle; border-radius: 2px; }
+.mine-menu { position: absolute !important; left: auto !important; right: calc(var(--px) * 4) !important; top: calc(var(--px) * 4) !important; bottom: auto !important; transform: none !important; max-width: 40vw; }
+/* train fantôme : l'horloge */
+.train-horloge { position: absolute; left: 50%; top: calc(var(--px) * 3); font-weight: 700; transform: translateX(-50%); z-index: 11; display: flex; gap: calc(var(--px) * 4); padding: calc(var(--px) * 1.5) calc(var(--px) * 4); background: rgba(14, 18, 28, .85); color: #dfe8ff; border: calc(var(--px) * .6) solid #6ad0a0; border-radius: calc(var(--px) * 2); font-size: calc(var(--px) * 5); pointer-events: none; }
+.train-horloge b { color: #9cffc8; font-variant-numeric: tabular-nums; }
+.train-horloge .urgent b { color: #ff7a6a; }

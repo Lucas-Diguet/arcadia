@@ -35,7 +35,7 @@ function saisirCode(ui, titre, n) {
 
 export const Voies = {
   poserObjetsVoies(d, m) {
-    if (!estVoies(d)) return;
+    if (!estVoies(d) && !d.caisses) return;
     for (const [c, l] of Object.entries(m.donjon.plan.objets)) {
       const o = d.objets[c];
       if (!TYPES.has(o.type)) continue;

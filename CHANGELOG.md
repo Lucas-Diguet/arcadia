@@ -1,5 +1,16 @@
 # Journal des versions — Arcadia
 
+## 3.94 — 3 novembre 2026
+- **TestOdyssée** — Nouveau donjon : la Mine Effondrée, de 2 à 4 joueurs, avec une équipe de niveau 35.
+  - Un joueur reste au poste de contrôle : il voit le plan de chaque niveau et où sont ses coéquipiers, ouvre les barrières et fait descendre la cage. Certaines barrières en referment une autre.
+  - Les autres descendent dans le noir. Ils voient les plafonds fissurés, mais pas le plan : passer dessous fait mal et bouche la galerie pour tout le monde.
+  - Au fond, tout le monde se retrouve, le joueur du poste compris, pour affronter Galeking.
+- **TestOdyssée** — Nouveau donjon : le Train Fantôme, en groupe, avec une équipe de niveau 35.
+  - Le train part quand tout le monde est sur les dalles de la voiture de queue. L'horloge en haut de l'écran annonce la prochaine gare et le terminus.
+  - À chaque gare, les voitures de queue se décrochent. Si vous y êtes encore, vous sautez sur la voie et devez rattraper le train à pied.
+  - En chemin : des dresseurs fantômes qui guettent, une voiture-restaurant pour se soigner (le service prend du temps), une voiture qui s'ouvre à deux et un fourgon encombré de bagages.
+  - Battez le Contrôleur Fantôme dans la locomotive avant le terminus.
+
 ## 3.93 — 3 novembre 2026
 - **TestOdyssée** — Les dalles de la Pyramide de l'Ascension sont de nouveau visibles sur le sol de sable.
 - **TestOdyssée** — En mode test, l'encadré du donjon indique qu'une seule dalle suffit.

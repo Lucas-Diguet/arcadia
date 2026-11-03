@@ -272,6 +272,28 @@ du Sac (poches Soins et Baies) sont mis de côté en entrant et rendus en sortan
 
 Les déconnexions en cours d'ascension ne sont pas encore gérées (un joueur parti compte comme éliminé).
 
+### La Mine Effondrée
+
+`js/donjons/mine.js` (plans), `js/donjon/mine.js` (mécaniques), de 2 à 4 joueurs, équipe de niveau 35. Au carreau,
+un joueur prend le poste de contrôle (`type: 'poste'`, un seul à la fois, action `poste`) : il voit le plan du niveau
+en direct (galeries, barrières, cages, ses coéquipiers), ouvre et ferme les barrières (`type: 'barriere'`, `lien` :
+aiguillage qui referme l'autre), et envoie la cage d'un niveau au suivant (`cageVers`). Il ne voit ni les dresseurs
+ni les plafonds fissurés (`~`) : passer dessous coûte un cinquième des PV de chaque Pokémon, fait reculer d'un pas et
+bouche la galerie pour tout le monde. Les niveaux sont générés par `niveau()` (grille de salles reliées par des
+galeries : libre, barrée ou fissurée) ; les tests vérifient qu'il existe toujours un réglage de barrières qui mène à la
+cage sans passer sous une fissure. Au fond, le joueur du poste descend et tout le monde affronte Galeking.
+
+### Le Train Fantôme
+
+`js/donjons/train.js` (voitures), `js/donjon/train.js` (mécaniques), en groupe, équipe de niveau 35. Les dalles de la
+voiture de queue font partir le train ; l'hôte tient l'horloge (`horloge` : une gare toutes les 3 minutes, terminus à
+16), affichée en haut de l'écran. À chaque gare, les voitures de `decroche` se décrochent : qui y est encore saute
+sur la voie ferrée (Pokémon sauvages) et remonte par le marchepied dans la dernière voiture accrochée ; la porte
+arrière de celle-ci est condamnée. En route : dresseurs qui guettent, voiture-restaurant (soin complet contre
+30 secondes d'attente), voiture verrouillée (`requisMax: 2` : deux joueurs sur les dalles, un seul s'il est seul),
+fourgon à bagages (caisses à pousser, `caisses: true`, un PC les remet en place). Le Contrôleur Fantôme attend dans
+la locomotive ; au terminus sans victoire, tout le monde se retrouve sur le quai.
+
 ### Le mode test
 
 Menu MODE TEST (ou `?test` dans l'adresse) : les dalles s'ouvrent avec un seul joueur, toutes les portes des voies

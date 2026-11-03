@@ -351,6 +351,89 @@ for (const d of DONJONS) {
   ok(q2.salles.s8a.donnees.gagnant === A && q2.dehors.includes(B) && !q2.dehors.includes(A), 'pyramide : le duel d\'arène a un seul gagnant, le perdant redescend');
 }
 
+/* ---------------- Mine Effondrée ---------------- */
+{
+  const d = DONJONS.find((q) => q.id === 'mine'), cartes = construireSalles(d), V4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  ok(texteJoueurs(d) === 'Donjon de 2 à 4 joueurs', 'mine : de 2 à 4 joueurs');
+  for (const m of cartes) {
+    const s = d.salles.find((q) => q.carte === m.id); if (!s.niveau) continue;
+    const P = m.donjon.plan, O = P.objets, lettres = Object.keys(O).filter((c) => d.objets[c].type === 'barriere');
+    const fiss = new Set((O['~'] || []).map(([x, y]) => cle(x, y)));
+    const atteint = (ouvertes, eviter) => {
+      const ferme = new Set(lettres.filter((c) => !ouvertes.has(c)).flatMap((c) => O[c].map(([x, y]) => cle(x, y))));
+      const sol = new Set(P.sol.map(([x, y]) => cle(x, y))), vu = new Set([cle(...P.depart)]), f = [P.depart];
+      const bloque = (x, y) => !sol.has(cle(x, y)) || ferme.has(cle(x, y)) || (eviter && fiss.has(cle(x, y))) || P.decor.some(([, a, b]) => a === x && b === y) || Object.values(P.pnj).some(([[a, b]]) => a === x && b === y);
+      while (f.length) { const [x, y] = f.shift(); for (const [dx, dy] of V4) { const k = cle(x + dx, y + dy); if (vu.has(k) || bloque(x + dx, y + dy)) continue; vu.add(k); f.push([x + dx, y + dy]); } }
+      return vu;
+    };
+    const cage = (vu) => O.c.some(([x, y]) => vu.has(cle(x, y)));
+    ok(!cage(atteint(new Set(), true)), `mine : ${s.nom}, barrières fermées, la cage est hors d'atteinte (sans passer sous un plafond fissuré)`);
+    ok(cage(atteint(new Set(lettres), false)), `mine : ${s.nom}, barrières ouvertes, on atteint la cage`);
+    // un réglage des barrières (aiguillages compris) mène à la cage sans passer sous un plafond fissuré
+    const permis = (set) => [...set].every((c) => !d.objets[c].lien || !set.has(d.objets[c].lien));
+    let sur = 0, fissuresUtiles = false;
+    for (let k = 0; k < 1 << lettres.length; k++) {
+      const set = new Set(lettres.filter((_, i) => k & (1 << i))); if (!permis(set)) continue;
+      if (cage(atteint(set, true))) sur++;
+      else if (cage(atteint(set, false))) fissuresUtiles = true;
+    }
+    ok(sur > 0, `mine : ${s.nom}, il existe un chemin sûr avec les bonnes barrières (${sur} réglages)`);
+    ok(fissuresUtiles, `mine : ${s.nom}, certains chemins passent sous un plafond fissuré`);
+    ok(lettres.some((c) => d.objets[c].lien), `mine : ${s.nom}, au moins un aiguillage`);
+    const tout = atteint(new Set(lettres), false);
+    for (const [k, [[x, y]]] of Object.entries(P.pnj)) ok(V4.some(([dx, dy]) => tout.has(cle(x + dx, y + dy))), `mine : ${s.nom}, on peut atteindre ${k}`);
+    ok(m.dark === 'arene' && P.sol.length > 600, `mine : ${s.nom}, grand niveau dans le noir`);
+  }
+  ok(d.salles.filter((q) => q.cageVers).every((q) => d.salles.some((x) => x.id === q.cageVers)), 'mine : chaque cage mène quelque part');
+  const e = nouvelEtat(d);
+  const r1 = appliquer(d, e, '1', { a: 'poste', salle: 'm0' }), r2 = appliquer(d, e, '2', { a: 'poste', salle: 'm0' });
+  appliquer(d, e, '1', { a: 'sortie' });
+  ok(r1.ok && !r2.ok && r2.why === 'pris' && !e.salles.m0.donnees.poste, 'mine : un seul joueur au poste, qui le lâche en partant');
+}
+
+/* ---------------- Train Fantôme ---------------- */
+{
+  const d = DONJONS.find((q) => q.id === 'train'), cartes = construireSalles(d), M = Object.fromEntries(cartes.map((m) => [m.salle, m])), V4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const voitures = d.salles.filter((q) => /^v\d/.test(q.id)).map((q) => q.id);
+  ok(d.horloge.decroche.flat().every((id, i, l) => voitures.indexOf(id) === i), 'train : les voitures se décrochent par la queue, dans l\'ordre');
+  ok(d.horloge.decroche.length * d.horloge.gare < d.horloge.terminus && d.gares.length >= d.horloge.decroche.length, 'train : chaque gare a son nom, le terminus vient après la dernière');
+  ok(voitures.every((id, i) => (i < voitures.length - 1 ? M[id].donjon.versSuivante?.map === M[voitures[i + 1]].id : M[id].donjon.versSuivante?.map === M.loco.id)), 'train : chaque voiture mène à la suivante, la dernière à la locomotive');
+  ok(!M.voie.donjon.versSuivante && M.voie.donjon.plan.objets.M?.length === 1, 'train : la voie ferrée se quitte par le marchepied');
+  for (const m of cartes) {
+    const P = m.donjon.plan;
+    for (const l of Object.values(P.portes)) for (const [x, y] of l) ouvrir(m, x, y);
+    if (P.suivante) passageSuivant(m, true);
+    const caisses = new Set((P.objets.L || []).map(([x, y]) => cle(x, y)));
+    for (const k of caisses) ouvrir(m, ...k.split(',').map(Number));
+    const vu = m.reach(...P.depart), at = (x, y) => vu[y * m.w + x];
+    if (P.suivante) ok(at(...P.suivante), `train : ${m.salle}, on va de l'entrée à la sortie`);
+    for (const [k, [[x, y]]] of Object.entries(P.pnj)) ok(V4.some(([dx, dy]) => at(x + dx, y + dy)), `train : ${m.salle}, on peut parler à ${k}`);
+    for (const c of ['K', 'M', 'R']) for (const [x, y] of P.objets[c] || []) ok(V4.some(([dx, dy]) => at(x + dx, y + dy)), `train : ${m.salle}, on atteint ${c}`);
+  }
+  // fourgon à bagages : les caisses barrent la route, on passe en les poussant
+  {
+    const m = construireSalles(d).find((q) => q.salle === 'v5'), P = m.donjon.plan, c0 = new Set(P.objets.L.map(([x, y]) => cle(x, y)));
+    passageSuivant(m, true);
+    const mur = (x, y) => !m.in(x, y) || !walkable(m.get(x, y)) && !c0.has(cle(x, y));
+    const but = cle(...P.suivante);
+    const resoudre = (pousser) => {
+      const vu = new Set([cle(...P.depart) + '|' + [...c0].sort()]), f = [[P.depart, c0]];
+      while (f.length) {
+        const [[x, y], cs] = f.shift(); if (cle(x, y) === but) return true;
+        for (const [dx, dy] of V4) {
+          const nx = x + dx, ny = y + dy; if (mur(nx, ny)) continue; let n = cs;
+          if (cs.has(cle(nx, ny))) { if (!pousser) continue; const bx = nx + dx, by = ny + dy; if (mur(bx, by) || cs.has(cle(bx, by)) || cle(bx, by) === but) continue; n = new Set(cs); n.delete(cle(nx, ny)); n.add(cle(bx, by)); }
+          const k = cle(nx, ny) + '|' + [...n].sort(); if (!vu.has(k)) { vu.add(k); f.push([[nx, ny], n]); }
+        }
+      }
+      return false;
+    };
+    ok(!resoudre(false) && resoudre(true), 'train : fourgon à bagages, il faut pousser les caisses pour passer');
+  }
+  ok(requisSalle(d, d.salles.find((q) => q.id === 'v4'), 2, 1) === 1 && requisSalle(d, d.salles.find((q) => q.id === 'v4'), 2, 3) === 2, 'train : la voiture verrouillée demande deux voyageurs (un seul s\'il est seul)');
+  for (const p of Object.values(d.pnj)) for (const [sp] of p.equipe || []) ok(!!SPECIES[sp], `train : ${p.nom}, espèce ${sp}`);
+}
+
 /* ---------------- panneau d'entrée (standard de tous les donjons) ---------------- */
 ok(texteJoueurs({ joueurs: { mode: 'solo' } }) === 'Donjon solo' && texteJoueurs({ joueurs: { mode: 'exact', n: 4 } }) === 'Donjon à 4 joueurs' && /solo ou en groupe \(3 joueurs recommandés\)/.test(texteJoueurs({ joueurs: { mode: 'groupe', n: 3 } })), 'panneau : les trois façons de dire le nombre de joueurs');
 for (const d of DONJONS) {

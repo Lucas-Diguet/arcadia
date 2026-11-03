@@ -15,6 +15,8 @@ import { Mecaniques } from './mecaniques.js';
 import { Miroirs } from './miroirs.js';
 import { Voies } from './voies.js';
 import { Pyramide } from './pyramide.js';
+import { Mine } from './mine.js';
+import { Train } from './train.js';
 import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 
@@ -37,7 +39,7 @@ export class Donjons {
       for (const c of cartes) game.world.maps[c.id] = c;
       const dehors = relierExterieur(d, m);
       if (dehors) game.world.maps[dehors.id] = dehors;
-      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); }
+      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); }
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -103,6 +105,8 @@ export class Donjons {
     this.appliquerMiroirs(d);
     this.appliquerVoies(d);
     this.appliquerPyramide(d);
+    this.appliquerMine(d);
+    this.appliquerTrain(d);
     if (ici) g.refreshNpcs();
     const vu = this.vus[id];
     // premier état connu : ce qui est déjà fait ne rejoue pas de scène ; nouvelle descente : tout se rejoue
@@ -260,12 +264,14 @@ export class Donjons {
     this.tickMiroirs(dt);
     this.tickVoies(dt);
     this.tickPyramide(dt);
+    this.tickMine(dt);
+    this.tickTrain(dt);
     this.panT = (this.panT || 0) - dt;
     if (g.state && g.mapObj !== this.carteVue) {
       const avant = this.carteVue && [...this.defs.values()].find((q) => this.estDans(q, this.carteVue.id));
       if (avant && !this.estDans(avant, g.mapObj.id)) this.sortir(avant);
       const apres = [...this.defs.values()].find((q) => this.estDans(q, g.mapObj.id));
-      if (apres && apres !== avant) this.entreePyramide(apres).catch((e) => console.error(e));
+      if (apres && apres !== avant) { this.entreePyramide(apres).catch((e) => console.error(e)); this.entreeTrain(apres).catch((e) => console.error(e)); }
     }
     if (g.state && (g.mapObj !== this.carteVue || this.panT <= 0)) { this.carteVue = g.mapObj; this.panT = 0.5; this.majPanneau(); }
     if (this.taches.length && g.state && !g.busy && !g.player.move && g.input.free && !g.bv.alive) {
@@ -274,14 +280,17 @@ export class Donjons {
     }
   }
   verifierDalles(d) {
-    const e = this.etats[d.id], s = d.salles.find((q) => q.type === 'dalles');
-    if (!s || e.salles[s.id].faite) return;
-    // salles séparées : les dalles sont sur la carte de leur salle
-    const g = this.game, carte = s.carte || d.carte, P = g.world.maps[carte].donjon.plan, sur = new Set(P.dalles.map(([x, y]) => x + ',' + y));
-    let n = 0;
-    if (g.state && g.mapObj.id === carte && !g.player.move && sur.has(g.player.x + ',' + g.player.y)) n++;
-    for (const o of g.link?.others.values() || []) if (o.map === carte && sur.has(o.x + ',' + o.y)) n++;
-    this.traiter(d.id, this.moi, { a: 'dalles', salle: s.id, n, requis: this.game.modeTest ? 1 : requisSalle(d, s, P.dalles.length, this.presents(d)) });
+    const e = this.etats[d.id], g = this.game;
+    for (const s of d.salles) {
+      if (s.type !== 'dalles' || e.salles[s.id].faite) continue;
+      // salles séparées : les dalles sont sur la carte de leur salle
+      const carte = s.carte || d.carte, P = g.world.maps[carte].donjon.plan, sur = new Set(P.dalles.map(([x, y]) => x + ',' + y));
+      let n = 0;
+      if (g.state && g.mapObj.id === carte && !g.player.move && sur.has(g.player.x + ',' + g.player.y)) n++;
+      for (const o of g.link?.others.values() || []) if (o.map === carte && sur.has(o.x + ',' + o.y)) n++;
+      if (!n && !e.salles[s.id].dalles) continue;
+      this.traiter(d.id, this.moi, { a: 'dalles', salle: s.id, n, requis: this.game.modeTest ? 1 : requisSalle(d, s, P.dalles.length, this.presents(d)) });
+    }
   }
 
   majPanneau() {
@@ -310,6 +319,8 @@ export class Donjons {
       else if (s.type === 'voies') txt = voie ? d.voies[voie] : 'choisis ta porte';
       else if (s.type === 'menteurs') txt = 'trouve les sincères';
       else if (this.textePyramide(d, s)) txt = this.textePyramide(d, s);
+      if (this.texteMine(d, s)) txt = this.texteMine(d, s);
+      if (this.texteTrain(d, s)) txt = this.texteTrain(d, s);
       if (s.type === 'voies' && !voie) { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       if (s.type === 'libre') { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
@@ -394,4 +405,4 @@ export class Donjons {
   }
 }
 
-Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide);
+Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train);

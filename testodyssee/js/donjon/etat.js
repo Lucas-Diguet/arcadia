@@ -243,7 +243,16 @@ export function appliquer(def, e, qui, m, o = {}) {
       if (s.type === 'sommet') { e.fini = true; if (S.donnees.gagnant) e.vainqueurs = [S.donnees.gagnant]; }
       return res(true, true);
     }
-    case 'equipe': return res(true, false);   // l'équipe du joueur, gardée par l'hôte (reflets des arènes)
+    case 'equipe': return res(true, false);
+    case 'poste': {
+      // poste de contrôle de la mine : un seul joueur à la fois
+      const S = e.salles[m.salle]; if (!S) return res(false, false, 'inconnu');
+      if (m.lacher) { if (S.donnees.poste !== qui) return res(true, false); delete S.donnees.poste; return res(true, true); }
+      if (S.donnees.poste && S.donnees.poste !== qui && !m.test) return res(false, false, 'pris');
+      if (S.donnees.poste === qui) return res(true, false);
+      S.donnees.poste = qui;
+      return res(true, true);
+    }   // l'équipe du joueur, gardée par l'hôte (reflets des arènes)
     case 'elimine': {
       if (e.dehors.includes(qui)) return res(true, false);
       e.dehors.push(qui);
@@ -257,6 +266,7 @@ export function appliquer(def, e, qui, m, o = {}) {
         for (const [p, c] of Object.entries(S.cles)) if (c.a === qui && !c.mise) { delete S.cles[p]; change = true; }
         if (!S.combat && S.prets.includes(qui)) { S.prets = S.prets.filter((q) => q !== qui); change = true; }
         for (const [k, l] of Object.entries(S.donnees.attente || {})) if (l.includes(qui)) { S.donnees.attente[k] = l.filter((q) => q !== qui); change = true; }
+        if (S.donnees.poste === qui) { delete S.donnees.poste; change = true; }
       }
       return res(true, change);
     }
@@ -276,6 +286,7 @@ export const requisDalles = (nbDalles, presents) => Math.max(1, Math.min(nbDalle
  */
 export function requisSalle(def, salle, nbDalles, presents) {
   if (salle.requis) return salle.requis;
+  if (salle.requisMax) return Math.max(1, Math.min(salle.requisMax, presents));
   if (def.joueurs?.mode === 'exact') return def.joueurs.n;
   if (def.joueurs?.mode === 'entre') return Math.max(def.joueurs.min, Math.min(def.joueurs.max, nbDalles, presents));
   return requisDalles(nbDalles, presents);
