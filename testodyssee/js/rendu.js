@@ -28,7 +28,8 @@ export function brancherRendu() {
   const carte = P.setMap;
   P.setMap = function (map) {
     carte.call(this, map);
-    if (map.style === 'clair') this.scene.background = new THREE.Color(CLAIR.fond);
+    // style clair : murs droits et blancs, sans les gradins de roche des grottes d'Odyssée
+    if (map.style === 'clair') { this.tiers = null; this.scene.background = new THREE.Color(CLAIR.fond); }
   };
 }
 

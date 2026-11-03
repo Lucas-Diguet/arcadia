@@ -10,8 +10,9 @@ import { isGrassEnc } from '../world/tiles.js';
 import { partyScreen, cardScreen, trainerCard, TYPE_FR } from '../ui/screens.js';
 import { BADGES } from '../world/region.js';
 import { el, esc, wait } from '../ui/ui.js';
+import { tenueCode, tenueDecode, composer } from '../render/tenue.js';
 
-const WALK = 0.26, RUN = 0.135;
+const WALK = 0.20, RUN = 0.068;
 const trainerSprite = (gender) => (gender === 'f' ? 'serena' : 'calem');
 
 export function installSocial(game) {
@@ -25,8 +26,8 @@ export function installSocial(game) {
     const p = game.player, st = game.state;
     return {
       map: game.mapObj.id, x: p.move ? p.move.tx : p.x, y: p.move ? p.move.ty : p.y, dir: p.dir,
-      run: game.input.isDown('run'), busy: !!(game.busy || !game.input.free || game.bv.alive || game.session),
-      name: st.name, gender: st.gender,
+      run: !!(game.autoRun || game.input.isDown('run')), busy: !!(game.busy || !game.input.free || game.bv.alive || game.session),
+      name: st.name, gender: st.gender, tn: st.tenue ? tenueCode(st.tenue) : undefined,
     };
   };
   link.onRequest = (from, m) => onRequest(game, from, m);
@@ -55,7 +56,11 @@ export function installSocial(game) {
       if (o.map !== mapId) continue;
       const id = 'peer:' + o.id; seen.add(id);
       const a = v.actor(id, {});
-      v.setFrame(a, o.gender === 'f' ? 'green' : 'red', o.dir, o.walking ? (o.step % 2 ? 1 : 2) : 0);
+      // sa tenue, composée sur le modèle de base (sinon le dresseur ou la dresseuse par défaut)
+      let spr = o.gender === 'f' ? 'green' : 'red';
+      const T = o.tn && tenueDecode(o.tn), b = T && v.baseDe?.(T.genre);
+      if (b) spr = v.pairSprite(o.tn, () => composer(b.src, b.sx, b.sy, T)) || (T.genre === 'f' ? 'green' : 'red');
+      v.setFrame(a, spr, o.dir, o.walking ? (o.step % 2 ? 1 : 2) : 0);
       v.place(a, o.dx, o.dy, 0, isGrassEnc(game.mapObj.get(Math.round(o.dx), Math.round(o.dy))) && !o.walking);
     }
     for (const id of [...v.actors.keys()]) if (id.startsWith('peer:') && !seen.has(id)) v.removeActor(id);
@@ -96,8 +101,17 @@ export async function talkToPeer(game, peer) {
   if (c !== 0 && c !== 1) return;
   if (!st.party.length) { await ui.say('Il te faut d\'abord un Pokémon !'); return; }
   const kind = c === 0 ? 'trade' : 'battle';
+  if (kind === 'trade' && !st.badges?.[3]) {
+    await ui.say('Les échanges sont bloqués tant que tu n\'as pas obtenu le 4e Badge (Badge Pétale de l\'Arène de Floralia) !');
+    return;
+  }
+  const myCap = game.levelCap ? game.levelCap() : 100;
+  if (kind === 'trade' && !st.party.some((m) => m.lvl <= myCap)) {
+    await ui.say(`Aucun de tes Pokémon ne respecte ta limite de niveau actuelle (N.${myCap}) pour pouvoir échanger.`);
+    return;
+  }
   const rid = newId();
-  link.send(peer.id, { t: 'req', kind, rid, name: st.name, gender: st.gender });
+  link.send(peer.id, { t: 'req', kind, rid, name: st.name, gender: st.gender, cap: myCap });
   const box = ui.dialogBox();
   ui.typePage(box, `Tu proposes ${kind === 'trade' ? 'un échange' : 'un combat'} à ${peer.name}… (Échap : annuler)`, { last: true });
   await wait(30);
@@ -111,12 +125,16 @@ export async function talkToPeer(game, peer) {
   }
   if (r.t === 'left') { await ui.say(`${peer.name} a quitté la partie.`); return; }
   if (!r.ok) {
-    const why = { busy: `${peer.name} est occupé${peer.gender === 'f' ? 'e' : ''} pour le moment.`, nomon: `${peer.name} n'a pas encore de Pokémon.` }[r.why] || `${peer.name} refuse.`;
+    const why = {
+      busy: `${peer.name} est occupé${peer.gender === 'f' ? 'e' : ''} pour le moment.`,
+      nomon: `${peer.name} n'a pas encore de Pokémon.`,
+      nobadge: `${peer.name} n'a pas encore le 4e Badge (Badge Pétale) pour pouvoir échanger.`,
+    }[r.why] || `${peer.name} refuse.`;
     await ui.say(why); return;
   }
   game.session = rid;
   try {
-    if (kind === 'trade') await tradeSession(game, peer.id, peer.name, rid);
+    if (kind === 'trade') await tradeSession(game, peer.id, peer.name, rid, r.cap || 100);
     else await battleSession(game, peer.id, peer.name, peer.gender, rid, true);
   } finally { game.session = null; }
 }
@@ -131,7 +149,7 @@ async function showCard(game, peer) {
   // données venues d'un autre joueur : on ne garde que ce qu'on sait afficher
   const card = {
     name: String(c.name || peer.name).slice(0, 12), id: (c.id | 0) % 100000, gender: c.gender === 'f' ? 'f' : 'm', dex: c.dex | 0, seen: c.seen | 0, time: +c.time || 0, champion: !!c.champion,
-    badges: Array.isArray(c.badges) ? c.badges.slice(0, 8).map(Boolean) : [],
+    badges: Array.isArray(c.badges) ? c.badges.slice(0, 15).map(Boolean) : [],
     team: Array.isArray(c.team) ? c.team.slice(0, 6).filter((q) => SPECIES[q?.sp]).map((q) => ({ sp: q.sp, lvl: Math.max(1, Math.min(100, q.lvl | 0)), nick: q.nick ? String(q.nick).slice(0, 12) : null })) : [],
   };
   game.ui.sound.sfx('select');
@@ -144,6 +162,8 @@ async function onRequest(game, from, m) {
   const free = st && game.player && !game.busy && game.input.free && !game.bv.alive && !game.session && !game.player.move;
   if (!free) { link.send(from, { t: 'rep', rid: m.rid, ok: false, why: 'busy' }); return; }
   if (!st.party.length) { link.send(from, { t: 'rep', rid: m.rid, ok: false, why: 'nomon' }); return; }
+  if (m.kind === 'trade' && !st.badges?.[3]) { link.send(from, { t: 'rep', rid: m.rid, ok: false, why: 'nobadge' }); return; }
+  const myCap = game.levelCap ? game.levelCap() : 100;
   const name = String(m.name || link.nameOf(from)).slice(0, 12);
   game.busy = true; game.session = m.rid;
   try {
@@ -159,10 +179,10 @@ async function onRequest(game, from, m) {
     const yes = await ui.yesNo(m.kind === 'trade' ? `${name} te propose un échange de Pokémon. Accepter ?` : `${name} te défie en combat ! Accepter ?`, { speaker: name });
     if (gone) { ui.closeDialog(); await ui.say(`${name} a retiré sa proposition.`); return; }
     link.abort(from); void cancel;
-    link.send(from, { t: 'rep', rid: m.rid, ok: yes, why: yes ? null : 'no' });
+    link.send(from, { t: 'rep', rid: m.rid, ok: yes, why: yes ? null : 'no', cap: myCap });
     if (!yes) return;
     const peer = link.others.get(String(from));
-    if (m.kind === 'trade') await tradeSession(game, from, name, m.rid);
+    if (m.kind === 'trade') await tradeSession(game, from, name, m.rid, m.cap || 100);
     else await battleSession(game, from, name, m.gender || peer?.gender, m.rid, false);
   } finally { game.busy = false; game.session = null; }
 }
@@ -182,8 +202,9 @@ async function waitFor(game, from, match, text, ms = 180000) {
 /* ======================================================================
    Échange
    ====================================================================== */
-async function tradeSession(game, from, name, rid) {
+async function tradeSession(game, from, name, rid, peerCap = 100) {
   const ui = game.ui, link = game.link, st = game.state;
+  const myCap = game.levelCap ? game.levelCap() : 100;
   const M = (step) => (m) => m.t === 'tr' && m.rid === rid && (m.step === step || m.step === 'cancel');
   const ended = async (r) => {
     if (r.t === 'abort') { link.send(from, { t: 'tr', rid, step: 'cancel' }); await ui.say('Échange annulé.'); }
@@ -192,8 +213,12 @@ async function tradeSession(game, from, name, rid) {
     else await ui.say(`${name} a annulé l'échange.`);
   };
 
-  await ui.say(`Échange avec ${name} : choisis le Pokémon que tu proposes.`);
-  const idx = await partyScreen(game, { mode: 'pick', prompt: 'Quel Pokémon proposer ?' });
+  await ui.say(`Échange avec ${name} : choisis le Pokémon que tu proposes (Niv. max autorisé : N.${Math.min(myCap, peerCap)}).`);
+  const idx = await partyScreen(game, {
+    mode: 'pick',
+    prompt: `Quel Pokémon proposer ? (Max N.${Math.min(myCap, peerCap)})`,
+    filter: (m) => (m.lvl > myCap ? ` > Niv. max (N.${myCap})` : m.lvl > peerCap ? ` > Niv. max ${name} (N.${peerCap})` : null),
+  });
   if (idx < 0) { link.send(from, { t: 'tr', rid, step: 'cancel' }); await ui.say('Échange annulé.'); return; }
   const mine = st.party[idx];
   link.send(from, { t: 'tr', rid, step: 'pick', mon: JSON.parse(JSON.stringify(mine)) });
@@ -202,6 +227,11 @@ async function tradeSession(game, from, name, rid) {
   if (r1.step !== 'pick') return ended(r1);
   if (!validMon(r1.mon)) { link.send(from, { t: 'tr', rid, step: 'cancel' }); await ui.say('Le Pokémon reçu est illisible. Échange annulé.'); return; }
   const theirs = r1.mon;
+  if (theirs.lvl > myCap || theirs.lvl > peerCap) {
+    link.send(from, { t: 'tr', rid, step: 'cancel' });
+    await ui.say(`Échange interdit : ${monName(theirs)} (N.${theirs.lvl}) dépasse la limite de niveau actuelle (N.${Math.min(myCap, peerCap)}) !`);
+    return;
+  }
 
   // les deux Pokémon face à face
   const s = el('div', 'screen trade-scr');

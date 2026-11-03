@@ -4,7 +4,9 @@ Un jeu du Hub pour essayer des villes, des routes et des donjons avant de les me
 une équipe prête, et on y apparaît directement, seul ou à plusieurs. Rien n'est sauvegardé : la vraie partie d'Odyssée
 n'est jamais touchée.
 
-Le labo réutilise le moteur et les images d'Odyssée (`../odyssee/js/`, `../odyssee/img/`) sans les copier. Ce qui est
+Le labo réutilise le moteur et les images d'Odyssée (`../odyssee/js/`, `../odyssee/img/`) sans les copier. La page déclare
+`<base href="../odyssee/">` : les adresses relatives des écrans d'Odyssée (`img/hud/…`, `img/battle/…`) marchent
+telles quelles, et les fichiers du labo sont appelés en `../testodyssee/…`. Ce qui est
 propre au labo :
 
 ```

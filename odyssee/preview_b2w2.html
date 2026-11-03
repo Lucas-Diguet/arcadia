@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Preview Pixel-Art Pokémon B2W2 UI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="odyssee.css">
+<style>
+  :root { --px: 3px; }
+  body {
+    background: #06090e;
+    color: #fff;
+    padding: 24px;
+    margin: 0;
+    font-family: 'Chakra Petch', 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    overflow-y: auto;
+  }
+  .preview-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .preview-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #00f0ff;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 2px solid #14283c;
+    padding-bottom: 6px;
+  }
+  .preview-box {
+    position: relative;
+    width: 960px;
+    height: 540px;
+    background: #0a0e16;
+    border: 2px solid #20344c;
+    overflow: hidden;
+  }
+</style>
+</head>
+<body>
+
+  <!-- 1. START MENU (PAUSE AVEC X - SANS SAUVER) -->
+  <div class="preview-section">
+    <div class="preview-title">1. MENU PAUSE (TOUCHE X) — OPTION SAUVEGARDER RETIRÉE & STYLE PIXEL ART</div>
+    <div class="preview-box" style="height: 360px; background: url('img/battle/bg_grass.png') center/cover;">
+      <div class="list startmenu" style="display: flex;">
+        <div class="list-title">MENU</div>
+        <div class="list-items">
+          <div class="list-row on"><span class="cur">▶</span><span class="lbl">POKéDEX</span></div>
+          <div class="list-row"><span class="cur">▶</span><span class="lbl">ÉQUIPE</span></div>
+          <div class="list-row"><span class="cur">▶</span><span class="lbl">SAC</span></div>
+          <div class="list-row"><span class="cur">▶</span><span class="lbl">QUÊTES</span></div>
+          <div class="list-row"><span class="cur">▶</span><span class="lbl">RED</span></div>
+          <div class="list-row"><span class="cur">▶</span><span class="lbl">CARTE</span></div>
+          <div class="list-row"><span class="cur">▶</span><span class="lbl">CODE</span></div>
+          <div class="list-row"><span class="cur">▶</span><span class="lbl">OPTIONS</span></div>
+          <div class="list-row"><span class="cur">▶</span><span class="lbl">FERMER</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ÉCRAN D'ÉQUIPE PIXEL-ART AUTHENTIQUE -->
+  <div class="preview-section">
+    <div class="preview-title">2. ÉCRAN D'ÉQUIPE — PIXEL-ART 16-BIT / 5G AUTHENTIQUE (COINS CRANTÉS, OMBLAGE 1-BIT, SOCLE ISOMÉTRIQUE)</div>
+    <div class="preview-box" style="height: 620px;">
+      <div class="screen party-scr" style="position: relative; width: 100%; height: 100%;">
+        <div class="scr-bar">
+          <div class="scr-bar-left">
+            <img class="scr-bar-ico" src="img/hud/team.png" alt="">
+            <span class="scr-bar-title">ÉQUIPE POKÉMON</span>
+            <span class="scr-bar-sub">5 / 6</span>
+          </div>
+          <div class="scr-bar-right">
+            <span class="scr-cap-badge">NIV. MAX AUTORISÉ : <b>N.21</b> <i>(Marine)</i></span>
+          </div>
+        </div>
+
+        <div class="party-b2w2">
+          <!-- Lead Card -->
+          <div class="pcol-lead">
+            <div class="pslot-lead-card on" data-idx="0">
+              <div class="pslot-lead-top">
+                <div class="pslot-lead-badge-row">
+                  <span class="pslot-star-tag">★ 1 LEADER</span>
+                  <div class="pslot-socket">
+                    <img class="pslot-ball-ico" src="img/battle/poke_ball_32.png" alt="">
+                  </div>
+                </div>
+                <div class="pslot-lead-lvl-row">
+                  <span class="pl">Lv. 18</span>
+                </div>
+              </div>
+              <div class="pslot-lead-pedestal">
+                <div class="pslot-ped-ring"></div>
+                <img class="pslot-lead-spr" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png" alt="">
+              </div>
+              <div class="pslot-lead-info">
+                <div class="pslot-lead-name-row">
+                  <span class="pn">Bulbizarre</span>
+                  <span class="g m">♂</span>
+                </div>
+                <div class="pslot-types">
+                  <span class="pslot-type" style="--tc:#78c850">PLANTE</span>
+                  <span class="pslot-type" style="--tc:#a040a0">POISON</span>
+                </div>
+                <div class="pslot-hp-box">
+                  <div class="hp-b2w2">
+                    <span class="hp-tag">HP</span>
+                    <div class="hp-track"><u style="width:100%;background:#20d860"></u></div>
+                  </div>
+                  <div class="phpn">48 / 48</div>
+                </div>
+                <div class="pexp-b2w2">
+                  <span class="pexp-tag">EXP</span>
+                  <div class="pexp-track"><u style="width:35%"></u></div>
+                  <span class="pexp-val">35%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Secondary Slots -->
+          <div class="pcol-subs">
+            <!-- Slot 2 -->
+            <div class="pslot-sub" data-idx="1">
+              <div class="pslot-sub-left">
+                <div class="pslot-socket">
+                  <img class="pslot-ball-ico" src="img/battle/poke_ball_32.png" alt="">
+                </div>
+                <span class="pslot-sub-num">#2</span>
+                <div class="pslot-sub-ped">
+                  <img class="pslot-sub-spr" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png" alt="">
+                </div>
+              </div>
+              <div class="pslot-sub-mid">
+                <div class="pslot-sub-top">
+                  <span class="pn">Salamèche</span>
+                  <span class="g m">♂</span>
+                </div>
+                <div class="pslot-sub-mid-row">
+                  <div class="pslot-types"><span class="pslot-type" style="--tc:#f08030">FEU</span></div>
+                  <div class="pslot-sub-tags"><span class="pl">Lv. 17</span></div>
+                </div>
+              </div>
+              <div class="pslot-sub-right">
+                <div class="hp-b2w2">
+                  <span class="hp-tag">HP</span>
+                  <div class="hp-track"><u style="width:88%;background:#20d860"></u></div>
+                </div>
+                <div class="phpn">38 / 42</div>
+                <div class="pexp-b2w2">
+                  <span class="pexp-tag">EXP</span>
+                  <div class="pexp-track"><u style="width:62%"></u></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 3 -->
+            <div class="pslot-sub" data-idx="2">
+              <div class="pslot-sub-left">
+                <div class="pslot-socket">
+                  <img class="pslot-ball-ico" src="img/battle/poke_ball_32.png" alt="">
+                </div>
+                <span class="pslot-sub-num">#3</span>
+                <div class="pslot-sub-ped">
+                  <img class="pslot-sub-spr" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png" alt="">
+                </div>
+              </div>
+              <div class="pslot-sub-mid">
+                <div class="pslot-sub-top">
+                  <span class="pn">Carapuce</span>
+                  <span class="g f">♀</span>
+                </div>
+                <div class="pslot-sub-mid-row">
+                  <div class="pslot-types"><span class="pslot-type" style="--tc:#6890f0">EAU</span></div>
+                  <div class="pslot-sub-tags"><span class="pl">Lv. 16</span></div>
+                </div>
+              </div>
+              <div class="pslot-sub-right">
+                <div class="hp-b2w2">
+                  <span class="hp-tag">HP</span>
+                  <div class="hp-track"><u style="width:100%;background:#20d860"></u></div>
+                </div>
+                <div class="phpn">44 / 44</div>
+                <div class="pexp-b2w2">
+                  <span class="pexp-tag">EXP</span>
+                  <div class="pexp-track"><u style="width:80%"></u></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 4 -->
+            <div class="pslot-sub" data-idx="3">
+              <div class="pslot-sub-left">
+                <div class="pslot-socket">
+                  <img class="pslot-ball-ico" src="img/battle/poke_ball_32.png" alt="">
+                </div>
+                <span class="pslot-sub-num">#4</span>
+                <div class="pslot-sub-ped">
+                  <img class="pslot-sub-spr" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png" alt="">
+                </div>
+              </div>
+              <div class="pslot-sub-mid">
+                <div class="pslot-sub-top">
+                  <span class="pn">Pikachu</span>
+                  <span class="g m">♂</span>
+                </div>
+                <div class="pslot-sub-mid-row">
+                  <div class="pslot-types"><span class="pslot-type" style="--tc:#f8d030">ÉLECTRIK</span></div>
+                  <div class="pslot-sub-tags"><span class="pl">Lv. 19</span></div>
+                </div>
+              </div>
+              <div class="pslot-sub-right">
+                <div class="hp-b2w2">
+                  <span class="hp-tag">HP</span>
+                  <div class="hp-track"><u style="width:92%;background:#20d860"></u></div>
+                </div>
+                <div class="phpn">35 / 38</div>
+                <div class="pexp-b2w2">
+                  <span class="pexp-tag">EXP</span>
+                  <div class="pexp-track"><u style="width:15%"></u></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 5 (K.O.) -->
+            <div class="pslot-sub ko" data-idx="4">
+              <div class="pslot-sub-left">
+                <div class="pslot-socket">
+                  <img class="pslot-ball-ico" src="img/battle/poke_ball_32.png" alt="">
+                </div>
+                <span class="pslot-sub-num">#5</span>
+                <div class="pslot-sub-ped">
+                  <img class="pslot-sub-spr" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/16.png" alt="">
+                </div>
+              </div>
+              <div class="pslot-sub-mid">
+                <div class="pslot-sub-top">
+                  <span class="pn">Roucool</span>
+                  <span class="g f">♀</span>
+                </div>
+                <div class="pslot-sub-mid-row">
+                  <div class="pslot-types"><span class="pslot-type" style="--tc:#a8a878">NORMAL</span><span class="pslot-type" style="--tc:#a890f0">VOL</span></div>
+                  <div class="pslot-sub-tags"><span class="st" style="background:#c03838">K.O.</span><span class="pl">Lv. 15</span></div>
+                </div>
+              </div>
+              <div class="pslot-sub-right">
+                <div class="hp-b2w2">
+                  <span class="hp-tag">HP</span>
+                  <div class="hp-track"><u style="width:0%;background:#e03030"></u></div>
+                </div>
+                <div class="phpn">0 / 40</div>
+                <div class="pexp-b2w2">
+                  <span class="pexp-tag">EXP</span>
+                  <div class="pexp-track"><u style="width:0%"></u></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 6 (Empty) -->
+            <div class="pslot-sub empty">
+              <div class="pslot-sub-left">
+                <div class="pslot-socket empty"></div>
+                <span class="pslot-sub-num">#6</span>
+              </div>
+              <div class="pslot-empty-lbl">EMPLACEMENT DISPONIBLE #6</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pfoot">
+          <div class="box phelp">Sélectionne un Pokémon (Clic ou Entrée · Échap pour quitter).</div>
+          <button type="button" class="pcancel">RETOUR ✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ÉCRAN DE RÉSUMÉ PIXEL-ART -->
+  <div class="preview-section">
+    <div class="preview-title">3. ÉCRAN DE RÉSUMÉ — STYLE PIXEL-ART CARTOUCHE DS</div>
+    <div class="preview-box" style="height: 540px;">
+      <div class="screen sum-scr" style="position: relative; width: 100%; height: 100%; padding: calc(var(--px) * 6);">
+        <div class="scr-bar">
+          <div class="scr-bar-left">
+            <img class="scr-bar-ico" src="img/hud/team.png" alt="">
+            <span class="scr-bar-title">RÉSUMÉ POKÉMON</span>
+            <span class="scr-bar-sub">1 / 5</span>
+          </div>
+          <div class="scr-bar-right">
+            <button type="button" class="scr-nav-btn">▲ PRÉC.</button>
+            <button type="button" class="scr-nav-btn">▼ SUIV.</button>
+            <button type="button" class="scr-close-btn">RETOUR ✕</button>
+          </div>
+        </div>
+        <div class="sum-body">
+          <div class="sum-left">
+            <div class="sum-head">
+              <span class="sum-name">Bulbizarre <span class="g m">♂</span></span>
+              <span class="sum-lvl">N.18</span>
+            </div>
+            <div class="sum-stage">
+              <img class="sum-spr" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png" alt="">
+            </div>
+            <div class="sum-types-row">
+              <span class="type" style="background:#78c850">PLANTE</span>
+              <span class="type" style="background:#a040a0">POISON</span>
+            </div>
+            <div class="hp-b2w2">
+              <span class="hp-tag">HP</span>
+              <div class="hp-track"><u style="width:100%;background:#20d860"></u></div>
+            </div>
+            <div class="phpn">48 / 48 PV</div>
+          </div>
+          <div class="sum-right">
+            <div class="tabs">
+              <button type="button" class="sum-tab"><b>INFOS DRESSEUR</b><small>Aperçu</small></button>
+              <button type="button" class="sum-tab"><b>STATISTIQUES</b><small>Capacités</small></button>
+              <button type="button" class="sum-tab on"><b>ATTAQUES CONNUES</b><small>4/4</small></button>
+            </div>
+            <div class="sum-content">
+              <div class="moves">
+                <div class="mv" style="--tc:#78c850">
+                  <div class="mv-top"><span class="mvn">Fouet Lianes</span><span class="type" style="background:#78c850">PLANTE</span><span class="mvpp">PP <b>25</b>/25</span></div>
+                  <div class="mvd">Puissance : 45 · Précision : 100%</div>
+                </div>
+                <div class="mv" style="--tc:#a8a878">
+                  <div class="mv-top"><span class="mvn">Charge</span><span class="type" style="background:#a8a878">NORMAL</span><span class="mvpp">PP <b>35</b>/35</span></div>
+                  <div class="mvd">Puissance : 40 · Précision : 100%</div>
+                </div>
+                <div class="mv" style="--tc:#a040a0">
+                  <div class="mv-top"><span class="mvn">Poudre Dodo</span><span class="type" style="background:#a040a0">POISON</span><span class="mvpp">PP <b>15</b>/15</span></div>
+                  <div class="mvd">Catégorie : Statut · Précision : 75%</div>
+                </div>
+                <div class="mv" style="--tc:#78c850">
+                  <div class="mv-top"><span class="mvn">Canon Graine</span><span class="type" style="background:#78c850">PLANTE</span><span class="mvpp">PP <b>15</b>/15</span></div>
+                  <div class="mvd">Puissance : 80 · Précision : 100%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sum-help">◀ ▶ Changer d'onglet · ▲ ▼ Changer de Pokémon · Clic ou Échap pour fermer</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. BOÎTE DE DIALOGUE PIXEL-ART -->
+  <div class="preview-section">
+    <div class="preview-title">4. BOÎTE DE DIALOGUE — 5G RETRO PIXEL-ART AVEC PORTRAIT D'INTERLOCUTEUR (SANS COUPURE DU NOM)</div>
+    <div class="preview-box" style="min-height: 340px; background: url('img/battle/bg_grass.png') center/cover; padding: 25px 20px; box-sizing: border-box;">
+      <div class="dlg has-face" style="display: block; position: relative; bottom: auto; left: auto; right: auto; margin: 20px auto 35px;">
+        <span class="dlg-name">Prof. Saule</span>
+        <img class="dlg-face" src="img/portraits/saule.png" alt="">
+        <div class="dlg-txt">Bienvenue dans l'archipel d'Odyssée, jeune dresseur !
+Chaque recoin de ces îles abrite des créatures légendaires prêtes à se joindre à ton équipe.
+Prends ces Poké Balls et pars à l'aventure !</div>
+        <div class="dlg-arrow">▼</div>
+      </div>
+      <div class="dlg has-face" style="display: block; position: relative; bottom: auto; left: auto; right: auto; margin: 20px auto 0;">
+        <span class="dlg-name">Gamin Léo</span>
+        <img class="dlg-face" src="img/portraits/gamin-l.png" alt="">
+        <div class="dlg-txt">Tu es vraiment fort !
+Nos regards se sont croisés et mes créatures ont tout donné, mais ton équipe est impressionnante !</div>
+        <div class="dlg-arrow">▼</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. ENREGISTREMENT POKÉDEX PIXEL-ART -->
+  <div class="preview-section">
+    <div class="preview-title">5. ENREGISTREMENT POKÉDEX — PIXEL-ART RETRO (COINS BISEAUTÉS 1-BIT, SANS FLOU)</div>
+    <div class="preview-box" style="height: 480px; display: flex; align-items: center; justify-content: center; background: #080c14;">
+      <div class="pdx-shell" style="margin: 0 auto;">
+        <div class="pdx-topbar">
+          <div class="pdx-lights">
+            <div class="pdx-lens"></div>
+            <div class="pdx-light red"></div>
+            <div class="pdx-light yellow"></div>
+            <div class="pdx-light green"></div>
+          </div>
+          <div class="pdx-header-lbl">
+            <span class="pdx-header-sub">POKÉDEX D'ODYSSÉE</span>
+            <span class="pdx-header-title">NOUVELLE ENTRÉE DÉTECTÉE</span>
+          </div>
+        </div>
+        <div class="pdx-body">
+          <div class="pdx-left-col">
+            <div class="pdx-num-banner">
+              <span class="pdx-num-digital">N° 025</span>
+              <span class="pdx-stamp">✓ ENREGISTRÉ</span>
+            </div>
+            <div class="pdx-holo-frame">
+              <div class="pdx-pedestal"></div>
+              <img class="pdx-mon-spr" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png" alt="">
+            </div>
+            <div class="pdx-sensor-bar">SIGNAL BIO-ACOUSTIQUE IDENTIFIÉ</div>
+          </div>
+          <div class="pdx-right-col">
+            <div class="pdx-name-card">
+              <div class="pdx-name-main">
+                <span class="pdx-name-txt">Pikachu</span>
+                <span class="g m">♂</span>
+              </div>
+              <span class="pdx-genus-tag">Pokémon Souris</span>
+            </div>
+            <div class="pdx-specs-row">
+              <div class="pdx-spec-cell">
+                <span class="pdx-spec-lbl">TYPE(S)</span>
+                <div class="pdx-types"><span class="pdx-type-badge" style="--tc:#f8d030">ÉLECTRIK</span></div>
+              </div>
+              <div class="pdx-spec-cell">
+                <span class="pdx-spec-lbl">TAILLE</span>
+                <span class="pdx-spec-val"><b>0.4</b> m</span>
+              </div>
+              <div class="pdx-spec-cell">
+                <span class="pdx-spec-lbl">POIDS</span>
+                <span class="pdx-spec-val"><b>6.0</b> kg</span>
+              </div>
+            </div>
+            <div class="pdx-desc-card">
+              <div class="pdx-desc-bar">
+                <span class="pdx-desc-title">RAPPORT DU POKÉDEX</span>
+                <span class="pdx-desc-cur">■</span>
+              </div>
+              <div class="pdx-desc-viewport">
+                <div class="pdx-desc-txt">Pikachu a de petites poches pleines d'électricité sur ses joues. S'il se sent menacé, il laisse s'échapper des décharges électriques.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pdx-footbar">
+          <span class="pdx-status-msg">✓ Données de Pikachu inscrites dans le Pokédex !</span>
+          <button type="button" class="pdx-btn-next ready">CONTINUER ▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 6. JOURNAL DES QUÊTES (STYLE 5G NOIR 2 / BLANC 2) -->
+  <div class="preview-section">
+    <div class="preview-title">6. JOURNAL DES QUÊTES (STYLE 5G B2W2) — MISSIONS EN COURS, OÙ ALLER & SUIVI D'OBJECTIF</div>
+    <div class="preview-box" style="height: 520px;">
+      <div class="quests-scr" style="position: relative; width: 100%; height: 100%;">
+        <div class="scr-bar">
+          <div class="scr-bar-left">
+            <img class="scr-bar-ico" src="img/items/notebook.png" alt="">
+            <span class="scr-bar-title">JOURNAL DES QUÊTES</span>
+            <span class="scr-bar-sub">17 actives · 1 terminée</span>
+          </div>
+          <div class="quests-tabs">
+            <button type="button" class="qtab on">EN COURS (17)</button>
+            <button type="button" class="qtab">TERMINÉES (1)</button>
+            <button type="button" class="qtab">TOUTES (18)</button>
+          </div>
+          <div class="scr-bar-right">
+            <button class="scr-btn-close" type="button" title="Fermer (Échap)">✕</button>
+          </div>
+        </div>
+
+        <div class="quests-body">
+          <!-- Colonne gauche: Liste des quêtes -->
+          <div class="qcol-list">
+            <div class="qlist-head">
+              <span>MISSIONS D'ODYSSÉE</span>
+              <span class="qlist-cnt">17 quêtes</span>
+            </div>
+            <div class="qlist-scroll">
+              <div class="qcard on tracked">
+                <span class="cur">▶</span>
+                <div class="qcard-top">
+                  <span class="qcat-tag qcat-main">PRINCIPALE</span>
+                  <span class="qtracked-tag">★ SUIVIE</span>
+                </div>
+                <div class="qcard-name">La Ligue Céleste</div>
+                <div class="qcard-sub">
+                  <span class="qcard-step">Étape 2/10</span>
+                  <span class="qcard-loc">📍 Bourg-Granit</span>
+                </div>
+              </div>
+
+              <div class="qcard active">
+                <span class="cur">▶</span>
+                <div class="qcard-top">
+                  <span class="qcat-tag qcat-main">PRINCIPALE</span>
+                </div>
+                <div class="qcard-name">L'Ombre de la Team Éclipse</div>
+                <div class="qcard-sub">
+                  <span class="qcard-step">Étape 1/5</span>
+                  <span class="qcard-loc">📍 Grotte Lunaire</span>
+                </div>
+              </div>
+
+              <div class="qcard active">
+                <span class="cur">▶</span>
+                <div class="qcard-top">
+                  <span class="qcat-tag qcat-side">AVENTURE</span>
+                </div>
+                <div class="qcard-name">Le Ponyta de Lucie</div>
+                <div class="qcard-sub">
+                  <span class="qcard-step">Étape 1/4</span>
+                  <span class="qcard-loc">📍 Sylvebourg</span>
+                </div>
+              </div>
+
+              <div class="qcard active">
+                <span class="cur">▶</span>
+                <div class="qcard-top">
+                  <span class="qcat-tag qcat-side">AVENTURE</span>
+                </div>
+                <div class="qcard-name">Les eaux troubles du Lac Miroir</div>
+                <div class="qcard-sub">
+                  <span class="qcard-step">Étape 1/5</span>
+                  <span class="qcard-loc">📍 Lac Miroir</span>
+                </div>
+              </div>
+
+              <div class="qcard active">
+                <span class="cur">▶</span>
+                <div class="qcard-top">
+                  <span class="qcat-tag qcat-story">HABITANT</span>
+                </div>
+                <div class="qcard-name">Le médaillon de Lucie</div>
+                <div class="qcard-sub">
+                  <span class="qcard-step">Étape 1/1</span>
+                  <span class="qcard-loc">📍 Bois Murmure</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Colonne droite: Fiche détaillée -->
+          <div class="qcol-detail">
+            <div class="qdet-head">
+              <div class="qdet-head-left">
+                <div class="qdet-title-row">
+                  <span class="qcat-tag qcat-main">QUÊTE PRINCIPALE</span>
+                  <span class="qcat-tag" style="background:#0088cc">EN COURS</span>
+                  <span class="qtracked-tag">★ QUÊTE ACTUELLEMENT SUIVIE</span>
+                </div>
+                <div class="qdet-title">La Ligue Céleste</div>
+                <div class="qdet-giver">Donneur : <b>Professeur Saule</b> · 📍 <i>Bourg-Aube</i></div>
+              </div>
+              <button type="button" class="qbtn-track tracked">
+                ★ QUÊTE SUIVIE
+              </button>
+            </div>
+
+            <!-- Grand Boîtier OÙ ALLER -->
+            <div class="qbox-destination">
+              <div class="qdest-head">
+                <span class="qdest-pin">📍</span>
+                <span>OÙ ALLER / PROCHAINE DESTINATION :</span>
+              </div>
+              <div class="qdest-place">Bourg-Granit (Route 1) — Arène Pokémon</div>
+              <div class="qdest-hint">Traverse la Route 1 vers le nord et bats Hector dans l'Arène de Bourg-Granit pour décrocher ton premier Badge d'Arène (Badge Roche/Insecte).</div>
+            </div>
+
+            <!-- Étapes de la quête -->
+            <div class="qsteps-box">
+              <div class="qsteps-title">ÉTAPES DE LA QUÊTE (2 / 10)</div>
+              <div class="qstep-item done">
+                <div class="qstep-mark">☑</div>
+                <div class="qstep-body">
+                  <div class="qstep-txt">Choisir son premier Pokémon au laboratoire</div>
+                  <div class="qstep-loc">📍 Bourg-Aube (Labo Saule)</div>
+                </div>
+              </div>
+              <div class="qstep-item current">
+                <div class="qstep-mark">▶</div>
+                <div class="qstep-body">
+                  <div class="qstep-txt">Vaincre Hector (Badge Roche/Insecte)</div>
+                  <div class="qstep-loc">📍 Bourg-Granit (Route 1)</div>
+                </div>
+              </div>
+              <div class="qstep-item">
+                <div class="qstep-mark">◻</div>
+                <div class="qstep-body">
+                  <div class="qstep-txt">Vaincre Marine (Badge Eau)</div>
+                  <div class="qstep-loc">📍 Rive-Claire (Route 2)</div>
+                </div>
+              </div>
+              <div class="qstep-item">
+                <div class="qstep-mark">◻</div>
+                <div class="qstep-body">
+                  <div class="qstep-txt">Vaincre Volta (Badge Volt)</div>
+                  <div class="qstep-loc">📍 Voltacité (Route 4)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Récompense -->
+            <div class="qreward-box">
+              <span class="qreward-ico">🎁</span>
+              <div><b>RÉCOMPENSE :</b> Titre de Maître de la Ligue & Badge Céleste</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quests-foot">
+          <div class="quests-foot-keys">
+            <span><kbd>▲</kbd><kbd>▼</kbd> Naviguer</span>
+            <span><kbd>◄</kbd><kbd>►</kbd> Changer d'onglet</span>
+            <span><kbd>ESPACE</kbd> Suivre la quête</span>
+            <span><kbd>X</kbd> Fermer</span>
+          </div>
+          <div class="quests-foot-tracked">
+            <span class="qft-label">OBJECTIF SUIVI :</span>
+            <span class="qft-val">★ La Ligue Céleste (📍 Bourg-Granit)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. POKÉGEAR / HUD AVEC CARTE DE QUÊTE SUIVIE & BOUTON QUÊTES -->
+  <div class="preview-section">
+    <div class="preview-title">7. POKÉGEAR DU HUD — QUÊTE SUIVIE EN TEMPS RÉEL & BOUTON D'ACCÈS QUÊTES</div>
+    <div class="preview-box" style="height: 280px; background: url('img/battle/bg_grass.png') center/cover; display: flex; align-items: flex-start; justify-content: flex-end; padding: 20px;">
+      <div class="hud-gear" style="position: relative; right: auto; top: auto;">
+        <div class="hud-gear-card">
+          <div class="hud-loc-row">
+            <span class="hud-loc">Route 1 (Plaine Verte)</span>
+            <button type="button" class="hud-toggle">▴</button>
+          </div>
+          <div class="hud-stats">
+            <div class="hud-stat-item">
+              <img class="hud-stat-ico" src="img/hud/coin.png" alt="">
+              <span class="hud-money">3 450 ₽</span>
+            </div>
+            <div class="hud-stat-item">
+              <img class="hud-stat-ico" src="img/hud/trophy.png" alt="">
+              <span class="hud-badge-cnt">0/8</span>
+            </div>
+            <div class="hud-stat-item hud-cap-pill">
+              <span>MAX N.15</span>
+            </div>
+          </div>
+          <div class="hud-bdots-row">
+            <i class="hud-bdot"></i>
+            <i class="hud-bdot"></i>
+            <i class="hud-bdot"></i>
+            <i class="hud-bdot"></i>
+            <i class="hud-bdot"></i>
+            <i class="hud-bdot"></i>
+            <i class="hud-bdot"></i>
+            <i class="hud-bdot"></i>
+          </div>
+          <div class="hud-quest-card">
+            <div class="hud-qc-head">
+              <span class="hud-qc-star">★ SUIVIE</span>
+              <span class="hud-qc-loc">📍 Bourg-Granit</span>
+            </div>
+            <div class="hud-qc-name">La Ligue Céleste</div>
+            <div class="hud-qc-step">Vaincre Hector (Badge Roche/Insecte)</div>
+          </div>
+        </div>
+        <div class="hud-actions">
+          <button type="button" class="hud-btn run">
+            <img src="img/hud/run.png" alt=""><span>COURSE</span>
+          </button>
+          <button type="button" class="hud-btn">
+            <img src="img/hud/team.png" alt=""><span>ÉQUIPE</span>
+          </button>
+          <button type="button" class="hud-btn">
+            <img src="img/hud/bag.png" alt=""><span>SAC</span>
+          </button>
+          <button type="button" class="hud-btn">
+            <img src="img/hud/map.png" alt=""><span>CARTE</span>
+          </button>
+          <button type="button" class="hud-btn">
+            <img src="img/hud/quest.png" alt=""><span>QUÊTES</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. COMBAT B2W2 — MASQUAGE CONDITIONNEL DES TYPES ET DE L'EFFICACITÉ -->
+  <div class="preview-section">
+    <div class="preview-title">8. COMBAT 5G — MASQUAGE CONDITIONNEL DU TYPE ET DE L'EFFICACITÉ (VU &lt; 3 FOIS &amp; NON CAPTURÉ)</div>
+    <div class="preview-box" style="height: 380px; background: url('img/battle/bg_grass.png') center/cover; display: flex; flex-direction: column; justify-content: space-between; padding: 16px;">
+      <!-- HUD adverse inconnu -->
+      <div style="position: relative; height: 100px;">
+        <div class="bhud foe" style="position: absolute; left: 20px; top: 10px; visibility: visible;">
+          <div class="bh-head">
+            <div class="bh-balls"><span class="bh-wild-tag">SAUVAGE</span></div>
+            <div class="bh-types">
+              <span class="bh-type unknown" title="Type inconnu (vu 1/3 - capturez-le pour révéler)">???</span>
+            </div>
+          </div>
+          <div class="bh-top"><span class="bh-name">Créature Inconnue</span><span class="bh-lv">N.12</span></div>
+          <div class="bh-mid"><span class="bh-st" style="display:none"></span><div class="bh-hp"><b>PV</b><i><u style="width:100%; background:#20d860"></u></i></div></div>
+          <div class="bh-caught"></div>
+        </div>
+      </div>
+
+      <!-- Menu des attaques avec indicateurs ??? masqués -->
+      <div class="bcmd on moves" style="position: relative; right: auto; bottom: auto; width: 100%; height: 130px; display: block;">
+        <div class="mv-layout">
+          <div class="mv-grid">
+            <div class="mbtn sel" style="--tc:#a8a878">
+              <div class="mbtn-top">
+                <span class="mn">Charge</span>
+                <div class="mbtn-top-right">
+                  <span class="bm-eff eff-unk" title="Efficacité inconnue (vu 1/3)">???</span>
+                  <img class="mcat" src="img/battle/cat_physical.png" alt="physical">
+                </div>
+              </div>
+              <div class="mbtn-bot">
+                <div class="mbtn-bot-left">
+                  <span class="mt">NORMAL</span>
+                  <span class="mpw">Puis. 50</span>
+                </div>
+                <span class="mpp">PP 35/35</span>
+              </div>
+            </div>
+            <div class="mbtn" style="--tc:#a8a878">
+              <div class="mbtn-top">
+                <span class="mn">Armure</span>
+                <div class="mbtn-top-right">
+                  <img class="mcat" src="img/battle/cat_status.png" alt="status">
+                </div>
+              </div>
+              <div class="mbtn-bot">
+                <div class="mbtn-bot-left">
+                  <span class="mt">NORMAL</span>
+                  <span class="mpw">Statut</span>
+                </div>
+                <span class="mpp">PP 30/30</span>
+              </div>
+            </div>
+            <div class="mbtn" style="--tc:#b8a038">
+              <div class="mbtn-top">
+                <span class="mn">Jet-Pierres</span>
+                <div class="mbtn-top-right">
+                  <span class="bm-eff eff-unk" title="Efficacité inconnue (vu 1/3)">???</span>
+                  <img class="mcat" src="img/battle/cat_physical.png" alt="physical">
+                </div>
+              </div>
+              <div class="mbtn-bot">
+                <div class="mbtn-bot-left">
+                  <span class="mt">ROCHE</span>
+                  <span class="mpw">Puis. 50</span>
+                </div>
+                <span class="mpp">PP 15/15</span>
+              </div>
+            </div>
+            <div class="mbtn" style="--tc:#c03028">
+              <div class="mbtn-top">
+                <span class="mn">Force Poigne</span>
+                <div class="mbtn-top-right">
+                  <span class="bm-eff eff-unk" title="Efficacité inconnue (vu 1/3)">???</span>
+                  <img class="mcat" src="img/battle/cat_physical.png" alt="physical">
+                </div>
+              </div>
+              <div class="mbtn-bot">
+                <div class="mbtn-bot-left">
+                  <span class="mt">COMBAT</span>
+                  <span class="mpw">Puis. 55</span>
+                </div>
+                <span class="mpp">PP 30/30</span>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="mv-back-btn" title="Retour (Échap / B)">
+            <span class="mv-back-ico">✕</span>
+            <span class="mv-back-lbl">RETOUR</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. TRANSITIONS ANIMÉES (BÂTIMENT ET COMBAT 5G) -->
+  <div class="preview-section">
+    <div class="preview-title">9. TRANSITIONS ANIMÉES — ENTRÉE DE BÂTIMENT (IRIS DS) &amp; COMBAT SAUVAGE (LAMES 5G)</div>
+    <div class="preview-box" id="transitionBox" style="height: 320px; position: relative; overflow: hidden; background: url('img/battle/bg_grass.png') center/cover; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;">
+      <div style="font-size: 16px; font-weight: 700; color: #fff; text-shadow: 2px 2px 0 #000; text-align: center; z-index: 10;">
+        Testez les nouvelles animations cinématographiques en un clic :
+      </div>
+      <div style="display: flex; gap: 12px; z-index: 10; flex-wrap: wrap; justify-content: center;">
+        <button type="button" class="action-btn" onclick="playDoorDemo()" style="background: #2a5888; color: #fff; border: 2px solid #68a0e0; padding: 10px 18px; font-weight: 700; font-family: inherit; font-size: 14px; cursor: pointer; box-shadow: 0 4px 0 #102038;">
+          🚪 Entrée de Bâtiment (Iris DS)
+        </button>
+        <button type="button" class="action-btn" onclick="playWildBattleDemo()" style="background: #0d2838; color: #00f0ff; border: 2px solid #00f0ff; padding: 10px 18px; font-weight: 700; font-family: inherit; font-size: 14px; cursor: pointer; box-shadow: 0 4px 0 #041018;">
+          ⚡ Rencontre Sauvage (Lames Cyan 5G)
+        </button>
+        <button type="button" class="action-btn" onclick="playTrainerBattleDemo()" style="background: #382808; color: #ffe058; border: 2px solid #ffe058; padding: 10px 18px; font-weight: 700; font-family: inherit; font-size: 14px; cursor: pointer; box-shadow: 0 4px 0 #181002;">
+          ⚔️ Rencontre Dresseur (Lames Or 5G)
+        </button>
+      </div>
+      <div id="demoFlash" style="position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 61;"></div>
+      <div id="demoIris" class="door-iris" style="position: absolute; inset: 0; z-index: 60;"></div>
+    </div>
+  </div>
+
+  <script>
+    async function playDoorDemo() {
+      const iris = document.getElementById('demoIris');
+      iris.style.transition = 'clip-path 260ms cubic-bezier(0.4, 0, 0.2, 1)';
+      iris.classList.add('closed');
+      await new Promise(r => setTimeout(r, 400));
+      iris.classList.remove('closed');
+    }
+
+    async function playWildBattleDemo(isTrainer = false) {
+      const box = document.getElementById('transitionBox');
+      const flash = document.getElementById('demoFlash');
+      
+      // Triple flash 5G
+      flash.style.transition = 'none';
+      flash.style.background = '#ffffff';
+      flash.style.opacity = '1';
+      await new Promise(r => setTimeout(r, 70));
+      flash.style.background = '#060a12';
+      flash.style.opacity = '1';
+      await new Promise(r => setTimeout(r, 60));
+      flash.style.background = '#ffffff';
+      flash.style.opacity = '1';
+      await new Promise(r => setTimeout(r, 80));
+      flash.style.opacity = '0';
+
+      // Shards
+      const wrap = document.createElement('div');
+      wrap.className = `battle-wipe ${isTrainer ? 'trainer' : 'wild'}`;
+      wrap.style.position = 'absolute';
+      const numShards = 10;
+      for (let i = 0; i < numShards; i++) {
+        const s = document.createElement('div');
+        s.className = `bw-shard ${i % 2 === 0 ? 'left' : 'right'}`;
+        s.style.top = `${(i * 100) / numShards}%`;
+        s.style.height = `${(100 / numShards) + 0.5}%`;
+        s.style.transitionDelay = `${i * 22}ms`;
+        wrap.appendChild(s);
+      }
+      box.appendChild(wrap);
+      void wrap.offsetHeight;
+      wrap.classList.add('on');
+      await new Promise(r => setTimeout(r, 22 * numShards + 300));
+      wrap.classList.add('opening');
+      await new Promise(r => setTimeout(r, 300));
+      wrap.remove();
+    }
+
+    function playTrainerBattleDemo() {
+      playWildBattleDemo(true);
+    }
+  </script>
+
+    <!-- 10. SAC D'OBJETS B2W2 (PROPOSITION 1 VALIDÉE — SAC SUR PIÉDESTAL & ARC GLISSANT ANIMÉ) -->
+  <div class="preview-section">
+    <div class="preview-title">10. SAC D'OBJETS B2W2 (PROPOSITION 1 OFFICIELLE) — SAC SUR PIÉDESTAL, ARC GLISSANT ANIMÉ &amp; DOUBLE PANNEAU</div>
+    <div class="preview-box" style="height: 520px; position: relative; padding: 0; overflow: hidden;">
+      <div class="bag-scr b2w2-bag" id="previewBag">
+        <div class="scr-bar">
+          <div class="scr-bar-left">
+            <img class="scr-bar-ico" src="img/hud/bag.png" alt="">
+            <span class="scr-bar-title">SAC D'OBJETS</span>
+            <span class="scr-bar-sub b2w2-pocket-name" id="prevPocketSub">OBJETS</span>
+          </div>
+          <div class="scr-bar-right">
+            <span class="scr-money-pill"><img src="img/hud/coin.png" alt=""> 24 850 ₽</span>
+            <button type="button" class="scr-close-btn" onclick="prevBagCloseDemo()">FERMER ✕</button>
+          </div>
+        </div>
+        <div class="b2w2-bag-body">
+          <!-- PANNEAU GAUCHE : SAC DE BAROUDEUR SUR SOCLE & ARC DE POCHES GLISSANT (CONCEPT 1) -->
+          <div class="b2w2-bag-left" id="prevBagLeft">
+            <div class="b2w2-backpack-stage" id="prevBackpackStage">
+              <div class="b2w2-backpack-beams"></div>
+              <img class="b2w2-backpack-img" id="prevBackpackImg" src="img/bag/backpack_objets.jpg" alt="Sac de Baroudeur Unys">
+              <!-- ARC EN CROISSANT DES 6 POCHES B2W2 -->
+              <div class="b2w2-arc-wrap">
+                <img class="b2w2-arc-img" src="img/bag/pocket_arc.png" alt="Arc des 6 poches">
+                <!-- CURSEUR LUMINEUX GLISSANT LE LONG DE LA COURBE -->
+                <div class="b2w2-arc-glider" id="prevGlider" style="left:39.5%; top:9.8%; --glider-col:#00e0ff;">
+                  <span class="glider-ring"></span>
+                  <span class="glider-dot"></span>
+                </div>
+                <!-- 6 ZONES INTERACTIVES CLIQUABLES -->
+                <button type="button" class="b2w2-arc-node on" data-pocket="0" onclick="prevBagSetPocket(0)" style="left:39.5%; top:9.8%;" title="Poche Objets"><span class="arc-node-halo"></span></button>
+                <button type="button" class="b2w2-arc-node" data-pocket="1" onclick="prevBagSetPocket(1)" style="left:61.9%; top:26.5%;" title="Poche Soins"><span class="arc-node-halo"></span></button>
+                <button type="button" class="b2w2-arc-node" data-pocket="2" onclick="prevBagSetPocket(2)" style="left:70.7%; top:42.2%;" title="Poche Poké Balls"><span class="arc-node-halo"></span></button>
+                <button type="button" class="b2w2-arc-node" data-pocket="3" onclick="prevBagSetPocket(3)" style="left:71.2%; top:57.8%;" title="Poche CT &amp; CS"><span class="arc-node-halo"></span></button>
+                <button type="button" class="b2w2-arc-node" data-pocket="4" onclick="prevBagSetPocket(4)" style="left:57.7%; top:73.5%;" title="Poche Baies"><span class="arc-node-halo"></span></button>
+                <button type="button" class="b2w2-arc-node" data-pocket="5" onclick="prevBagSetPocket(5)" style="left:30.7%; top:89.2%;" title="Poche Objets Rares"><span class="arc-node-halo"></span></button>
+              </div>
+            </div>
+            <!-- BANDEAU D'ÉTAT DE LA POCHE -->
+            <div class="b2w2-pocket-status">
+              <div class="b2w2-pocket-badge" id="prevPocketBadge" style="color:#00e0ff;">◀ OBJETS ▶</div>
+              <div class="b2w2-pocket-sub" id="prevPocketSubDesc">Pierres, Bonbons et Objets tenus</div>
+            </div>
+          </div>
+          <!-- PANNEAU DROIT : LISTE DES OBJETS DE LA POCHE -->
+          <div class="b2w2-bag-right">
+            <div class="b2w2-list-header">
+              <div class="b2w2-list-title">
+                <span class="b2w2-pocket-tag" id="prevPocketTag" style="color:#00e0ff;">POCHE OBJETS</span>
+                <span class="b2w2-pocket-items-cnt" id="prevPocketCount">6 objets</span>
+              </div>
+              <div class="b2w2-list-hint">
+                <span><kbd>▲</kbd><kbd>▼</kbd> Naviguer</span>
+                <span><kbd>◀</kbd><kbd>▶</kbd> Poches</span>
+              </div>
+            </div>
+            <div class="b2w2-items-viewport">
+              <div class="b2w2-items-list" id="prevItemsList">
+                <!-- Dynamique -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- BANDEAU INFÉRIEUR : INSPECTEUR D'OBJET & GRILLE 2X2 DE BOUTONS TACTILES -->
+        <div class="b2w2-bag-inspector">
+          <div class="b2w2-insp-left">
+            <div class="b2w2-insp-frame">
+              <img class="b2w2-insp-img" id="prevInspImg" src="img/items/rare-candy.png" alt="">
+            </div>
+          </div>
+          <div class="b2w2-insp-mid">
+            <div class="b2w2-insp-topline">
+              <span class="b2w2-insp-name" id="prevInspName">Super Bonbon</span>
+              <span class="b2w2-insp-cat" id="prevInspCat" style="color:#00e0ff;">[Objets]</span>
+              <span class="b2w2-insp-qty" id="prevInspQty">Quantité : × 5</span>
+            </div>
+            <div class="b2w2-insp-desc" id="prevInspDesc">Friandise énergisante faisant instantanément monter d'un niveau.</div>
+          </div>
+          <!-- GRILLE 2X2 DE BOUTONS TACTILES DS (CONCEPT 1) -->
+          <div class="b2w2-btn-grid">
+            <button type="button" class="b2w2-touch-btn b2w2-btn-use" id="prevBtnUse" title="Utiliser (Entrée / A)">
+              <span class="touch-btn-ico">⚡</span>
+              <span class="touch-btn-lbl">UTILISER</span>
+            </button>
+            <button type="button" class="b2w2-touch-btn b2w2-btn-give" id="prevBtnGive" title="Donner à un Pokémon (D)">
+              <span class="touch-btn-ico">🎁</span>
+              <span class="touch-btn-lbl">DONNER</span>
+            </button>
+            <button type="button" class="b2w2-touch-btn b2w2-btn-toss" id="prevBtnToss" title="Jeter une quantité (J)">
+              <span class="touch-btn-ico">🗑</span>
+              <span class="touch-btn-lbl">JETER</span>
+            </button>
+            <button type="button" class="b2w2-touch-btn b2w2-btn-back" id="prevBtnBack" onclick="prevBagCloseDemo()" title="Fermer le sac (Échap / B)">
+              <span class="touch-btn-ico">✕</span>
+              <span class="touch-btn-lbl">RETOUR</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Données de démonstration du Sac B2W2 Concept 1 (6 poches officielles)
+    const prevBagData = {
+      0: [
+        { id: 'rare-candy', name: 'Super Bonbon', qty: 5, desc: "Friandise énergisante faisant instantanément monter d'un niveau.", icon: 'img/items/rare-candy.png' },
+        { id: 'fire-stone', name: 'Pierre Feu', qty: 2, desc: "Pierre chaude et rougeoyante capable de faire évoluer certains Pokémon.", icon: 'img/items/fire-stone.png' },
+        { id: 'water-stone', name: 'Pierre Eau', qty: 3, desc: "Pierre bleutée imprégnée d'une onde pure pour l'évolution.", icon: 'img/items/water-stone.png' },
+        { id: 'repel', name: 'Repousse', qty: 9, desc: "Éloigne les créatures sauvages plus faibles pendant 100 pas.", icon: 'img/items/repel.png' },
+        { id: 'eviolite', name: 'Évoluroc', qty: 1, desc: "Objet à tenir. Augmente de 50% la Défense et Déf. Spé. d'un Pokémon non évolué.", icon: 'img/items/rare-candy.png', held: true },
+        { id: 'leftovers', name: 'Restes', qty: 2, desc: "Objet à tenir. Restaure 1/16 des PV max à chaque fin de tour.", icon: 'img/items/gift.png', held: true },
+      ],
+      1: [
+        { id: 'potion', name: 'Potion', qty: 15, desc: "Restaure 20 PV d'une créature alliée.", icon: 'img/items/potion.png' },
+        { id: 'super-potion', name: 'Super Potion', qty: 7, desc: "Restaure 50 PV d'une créature alliée.", icon: 'img/items/super-potion.png' },
+        { id: 'hyper-potion', name: 'Hyper Potion', qty: 4, desc: "Restaure 200 PV d'une créature alliée.", icon: 'img/items/hyper-potion.png' },
+        { id: 'revive', name: 'Rappel', qty: 6, desc: "Ranime une créature K.O. avec 50% de ses PV.", icon: 'img/items/revive.png' },
+        { id: 'full-heal', name: 'Total Soin', qty: 3, desc: "Guérit toutes les altérations de statut d'un Pokémon.", icon: 'img/items/full-heal.png' },
+      ],
+      2: [
+        { id: 'poke-ball', name: 'Poké Ball', qty: 25, desc: "Capsule basique servant à capturer les créatures sauvages.", icon: 'img/items/poke-ball.png' },
+        { id: 'great-ball', name: 'Super Ball', qty: 14, desc: "Ball de qualité supérieure avec un taux de réussite plus élevé.", icon: 'img/items/great-ball.png' },
+        { id: 'ultra-ball', name: 'Ultra Ball', qty: 8, desc: "Excellente Ball offrant un taux de capture remarquable.", icon: 'img/items/ultra-ball.png' },
+        { id: 'master-ball', name: 'Master Ball', qty: 1, desc: "La Ball suprême qui capture à coup sûr n'importe quelle créature !", icon: 'img/items/master-ball.png' },
+      ],
+      3: [
+        { id: 'cs-coupe', name: 'CS01 Coupe', qty: 1, desc: "Capsule Secrète permettant de couper les petits arbustes gênants.", icon: 'img/items/letter.png', key: true },
+        { id: 'cs-surf', name: 'CS02 Surf', qty: 1, desc: "Permet de voguer sur l'eau sur le dos d'une créature alliée.", icon: 'img/items/letter.png', key: true },
+        { id: 'cs-vol', name: 'CS04 Vol', qty: 1, desc: "Ramène en un éclair vers n'importe quelle bourgade déjà visitée.", icon: 'img/items/letter.png', key: true },
+      ],
+      4: [
+        { id: 'oran-berry', name: 'Baie Oran', qty: 12, desc: "Baie restaurant 10 PV lorsqu'elle est consommée ou tenue par un Pokémon.", icon: 'img/items/oran-berry.png', held: true },
+        { id: 'sitrus-berry', name: 'Baie Sitrus', qty: 5, desc: "Restaure 25% des PV lorsque les PV tombent sous 50%.", icon: 'img/items/oran-berry.png', held: true },
+        { id: 'lum-berry', name: 'Baie Prun', qty: 3, desc: "Guérit instantanément toute altération de statut au combat.", icon: 'img/items/oran-berry.png', held: true },
+      ],
+      5: [
+        { id: 'town-map', name: 'Carte Régionale', qty: 1, desc: "Carte détaillée de l'archipel d'Odyssée indiquant villes et routes.", icon: 'img/items/town-map.png', key: true },
+        { id: 'velo', name: 'Bicyclette', qty: 1, desc: "Vélo pliable ultra-rapide pour se déplacer à toute vitesse.", icon: 'img/items/bag.png', key: true },
+        { id: 'gs-ball', name: 'Balle GS', qty: 1, desc: "Capsule dorée mystérieuse liée à l'autel de la forêt de Céleste.", icon: 'img/items/gift.png', key: true },
+      ]
+    };
+
+    const prevPocketCfg = [
+      { id: 'objets', label: 'Objets', sub: 'Pierres, Bonbons et Objets tenus', color: '#00e0ff', glow: 'rgba(0, 224, 255, 0.45)', bg: 'img/bag/backpack_objets.jpg', arcX: 39.5, arcY: 9.8 },
+      { id: 'soin', label: 'Soins', sub: 'Médicaments, Potions et Guérisons', color: '#34d870', glow: 'rgba(52, 216, 112, 0.45)', bg: 'img/bag/backpack_soin.jpg', arcX: 61.9, arcY: 26.5 },
+      { id: 'balls', label: 'Poké Balls', sub: 'Capsules de capture de créatures', color: '#ff4c4c', glow: 'rgba(255, 76, 76, 0.45)', bg: 'img/bag/backpack_balls.jpg', arcX: 70.7, arcY: 42.2 },
+      { id: 'ct', label: 'CT & CS', sub: 'Capsules Techniques et Secrètes', color: '#b966ff', glow: 'rgba(185, 102, 255, 0.45)', bg: 'img/bag/backpack_ct.jpg', arcX: 71.2, arcY: 57.8 },
+      { id: 'baies', label: 'Baies', sub: 'Baies naturelles et remèdes doux', color: '#ff77a8', glow: 'rgba(255, 119, 168, 0.45)', bg: 'img/bag/backpack_baies.jpg', arcX: 57.7, arcY: 73.5 },
+      { id: 'cles', label: 'Objets Rares', sub: 'Objets précieux, Carte et Bicyclette', color: '#ffe058', glow: 'rgba(255, 224, 88, 0.45)', bg: 'img/bag/backpack_cles.jpg', arcX: 30.7, arcY: 89.2 },
+    ];
+
+    let prevActiveP = 0;
+    let prevActiveI = 0;
+
+    function prevBagSetPocket(p) {
+      const count = prevPocketCfg.length;
+      prevActiveP = (p % count + count) % count;
+      prevActiveI = 0;
+      prevBagUpdateUI();
+    }
+
+    function prevBagChangePocket(dir) {
+      prevBagSetPocket(prevActiveP + dir);
+    }
+
+    function prevBagSelectItem(idx) {
+      prevActiveI = idx;
+      prevBagUpdateInspector();
+      const listEl = document.getElementById('prevItemsList');
+      listEl.querySelectorAll('.b2w2-item-row').forEach((r, k) => {
+        r.classList.toggle('on', k === prevActiveI);
+        const cur = r.querySelector('.cur');
+        if (cur) cur.textContent = k === prevActiveI ? '▶' : '';
+      });
+    }
+
+    function prevBagUpdateUI() {
+      const cfg = prevPocketCfg[prevActiveP];
+
+      // 1. Déplacement physique fluide du curseur glider le long de l'arc incurvé
+      const glider = document.getElementById('prevGlider');
+      glider.style.left = cfg.arcX + '%';
+      glider.style.top = cfg.arcY + '%';
+      glider.style.setProperty('--glider-col', cfg.color);
+
+      // 2. Nœuds de l'arc
+      document.querySelectorAll('#prevBagLeft .b2w2-arc-node').forEach((node) => {
+        const p = +node.dataset.pocket;
+        node.classList.toggle('on', p === prevActiveP);
+      });
+
+      // 3. Sac HD correspondant avec rétro-éclairage coloré
+      document.getElementById('prevBackpackImg').src = cfg.bg;
+      document.getElementById('prevBackpackStage').style.setProperty('--stage-glow', cfg.glow);
+
+      // 4. Badges et sous-titres
+      document.getElementById('prevPocketSub').textContent = cfg.label.toUpperCase();
+      document.getElementById('prevPocketTag').textContent = 'POCHE ' + cfg.label.toUpperCase();
+      document.getElementById('prevPocketTag').style.color = cfg.color;
+
+      const badge = document.getElementById('prevPocketBadge');
+      badge.textContent = `◀ ${cfg.label.toUpperCase()} ▶`;
+      badge.style.color = cfg.color;
+      badge.style.textShadow = `0 0 10px ${cfg.color}`;
+
+      document.getElementById('prevPocketSubDesc').textContent = cfg.sub;
+
+      // 5. Render items list
+      const items = prevBagData[prevActiveP] || [];
+      document.getElementById('prevPocketCount').textContent = `${items.length} objet${items.length > 1 ? 's' : ''}`;
+
+      const listEl = document.getElementById('prevItemsList');
+      listEl.innerHTML = items.map((it, n) => {
+        const heldTag = it.held ? '<span class="b2w2-held-tag">TENU</span>' : '';
+        const qtyTxt = it.key ? 'CLÉ' : `× ${it.qty}`;
+        return `
+          <div class="list-row b2w2-item-row ${n === prevActiveI ? 'on' : ''}" onclick="prevBagSelectItem(${n})">
+            <span class="cur">${n === prevActiveI ? '▶' : ''}</span>
+            <div class="b2w2-item-ico-wrap">
+              <img class="b2w2-item-ico" src="${it.icon}" alt="">
+            </div>
+            <span class="b2w2-item-name">${it.name}</span>
+            ${heldTag}
+            <span class="b2w2-item-qty">${qtyTxt}</span>
+          </div>`;
+      }).join('') + `
+        <div class="list-row b2w2-item-row b2w2-close-row ${prevActiveI === items.length ? 'on' : ''}" onclick="prevBagSelectItem(${items.length})">
+          <span class="cur">${prevActiveI === items.length ? '▶' : ''}</span>
+          <span class="b2w2-item-name" style="color:#ff9898;">FERMER LE SAC</span>
+          <span class="b2w2-item-qty" style="color:#98a8c0;">Échap / B</span>
+        </div>`;
+
+      prevBagUpdateInspector();
+    }
+
+    function prevBagUpdateInspector() {
+      const cfg = prevPocketCfg[prevActiveP];
+      const items = prevBagData[prevActiveP] || [];
+      const it = items[prevActiveI];
+      if (it) {
+        document.getElementById('prevInspImg').src = it.icon;
+        document.getElementById('prevInspImg').style.display = '';
+        document.getElementById('prevInspName').textContent = it.name;
+        document.getElementById('prevInspCat').textContent = `[${cfg.label}]`;
+        document.getElementById('prevInspCat').style.color = cfg.color;
+        document.getElementById('prevInspQty').textContent = it.key ? 'Objet Unique Rare' : `Quantité : × ${it.qty}`;
+        document.getElementById('prevInspDesc').textContent = it.desc;
+      } else {
+        document.getElementById('prevInspImg').style.display = 'none';
+        document.getElementById('prevInspName').textContent = 'Fermer le Sac';
+        document.getElementById('prevInspCat').textContent = '';
+        document.getElementById('prevInspQty').textContent = '';
+        document.getElementById('prevInspDesc').textContent = "Revenir à l'aventure sans utiliser d'objet.";
+      }
+    }
+
+    function prevBagCloseDemo() {
+      alert("Fermeture du sac (simulation). Dans le jeu, cela revient à l'aventure !");
+    }
+
+    // Support de la molette sur le panneau gauche
+    document.getElementById('prevBagLeft')?.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (e.deltaY > 15) prevBagChangePocket(1);
+      else if (e.deltaY < -15) prevBagChangePocket(-1);
+    }, { passive: false });
+
+    // Initialisation immédiate du Sac B2W2 Concept 1
+    prevBagUpdateUI();
+  </script>
+</body>
+</html>

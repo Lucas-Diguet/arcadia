@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Dogfight 3D : Bataille Aérienne</title>
+  <link rel="stylesheet" href="dogfight.css">
+</head>
+<body>
+<div id="app">
+  <div id="stage"></div>
+  <canvas id="hudCanvas"></canvas>
+
+  <div class="top-bar">
+    <button class="icon-btn" id="btnSet" title="Réglages" aria-label="Réglages"></button>
+    <button class="icon-btn" id="btnExit" title="Quitter" aria-label="Quitter">✕</button>
+  </div>
+
+  <div id="touchUI" aria-hidden="true">
+    <button data-a="fire" class="t-fire">Tir</button>
+    <button data-a="msl">Missile</button>
+    <button data-a="flare">Leurre</button>
+    <button data-a="boost">Boost</button>
+    <button data-a="brake">Frein</button>
+  </div>
+
+  <div id="loadingOverlay">
+    <div class="load-title">DOGFIGHT <span>3D</span></div>
+    <div class="load-status" id="loadStatus">Chargement…</div>
+    <div class="spinner" id="loadSpin"></div>
+  </div>
+
+  <section id="hangar" class="hidden" aria-label="Hangar">
+    <div class="h-head">
+      <p class="h-eyebrow">Hangar</p>
+      <h1>Choisis ton avion</h1>
+    </div>
+    <div class="h-planes" role="group" aria-label="Avion">
+      <button type="button" data-plane="f16" aria-pressed="true"><b>F-16</b><span>Fighting Falcon</span></button>
+      <button type="button" data-plane="f22" aria-pressed="false"><b>F-22</b><span>Raptor</span></button>
+    </div>
+    <p class="h-mode" id="modeBrief"></p>
+    <p class="h-blurb" id="planeBlurb"></p>
+    <dl class="h-stats">
+      <dt>Vitesse</dt><dd><i id="stat-speed"></i></dd>
+      <dt>Roulis</dt><dd><i id="stat-roll"></i></dd>
+      <dt>Virage</dt><dd><i id="stat-pitch"></i></dd>
+      <dt>Solidité</dt><dd><i id="stat-hp"></i></dd>
+      <dt>Canon</dt><dd><i id="stat-gun"></i></dd>
+      <dt>Repérage</dt><dd><i id="stat-sig"></i></dd>
+    </dl>
+    <ul class="h-roster" id="hangarRoster"></ul>
+    <ul class="h-keys">
+      <li><kbd>Souris</kbd> viser, l'avion suit</li>
+      <li><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> piloter soi-même</li>
+      <li><kbd>Espace</kbd> ou clic : canon</li>
+      <li><kbd>E</kbd> ou clic droit : missile, <kbd>F</kbd> : leurres</li>
+      <li><kbd>Maj</kbd> postcombustion, <kbd>C</kbd> aérofrein</li>
+    </ul>
+    <button id="btnStart" class="btn-launch" type="button">Décoller</button>
+  </section>
+
+  <section id="endScreen" class="hidden" aria-label="Fin de partie">
+    <div class="end-card">
+      <h1 id="endTitle"></h1>
+      <p id="endSub"></p>
+      <table>
+        <thead><tr><th></th><th>Pilote</th><th>Avion</th><th>Élim.</th><th>Aide</th><th>Morts</th></tr></thead>
+        <tbody id="endRows"></tbody>
+      </table>
+      <ul class="end-awards" id="endAwards"></ul>
+      <p id="endWait" hidden>En attente de l'hôte…</p>
+      <div class="end-actions">
+        <button id="btnReplay" class="btn-launch" type="button">Rejouer</button>
+        <button id="btnQuit" class="btn-sec" type="button">Quitter</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="../shared/bridge.js"></script>
+<script src="../shared/volume.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

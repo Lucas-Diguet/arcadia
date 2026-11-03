@@ -1,4 +1,5 @@
-# Arcadia — Duo Drift, DavidSimulator, Bastion Clash, Tête de Calcul, Fil Rouge, Outbreak, Cyber Kart GP, Convoy Storm, Birdie Party, Mini-Golf Party, Island Rush et Mollo !
+# Arcadia — Duo Drift, DavidSimulator, Bastion Clash, Tête de Calcul, Fil Rouge, Outbreak, Cyber Kart GP, Convoy Storm, Birdie Party, Mini-Golf Party, Island Rush, Mollo !, Site Noir et Mystère Mystère
+# Arcadia — Dogfight 3D, Duo Drift, DavidSimulator, Bastion Clash, Tête de Calcul, Fil Rouge, Outbreak, Cyber Kart GP, Convoy Storm, Birdie Party, Mini-Golf Party, Island Rush et Mollo !
 
 Des jeux en ligne entre potes, directement dans le navigateur, sans rien installer. On crée un salon,
 on partage le code, et l'hôte choisit le jeu. Le salon reste ouvert d'un jeu à l'autre.
@@ -14,6 +15,10 @@ Course et bataille en vue de dessus, jusqu'à 5 joueurs.
 - **Progression** : niveaux, pièces, garage à débloquer, défis du jour, succès, médailles contre-la-montre, fantômes à partager, rivalités
 - **Fin de course** : replay au ralenti, photo-finish, podium animé, finale du Grand Prix
 - Clavier ou manette, bots, chat, émotes
+
+## Dogfight 3D
+Combat aérien au-dessus de la vraie île d'Island Rush, jusqu'à 6 pilotes (bots possibles), chacun pour soi ou en équipes.
+F-16 ou F-22, visée à la souris ou pilotage en ZQSD, manette et tactile, canon, missiles et leurres.
 
 ## DavidSimulator
 Le Monopoly classique transposé à Nice, de Saint-Roch à la Promenade des Anglais, jusqu'à 6 joueurs (bots possibles).
@@ -150,7 +155,8 @@ Horreur asymétrique à la première personne (`sitenoir/`) : un monstre contre 
 - Moteur (`sitenoir/engine/`, sans DOM) : carte en grille (`map.js`), règles et réseau (`sim.js`), bots des deux camps (`bots.js`).
 - Réseau (`sitenoir/app.js`) : pas de serveur de jeu, l'hôte simule à 60 Hz via le relais du Hub. Il envoie 20 états de joueurs par seconde et le reste du monde quand il change ; l'invité anticipe son propre pas, se recale sur l'hôte et voit les autres ~100 ms en retard. Si l'hôte part, un invité reprend, et un bot remplace chaque joueur parti. `?debug` expose `__sitenoir.run(2)` ; `?autostart`, `?role=m|s`, `?seed`, `?lag=150`, `?q=bas`.
 - Image (`sitenoir/view/scene.js`, `post.js`, `textures.js`) : matériaux peints au canvas (couleur, relief, brillance), ombres de contact cuites dans les sommets, empreinte de lampe avec ombres, halo, exposition qui s'habitue au noir. Grain VHS et caméra tenue à la main pour les enquêteurs, vision de nuit pour le monstre. La définition baisse d'elle-même si la machine peine.
-- Modèles : Poly Pizza, crédits dans `sitenoir/models/LICENSE.txt`. Sons synthétisés (WebAudio).
+- Modèles : Poly Pizza, crédits dans `sitenoir/models/LICENSE.txt`. Sons : enregistrements CC0 (`sitenoir/sounds/`, crédits dans `LICENSE.txt`), placés dans l'espace par `view/sfx.js` avec des sons synthétisés en repli.
+- Guidage : `goalOf` (`view/hud.js`) déduit l'objectif de l'état de la partie, la flèche suit un chemin à pied, les bandes et panneaux viennent de `M.routes` et `M.signs` (`engine/map.js`).
 
 ## Mollo !
 
@@ -176,6 +182,24 @@ Le labo d'Odyssée : on choisit un lieu et une équipe prête, et on y apparaît
 - **Donjon de Didier** : trois Adeptes de l'X gardent les clés de l'ascenseur et posent chacun une question sur les grecs (delta, gamma, vega). Une erreur coûte des PV à toute l'équipe. En haut, le Spectre de Pierre Chartier se combat à trois contre un, avec une barre de vie en trois blocs
 - Faire un donjon (il se dessine en texte) : [testodyssee/LISEZMOI.md](testodyssee/LISEZMOI.md)
 
+## Mystère Mystère
+
+Murder mystery à la première personne (`mystery/`), façon Murder Mystery 2 : un meurtrier caché parmi les invités d'un manoir, un shérif, des innocents.
+Des manches de 2 à 4 minutes, de 3 à 12 invités (bots compris), et un mode Découverte sans rôles pour visiter.
+
+- **Rôles secrets** : le meurtrier (couteau caché, coup au corps à corps, lancer de couteau qui se plante et revient, coupure de courant),
+  le shérif (revolver ; abattre un innocent le sonne et lui fait lâcher l'arme), les innocents (pièces d'or, survivre jusqu'à l'aube).
+  Le revolver d'un shérif tombé brille d'un faisceau doré : le premier innocent qui le ramasse devient le héros.
+- **Le manoir** : trois niveaux et 24 pièces (grand hall à double hauteur et sa galerie, salle à manger, cuisine, bibliothèque, salon, billard,
+  salon de musique, jardin d'hiver, chambres, salle de bain, bureau, salle des trophées, cave à vin, crypte, souterrain, salle des coffres),
+  cinq escaliers dont un dérobé, trois passages secrets (bibliothèque pivotante, armoire, miroir).
+- **Bots** à trois niveaux : ils voient ce qu'un joueur verrait, retiennent qui a sorti un couteau, se déplacent sur tous les étages et prennent les passages secrets.
+- **Réseau** : l'hôte simule à 60 Hz ; personne d'autre ne connaît les rôles avant la fin. L'invité anticipe son propre pas et se recale sur l'hôte.
+  Un bot remplace un joueur parti ; si l'hôte part, la manche s'arrête et le nouvel hôte en relance une.
+- **Graphismes** : personnages animés de Quaternius aux couleurs des joueurs, mobilier Kenney et KayKit (CC0, `mystery/models/LICENSE.txt`),
+  papiers peints, parquets et damiers peints au canvas, lustres, fenêtres au clair de lune. Sons et petite valse de boîte à musique synthétisés (WebAudio).
+- `?debug` expose `__mystery` ; `?autostart`, `?seed`, `?role=m|s|i`, `?mode=explore`, `?bots=4`, `?lag=150`, `?q=bas`.
+
 ## Pour les développeurs
 - Site statique (GitHub Pages), sans étape de build.
 - `?local` dans l'adresse : réseau simulé entre onglets du même navigateur, pratique pour tester à plusieurs.
@@ -190,6 +214,7 @@ Le labo d'Odyssée : on choisit un lieu et une équipe prête, et on y apparaît
   `node tools/test-royale.mjs` teste l'île d'Island Rush (plusieurs graines), le déplacement, une partie, le réseau et la prédiction ;
   `node tools/bench-royale.mjs` y fait jouer une partie entière entre bots ;
   `node tools/test-sitenoir.mjs` teste le moteur de Site Noir (carte, clés, générateur, ascenseur, coups, extraction, copies des invités, relais d'hôte, parties entières entre bots).
+  `node tools/test-mystery.mjs` teste le moteur de Mystère Mystère (manoir, escaliers, passages secrets, armes, bavure, héros, pièces, coupure, secret des rôles, prédiction, manches entre bots).
   `node tools/test-mollo.mjs` teste le moteur de Mollo ! (arènes et pièges, objets, collisions, marche, coups, KO, prises, rebords, parties entières entre bots, reprise d'hôte).
 - Serveur relais (`server/server.js`, à redéployer quand il change) : `/status` donne les salons et les pics de trafic
   (`maxFrame`, `peakMsgs`, `peakBytes`) ; la lecture des logs (`GET /api/logs`) demande la variable d'environnement
@@ -202,6 +227,6 @@ Le labo d'Odyssée : on choisit un lieu et une équipe prête, et on y apparaît
   en haut de `CHANGELOG.md` (consignes pour les assistants de code dans [AGENTS.md](AGENTS.md)). Si un push l'oublie,
   l'action `.github/workflows/changelog.yml` rédige l'entrée à partir des commits.
 
-Version actuelle : **3.21** — voir le [journal des versions](CHANGELOG.md).
+Version actuelle : **3.57** — voir le [journal des versions](CHANGELOG.md).
 
 by Amiel, Nicolas, Gabriel and Claude
