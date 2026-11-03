@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 3.60 — 3 novembre 2026
+- **TestOdyssée** — Les deux donjons ont maintenant un extérieur : on arrive juste devant l'entrée, il ne reste plus qu'à entrer.
+  - Crypte des Murmures : un petit cimetière, ses stèles et ses lanternes, autour de l'entrée de la grotte.
+  - Donjon de Didier : une grande bâtisse grise derrière une cour pavée, avec sa fontaine.
+  - Une sortie en bas de chaque donjon ramène dehors. Les clés de l'ascenseur restent à l'intérieur.
+
 ## 3.59 — 3 novembre 2026
 - **TestOdyssée** — Correction : « Changer de lieu » laissait l'écran tout noir. L'écran de choix s'affiche de nouveau.
 

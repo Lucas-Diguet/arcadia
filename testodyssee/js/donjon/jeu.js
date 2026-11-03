@@ -10,7 +10,7 @@ import { createMon, healFull } from '../../../odyssee/js/core/mon.js';
 import { itemName } from '../../../odyssee/js/core/items.js';
 import { el, esc } from '../../../odyssee/js/ui/ui.js';
 import { nouvelEtat, appliquer, battu, prisPar, requisDalles } from './etat.js';
-import { construireCarte, fermer, ouvrir } from './plan.js';
+import { construireCarte, relierExterieur, fermer, ouvrir } from './plan.js';
 import { Mecaniques } from './mecaniques.js';
 import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
@@ -30,6 +30,8 @@ export class Donjons {
     for (const d of defs) {
       const m = construireCarte(d);
       game.world.maps[d.carte] = m;
+      const dehors = relierExterieur(d, m);
+      if (dehors) game.world.maps[dehors.id] = dehors;
       this.poserPnj(d, m);
       this.poserObjets(d, m);
       this.etats[d.id] = nouvelEtat(d);

@@ -6,13 +6,39 @@
 // une clé. Une mauvaise réponse coûte la moitié des PV de toute l'équipe (puis tout sauf 1 PV, puis plus rien).
 // Bureau de Pierre : on y monte par l'ascenseur. Quand tous les joueurs présents ont parlé au personnage masqué,
 // le combat à plusieurs contre le Spectre de Pierre Chartier commence (barre de vie à trois blocs).
+// Dehors : une grande bâtisse grise derrière une cour pavée.
 import { SPECTRE_PIERRE } from '../contenu.js';
+import { GameMap, rng } from '../../../odyssee/js/world/mapgen.js';
+import { T } from '../../../odyssee/js/world/tiles.js';
+
+/** l'extérieur : carte d'Odyssée ordinaire (comme les lieux annexes de odyssee/js/world/quetes.js) */
+function exterieur() {
+  const m = new GameMap('labo:didier:dehors', 34, 26, { outdoor: true, fill: T.TREE, name: 'Cour de Didier', music: 'city' });
+  m.blob(17, 13, 13.5, 10.5, T.GRASS, rng(2007));
+  m.rect(5, 3, 28, 22, T.GRASS, [T.TREE]);
+  const b = m.building('bighouse', 14, 4, { roof: 'gray', name: 'Donjon de Didier' });
+  // cour pavée devant la façade, allée jusqu'en bas
+  m.rect(9, b.doorY + 1, 24, 18, T.PAVE);
+  for (let y = 19; y <= 23; y++) { m.set(b.doorX, y, T.PAVE); m.set(b.doorX + 1, y, T.PAVE); }
+  // massifs de fleurs de part et d'autre de la façade, haies devant
+  m.rect(9, 5, 12, 6, T.FLOWER, [T.GRASS]); m.rect(21, 5, 24, 6, T.FLOWER, [T.GRASS]);
+  for (const x of [8, 10, 12]) m.prop('bush', x, 8);
+  for (const x of [21, 23, 25]) m.prop('bush', x, 8);
+  // fontaine au milieu, lampadaires aux coins, bancs
+  m.prop('fontaine', b.doorX, 14);
+  for (const [x, y] of [[9, 11], [24, 11], [9, 18], [24, 18]]) m.prop('lamp', x, y);
+  m.prop('banc', 12, 16); m.prop('banc', 21, 16);
+  m.sign(b.doorX + 3, 20, 'DONJON DE DIDIER\nSalle des marchés au sous-sol. Tenue correcte exigée.');
+  m.zone(0, 0, 33, 25, { name: 'Cour de Didier', music: 'city' });
+  return { carte: m, porte: [b.doorX, b.doorY] };
+}
 
 export default {
   id: 'didier',
   carte: 'labo:didier',
   nom: 'Donjon de Didier',
   niveau: 'niv. 45, de 1 à 3 joueurs',
+  exterieur,
   musique: 'tower',
   equipe: 'didier',
   plan: [
@@ -39,7 +65,7 @@ export default {
     '##########.PPP.###########',
     '##########.....###########',
     '############S#############',
-    '##########################',
+    '############D#############',
   ],
   decor: { T: 'brasero', C: 'colonne', X: 'squelette' },
   objets: {

@@ -1,7 +1,7 @@
 // tools/test-testodyssee.mjs — TestOdyssée : plans des donjons et règles partagées du groupe.
 // node tools/test-testodyssee.mjs
 import { DONJONS } from '../testodyssee/js/donjons/index.js';
-import { construireCarte, lirePlan, regionDe, ouvrir, aCote } from '../testodyssee/js/donjon/plan.js';
+import { construireCarte, lirePlan, regionDe, ouvrir, aCote, relierExterieur } from '../testodyssee/js/donjon/plan.js';
 import { installerContenu } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
 import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, clesDe, serrures } from '../testodyssee/js/donjon/etat.js';
@@ -41,6 +41,14 @@ for (const d of DONJONS) {
   const sol = P.sol.filter(([x, y]) => walkable(m.get(x, y)));
   ok(sol.every(([x, y]) => seen[y * m.w + x]), `${d.id} : portes ouvertes, tout le sol est accessible`);
   for (const [k, [[x, y]]] of Object.entries(P.pnj)) ok([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen[(y + dy) * m.w + x + dx]), `${d.id} : on peut parler à ${k}`);
+  // extérieur : de l'arrivée devant la porte, on atteint la porte ; elle mène à S, et la sortie D ramène devant
+  const dehors = relierExterieur(d, m);
+  if (d.exterieur) {
+    const [px, py] = m.donjon.exterieur.porte, vu = dehors.reach(px, py + 2);
+    ok(walkable(dehors.get(px, py + 2)) && vu[py * dehors.w + px], `${d.id} : la porte de l'extérieur est accessible`);
+    ok(dehors.warpAt(px, py)?.map === m.id && dehors.warpAt(px, py).x === P.depart[0], `${d.id} : la porte mène à l'arrivée du donjon`);
+    ok(P.sortie && m.warpAt(...P.sortie)?.map === dehors.id && m.reach(...P.depart)[P.sortie[1] * m.w + P.sortie[0]], `${d.id} : la sortie ramène dehors`);
+  }
 }
 let erreur = null;
 try { lirePlan({ id: 'x', plan: ['#Z#', '#S#'], pnj: {}, decor: {} }); } catch (e) { erreur = e.message; }
@@ -156,7 +164,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
 
 /* ---------------- lieux et équipes ---------------- */
 const world = buildWorld();
-for (const dd of DONJONS) { const m = construireCarte(dd); world.maps[dd.carte] = m; }
+for (const dd of DONJONS) { const m = construireCarte(dd); world.maps[dd.carte] = m; const e = relierExterieur(dd, m); if (e) world.maps[e.id] = e; }
 const lieux = listerLieux(world, DONJONS);
 ok(lieux.labo.length === DONJONS.length && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
 for (const l of Object.values(lieux).flat()) {

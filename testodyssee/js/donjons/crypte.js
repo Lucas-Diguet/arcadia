@@ -5,12 +5,38 @@
 // Salles des Murmures et Ossuaire : trois esprits par salle, chacun se combat par un seul joueur à la fois.
 // Salle des Dalles : tout le groupe doit se tenir sur les dalles en même temps (seul : une dalle suffit).
 // Tombeau : Ossarion a des PV partagés ; chaque combat lui retire ce qu'on lui a infligé.
+// Dehors : le Cimetière des Murmures, une clairière aux stèles dont la grotte mène à la crypte.
+import { GameMap, rng } from '../../../odyssee/js/world/mapgen.js';
+import { T } from '../../../odyssee/js/world/tiles.js';
+
+/** l'extérieur : carte d'Odyssée ordinaire (comme les lieux annexes de odyssee/js/world/quetes.js) */
+function exterieur() {
+  const m = new GameMap('labo:crypte:dehors', 32, 26, { outdoor: true, fill: T.TREE, name: 'Cimetière des Murmures', music: 'mystic' });
+  const r = rng(4417);
+  m.blob(16, 13, 12.5, 10, T.GRASS, r);
+  m.rect(5, 4, 26, 22, T.GRASS, [T.TREE]);
+  // l'entrée de la crypte, au fond, et l'allée qui y mène
+  const b = m.building('cave', 13, 3, { name: 'Crypte des Murmures' });
+  for (let y = b.doorY + 1; y <= 23; y++) m.set(b.doorX, y, T.PATH);
+  m.rect(14, 7, 16, 7, T.PATH);
+  // clôture du cimetière, ouverte sur l'allée
+  for (let x = 5; x <= 26; x++) if (x !== b.doorX) m.set(x, 18, T.FENCE);
+  // stèles en rangées de part et d'autre de l'allée
+  for (const y of [9, 12, 15]) for (const x of [8, 10, 12, 18, 20, 22]) m.prop('stele', x, y);
+  m.prop('lanterne', b.doorX - 1, 10); m.prop('lanterne', b.doorX + 1, 10); m.prop('lanterne', b.doorX - 1, 15); m.prop('lanterne', b.doorX + 1, 15);
+  for (const [x, y] of [[6, 8], [25, 9], [6, 15], [25, 15], [9, 21], [23, 21]]) m.prop('deadtree', x, y);
+  m.prop('gargouille', b.x - 1, b.doorY); m.prop('gargouille', b.x + b.w, b.doorY);
+  m.sign(b.doorX + 2, 19, 'CIMETIÈRE DES MURMURES\nLe fossoyeur Anselme veille sur la crypte.');
+  m.zone(0, 0, 31, 25, { name: 'Cimetière des Murmures', music: 'mystic' });
+  return { carte: m, porte: [b.doorX, b.doorY] };
+}
 
 export default {
   id: 'crypte',
   carte: 'labo:crypte',
   nom: 'Crypte des Murmures',
   niveau: 'niv. 20 à 30, de 1 à 4 joueurs',
+  exterieur,
   musique: 'tower',
   plan: [
     '##########################',
@@ -55,7 +81,7 @@ export default {
     '########...g........######',
     '########.....S......######',
     '#########..........#######',
-    '##########################',
+    '#############D############',
   ],
   decor: { T: 'brasero', C: 'colonne', X: 'squelette', G: 'gargouille', R: 'caverock' },
   pnj: {

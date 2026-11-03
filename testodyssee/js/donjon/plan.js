@@ -7,6 +7,7 @@ export const LEGENDE = {
   '#': 'mur',
   '.': 'sol',
   'S': 'arrivée des joueurs',
+  'D': 'sortie vers l\'extérieur (sous l\'arrivée)',
   'o': 'dalle à tenir',
   '0-9': 'porte scellée (s\'ouvre quand la salle qui la porte est terminée)',
 };
@@ -20,12 +21,13 @@ export function lirePlan(def) {
   const rows = def.plan.map((r) => r.replace(/\s+$/, ''));
   const w = Math.max(...rows.map((r) => r.length)) + 2, h = rows.length + 2;
   const at = (x, y) => (y >= 1 && y <= rows.length ? rows[y - 1][x - 1] ?? '#' : '#') || '#';
-  const out = { w, h, depart: null, portes: {}, dalles: [], pnj: {}, decor: [], sol: [], objets: {} };
+  const out = { w, h, depart: null, sortie: null, portes: {}, dalles: [], pnj: {}, decor: [], sol: [], objets: {} };
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = x === 0 || x === w - 1 ? '#' : at(x, y);
     if (c === '#' || c === ' ') continue;
     out.sol.push([x, y]);
     if (c === 'S') out.depart = [x, y];
+    else if (c === 'D') out.sortie = [x, y];
     else if (c === 'o') out.dalles.push([x, y]);
     else if (/[0-9]/.test(c)) (out.portes[c] ||= []).push([x, y]);
     else if (def.pnj?.[c]) (out.pnj[c] ||= []).push([x, y]);
@@ -44,6 +46,7 @@ export function construireCarte(def) {
   const m = new GameMap(def.carte, P.w, P.h, { outdoor: false, fill: T.CAVEWALL, floor: 'cave', music: def.musique || 'cave', name: def.nom, battleBg: 'cave' });
   m.edge = T.CAVEWALL;
   for (const [x, y] of P.sol) m.set(x, y, T.CAVE);
+  if (P.sortie) m.set(...P.sortie, T.CAVEWALL);   // fermée tant qu'aucun extérieur ne la relie
   for (const [k, x, y] of P.decor) m.prop(k, x, y);
   for (const [c, l] of Object.entries(P.objets)) {
     const o = def.objets[c];
@@ -106,4 +109,24 @@ export function aCote(m, P, c) {
   const sol = new Set(P.sol.map(([a, b]) => a + ',' + b));
   for (const [dx, dy] of [[0, 1], [-1, 0], [1, 0], [0, -1]]) if (sol.has((x + dx) + ',' + (y + dy)) && !P.decor.some(([, a, b]) => a === x + dx && b === y + dy)) return [x + dx, y + dy];
   return P.depart;
+}
+
+/**
+ * relie le donjon à son extérieur (def.exterieur() construit une carte d'Odyssée en plein air et renvoie
+ * { carte, porte: [x, y] }) : la porte de l'extérieur mène à l'arrivée S, la sortie D ramène devant la porte.
+ */
+export function relierExterieur(def, m) {
+  if (!def.exterieur) return null;
+  const { carte, porte } = def.exterieur();
+  const P = m.donjon.plan, [px, py] = porte;
+  carte.warp(px, py, { map: m.id, x: P.depart[0], y: P.depart[1], dir: 'up' });
+  if (P.sortie) {
+    const [sx, sy] = P.sortie;
+    m.set(sx, sy, T.CAVEDOOR);
+    m.warp(sx, sy, { map: carte.id, x: px, y: py + 1, dir: 'down' });
+    m.deco.push({ k: 'exitlight', x: sx, y: sy });
+  }
+  m.outside = { map: carte.id, x: px, y: py + 1 };
+  m.donjon.exterieur = { carte, porte };
+  return carte;
 }

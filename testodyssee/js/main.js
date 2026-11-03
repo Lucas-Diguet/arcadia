@@ -95,7 +95,10 @@ async function boot() {
   game.onChangerLieu = donjons.onQuitter = () => { choisir().catch(fatal); };
 
   // ?lieu=crypte&equipe=debut : démarre directement (pratique pour tester)
-  const direct = QS.get('lieu') && Object.values(lieux).flat().find((l) => l.map === QS.get('lieu') || l.map === 'labo:' + QS.get('lieu') || l.nom === QS.get('lieu'));
+  // ?lieu=crypte : devant l'entrée ; ?lieu=crypte&dedans : directement à l'intérieur
+  const DJ = DONJONS.find((d) => d.id === QS.get('lieu'));
+  const direct = DJ && QS.has('dedans') ? { nom: DJ.nom, map: DJ.carte, x: world.maps[DJ.carte].donjon.plan.depart[0], y: world.maps[DJ.carte].donjon.plan.depart[1], dir: 'up', equipe: DJ.equipe }
+    : QS.get('lieu') && Object.values(lieux).flat().find((l) => (DJ && l.nom === DJ.nom) || l.map === QS.get('lieu') || l.nom === QS.get('lieu'));
   if (direct) {
     const nomHub = H && H.embedded && H.players.find((p) => String(p.id) === String(H.info.myId))?.name;
     const state = partieTest(game, { nom: (QS.get('nom') || nomHub || 'Testeur').slice(0, 10), genre: QS.get('genre') === 'f' ? 'f' : 'm', equipe: QS.get('equipe') || direct.equipe || 'debut', lieu: direct });

@@ -50,6 +50,7 @@ Le donjon se dessine en texte, une lettre par case :
 | `#` | mur |
 | `.` | sol |
 | `S` | arrivée des joueurs (une seule) |
+| `D` | sortie vers l'extérieur (sous l'arrivée) |
 | `o` | dalle à tenir |
 | `0` à `9` | porte scellée ; elle s'ouvre quand la salle qui porte ce numéro est terminée |
 | lettres de `pnj` | un PNJ (gardien, adversaire, boss), une seule fois chacun |
@@ -62,6 +63,14 @@ touchent pas (comme le bureau de Pierre) ne se rejoignent que par un ascenseur.
 
 Les décors disponibles sont ceux d'Odyssée : la liste `deco`, `nature` et `mobilier` de `odyssee/js/data/sprites.js`.
 Une lettre inconnue arrête le labo avec un message qui donne sa ligne et sa colonne.
+
+### L'extérieur
+
+`exterieur()` construit l'extérieur du donjon avec les outils d'Odyssée (`GameMap`, `building`, `prop`, `sign`, comme
+les lieux annexes de `odyssee/js/world/quetes.js`) et renvoie `{ carte, porte: [x, y] }`. La porte mène à l'arrivée `S`,
+la sortie `D` ramène devant la porte, et dans l'écran de choix on apparaît deux cases devant l'entrée
+(`?lieu=crypte&dedans` pour entrer directement). Pour passer un extérieur dans Odyssée, il suffit de relier sa
+lisière à la grande carte, comme le fait `passage()` dans `quetes.js`.
 
 ### Les salles
 
