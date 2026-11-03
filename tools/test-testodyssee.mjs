@@ -11,7 +11,8 @@ import { ITEMS } from '../odyssee/js/core/items.js';
 import { buildWorld } from '../odyssee/js/world/region.js';
 import { listerLieux } from '../testodyssee/js/lieux.js';
 import { EQUIPES } from '../testodyssee/js/equipes.js';
-import { walkable } from '../odyssee/js/world/tiles.js';
+import { walkable, T } from '../odyssee/js/world/tiles.js';
+import { cle, explorerGlace, faisceau, resoudreReflet } from '../testodyssee/js/donjon/casse-tetes.js';
 
 installerContenu();
 let fails = 0, checks = 0;
@@ -29,12 +30,14 @@ for (const d of DONJONS) {
     if (s.type === 'dalles') ok(P.dalles.length > 0, `${d.id} : des dalles dans ${s.id}`);
   }
   for (const k of Object.keys(P.portes)) ok(d.salles.some((s) => s.porte === k), `${d.id} : la porte ${k} appartient à une salle`);
-  for (const p of Object.values(d.pnj)) for (const [sp, lvl] of p.equipe || []) ok(SPECIES[sp] && lvl > 0 && lvl <= 100, `${d.id} : ${p.nom} a des Pokémon valides`);
+  for (const p of Object.values(d.pnj || {})) for (const [sp, lvl] of p.equipe || []) ok(SPECIES[sp] && lvl > 0 && lvl <= 100, `${d.id} : ${p.nom} a des Pokémon valides`);
   for (const k of Object.keys(d.recompense?.objets || {})) ok(ITEMS[k], `${d.id} : l'objet ${k} existe`);
   // portes fermées : on ne quitte pas l'entrée ; ouvertes : tout le sol est atteint, chaque PNJ a une case libre à côté
   const ferme = compte(m.reach(...P.depart));
   ok(ferme === regionDe(m, P, d.salles[0]).filter(([x, y]) => walkable(m.get(x, y))).length, `${d.id} : portes fermées, seule l'entrée est accessible (${ferme})`);
   for (const l of Object.values(P.portes)) for (const [x, y] of l) ok(ouvrir(m, x, y), `${d.id} : la porte en ${x},${y} s'ouvre`);
+  // passage ouvert par un objet (le bon miroir de l'énigme)
+  for (const s of d.salles) if (s.porteObjet) for (const [x, y] of P.objets[s.porteObjet]) ok(ouvrir(m, x, y), `${d.id} : le passage ${s.porteObjet} s'ouvre`);
   // on part de l'entrée et de chaque arrivée d'ascenseur
   const seen = m.reach(...P.depart);
   for (const [c, o] of Object.entries(d.objets || {})) if (o.type === 'ascenseur') { const s2 = m.reach(...aCote(m, P, c)); for (let i = 0; i < seen.length; i++) seen[i] |= s2[i]; }
@@ -50,6 +53,59 @@ for (const d of DONJONS) {
     ok(P.sortie && m.warpAt(...P.sortie)?.map === dehors.id && m.reach(...P.depart)[P.sortie[1] * m.w + P.sortie[0]], `${d.id} : la sortie ramène dehors`);
   }
 }
+/* ---------------- donjon des miroirs : les casse-têtes ---------------- */
+{
+  const d = DONJONS.find((q) => q.id === 'miroirs'), m = construireCarte(d), P = m.donjon.plan;
+  const objet = (x, y) => Object.entries(P.objets).find(([, l]) => l.some(([a, b]) => a === x && b === y))?.[0];
+  const zone = (id) => { const [x0, y0, x1, y1] = d.salles.find((s) => s.id === id).zone; return [x0 + 1, y0 + 1, x1 + 1, y1 + 1]; };
+  const dans = ([x0, y0, x1, y1], x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+  // salles de glace : depuis l'entrée (bas), on atteint la sortie (haut) et chaque objet, quels que soient ceux déjà pris,
+  // et on ne reste jamais coincé (de toute case atteinte, on peut revenir à l'entrée)
+  for (const [id, cibles] of [['s2', ['p', 'q']], ['s3', ['u', 'v', 'w', 'x', 'y', 'R']]]) {
+    const Z = zone(id), cases = cibles.flatMap((c) => P.objets[c]);
+    const entree = P.sol.find(([x, y]) => x === 15 && y === Z[3] + 1), sortie = P.sol.find(([x, y]) => x === 15 && y === Z[1] - 1);
+    const base = (x, y) => dans(Z, x, y) || (x === 15 && (y === Z[3] + 1 || y === Z[1] - 1));
+    let bon = true, coince = 0;
+    for (let mask = 0; mask < 1 << cases.length; mask++) {
+      const pris = new Set(cases.filter((_, i) => mask >> i & 1).map(([x, y]) => cle(x, y)));
+      const objets = new Set(cases.map(([x, y]) => cle(x, y)));
+      const libre = (x, y) => base(x, y) && (pris.has(cle(x, y)) || (walkable(m.get(x, y)) && !objets.has(cle(x, y))));
+      const vu = explorerGlace(m.glace, libre, ...entree);
+      if (!vu.has(cle(...sortie))) bon = false;
+      // chaque objet restant : une case voisine atteinte, d'où on le touche
+      for (const [x, y] of cases) if (!pris.has(cle(x, y)) && ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vu.has(cle(x + dx, y + dy)))) bon = false;
+      for (const k of vu.keys()) { const [x, y] = k.split(',').map(Number); if (!explorerGlace(m.glace, libre, x, y).has(cle(...entree))) coince++; }
+    }
+    ok(bon, `miroirs : ${id}, la sortie et chaque objet sont accessibles en glissant`);
+    ok(coince === 0, `miroirs : ${id}, on ne reste jamais coincé sur la glace (${coince})`);
+  }
+  // salle du brasier : la lumière n'éclaire rien au départ ; une seule façon d'éclairer les deux soleils, avec les 3 miroirs de poche
+  const [bx, by] = P.objets.F[0], cibles = new Set(P.objets.L.map(([x, y]) => cle(x, y))), socles = P.objets.o;
+  const bloque = (x, y) => m.get(x, y) === T.CAVEWALL || (m.get(x, y) === T.BLOCK && objet(x, y) !== 'o');
+  const fixes = [...P.objets.f.map((c) => [c, '/']), ...P.objets.g.map((c) => [c, '\\'])];
+  const essai = (mm) => [[-1, 0], [1, 0]].map(([dx, dy]) => faisceau(bx, by, dx, dy, mm, bloque, cibles).touche);
+  const t0 = essai(new Map(fixes.map(([[x, y], o]) => [cle(x, y), o])));
+  ok(!t0[0] && !t0[1], 'miroirs : au départ, la lumière n\'éclaire aucun soleil');
+  let n = 0, moins = 0;
+  for (let mask = 0; mask < 3 ** socles.length; mask++) {
+    let q = mask; const pose = [];
+    for (const c of socles) { const v = q % 3; q = Math.floor(q / 3); if (v) pose.push([c, v === 1 ? '/' : '\\']); }
+    if (pose.length > P.objets.p.length) continue;
+    for (let f = 0; f < 1 << fixes.length; f++) {
+      const mm = new Map(fixes.map(([[x, y]], i) => [cle(x, y), (f >> i) & 1 ? '\\' : '/']));
+      for (const [[x, y], o] of pose) mm.set(cle(x, y), o);
+      const t = essai(mm);
+      if (t[0] && t[1] && t[0] !== t[1]) { n++; if (pose.length < P.objets.p.length) moins++; }
+    }
+  }
+  ok(n === 1 && moins === 0, `miroirs : une seule solution de lumière, avec tous les miroirs de poche (${n}, ${moins})`);
+  // salle du reflet : Copycat est rejoignable
+  const S5 = d.salles.find((s) => s.type === 'reflet'), Z5 = zone('s5'), L = S5.ligne + 1;
+  const libre5 = (x, y) => dans(Z5, x, y) && walkable(m.get(x, y));
+  const r = resoudreReflet([S5.retour[0] + 1, S5.retour[1]], P.objets.K[0], (x, y) => libre5(x, y) && y >= L, (x, y) => libre5(x, y) && y <= L);
+  ok(r.n > 0 && r.n <= 30, `miroirs : on rejoint Copycat (${r.n} pas)`);
+}
+
 let erreur = null;
 try { lirePlan({ id: 'x', plan: ['#Z#', '#S#'], pnj: {}, decor: {} }); } catch (e) { erreur = e.message; }
 ok(/lettre inconnue/.test(erreur || ''), 'une lettre inconnue du plan est signalée');

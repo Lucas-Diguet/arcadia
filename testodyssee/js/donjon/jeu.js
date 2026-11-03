@@ -10,8 +10,9 @@ import { createMon, healFull } from '../../../odyssee/js/core/mon.js';
 import { itemName } from '../../../odyssee/js/core/items.js';
 import { el, esc } from '../../../odyssee/js/ui/ui.js';
 import { nouvelEtat, appliquer, battu, prisPar, requisDalles } from './etat.js';
-import { construireCarte, relierExterieur, fermer, ouvrir } from './plan.js';
+import { construireCarte, relierExterieur, fermer, ouvrir, decorPorte } from './plan.js';
 import { Mecaniques } from './mecaniques.js';
+import { Miroirs } from './miroirs.js';
 import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 
@@ -34,6 +35,7 @@ export class Donjons {
       if (dehors) game.world.maps[dehors.id] = dehors;
       this.poserPnj(d, m);
       this.poserObjets(d, m);
+      this.poserObjetsMiroirs(d, m);
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -71,12 +73,14 @@ export class Donjons {
     const ici = g.state && g.mapObj === m;
     for (const s of d.salles) {
       if (!s.porte) continue;
-      for (const [x, y] of P.portes[s.porte] || []) {
+      const cases = P.portes[s.porte] || [];
+      for (const [i, [x, y]] of cases.entries()) {
         const k = x + ',' + y;
         if (e.salles[s.id].faite) { if (ouvrir(m, x, y) && ici) { g.view.decoAt.delete(k); g.view.rebuildAt(x, y); } }
-        else if (m.get(x, y) !== T.BLOCK) { fermer(m, x, y); if (ici) { g.view.decoAt.set(k, m.deco.find((q) => q.x === x && q.y === y)); g.view.rebuildAt(x, y); } }
+        else if (m.get(x, y) !== T.BLOCK) { fermer(m, x, y, decorPorte(d, s.porte, i, cases.length)); if (ici) { g.view.decoAt.set(k, m.deco.find((q) => q.x === x && q.y === y)); g.view.rebuildAt(x, y); } }
       }
     }
+    this.appliquerMiroirs(d);
     if (ici) g.refreshNpcs();
     const vu = this.vus[id];
     // premier état connu : ce qui est déjà fait ne rejoue pas de scène ; nouvelle descente : tout se rejoue
@@ -89,11 +93,14 @@ export class Donjons {
       vu.faites.add(s.id);
       if (ici && s.type !== 'boss') this.taches.push(() => this.porteOuverte(d, s));
     }
-    if (e.fini && !vu.fini) { vu.fini = true; if (ici && !d.salles.some((s) => s.type === 'raid')) this.taches.push(() => this.victoire(d)); }
+    if (e.fini && !vu.fini) { vu.fini = true; if (ici && !d.solo && !d.salles.some((s) => s.type === 'raid')) this.taches.push(() => this.victoire(d)); }
     this.majPanneau();
   }
   async porteOuverte(d, s) {
     const g = this.game;
+    // ces salles racontent elles-mêmes leur fin
+    if (s.type === 'enigme' || s.type === 'reflet') return;
+    if (s.type === 'lumiere') { g.sound.sfx('badge'); g.view.shake = 0.3; await g.ui.say(d.textes.porteOuverte); return; }
     g.sound.sfx('bang'); g.view.shake = 0.2;
     g.ui.toast(s.type === 'accueil' ? 'La porte de la crypte s\'ouvre !' : `${s.nom} : terminée ! Une porte s'ouvre.`, 2200);
   }
@@ -126,7 +133,8 @@ export class Donjons {
   }
   /** demande à l'hôte (ou s'applique tout de suite chez l'hôte) ; renvoie { ok, why } */
   demande(id, m) {
-    if (this.hote) return Promise.resolve(this.traiter(id, this.moi, m));
+    // un donjon solo n'est pas partagé : chacun tient le sien
+    if (this.hote || this.defs.get(id)?.solo) return Promise.resolve(this.traiter(id, this.moi, m));
     const rid = newRid();
     this.H.send('host', { t: 'dj', id, m, rid });
     return new Promise((res) => {
@@ -142,17 +150,17 @@ export class Donjons {
     return { ok: r.ok, why: r.why };
   }
   diffuser(id) {
-    if (this.H) this.H.send('all', { t: 'djE', id, e: this.etats[id] });
+    if (this.H && !this.defs.get(id).solo) this.H.send('all', { t: 'djE', id, e: this.etats[id] });
     this.appliquerEtat(id);
   }
   recevoir(from, m) {
     if (!m || typeof m.t !== 'string' || !m.t.startsWith('dj') || String(from) === this.moi) return;
     if (m.t === 'dj' && this.hote) { const r = this.traiter(m.id, String(from), m.m); this.H.send(from, { t: 'djR', rid: m.rid, ...r }); return; }
-    if (m.t === 'dj?' && this.hote) { for (const id of this.defs.keys()) this.H.send(from, { t: 'djE', id, e: this.etats[id] }); return; }
+    if (m.t === 'dj?' && this.hote) { for (const [id, d] of this.defs) if (!d.solo) this.H.send(from, { t: 'djE', id, e: this.etats[id] }); return; }
     if (m.t === 'djRA' && this.hote) { this.actionRaid(String(from), m.id, m.action); return; }
     if (m.t === 'djRaid' && String(from) === String(this.H.info.hostId)) { this.recevoirRaid(m); return; }
     if (m.t === 'djR') { const f = this.attentes.get(m.rid); if (f) { this.attentes.delete(m.rid); f({ ok: !!m.ok, why: m.why }); } return; }
-    if (m.t === 'djE' && !this.hote && String(from) === String(this.H.info.hostId) && this.defs.has(m.id) && m.e) {
+    if (m.t === 'djE' && !this.hote && String(from) === String(this.H.info.hostId) && this.defs.has(m.id) && !this.defs.get(m.id).solo && m.e) {
       const cur = this.etats[m.id];
       if (m.e.run !== cur.run || m.e.v >= cur.v) { this.etats[m.id] = m.e; this.recu.add(m.id); this.appliquerEtat(m.id); }
     }
@@ -178,14 +186,20 @@ export class Donjons {
   dansUnDonjon() { const g = this.game; return !!g.state && [...this.defs.values()].some((q) => g.mapObj?.id === q.carte); }
   /** on quitte un donjon (autre lieu, changement de lieu) : les objets de quête disparaissent */
   sortir(d) {
-    for (const q of d ? [d] : this.defs.values()) this.demande(q.id, { a: 'sortie' });
+    const st = this.game.state;
+    for (const q of d ? [d] : this.defs.values()) {
+      if (!q.solo) { this.demande(q.id, { a: 'sortie' }); continue; }
+      // donjon solo : il se remet à zéro, et ses objets propres quittent le Sac
+      this.demande(q.id, { a: 'recommencer' });
+      if (st) for (const k of q.objetsDuDonjon || []) delete st.bag[k];
+    }
   }
 
   /* ---------------- à chaque image ---------------- */
   tick(dt) {
     const g = this.game;
     // demande les états à l'hôte tant qu'on n'a rien reçu
-    if (!this.hote && this.recu.size < this.defs.size) {
+    if (!this.hote && this.recu.size < [...this.defs.values()].filter((q) => !q.solo).length) {
       this.askT = (this.askT || 0) - dt;
       if (this.askT <= 0) { this.askT = 2.5; this.H.send('host', { t: 'dj?' }); }
     }
@@ -193,6 +207,7 @@ export class Donjons {
       this.dallesT = (this.dallesT || 0) - dt;
       if (this.dallesT <= 0) { this.dallesT = 0.25; for (const d of this.defs.values()) { this.verifierDalles(d); this.verifierRaid(d); } }
     }
+    this.tickMiroirs(dt);
     this.panT = (this.panT || 0) - dt;
     if (g.state && g.mapObj !== this.carteVue) {
       const avant = this.carteVue && [...this.defs.values()].find((q) => q.carte === this.carteVue.id);
@@ -227,6 +242,11 @@ export class Donjons {
       else if (s.type === 'boss') txt = e.boss ? `${e.boss.pv}/${e.boss.max} PV` : '—';
       else if (s.type === 'serrures') txt = `serrures ${Object.values(S.cles).filter((c) => c.mise).length}/${s.pnj.length}`;
       else if (s.type === 'raid') txt = S.combat ? 'combat en cours' : `prêts ${S.prets.length}`;
+      else if (s.type === 'enigme') txt = 'lis le panneau';
+      else if (s.type === 'libre') txt = 'à explorer';
+      else if (s.type === 'lumiere') txt = (S.donnees.feux || 0) < 5 ? `brasier ${S.donnees.feux || 0}/5` : `soleils ${(S.donnees.soleils || []).length}/2`;
+      else if (s.type === 'reflet') txt = 'rejoins ton reflet';
+      if (s.type === 'libre') { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
     }
     const html = `<div class="dj-t">${esc(d.nom)}</div>${lignes.join('')}`;
@@ -306,4 +326,4 @@ export class Donjons {
   }
 }
 
-Object.assign(Donjons.prototype, Mecaniques);
+Object.assign(Donjons.prototype, Mecaniques, Miroirs);

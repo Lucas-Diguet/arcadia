@@ -8,7 +8,8 @@ export const LEGENDE = {
   '.': 'sol',
   'S': 'arrivée des joueurs',
   'D': 'sortie vers l\'extérieur (sous l\'arrivée)',
-  'o': 'dalle à tenir',
+  'o': 'dalle à tenir (sauf si le donjon donne un autre sens à la lettre)',
+  'i': 'sol glacé : on y glisse jusqu\'au prochain obstacle',
   '0-9': 'porte scellée (s\'ouvre quand la salle qui la porte est terminée)',
 };
 // décor par défaut des objets du plan (def.objets)
@@ -21,19 +22,20 @@ export function lirePlan(def) {
   const rows = def.plan.map((r) => r.replace(/\s+$/, ''));
   const w = Math.max(...rows.map((r) => r.length)) + 2, h = rows.length + 2;
   const at = (x, y) => (y >= 1 && y <= rows.length ? rows[y - 1][x - 1] ?? '#' : '#') || '#';
-  const out = { w, h, depart: null, sortie: null, portes: {}, dalles: [], pnj: {}, decor: [], sol: [], objets: {} };
+  const out = { w, h, depart: null, sortie: null, portes: {}, dalles: [], pnj: {}, decor: [], sol: [], objets: {}, glace: new Set() };
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = x === 0 || x === w - 1 ? '#' : at(x, y);
     if (c === '#' || c === ' ') continue;
     out.sol.push([x, y]);
-    if (c === 'S') out.depart = [x, y];
+    if (c === 'i') out.glace.add(x + ',' + y);
+    else if (def.objets?.[c]) (out.objets[c] ||= []).push([x, y]);
+    else if (c === 'S') out.depart = [x, y];
     else if (c === 'D') out.sortie = [x, y];
-    else if (c === 'o') out.dalles.push([x, y]);
+    else if (c === 'o' && !def.objets?.o) out.dalles.push([x, y]);
     else if (/[0-9]/.test(c)) (out.portes[c] ||= []).push([x, y]);
     else if (def.pnj?.[c]) (out.pnj[c] ||= []).push([x, y]);
-    else if (def.objets?.[c]) (out.objets[c] ||= []).push([x, y]);
     else if (def.decor?.[c]) out.decor.push([def.decor[c], x, y]);
-    else if (c !== '.') throw new Error(`Plan de ${def.id} : lettre inconnue « ${c} » (ligne ${y}, colonne ${x})`);
+    else if (c !== '.' && c !== 'i') throw new Error(`Plan de ${def.id} : lettre inconnue « ${c} » (ligne ${y}, colonne ${x})`);
   }
   if (!out.depart) throw new Error(`Plan de ${def.id} : il manque l'arrivée S`);
   for (const [k, l] of Object.entries(out.pnj)) if (l.length > 1) throw new Error(`Plan de ${def.id} : le PNJ « ${k} » apparaît ${l.length} fois`);
@@ -50,16 +52,21 @@ export function construireCarte(def) {
   for (const [k, x, y] of P.decor) m.prop(k, x, y);
   for (const [c, l] of Object.entries(P.objets)) {
     const o = def.objets[c];
-    for (const [x, y] of l) {
+    l.forEach(([x, y], i) => {
       if (o.type === 'panneau') m.sign(x, y, o.texte || '...');
+      else if (o.type === 'ramasser') m.item(x, y, o.objet, o.n || 1, `${def.id}:${c}:${i}`);
+      else if (o.sol) { if (o.decor) m.deco.push({ k: o.decor, x, y }); }   // objet sur lequel on marche (départ d'un personnage…)
       else m.prop(o.decor || DECOR_OBJET[o.type] || 'statue', x, y);
-    }
+    });
   }
   for (const [x, y] of P.dalles) m.deco.push({ k: 'carpet', x, y });
-  for (const l of Object.values(P.portes)) for (const [x, y] of l) fermer(m, x, y);
+  for (const [k, l] of Object.entries(P.portes)) l.forEach(([x, y], i) => fermer(m, x, y, decorPorte(def, k, i, l.length)));
   m.donjon = { def, plan: P };
+  m.glace = P.glace;
+  if (def.style) m.style = def.style;
   // une zone par salle : le bandeau affiche son nom en y entrant
   for (const s of def.salles) {
+    if (s.zone) { const [x0, y0, x1, y1] = s.zone; m.zone(x0 + 1, y0 + 1, x1 + 1, y1 + 1, { name: s.nom, music: s.musique || def.musique || 'cave', salle: s.id }); continue; }
     const r = regionDe(m, P, s);
     if (!r.length) continue;
     const xs = r.map((p) => p[0]), ys = r.map((p) => p[1]);
@@ -70,6 +77,7 @@ export function construireCarte(def) {
 
 /** cases d'une salle : tout ce qu'on atteint depuis son repère sans passer une porte */
 export function regionDe(m, P, salle) {
+  if (salle.zone) { const [x0, y0, x1, y1] = salle.zone; return P.sol.filter(([x, y]) => x > x0 && x <= x1 + 1 && y > y0 && y <= y1 + 1); }
   const rep = repere(P, salle);
   if (!rep) return [];
   const portes = new Set(Object.values(P.portes).flat().map(([x, y]) => x + ',' + y));
@@ -92,8 +100,13 @@ function repere(P, salle) {
   return k ? P.pnj[k]?.[0] : null;
 }
 
-export function fermer(m, x, y) {
-  if (m.get(x, y) !== T.BLOCK) { m.set(x, y, T.CAVE); m.prop(PORTE, x, y); }
+export function fermer(m, x, y, k = PORTE) {
+  if (m.get(x, y) !== T.BLOCK) { m.set(x, y, T.CAVE); m.prop(k, x, y); }
+}
+/** décor d'une case de porte : def.portesDecor[chiffre] (dessin sur la case du milieu, rien sur les autres) */
+export function decorPorte(def, k, i, n) {
+  const d = def.portesDecor?.[k]; if (!d) return PORTE;
+  return i === (n >> 1) ? d : 'porte_vide';
 }
 export function ouvrir(m, x, y) {
   if (m.get(x, y) !== T.BLOCK) return false;

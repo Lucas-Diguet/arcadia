@@ -8,12 +8,14 @@
 //   boss    : PV partagés par le groupe ; chaque combat retire ce qu'il a infligé
 //   serrures : chaque PNJ (s.pnj) donne une clé à qui le bat ; la salle est terminée quand toutes les clés sont dans
 //             les serrures. Une clé pas encore posée retourne à son PNJ si son porteur quitte le donjon
+//   libre   : rien à faire (salle de passage, casse-tête sans porte)
+//   autres  : leur avancée est notée par le jeu avec l'action « maj » (donjon des miroirs)
 //   raid    : le combat contre le boss se lance quand tous les joueurs présents sont prêts (l'hôte en décide)
 
 export function nouvelEtat(def, o = {}) {
   const joueurs = Math.max(1, o.joueurs || 1);
   const salles = {};
-  for (const s of def.salles) salles[s.id] = { faite: false, battus: [], pris: {}, dalles: 0, cles: {}, prets: [], combat: false };
+  for (const s of def.salles) salles[s.id] = { faite: s.type === 'libre', battus: [], pris: {}, dalles: 0, cles: {}, prets: [], combat: false, donnees: {} };
   return {
     id: def.id, run: o.run || 1, v: 0, joueurs, fini: false,
     salles,
@@ -128,6 +130,14 @@ export function appliquer(def, e, qui, m, o = {}) {
       if (m.etape === 'debut') { S.combat = true; return res(true, true); }
       S.combat = false; S.prets = [];
       if (m.result === 'win') { S.faite = true; e.fini = true; for (const q of m.vainqueurs || []) if (!e.vainqueurs.includes(String(q))) e.vainqueurs.push(String(q)); }
+      return res(true, true);
+    }
+    case 'maj': {
+      // avancée propre à un donjon : m.donnees est fusionné dans la salle, m.faite la termine, m.fini termine le donjon
+      const S = e.salles[m.salle]; if (!S) return res(false, false, 'inconnu');
+      if (m.donnees && typeof m.donnees === 'object') S.donnees = { ...S.donnees, ...m.donnees };
+      if (m.faite) S.faite = true;
+      if (m.fini) e.fini = true;
       return res(true, true);
     }
     case 'parti': case 'sortie': {

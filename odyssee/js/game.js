@@ -679,6 +679,8 @@ export class Game {
     for (;;) {
       const r = await bagScreen(this, {}); if (!r) return false;
       const it = ITEMS[r.item], st = this.state;
+      // objet qui a sa propre action (lire un parchemin, apprendre une CT…) ; true : le sac se ferme
+      if (typeof it.use === 'function') { if (await it.use(this, r.item)) return true; continue; }
       if (it.ball) { await this.ui.say('Ce n\'est pas le moment d\'utiliser ça !'); continue; }
       if (r.item === 'town-map') { await mapScreen(this); continue; }
       if (it.field) {

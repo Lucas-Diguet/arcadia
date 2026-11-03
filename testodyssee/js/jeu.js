@@ -5,6 +5,25 @@ import { partyScreen, dexScreen, mapScreen, optionsScreen } from '../../odyssee/
 
 export class TestGame extends Game {
   save() { return true; }
+
+  // le labo ajoute ses propres règles de déplacement (glace, reflet) : voir donjon/miroirs.js
+  tryStep(d) {
+    const D = this.donjons, p = this.player;
+    if (D?.pasSpecial(d)) return;
+    const depart = [p.x, p.y], avant = p.move;
+    super.tryStep(d);
+    if (!avant && p.move) D?.apresDepart(d, depart);
+  }
+  // donjon clair : fond de combat clair (Odyssée prend le fond de grotte pour toute carte de grotte)
+  async runBattle(o) {
+    const m = this.mapObj;
+    if (m?.style !== 'clair') return super.runBattle(o);
+    const avant = [m.floor, m.battleBg]; m.floor = 'clair'; m.battleBg = 'league';
+    try { return await super.runBattle(o); } finally { [m.floor, m.battleBg] = avant; }
+  }
+  occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
+  async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }
+  async onStep(mv) { await super.onStep(mv); if (!this.busy && this.mapObj) await this.donjons?.apresPas(mv); }
   load() { return null; }
 
   async startMenu() {
@@ -12,6 +31,7 @@ export class TestGame extends Game {
     const opts = [['ÉQUIPE', 'party'], ['SAC', 'bag'], ['POKéDEX', 'dex']];
     if (this.canField('vol')) opts.push(['VOL', 'fly']);
     if (this.donjons?.dansUnDonjon()) opts.push(['JOURNAL', 'journal']);
+    if (this.donjons?.dansLeReflet()) opts.push(['REVENIR AU DÉBUT DE LA SALLE', 'debut']);
     opts.push(['CARTE', 'map'], ['CHANGER DE LIEU', 'lieu'], ['OPTIONS', 'opt'], ['FERMER', 'close']);
     let idx = Math.min(this._menuIdx || 0, opts.length - 1);
     try {
@@ -27,6 +47,7 @@ export class TestGame extends Game {
         else if (k === 'map') await mapScreen(this);
         else if (k === 'journal') await this.donjons.journal();
         else if (k === 'opt') await optionsScreen(this);
+        else if (k === 'debut') { if (await this.ui.yesNo('Revenir à l\'entrée de la salle ? Copycat reprendra sa place.')) { await this.donjons.recommencerSalle(); break; } }
         else if (k === 'lieu') { this.onChangerLieu?.(); break; }
       }
     } finally { this.busy = false; }

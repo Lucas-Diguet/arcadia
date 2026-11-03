@@ -2,5 +2,6 @@
 // puis une ligne ici (voir testodyssee/LISEZMOI.md).
 import crypte from './crypte.js';
 import didier from './didier.js';
+import miroirs from './miroirs.js';
 
-export const DONJONS = [crypte, didier];
+export const DONJONS = [crypte, didier, miroirs];

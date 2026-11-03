@@ -109,6 +109,8 @@ Ajouter `[skip changelog]` dans le message d'un commit purement technique pour q
   Donjon de Didier : questions, clés et ascenseur à serrures, journal du donjon (`testodyssee/js/donjon/mecaniques.js`), et combat à plusieurs
   contre un boss calculé par l'hôte (`testodyssee/js/combat/raid.js`, barre de vie à blocs façon PokéRogue) que chaque écran rejoue
   dans l'écran de combat d'Odyssée par `runPvp` (`testodyssee/js/combat/vue.js`). Pokémon et objets exclusifs du labo : `testodyssee/js/contenu.js`.
+  Donjon des Miroirs (solo, `testodyssee/js/donjons/miroirs.js`, mécaniques dans `testodyssee/js/donjon/miroirs.js`) : glace, lumière et reflet
+  résolus sans écran dans `testodyssee/js/donjon/casse-tetes.js`, vérifiés par `node tools/test-testodyssee.mjs`. Un panneau demandé se pose au centre de la première salle.
 - Island Rush (battle royale, `royale/`) : l'île vient d'une graine (`royale/engine/map.js`, île officielle `ILE`), `royale/carte.html`
   la montre en 2D. `node tools/test-royale.mjs` vérifie l'île sur plusieurs graines, le déplacement (portes, escaliers, murs, nage),
   une partie (butin, combat, construction), les copies des invités et le relais d'hôte, la prédiction : à lancer quand on touche

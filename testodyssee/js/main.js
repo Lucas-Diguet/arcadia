@@ -14,10 +14,14 @@ import { Donjons } from './donjon/jeu.js';
 import { DONJONS } from './donjons/index.js';
 import { listerLieux } from './lieux.js';
 import { EQUIPES, partieTest } from './equipes.js';
-import { installerContenu } from './contenu.js';
-import { ASSETS } from '../../odyssee/js/assets.js';
+import { installerContenu, DECOR } from './contenu.js';
+import { brancherObjets } from './objets.js';
+import { brancherRendu } from './rendu.js';
+import { ASSETS, loadAll } from '../../odyssee/js/assets.js';
 
 installerContenu(ASSETS);
+brancherObjets();
+brancherRendu();
 
 const H = window.HubBridge;
 const canvas = document.getElementById('gl'), uiRoot = document.getElementById('ui'), loading = document.getElementById('loading');
@@ -40,6 +44,9 @@ async function boot() {
   const input = new Input(), sound = new Sound(), ui = new UI(uiRoot, input, sound);
   const world = buildWorld();
   const art = await loadArt();
+  // décor du labo, dessiné comme le décor du tileset (16 pixels par case)
+  Object.assign(art.sprites, await loadAll(Object.fromEntries(DECOR)));
+  for (const [k] of DECOR) art.dens[k] = 1;
   setArt({ kits: art.kits, sols: art.sols, sol32: art.sol32, hgss: art.hgss });
   const view = new WorldView(renderer, art.chars, { sprites: art.sprites, dens: art.dens });
   const game = new TestGame({ view, ui, input, sound, world });

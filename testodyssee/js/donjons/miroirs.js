@@ -1,0 +1,199 @@
+// testodyssee/js/donjons/miroirs.js — le Donjon des Miroirs : un donjon à faire seul, tout en blanc et en lumière.
+//
+// Salle 1 : une énigme sur le panneau, trois miroirs au mur ; le bon s'efface et laisse passer, les autres se brisent
+//           (et coûtent des PV à l'équipe, comme dans le donjon de Didier).
+// Salle 2 : sol glacé, cinq petits miroirs ; trois sont des miroirs de poche (journal), deux sont des pièges qui
+//           renvoient une copie du premier Pokémon de l'équipe.
+// Salle 3 : sol glacé plus grand ; objets et parchemins à garder, et un robot (CT Voile Miroir) difficile à atteindre.
+// Salle 4 : Pokémon sauvages de Feu (Feux Follets pour le brasier) et de Glace (Eau Fraîche, mais le brasier s'éteint).
+//           Brasier allumé : deux faisceaux à guider jusqu'aux soleils avec les miroirs fixes et les miroirs de poche.
+// Salle 5 : Copycat refait tes pas en miroir ; une fois à côté de lui, il t'affronte avec une copie de ton équipe.
+import { GameMap, rng } from '../../../odyssee/js/world/mapgen.js';
+import { T } from '../../../odyssee/js/world/tiles.js';
+
+/** l'extérieur : un temple blanc sur une place enneigée (carte d'Odyssée ordinaire) */
+function exterieur() {
+  const m = new GameMap('labo:miroirs:dehors', 32, 26, { outdoor: true, fill: T.PINE, name: 'Parvis des Miroirs', music: 'snow' });
+  m.blob(16, 13, 12.5, 10, T.GRASS, rng(909));
+  m.rect(5, 3, 26, 22, T.GRASS, [T.PINE]);
+  const b = m.building('gym', 12, 4, { roof: 'gray', name: 'Donjon des Miroirs' });
+  for (let y = b.doorY + 1; y <= 23; y++) { m.set(b.doorX, y, T.PATH); }
+  m.rect(b.doorX - 1, b.doorY + 1, b.doorX + 1, b.doorY + 3, T.PATH);
+  for (const [x, y] of [[9, 12], [22, 12], [9, 18], [22, 18]]) m.prop('cristal', x, y);
+  for (const [x, y] of [[7, 7], [24, 7], [6, 16], [25, 16]]) m.prop('snowpine', x, y);
+  m.prop('lanterne', b.doorX - 2, b.doorY + 2); m.prop('lanterne', b.doorX + 2, b.doorY + 2);
+  m.sign(b.doorX + 2, 19, 'DONJON DES MIROIRS\nCe que tu vois n\'est pas toujours ce qui est.');
+  m.zone(0, 0, 31, 25, { name: 'Parvis des Miroirs', music: 'snow', theme: 'snow' });
+  return { carte: m, porte: [b.doorX, b.doorY] };
+}
+
+export default {
+  id: 'miroirs',
+  carte: 'labo:miroirs',
+  nom: 'Donjon des Miroirs',
+  niveau: 'niv. 35, en solo',
+  solo: true,
+  style: 'clair',
+  musique: 'mystic',
+  equipe: 'milieu',
+  exterieur,
+  plan: [
+    '#############################',
+    '#############################',
+    '#######..K............#######',
+    '##########...#....##..#######',
+    '#######......#...##...#######',
+    '#######..............########',
+    '#######..#........###########',
+    '#######..#........#..########',
+    '#######...............#######',
+    '#######......#.#......#######',
+    '#######......####.....#######',
+    '#######......#.#..#...#######',
+    '#######..###...#..#...#######',
+    '#######.....###...#...#######',
+    '#######...#...........#######',
+    '##############.##############',
+    '##############.##############',
+    '##############.E#############',
+    '##############.##############',
+    '#############444#############',
+    '###...L...............L...###',
+    '###................o..o...###',
+    '###...o...g...............###',
+    '###.......................###',
+    '###.....o.......o.........###',
+    '###...................o...###',
+    '###.......................###',
+    '###.......f.o.F....g......###',
+    '###.......................###',
+    '###..T.................T..###',
+    '###.......................###',
+    '###.......................###',
+    '###.......................###',
+    '##############.##############',
+    '##############.##############',
+    '##############.##############',
+    '##############.##############',
+    '#####iiiiiiiXiiiiiiiiiiX#####',
+    '#####iiiiiiiiiiiiiiiiiiR#####',
+    '#####XiiiiiuiiiXiiiiiiii#####',
+    '#####iiiiiiiiiiiiiiiiviX#####',
+    '#####iiiiXiiiiiiiiiiiiXi#####',
+    '#####iXiiXiiiiiiiiiiiXii#####',
+    '#####iXiwiiiXXiiiiiiiiii#####',
+    '#####iiiiiiiiiiiiiiiiiii#####',
+    '#####iiiXiiiiiXiiiiiiiii#####',
+    '#####iiiiiiiiiiiiXxiiiii#####',
+    '#####Xiiiiiiiyiiiiiiiiii#####',
+    '#####iiiiiiiiiiiiiiiiiii#####',
+    '#####...................#####',
+    '##############.##############',
+    '##############.##############',
+    '##############.##############',
+    '##############.##############',
+    '########.....i.i.....########',
+    '########.iiiiiiiiiip.########',
+    '########.iXiiiiiiXii.########',
+    '########.iiiipiiiiiiq########',
+    '########.iiiiiiiXiii.########',
+    '########qiiXiiiiiiii.########',
+    '########.iiiiiiiiiXi.########',
+    '########.iiipiiiiiii.########',
+    '########.............########',
+    '##############.##############',
+    '##############.##############',
+    '##############.##############',
+    '##############.##############',
+    '############A#B#C############',
+    '###########.......###########',
+    '###########...P...###########',
+    '###########.......###########',
+    '##############S##############',
+    '##############D##############',
+    '#############################',
+  ],
+  decor: { X: 'cristal', T: 'colonne' },
+  portesDecor: { 4: 'porte_miroirs' },
+  objets: {
+    P: { type: 'enigme', decor: 'sign' },
+    A: { type: 'miroirMural', decor: 'miroir_mur', reponse: '9 h 20' },
+    B: { type: 'miroirMural', decor: 'miroir_mur', reponse: '8 h 20', juste: true },
+    C: { type: 'miroirMural', decor: 'miroir_mur', reponse: '3 h 20' },
+    p: { type: 'miroirPoche', decor: 'miroir_poche' },
+    q: { type: 'miroirPoche', decor: 'miroir_poche', piege: true },
+    u: { type: 'ramasser', objet: 'parchemin-miroirs-1' },
+    v: { type: 'ramasser', objet: 'hyper-potion', n: 2 },
+    w: { type: 'ramasser', objet: 'parchemin-miroirs-2' },
+    x: { type: 'ramasser', objet: 'elixir' },
+    y: { type: 'ramasser', objet: 'parchemin-miroirs-3' },
+    R: { type: 'robot', decor: 'robot' },
+    F: { type: 'brasier', decor: 'brasier' },
+    L: { type: 'soleil', decor: 'soleil' },
+    f: { type: 'miroirFixe', decor: 'miroir_d', sens: '/' },
+    g: { type: 'miroirFixe', decor: 'miroir_g', sens: '\\' },
+    o: { type: 'socle', decor: 'socle' },
+    E: { type: 'plaque', decor: 'stele' },
+    K: { type: 'copycat', sol: true },
+  },
+  salles: [
+    { id: 's1', nom: 'Salle de l\'Énigme', type: 'enigme', zone: [11, 67, 17, 72], porteObjet: 'B' },
+    { id: 's2', nom: 'Galerie de Glace', type: 'libre', zone: [8, 53, 20, 63] },
+    { id: 's3', nom: 'Grand Miroir Gelé', type: 'libre', zone: [5, 36, 23, 50] },
+    { id: 's4', nom: 'Salle du Brasier', type: 'lumiere', zone: [3, 19, 25, 32], porte: '4', rencontres: true },
+    { id: 's5', nom: 'Salle du Reflet', type: 'reflet', zone: [7, 1, 22, 14], ligne: 8, retour: [14, 15] },
+  ],
+  journal: [
+    { id: 'enigme', nom: 'L\'énigme des miroirs', salle: 's1', but: 'Lis le panneau et touche le miroir qui porte la bonne réponse.' },
+    { id: 'brasier', nom: 'Rallumer le brasier', salle: 's4', but: 'Les Pokémon de Feu laissent des Feux Follets. Il en faut 5 dans le brasier.' },
+    { id: 'reflet', nom: 'Affronter son reflet', salle: 's5', but: 'Copycat refait tes pas en miroir. Arrive à côté de lui.' },
+  ],
+  enigme: {
+    texte: ['Une plaque est gravée d\'une horloge.', 'Dans le miroir, l\'horloge semble indiquer 3 h 40.\nQuelle heure est-il vraiment ?', 'Touche le miroir qui porte la bonne réponse.'],
+    image: 'miroirs/horloge.png',
+  },
+  // rencontres de la Salle du Brasier : [espèce, niveau min, niveau max, poids]
+  rencontres: [[607, 30, 33, 30], [608, 32, 34, 15], [582, 30, 33, 25], [583, 32, 34, 15], [615, 31, 34, 15]],
+  feu: [607, 608], glace: [582, 583, 615],
+  robot: {
+    cls: 'Robot', nom: 'Réflecteur', bs: 'robot_combat',
+    equipe: [[122, 36, ['mirror-coat', 'psychic', 'light-screen', 'reflect']], [202, 36, ['mirror-coat', 'counter', 'safeguard', 'amnesia']], [350, 37, ['mirror-coat', 'hydro-pump', 'ice-beam', 'recover']]],
+  },
+  textes: {
+    miroirMur: (r) => `Une inscription brille au bas du miroir : « ${r} ».\nToucher ce miroir ?`,
+    juste: ['Le miroir se trouble, puis s\'efface comme une brume...', 'Un passage s\'ouvre derrière lui !'],
+    faux: 'Le miroir se brise en mille éclats !',
+    brise: 'Un miroir brisé. Il ne reflète plus rien.',
+    poche: 'Un petit miroir de poche, encore intact.',
+    piege: ['Le petit miroir se trouble... Ton reflet en sort !'],
+    robot: ['BIP. INTRUS DÉTECTÉ.', 'PROTOCOLE VOILE MIROIR ENCLENCHÉ.'],
+    robotBattu: 'BIP... SYSTÈME EN VEILLE. MERCI DE VOTRE VISITE.',
+    brasier: [
+      'Un grand brasier ancien. Il n\'a pas été allumé depuis bien longtemps.',
+      'Une petite flamme vacille au fond du brasier.',
+      'Les braises rougeoient. Le brasier se réveille doucement.',
+      'Les flammes montent. On sent leur chaleur à plusieurs pas.',
+      'Le brasier est brûlant, il est presque à sa limite !',
+      'Le brasier rugit ! Deux grands faisceaux de lumière jaillissent de ses flammes.',
+    ],
+    jeter: (n) => `Tu jettes un Feu Follet dans le brasier. (${n}/5)`,
+    feuFollet: 'Tu ramasses un Feu Follet ! Il est rangé dans le journal du donjon.',
+    froid: 'Un souffle glacé traverse la salle. L\'air devient froid et humide.',
+    eauFraiche: 'Tu ramasses une Eau Fraîche !',
+    eteint: 'Une pluie fine tombe sur le brasier... Le brasier s\'est éteint.',
+    soleil: 'Un soleil de pierre, sculpté dans le mur. Il attend la lumière.',
+    soleilOn: 'Le soleil de pierre brille de mille feux.',
+    porte: 'Une grande porte de verre et d\'argent. Elle ne s\'ouvrira pas d\'elle-même.',
+    porteOuverte: 'Les deux soleils brillent... La grande porte s\'ouvre !',
+    socleVide: 'Un socle vide. On pourrait y poser un miroir.',
+    socleSans: 'Un socle vide. Il te faudrait un miroir de poche.',
+    plaque: 'Une plaque de verre : « Qui se perd dans son reflet peut toujours revenir au début. »',
+    copycat: ['...', 'Copycat imite ta posture, tes gestes, ton regard.', 'Il veut se battre... avec ton équipe !'],
+    copycatBattu: ['Le reflet de Copycat se fissure...', 'Il s\'incline, et te laisse ce qu\'il gardait.'],
+    copycatGagne: 'Copycat éclate d\'un rire silencieux.',
+    fin: 'Un passage de lumière te ramène à l\'entrée du donjon.',
+    perdu: ['Tes Pokémon n\'en peuvent plus...', 'Tu te réveilles à l\'entrée du donjon. Ton équipe a été soignée.'],
+  },
+  recompense: { objets: { 'bouchon-or': 1, 'eclat-miroir': 1 } },
+  objetsDuDonjon: ['eau-fraiche'],
+};

@@ -100,10 +100,10 @@ export const Mecaniques = {
     const e = this.etats[d.id];
     const quetes = (d.journal || []).map((q) => {
       const S = e.salles[q.salle], s = d.salles.find((x) => x.id === q.salle);
-      const avance = s.type === 'serrures' ? ` (${serrures(d, e)}/${s.pnj.length} serrures)` : '';
+      const avance = s.type === 'serrures' ? ` (${serrures(d, e)}/${s.pnj.length} serrures)` : s.type === 'lumiere' ? ` (${Math.min(5, S.donnees.feux || 0)}/5 dans le brasier)` : '';
       return { label: q.nom, right: S.faite ? '✔' : '…', q, txt: S.faite ? 'Terminée.' : q.but + avance };
     });
-    const objets = clesDe(d, e, this.moi).map((k) => ({ label: d.pnj[k].cle, right: '×1', txt: 'Une clé de l\'ascenseur. Elle disparaît si tu quittes le donjon.' }));
+    const objets = [...clesDe(d, e, this.moi).map((k) => ({ label: d.pnj[k].cle, right: '×1', txt: 'Une clé de l\'ascenseur. Elle disparaît si tu quittes le donjon.' })), ...(this.objetsJournal?.(d) || [])];
     const items = [{ label: '— Quêtes —', disabled: true }, ...(quetes.length ? quetes : [{ label: 'Aucune', disabled: true }]), { label: '— Objets de quête —', disabled: true }, ...(objets.length ? objets : [{ label: 'Aucun', disabled: true }])];
     for (;;) {
       const r = await g.ui.list({ title: `Journal · ${d.nom}`, items, cls: 'shop', cancel: -1, start: 1 });

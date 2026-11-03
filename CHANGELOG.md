@@ -1,5 +1,15 @@
 # Journal des versions — Arcadia
 
+## 3.61 — 3 novembre 2026
+- **TestOdyssée** — Nouveau donjon en solo : le Donjon des Miroirs, tout blanc, cinq salles.
+  - Une énigme d'horloge vue dans un miroir : le mauvais miroir se brise et blesse ton équipe.
+  - Deux salles de glace où l'on glisse jusqu'au prochain obstacle, avec des miroirs de poche à ramasser et des miroirs piégés.
+  - Un robot qui ne joue que Voile Miroir, et qui donne la CT Voile Miroir.
+  - Un brasier à rallumer avec des Feux Follets, puis des miroirs à tourner pour envoyer la lumière sur deux soleils.
+  - Copycat, ton reflet, refait tous tes pas en miroir : rejoins-le pour affronter ta propre équipe.
+  - À la fin : un Bouchon d'Or (IV au maximum) et un Éclat de Miroir.
+- **TestOdyssée** — Dans le donjon de Didier, le panneau est maintenant au milieu de la salle.
+
 ## 3.60 — 3 novembre 2026
 - **TestOdyssée** — Les deux donjons ont maintenant un extérieur : on arrive juste devant l'entrée, il ne reste plus qu'à entrer.
   - Crypte des Murmures : un petit cimetière, ses stèles et ses lanternes, autour de l'entrée de la grotte.

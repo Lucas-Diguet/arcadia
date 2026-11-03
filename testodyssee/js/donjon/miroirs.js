@@ -1,0 +1,349 @@
+// testodyssee/js/donjon/miroirs.js — mécaniques du donjon des miroirs, ajoutées à la classe Donjons (jeu.js) :
+// énigme aux miroirs muraux, sol glacé, miroirs de poche et miroirs piégés, robot, brasier et rencontres de la salle
+// du brasier, faisceaux de lumière et soleils, et Copycat qui refait nos pas en miroir.
+// Tout ce qui tient de l'état passe par l'action « maj » d'etat.js (donnees de chaque salle).
+import { createMon, healFull } from '../../../odyssee/js/core/mon.js';
+import { itemName } from '../../../odyssee/js/core/items.js';
+import { T, walkable, DIRS } from '../../../odyssee/js/world/tiles.js';
+import { loadImg } from '../../../odyssee/js/assets.js';
+import { el } from '../../../odyssee/js/ui/ui.js';
+import { MOVES } from '../../../odyssee/js/data/moves.js';
+import { glisser, faisceau, refleter, cle } from './casse-tetes.js';
+import { ouvrir } from './plan.js';
+import { IMAGES } from '../contenu.js';
+import { dessinerFaisceaux } from '../rendu.js';
+
+const estMiroirs = (d) => d.salles.some((s) => s.type === 'reflet' || s.type === 'lumiere');
+const TYPES = new Set(['enigme', 'miroirMural', 'miroirPoche', 'robot', 'brasier', 'soleil', 'miroirFixe', 'socle', 'plaque']);
+const idAttaque = (key) => Object.values(MOVES).find((m) => m.key === key).id;
+const copieSoignee = (party) => party.map((m) => { const c = JSON.parse(JSON.stringify(m)); healFull(c); delete c._ko; return c; });
+
+export const Miroirs = {
+  /* ---------------- installation ---------------- */
+  poserObjetsMiroirs(d, m) {
+    if (!estMiroirs(d)) return;
+    for (const [c, l] of Object.entries(m.donjon.plan.objets)) {
+      const o = d.objets[c];
+      if (!TYPES.has(o.type)) continue;
+      for (const [x, y] of l) m.object(x, y, { use: () => this.objetMiroirs(d, c, x, y) });
+    }
+  },
+  dm(d, salle) { return this.etats[d.id].salles[salle].donnees || {}; },
+  salleDe(d, type) { return d.salles.find((s) => s.type === type); },
+  maj(d, salle, donnees, o = {}) { return this.demande(d.id, { a: 'maj', salle, donnees, ...o }); },
+  /** décor d'une case (k = null : la case se libère) ; la vue suit si on est sur la carte */
+  decor(m, x, y, k) {
+    const g = this.game, ici = g.mapObj === m, c = cle(x, y);
+    if (k == null) { if (ouvrir(m, x, y) && ici) { g.view.decoAt.delete(c); g.view.rebuildAt(x, y); } return; }
+    let dd = m.deco.find((q) => q.x === x && q.y === y);
+    if (dd && dd.k === k && m.get(x, y) === T.BLOCK) return;
+    if (m.get(x, y) !== T.BLOCK) { m.set(x, y, T.CAVE); m.prop(k, x, y); dd = m.deco.find((q) => q.x === x && q.y === y); }
+    else if (dd) dd.k = k; else { m.deco.push({ k, x, y }); dd = m.deco[m.deco.length - 1]; }
+    if (ici) { g.view.decoAt.set(c, dd); g.view.rebuildAt(x, y); }
+  },
+  /** le décor de toute la carte selon l'état (aussi pour tout remettre en place quand on recommence) */
+  appliquerMiroirs(d) {
+    if (!estMiroirs(d)) return;
+    const m = this.game.world.maps[d.carte], P = m.donjon.plan;
+    const s1 = this.salleDe(d, 'enigme'), D1 = this.dm(d, s1.id), fait1 = this.etats[d.id].salles[s1.id].faite;
+    const D2 = this.dm(d, 's2'), D4 = this.dm(d, this.salleDe(d, 'lumiere').id);
+    for (const [c, l] of Object.entries(P.objets)) {
+      const o = d.objets[c];
+      for (const [x, y] of l) {
+        const k = cle(x, y);
+        if (o.type === 'miroirMural') this.decor(m, x, y, o.juste && fait1 ? null : (D1.brises || []).includes(c) ? 'miroir_brise' : 'miroir_mur');
+        else if (o.type === 'miroirPoche') this.decor(m, x, y, D2.pris?.[k] ? null : 'miroir_poche');
+        else if (o.type === 'miroirFixe') this.decor(m, x, y, (D4.orient?.[k] ?? o.sens) === '/' ? 'miroir_d' : 'miroir_g');
+        else if (o.type === 'socle') { const s = D4.socles?.[k]; this.decor(m, x, y, s ? (s === '/' ? 'miroir_d' : 'miroir_g') : 'socle'); }
+        else if (o.type === 'brasier') this.decor(m, x, y, (D4.feux || 0) >= 5 ? 'brasier_on' : 'brasier');
+        else if (o.type === 'soleil') this.decor(m, x, y, (D4.soleils || []).includes(k) ? 'soleil_on' : 'soleil');
+      }
+    }
+    // le reflet revient à sa place quand le donjon recommence
+    if (!this.reflet || this.reflet.run !== this.etats[d.id].run) this.placerReflet(d);
+    this.lumiereVue = null;
+  },
+
+  /* ---------------- interactions ---------------- */
+  async objetMiroirs(d, c, x, y) {
+    const o = d.objets[c];
+    switch (o.type) {
+      case 'enigme': return this.lireEnigme(d);
+      case 'miroirMural': return this.miroirMural(d, c);
+      case 'miroirPoche': return this.miroirPoche(d, x, y, o.piege);
+      case 'robot': return this.robot(d);
+      case 'brasier': return this.brasier(d);
+      case 'soleil': { const D4 = this.dm(d, 's4'); return this.game.ui.say((D4.soleils || []).includes(cle(x, y)) ? d.textes.soleilOn : d.textes.soleil); }
+      case 'miroirFixe': return this.miroirFixe(d, x, y);
+      case 'socle': return this.socle(d, x, y);
+      case 'plaque': return this.plaque(d);
+    }
+  },
+
+  async lireEnigme(d) {
+    const ui = this.game.ui, img = el('div', 'box starter-pic testody-horloge', `<img src="${new URL('../../img/' + d.enigme.image, import.meta.url).href}" alt="">`);
+    ui.root.appendChild(img);
+    try { await ui.say(d.enigme.texte); } finally { img.remove(); }
+  },
+  async miroirMural(d, c) {
+    const g = this.game, ui = g.ui, o = d.objets[c], s1 = this.salleDe(d, 'enigme'), D1 = this.dm(d, s1.id);
+    if ((D1.brises || []).includes(c)) { await ui.say(d.textes.brise); return; }
+    if (!(await ui.yesNo(d.textes.miroirMur(o.reponse)))) return;
+    if (o.juste) {
+      g.sound.sfx('learn'); await ui.flash(1, '#ffffff', 120);
+      await this.maj(d, s1.id, {}, { faite: true });
+      await ui.say(d.textes.juste);
+      return;
+    }
+    g.sound.sfx('hitstrong'); g.view.shake = 0.3; await ui.flash(1, '#d0e8ff', 90);
+    await this.maj(d, s1.id, { brises: [...(D1.brises || []), c] });
+    await ui.say(d.textes.faux);
+    await this.penalite(d);
+  },
+  /** miroirs de poche gardés : ramassés moins ceux posés sur un socle */
+  miroirsEnPoche(d) {
+    const pris = Object.values(this.dm(d, 's2').pris || {}).filter((v) => v === 'poche').length;
+    return pris - Object.keys(this.dm(d, 's4').socles || {}).length;
+  },
+  async miroirPoche(d, x, y, piege) {
+    const g = this.game, ui = g.ui, k = cle(x, y), D2 = this.dm(d, 's2');
+    if (D2.pris?.[k]) return;
+    if (!piege) {
+      g.sound.sfx('item');
+      await this.maj(d, 's2', { pris: { ...(D2.pris || {}), [k]: 'poche' } });
+      await ui.say(`${g.state.name} ramasse un Miroir de poche !\nIl est rangé dans le journal du donjon. (${this.miroirsEnPoche(d)} en poche)`);
+      return;
+    }
+    await ui.say(d.textes.piege);
+    const res = await this.combat({ cls: 'Miroir', nom: 'piégé', bs: 'miroir_piege' }, copieSoignee([g.state.party[0]]));
+    if (res !== 'win') { await this.defaite(d); return; }
+    await this.maj(d, 's2', { pris: { ...(this.dm(d, 's2').pris || {}), [k]: 'piege' } });
+    g.sound.sfx('hitstrong');
+    await ui.say('Le miroir piégé vole en éclats.');
+  },
+  async robot(d) {
+    const g = this.game, ui = g.ui, R = d.robot, D3 = this.dm(d, 's3');
+    if (D3.robot) { await ui.say(d.textes.robotBattu, { speaker: R.nom }); return; }
+    await ui.say(d.textes.robot, { speaker: R.nom });
+    const party = R.equipe.map(([sp, lvl, mv]) => createMon(sp, lvl, { moves: mv.map(idAttaque), iv: Array(6).fill(24), shiny: false }));
+    const res = await this.combat({ cls: R.cls, nom: R.nom, bs: R.bs }, party);
+    if (res !== 'win') { await this.defaite(d); return; }
+    await this.maj(d, 's3', { robot: true });
+    if (!g.state.bag['ct-voile-miroir']) { g.give('ct-voile-miroir'); g.sound.sfx('item'); await ui.say(`${g.state.name} reçoit la ${itemName('ct-voile-miroir')} !\nElle est rangée dans les Objets rares du Sac.`); }
+  },
+
+  /* ---------------- salle du brasier ---------------- */
+  async brasier(d) {
+    const g = this.game, ui = g.ui, s = this.salleDe(d, 'lumiere'), D4 = this.dm(d, s.id);
+    let n = D4.feux || 0, tenus = D4.tenus || 0;
+    if (n >= 5) { await ui.say(d.textes.brasier[5]); return; }
+    if (!tenus) { await ui.say(d.textes.brasier[n]); return; }
+    while (tenus > 0 && n < 5) { n++; tenus--; g.sound.sfx('hitweak'); await ui.say(d.textes.jeter(n)); }
+    await this.maj(d, s.id, { feux: n, tenus });
+    if (n >= 5) { g.sound.sfx('bang'); g.view.shake = 0.3; await ui.flash(2, '#fff6c0', 90); }
+    await ui.say(d.textes.brasier[n]);
+    this.lumiere(d);
+  },
+  async miroirFixe(d, x, y) {
+    const g = this.game, k = cle(x, y), o = d.objets[this.lettre(d, x, y)], D4 = this.dm(d, 's4');
+    const sens = D4.orient?.[k] ?? o.sens;
+    if (!(await g.ui.yesNo(`Un miroir sur pied, tourné « ${sens} ».\nLe faire pivoter ?`))) return;
+    g.sound.sfx('select');
+    await this.maj(d, 's4', { orient: { ...(D4.orient || {}), [k]: sens === '/' ? '\\' : '/' } });
+    this.lumiere(d);
+  },
+  async socle(d, x, y) {
+    const g = this.game, ui = g.ui, k = cle(x, y), D4 = this.dm(d, 's4'), s = D4.socles?.[k];
+    const socles = { ...(D4.socles || {}) };
+    if (s) {
+      const r = await ui.ask(`Un miroir de poche est posé ici, tourné « ${s} ».`, ['Le faire pivoter', 'Le reprendre', 'Rien']);
+      if (r === 0) socles[k] = s === '/' ? '\\' : '/'; else if (r === 1) delete socles[k]; else return;
+    } else {
+      if (this.miroirsEnPoche(d) <= 0) { await ui.say(d.textes.socleSans); return; }
+      const r = await ui.ask(`${d.textes.socleVide} (${this.miroirsEnPoche(d)} en poche)`, ['Poser un miroir « / »', 'Poser un miroir « \\ »', 'Rien']);
+      if (r === 0) socles[k] = '/'; else if (r === 1) socles[k] = '\\'; else return;
+    }
+    g.sound.sfx('select');
+    await this.maj(d, 's4', { socles });
+    this.lumiere(d);
+  },
+  lettre(d, x, y) { const P = this.game.world.maps[d.carte].donjon.plan; return Object.entries(P.objets).find(([, l]) => l.some(([a, b]) => a === x && b === y))?.[0]; },
+  /** les deux faisceaux du brasier allumé : cases traversées et soleils touchés */
+  calculLumiere(d) {
+    const m = this.game.world.maps[d.carte], P = m.donjon.plan, D4 = this.dm(d, 's4');
+    if ((D4.feux || 0) < 5) return { traits: [], soleils: [] };
+    const miroirs = new Map();
+    for (const [c, l] of Object.entries(P.objets)) for (const [x, y] of l) {
+      const o = d.objets[c], k = cle(x, y);
+      if (o.type === 'miroirFixe') miroirs.set(k, D4.orient?.[k] ?? o.sens);
+      if (o.type === 'socle' && D4.socles?.[k]) miroirs.set(k, D4.socles[k]);
+    }
+    const cibles = new Set((P.objets.L || []).map(([x, y]) => cle(x, y)));
+    const socles = new Set((P.objets.o || []).map(([x, y]) => cle(x, y)));
+    // la lumière passe au-dessus des socles vides ; murs, portes et décor l'arrêtent
+    const bloque = (x, y) => { const t = m.get(x, y); return t === T.CAVEWALL || (t === T.BLOCK && !socles.has(cle(x, y))); };
+    const [bx, by] = P.objets.F[0], traits = [], soleils = [];
+    for (const [dx, dy] of [[-1, 0], [1, 0]]) {
+      const r = faisceau(bx, by, dx, dy, miroirs, bloque, cibles);
+      traits.push([[bx, by], ...r.cases]);
+      if (r.touche) soleils.push(r.touche);
+    }
+    return { traits, soleils };
+  },
+  /** recalcule la lumière, éclaire les soleils, ouvre la grande porte */
+  lumiere(d) {
+    const s = this.salleDe(d, 'lumiere'), D4 = this.dm(d, s.id), L = this.calculLumiere(d);
+    this.lumiereVue = null;
+    const avant = (D4.soleils || []).slice().sort().join('|'), apres = L.soleils.slice().sort().join('|');
+    const tous = L.soleils.length >= (this.game.world.maps[d.carte].donjon.plan.objets.L || []).length && L.soleils.length > 0;
+    if (avant !== apres || (tous && !this.etats[d.id].salles[s.id].faite)) {
+      this.maj(d, s.id, { soleils: L.soleils }, tous ? { faite: true } : {}).then(() => {
+        if (L.soleils.length > (D4.soleils || []).length) this.game.sound.sfx('pc');
+      });
+    }
+  },
+  /** à chaque image : faisceaux dessinés (refaits quand la carte ou l'état change) */
+  dessinerLumiere(d, dessiner = dessinerFaisceaux) {
+    const v = this.game.view;
+    if (this.lumiereVue && v.__faisceauxRoot === v.root) return;
+    this.lumiereVue = true;
+    dessiner(v, this.calculLumiere(d).traits);
+  },
+
+  /** après un pas dans la salle du brasier : rencontres de Feu (Feu Follet) et de Glace (Eau Fraîche, brasier éteint) */
+  async rencontreMiroirs(d) {
+    const g = this.game, p = g.player, m = g.mapObj, s = this.salleDe(d, 'lumiere'), [x0, y0, x1, y1] = s.zone;
+    const dedans = p.x > x0 && p.x <= x1 + 1 && p.y > y0 && p.y <= y1 + 1;
+    if (!dedans || m.get(p.x, p.y) !== T.CAVE || g.bv.alive || Math.random() > 0.08) return;
+    const tot = d.rencontres.reduce((a, e) => a + e[3], 0); let r = Math.random() * tot, e = d.rencontres[0];
+    for (const x of d.rencontres) { r -= x[3]; if (r <= 0) { e = x; break; } }
+    const wild = createMon(e[0], e[1] + Math.floor(Math.random() * (e[2] - e[1] + 1)), { met: d.nom });
+    g.busy = true;
+    try {
+      const res = await g.runBattle({ wild, noWhiteout: true });
+      if (res === 'lose') { await this.defaite(d); return; }
+      if (res !== 'win') return;
+      const D4 = this.dm(d, s.id);
+      if (d.feu.includes(e[0])) {
+        await this.maj(d, s.id, { tenus: (D4.tenus || 0) + 1 });
+        g.sound.sfx('item'); await g.ui.say(d.textes.feuFollet);
+      } else if (d.glace.includes(e[0])) {
+        g.give('eau-fraiche'); g.sound.sfx('item');
+        await g.ui.say([d.textes.froid, d.textes.eauFraiche]);
+        const n = D4.feux || 0;
+        if (n > 0 && n < 5) { await this.maj(d, s.id, { feux: 0 }); g.sound.sfx('run'); await g.ui.say(d.textes.eteint); this.lumiere(d); }
+      }
+    } finally { g.busy = false; }
+  },
+
+  /* ---------------- salle du reflet ---------------- */
+  zoneReflet(d) { const s = this.salleDe(d, 'reflet'), [x0, y0, x1, y1] = s.zone; return { s, x0: x0 + 1, y0: y0 + 1, x1: x1 + 1, y1: y1 + 1, ligne: s.ligne + 1 }; },
+  placerReflet(d) {
+    const [x, y] = this.game.world.maps[d.carte].donjon.plan.objets.K[0];
+    this.reflet = { x, y, move: null, run: this.etats[d.id].run, d };
+  },
+  dansReflet(d, x, y) { const Z = this.zoneReflet(d); return x >= Z.x0 && x <= Z.x1 && y >= Z.y0 && y <= Z.y1; },
+  refletActif(d) { const g = this.game; return this.reflet && g.state && g.mapObj?.id === d.carte && !this.etats[d.id].salles[this.zoneReflet(d).s.id].faite; },
+  /** le joueur ne passe pas la ligne du miroir ; renvoie true si le pas est refusé */
+  barriereReflet(d, tx, ty) {
+    if (!this.refletActif(d)) return false;
+    const Z = this.zoneReflet(d), p = this.game.player;
+    return this.dansReflet(d, p.x, p.y) && this.dansReflet(d, tx, ty) && ty < Z.ligne;
+  },
+  /** le joueur vient de partir dans la direction dir : le reflet fait le pas symétrique */
+  refleterPas(d, dir, depart) {
+    if (!this.refletActif(d) || !this.dansReflet(d, ...depart)) return;
+    const g = this.game, m = g.mapObj, R = this.reflet, Z = this.zoneReflet(d), p = g.player;
+    const [dx, dy] = DIRS[refleter(dir)], tx = R.x + dx, ty = R.y + dy;
+    const libre = m.in(tx, ty) && walkable(m.get(tx, ty)) && ty <= Z.ligne && this.dansReflet(d, tx, ty)
+      && !(p.move && p.move.tx === tx && p.move.ty === ty) && !(p.x === tx && p.y === ty);
+    R.dir = refleter(dir);
+    if (!libre) return;
+    R.move = { fx: R.x, fy: R.y, t: 0, dur: p.move?.dur || 0.26 }; R.x = tx; R.y = ty;
+  },
+  occupeReflet(x, y) { const R = this.reflet; return !!R && this.refletActif(R.d) && ((R.x === x && R.y === y) || (R.move && R.move.fx === x && R.move.fy === y)); },
+  async dessinerReflet(dt) {
+    const R = this.reflet, g = this.game, v = g.view;
+    if (!R || !this.refletActif(R.d)) { if (v.actors.has('copycat')) v.removeActor('copycat'); return; }
+    if (!this.imgCopycat) { if (!this.chargeCopycat) this.chargeCopycat = loadImg(IMAGES.copycat).then((im) => { this.imgCopycat = im; }); return; }
+    let x = R.x, y = R.y;
+    if (R.move) { R.move.t += dt / R.move.dur; const u = Math.min(1, R.move.t); x = R.move.fx + (R.x - R.move.fx) * u; y = R.move.fy + (R.y - R.move.fy) * u; if (R.move.t >= 1) R.move = null; }
+    const a = v.imageActor('copycat', this.imgCopycat, 1.2);
+    v.place(a, x, y, R.move ? Math.abs(Math.sin(R.move.t * Math.PI)) * 0.08 : 0);
+  },
+  /** un pas plus loin : Copycat est-il sur la case visée ? */
+  async parlerReflet(d) {
+    const g = this.game, ui = g.ui, p = g.player, [dx, dy] = DIRS[p.dir], R = this.reflet;
+    if (!this.refletActif(d) || R.x !== p.x + dx || R.y !== p.y + dy || R.move) return false;
+    g.busy = true;
+    try {
+      await ui.say(d.textes.copycat, { speaker: 'Copycat' });
+      const res = await this.combat({ cls: 'Mime', nom: 'Copycat', bs: 'copycat_combat' }, copieSoignee(g.state.party));
+      if (res !== 'win') { await ui.say(d.textes.copycatGagne); this.placerReflet(d); await this.defaite(d); return true; }
+      await ui.say(d.textes.copycatBattu, { speaker: 'Copycat' });
+      for (const [k, n] of Object.entries(d.recompense.objets)) { g.give(k, n); g.sound.sfx('item'); await ui.say(`${g.state.name} reçoit ${n > 1 ? n + ' × ' : ''}${itemName(k)} !`); }
+      await this.maj(d, this.zoneReflet(d).s.id, {}, { faite: true, fini: true });
+      g.sound.play('victory');
+      await ui.say(d.textes.fin);
+      const [x, y] = g.world.maps[d.carte].donjon.plan.depart;
+      await g.warp({ map: d.carte, x, y, dir: 'up' }, 'exit');
+    } finally { g.busy = false; }
+    return true;
+  },
+  async plaque(d) {
+    const g = this.game;
+    await g.ui.say(d.textes.plaque);
+    if (this.etats[d.id].salles[this.zoneReflet(d).s.id].faite) return;
+    if (!(await g.ui.yesNo('Revenir à l\'entrée de la salle et recommencer ?'))) return;
+    await this.recommencerReflet(d);
+  },
+  async recommencerReflet(d) {
+    const g = this.game, s = this.zoneReflet(d).s, [x, y] = s.retour;
+    this.placerReflet(d);
+    await g.warp({ map: d.carte, x: x + 1, y: y + 1, dir: 'up' }, 'exit');
+  },
+
+  /* ---------------- branchements (jeu.js du labo et classe Donjons) ---------------- */
+  /** le donjon des miroirs où se trouve le joueur, s'il y est */
+  miroirsIci() { const g = this.game; if (!g.state) return null; for (const d of this.defs.values()) if (estMiroirs(d) && g.mapObj?.id === d.carte) return d; return null; },
+  tickMiroirs(dt) {
+    const d = this.miroirsIci();
+    if (!d) { if (this.game.view.actors.has('copycat')) this.game.view.removeActor('copycat'); return; }
+    if (this.salleDe(d, 'lumiere')) this.dessinerLumiere(d);
+    if (this.salleDe(d, 'reflet')) this.dessinerReflet(dt);
+  },
+  /** pas pris en charge ici (glissade sur la glace, ligne du miroir) : renvoie true si le pas est traité */
+  pasSpecial(dir) {
+    const d = this.miroirsIci(); if (!d) return false;
+    const g = this.game, p = g.player, m = g.mapObj, [dx, dy] = DIRS[dir];
+    if (this.barriereReflet(d, p.x + dx, p.y + dy)) {
+      p.dir = dir; p.walking = false;
+      if (p.bumpT <= 0) { g.sound.sfx('bump'); p.bumpT = 0.3; }
+      return true;
+    }
+    if (!m.glace?.size || !(m.glace.has(cle(p.x, p.y)) || m.glace.has(cle(p.x + dx, p.y + dy)))) return false;
+    const libre = (x, y) => m.in(x, y) && walkable(m.get(x, y)) && !g.occupied(x, y) && m.height(x, y) === m.height(p.x, p.y);
+    const ch = glisser(m.glace, libre, p.x, p.y, dx, dy);
+    if (ch.length < 2) return false;
+    const [tx, ty] = ch[ch.length - 1];
+    p.dir = dir; p.walking = false;
+    p.move = { fx: p.x, fy: p.y, tx, ty, t: 0, dur: Math.max(0.14, 0.085 * ch.length), glisse: true };
+    g.sound.sfx('ledge');
+    return true;
+  },
+  apresDepart(dir, depart) { const d = this.miroirsIci(); if (d && this.salleDe(d, 'reflet')) this.refleterPas(d, dir, depart); },
+  occupe(x, y) { return this.occupeReflet(x, y); },
+  async interagir() { const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.parlerReflet(d); },
+  async apresPas(mv) { const d = this.miroirsIci(); if (d && !mv?.glisse && this.salleDe(d, 'lumiere')) await this.rencontreMiroirs(d); },
+  /** dans la salle du reflet : on peut revenir à l'entrée de la salle depuis le menu */
+  dansLeReflet() { const d = this.miroirsIci(), p = this.game.player; return !!d && !!this.salleDe(d, 'reflet') && this.refletActif(d) && this.dansReflet(d, p.x, p.y); },
+  async recommencerSalle() { const d = this.miroirsIci(); if (d) await this.recommencerReflet(d); },
+  /** objets de quête du donjon des miroirs (journal) */
+  objetsJournal(d) {
+    if (!estMiroirs(d)) return [];
+    const l = [], n = this.miroirsEnPoche(d), f = this.dm(d, 's4').tenus || 0;
+    if (n > 0) l.push({ label: 'Miroir de poche', right: '×' + n, txt: 'Un petit miroir intact. Il se pose sur un socle de la Salle du Brasier. Il disparaît si tu quittes le donjon.' });
+    if (f > 0) l.push({ label: 'Feu Follet', right: '×' + f, txt: 'Une petite flamme qui ne brûle pas les doigts. Elle se jette dans le brasier.' });
+    return l;
+  },
+};
