@@ -203,8 +203,8 @@ retour possible.
 3. **Épreuves** (un joueur chacune), avec un parchemin à deux chiffres au bout :
    - Sagesse : cinq statues, certaines mentent toujours ; on touche celles qui disent vrai (une seule solution,
      vérifiée par les tests ; toucher un menteur coûte des PV comme chez Didier).
-   - Force : deux Karatékas, puis le Gardien de la Force (combat à blocs en solo) : immunisé aux attaques physiques
-     tant que son premier bloc tient (`immunite: 'physique'`), Attaque en hausse à chaque bloc cassé (`boost: 2`).
+   - Force : deux Karatékas, puis le Gardien de la Force (combat à blocs en solo) : immunisé aux attaques spéciales
+     tant que son premier bloc tient (`immunite: 'speciale'` ; `'physique'` pour l'inverse), Attaque en hausse à chaque bloc cassé (`boost: 2`).
    - Courage : une salle en croix. L'interrupteur du bas ouvre la grille de gauche 5 secondes ; derrière, une
      dresseuse attaque au passage (`embuscade`), et l'interrupteur du bout rouvre la gauche et ouvre la droite
      3 secondes ; avant la droite, des caisses à pousser (un levier les remet en place) ; l'interrupteur de droite

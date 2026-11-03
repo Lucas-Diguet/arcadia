@@ -406,14 +406,14 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
     const essai = (attaque) => {
       const b = createMon(68, 25, { shiny: false }); b.moves = [{ id: mv('splash'), pp: 40 }];
       const j = createMon(65, 60, { shiny: false }); j.moves = [{ id: mv(attaque), pp: 30 }];
-      const r = new Raid({ joueurs: [{ id: '1', nom: 'Lucas', party: [j] }], boss: { mon: b, nom: 'Gardien' }, blocs: 3, immunite: 'physique', boost: 2, rng: () => 0.5 });
+      const r = new Raid({ joueurs: [{ id: '1', nom: 'Lucas', party: [j] }], boss: { mon: b, nom: 'Gardien' }, blocs: 3, immunite: 'speciale', boost: 2, rng: () => 0.5 });
       r.start(); const avant = b.hp; r.action('1', { type: 'move', idx: 0 });
       return { degats: avant - b.hp, r };
     };
     const phys = essai('mega-punch'), spe = essai('psychic');
-    ok(phys.degats === 0 && spe.degats > 0, `gardien de la Force : les coups physiques ne passent pas, les spéciaux si (${phys.degats}, ${spe.degats})`);
-    ok(spe.r.bloc() < 3 ? spe.r.manches[0].sides[1].v.st[1] > 0 : true, 'gardien de la Force : son Attaque monte quand un bloc casse');
-    ok(!spe.r.immunise() || spe.r.bloc() === 3, 'gardien de la Force : l\'immunité tombe avec le premier bloc');
+    ok(spe.degats === 0 && phys.degats > 0, `gardien de la Force : les attaques spéciales ne passent pas, les physiques si (${spe.degats}, ${phys.degats})`);
+    ok(phys.r.bloc() < 3 ? phys.r.manches[0].sides[1].v.st[1] > 0 : true, 'gardien de la Force : son Attaque monte quand un bloc casse');
+    ok(!phys.r.immunise() || phys.r.bloc() === 3, 'gardien de la Force : l\'immunité tombe avec le premier bloc');
   }
 }
 

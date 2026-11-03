@@ -4,7 +4,7 @@
 // Salle 2 : les statues du trio des lacs et trois portes (Sagesse, Force, Courage). Une porte ne laisse passer
 //           qu'un joueur, et on ne revient pas en arrière : chacun suit son chemin.
 // Salles 3 : Sagesse, l'énigme des menteurs ; Force, deux dresseurs et un gardien à blocs (immunisé aux attaques
-//            physiques tant que son premier bloc tient, son Attaque monte à chaque bloc cassé) ; Courage, une salle en
+//            spéciales tant que son premier bloc tient, son Attaque monte à chaque bloc cassé) ; Courage, une salle en
 //            croix : chaque interrupteur ouvre quelques secondes la grille suivante (bas → gauche → droite → haut), un
 //            dresseur en embuscade, des caisses à pousser ; coincé derrière une grille, on recommence la salle.
 //            Au bout de chaque épreuve : un parchemin avec un nombre à deux chiffres.
@@ -156,8 +156,8 @@ export default {
     q: { id: 'f3-2', cls: 'Karatéka', nom: 'Shin', sprite: 'karateka', dir: 'down', equipe: [[67, 23], [57, 22], [106, 23]] },
     B: {
       id: 'f3-gardien', cls: 'Gardien', nom: 'de la Force', sprite: 'karateka', dir: 'down', raid: true, espece: 68, niveau: 25,
-      blocs: 3, immunite: 'physique', boost: 2,
-      avant: ['Je suis le gardien de la Force.', 'Tant que mon premier bouclier tient, aucun coup physique ne m\'atteint.', 'Et chaque bouclier brisé me rendra plus fort !'],
+      blocs: 3, immunite: 'speciale', boost: 2,
+      avant: ['Je suis le gardien de la Force.', 'Tant que mon premier bouclier tient, aucune attaque spéciale ne m\'atteint.', 'Et chaque bouclier brisé me rendra plus fort !'],
       cri: 'Montre-moi ce que vaut ta force !', apres: 'Ta force est réelle. Le chemin est à toi.',
     },
     r: { id: 'c3-1', cls: 'Dompteuse', nom: 'Sacha', sprite: 'fillette2', dir: 'right', equipe: [[58, 22], [77, 22], [37, 23]], embuscade: 'Halte ! Personne ne passe sans m\'affronter !' },

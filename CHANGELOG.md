@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 3.88 — 3 novembre 2026
+- **TestOdyssée** — Sanctuaire des Trois Voies : le Gardien de la Force ne craint plus les attaques spéciales tant que son premier bouclier tient (les coups physiques, eux, passent).
+
 ## 3.87 — 3 novembre 2026
 - **TestOdyssée** — Le panneau devant chaque donjon est maintenant juste à côté de l'allée, près de la porte.
 - **TestOdyssée** — Nouveau mode test dans le menu : on entre seul dans les donjons à plusieurs, on va directement dans n'importe quelle salle et on peut passer les combats.
