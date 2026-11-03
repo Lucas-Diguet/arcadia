@@ -18,7 +18,7 @@ testodyssee/
 ├── js/contenu.js         Pokémon, objets, dresseurs et décor exclusifs du labo
 ├── js/objets.js          ce que font ces objets quand on les utilise (parchemins, CT, Bouchon d'Or)
 ├── js/rendu.js           donjons clairs, sol glacé, faisceaux de lumière
-├── js/donjons/           un fichier par donjon (crypte.js, didier.js, miroirs.js) et la liste (index.js)
+├── js/donjons/           un fichier par donjon (crypte.js, didier.js, miroirs.js, voies.js) et la liste (index.js)
 ├── js/combat/
 │   ├── raid.js           combat à plusieurs contre un boss, barre de vie à blocs (sans écran, testé sous Node)
 │   └── vue.js            ce combat dans l'écran de combat d'Odyssée, encadré des équipiers
@@ -28,7 +28,8 @@ testodyssee/
     ├── jeu.js            PNJ, portes, combats, dalles, panneau, échanges avec l'hôte du salon
     ├── mecaniques.js     questions, clés et serrures, ascenseur, journal, organisation du combat contre le boss
     ├── casse-tetes.js    glace, lumière et reflet, sans écran (résolus sous Node par les tests)
-    └── miroirs.js        le donjon des miroirs : énigme, miroirs de poche, robot, brasier, lumière, Copycat
+    ├── miroirs.js        le donjon des miroirs : énigme, miroirs de poche, robot, brasier, lumière, Copycat
+    └── voies.js          le Sanctuaire des Trois Voies : portes à une personne, menteurs, parchemins, coffre et porte à code, caisses, grille
 ```
 
 ## Tester
@@ -189,6 +190,34 @@ Seul, niveau 35, cinq salles séparées :
 Récompenses : un Bouchon d'Or (IV au maximum, pour renforcer l'équipe) et un Éclat de Miroir (pour un futur donjon).
 `tools/test-testodyssee.mjs` vérifie l'enchaînement des salles, qu'on ne reste jamais coincé sur la glace (quels que
 soient les objets déjà pris) et que c'est assez long, que la lumière n'a qu'une solution, et que Copycat est rejoignable.
+
+### Le Sanctuaire des Trois Voies
+
+À trois, salles séparées. Les chemins se séparent après la salle 2 : `apres` d'une salle dit quelles salles doivent
+être terminées avant elle (au lieu de l'ordre de la liste), `suivante` où mène son passage N. Une salle `voies`
+(`voies: { lettre: salle }`) a des portes qui ne laissent passer qu'un joueur chacune (action `voie` d'etat.js), sans
+retour possible.
+
+1. **Salle des Dalles** : trois dalles, la porte s'ouvre quand chacune est tenue (donjon « à 3 joueurs »).
+2. **Salle des Trois Voies** : le trio des lacs en statues, le panneau, trois portes avec leur inscription.
+3. **Épreuves** (un joueur chacune), avec un parchemin à deux chiffres au bout :
+   - Sagesse : cinq statues, certaines mentent toujours ; on touche celles qui disent vrai (une seule solution,
+     vérifiée par les tests ; toucher un menteur coûte des PV comme chez Didier).
+   - Force : deux Karatékas, puis le Gardien de la Force (combat à blocs en solo) : immunisé aux attaques physiques
+     tant que son premier bloc tient (`immunite: 'physique'`), Attaque en hausse à chaque bloc cassé (`boost: 2`).
+   - Courage : des caisses à pousser (un levier les remet en place) et un dresseur, puis une grille qu'un
+     interrupteur ouvre 6 secondes (il faut courir) et un dernier dresseur.
+4. **Salles des Codes**, la même pour chacun : cinq gardiens (un deuxième parchemin), un coffre qui s'ouvre avec ses
+   deux nombres (dans un sens ou dans l'autre) et donne l'ordre du code, par exemple « Force, Force, Courage,
+   Courage » : le code à huit chiffres de la grande porte est fait des nombres des deux autres chemins, à se dire
+   à l'oral. Codes et ordres sont tirés au sort à chaque descente par l'hôte (`preparer` du donjon) ; des quatre
+   combinaisons, une seule ouvre.
+5. **Couloir des Sentinelles** : les combats à trois contre trois viendront ici.
+6. **Cœur du Sanctuaire** : le Gardien des Trois Voies, à trois contre un. Récompenses : la CT Abri et la Relique de
+   Triforce.
+
+Un combat à plusieurs (`raid`) se lance quand tous les joueurs présents sur la carte de sa salle sont prêts : il peut
+y en avoir plusieurs dans un donjon, et seul celui de la dernière salle termine le donjon.
 
 ### Pokémon et objets exclusifs
 

@@ -56,7 +56,7 @@ export function construireCarte(def) {
     const o = def.objets[c];
     l.forEach(([x, y], i) => {
       if (o.type === 'panneau') m.sign(x, y, o.texte || '...');
-      else if (o.type === 'ramasser') m.item(x, y, o.objet, o.n || 1, `${def.id}:${c}:${i}`);
+      else if (o.type === 'ramasser') m.item(x, y, o.objet, o.n || 1, `${def.carte}:${c}:${i}`);
       else if (o.sol) { if (o.decor) m.deco.push({ k: o.decor, x, y }); }   // objet sur lequel on marche (départ d'un personnage…)
       else m.prop(o.decor || DECOR_OBJET[o.type] || 'statue', x, y);
     });
@@ -91,10 +91,16 @@ export function construireSalles(def) {
     m.salle = s.id;
     return m;
   });
+  // salle suivante : s.suivante, sinon celle d'après dans la liste (une salle des voies n'a pas de suite directe) ;
+  // salle d'avant : celle dont c'est la suite, si elle est unique (plusieurs chemins qui se rejoignent : pas de retour)
+  const idx = (id) => def.salles.findIndex((s) => s.id === id);
+  const suite = (s, i) => (s.suivante !== undefined ? idx(s.suivante) : s.type === 'voies' ? -1 : i + 1);
   cartes.forEach((m, i) => {
-    const P = m.donjon.plan, suiv = cartes[i + 1], prec = cartes[i - 1];
+    const P = m.donjon.plan, s = def.salles[i], j = suite(s, i), suiv = cartes[j];
+    const avant = def.salles.map((q, k) => (k !== i && suite(q, k) === i ? k : -1)).filter((k) => k >= 0);
+    const prec = avant.length === 1 ? cartes[avant[0]] : null;
     if (suiv && P.suivante) m.donjon.versSuivante = { map: suiv.id, x: suiv.donjon.plan.depart[0], y: suiv.donjon.plan.depart[1], dir: 'up' };
-    if (prec && P.sortie) {
+    if (prec && P.sortie && prec.donjon.plan.suivante) {
       const [nx, ny] = prec.donjon.plan.suivante, [sx, sy] = P.sortie;
       m.set(sx, sy, T.CAVEDOOR); m.warp(sx, sy, { map: prec.id, x: nx, y: ny + 1, dir: 'down' }); m.deco.push({ k: 'exitlight', x: sx, y: sy });
     }

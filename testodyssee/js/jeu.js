@@ -9,7 +9,7 @@ export class TestGame extends Game {
   // le labo ajoute ses propres règles de déplacement (glace, reflet) : voir donjon/miroirs.js
   tryStep(d) {
     const D = this.donjons, p = this.player;
-    if (D?.pasSpecial(d)) return;
+    if (D?.pasSpecial(d) || D?.pousser(d)) return;
     const depart = [p.x, p.y], avant = p.move;
     super.tryStep(d);
     if (!avant && p.move) D?.apresDepart(d, depart);
@@ -23,7 +23,7 @@ export class TestGame extends Game {
   }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
   async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }
-  async onStep(mv) { await super.onStep(mv); if (!this.busy && this.mapObj) await this.donjons?.apresPas(mv); }
+  async onStep(mv) { await super.onStep(mv); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas(mv); } }
   load() { return null; }
 
   async startMenu() {

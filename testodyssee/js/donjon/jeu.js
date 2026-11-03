@@ -13,6 +13,7 @@ import { nouvelEtat, appliquer, battu, prisPar, requisSalle } from './etat.js';
 import { construireCarte, construireSalles, relierExterieur, fermer, ouvrir, decorPorte, passageSuivant } from './plan.js';
 import { Mecaniques } from './mecaniques.js';
 import { Miroirs } from './miroirs.js';
+import { Voies } from './voies.js';
 import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 
@@ -35,7 +36,7 @@ export class Donjons {
       for (const c of cartes) game.world.maps[c.id] = c;
       const dehors = relierExterieur(d, m);
       if (dehors) game.world.maps[dehors.id] = dehors;
-      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); }
+      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); }
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -66,8 +67,13 @@ export class Donjons {
       const p = d.pnj[k];
       m.npc({
         id: `${d.id}:${p.id}`, x, y, dir: p.dir || 'down', sprite: p.sprite, move: 'static',
-        when: () => (p.gardien || p.quiz ? true : p.boss || p.raid ? !this.etats[d.id].fini : !battu(this.etats[d.id], d, k)),
-        talk: async () => (p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
+        when: () => {
+          const e = this.etats[d.id], sr = p.raid && d.salles.find((s) => s.type === 'raid' && s.pnj?.includes(k));
+          if (p.gardien || p.quiz || p.toujours) return true;
+          if (sr) return !e.salles[sr.id].faite;
+          return p.boss || p.raid ? !e.fini : !battu(e, d, k);
+        },
+        talk: async () => (p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
       });
     }
   }
@@ -93,6 +99,7 @@ export class Donjons {
       }
     }
     this.appliquerMiroirs(d);
+    this.appliquerVoies(d);
     if (ici) g.refreshNpcs();
     const vu = this.vus[id];
     // premier état connu : ce qui est déjà fait ne rejoue pas de scène ; nouvelle descente : tout se rejoue
@@ -103,7 +110,8 @@ export class Donjons {
     for (const s of d.salles) {
       if (!e.salles[s.id].faite || vu.faites.has(s.id)) continue;
       vu.faites.add(s.id);
-      if (ici && s.type !== 'boss') this.taches.push(() => this.porteOuverte(d, s));
+      // salles séparées : seulement pour qui est dans la salle
+      if (ici && s.type !== 'boss' && (!s.carte || g.mapObj?.id === s.carte)) this.taches.push(() => this.porteOuverte(d, s));
     }
     if (e.fini && !vu.fini) { vu.fini = true; if (ici && !d.solo && !d.salles.some((s) => s.type === 'raid')) this.taches.push(() => this.victoire(d)); }
     this.majPanneau();
@@ -114,6 +122,8 @@ export class Donjons {
     if (s.type === 'enigme' || s.type === 'reflet') return;
     if (s.type === 'lumiere') { g.sound.sfx('badge'); g.view.shake = 0.3; await g.ui.say(d.textes.porteOuverte); return; }
     g.sound.sfx('bang'); g.view.shake = 0.2;
+    if (s.parchemin) { g.ui.toast(`${s.nom} : terminée ! Un parchemin est apparu.`, 2600); return; }
+    if (s.type === 'raid') return;
     g.ui.toast(s.type === 'accueil' ? 'La porte de la crypte s\'ouvre !' : `${s.nom} : terminée ! Une porte s'ouvre.`, 2200);
   }
   async victoire(d) {
@@ -233,6 +243,7 @@ export class Donjons {
       if (this.dallesT <= 0) { this.dallesT = 0.25; for (const d of this.defs.values()) { this.verifierDalles(d); this.verifierRaid(d); } }
     }
     this.tickMiroirs(dt);
+    this.tickVoies(dt);
     this.panT = (this.panT || 0) - dt;
     if (g.state && g.mapObj !== this.carteVue) {
       const avant = this.carteVue && [...this.defs.values()].find((q) => this.estDans(q, this.carteVue.id));
@@ -259,7 +270,10 @@ export class Donjons {
     const g = this.game, d = [...this.defs.values()].find((q) => this.estDans(q));
     if (!d) { this.panel.style.display = 'none'; return; }
     const e = this.etats[d.id], lignes = [];
+    // chemins séparés : seulement les salles communes et celles de son propre chemin
+    const voie = this.maVoie?.(d);
     for (const s of d.salles) {
+      if (s.voie && s.voie !== voie) continue;
       const S = e.salles[s.id];
       let txt = '';
       if (s.type === 'accueil') txt = S.faite ? 'ouverte' : 'parle au gardien';
@@ -273,6 +287,9 @@ export class Donjons {
       else if (s.type === 'libre') txt = 'à explorer';
       else if (s.type === 'lumiere') txt = (S.donnees.feux || 0) < 5 ? `brasier ${S.donnees.feux || 0}/5` : `soleils ${(S.donnees.soleils || []).length}/2`;
       else if (s.type === 'reflet') txt = 'rejoins ton reflet';
+      else if (s.type === 'voies') txt = voie ? d.voies[voie] : 'choisis ta porte';
+      else if (s.type === 'menteurs') txt = 'trouve les sincères';
+      if (s.type === 'voies' && !voie) { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       if (s.type === 'libre') { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
     }
@@ -354,4 +371,4 @@ export class Donjons {
   }
 }
 
-Object.assign(Donjons.prototype, Mecaniques, Miroirs);
+Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies);

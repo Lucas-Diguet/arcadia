@@ -3,5 +3,6 @@
 import crypte from './crypte.js';
 import didier from './didier.js';
 import miroirs from './miroirs.js';
+import voies from './voies.js';
 
-export const DONJONS = [crypte, didier, miroirs];
+export const DONJONS = [crypte, didier, miroirs, voies];

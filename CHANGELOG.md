@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 3.86 — 3 novembre 2026
+- **TestOdyssée** — nouveau donjon à trois : le Sanctuaire des Trois Voies.
+  - Trois dalles à tenir ensemble, puis trois portes : chacun choisit la sienne, et personne ne peut le suivre.
+  - Sagesse : cinq statues, certaines mentent toujours. Touche celles qui disent la vérité.
+  - Force : deux Karatékas, puis un gardien que les coups physiques n'atteignent pas tant que son premier bouclier tient.
+  - Courage : des caisses à pousser, puis une grille qui ne reste ouverte que quelques secondes.
+  - Chaque épreuve et chaque salle de gardiens donnent un parchemin avec un nombre. Le code de ta grande porte est fait des nombres de tes coéquipiers : il faut se parler.
+  - Au bout, le Gardien des Trois Voies vous attend tous les trois. Récompenses : la CT Abri et la Relique de Triforce.
+
 ## 3.85 — 3 novembre 2026
 - **TestOdyssée** — Devant chaque donjon, un panneau donne son nom, une phrase d'ambiance et pour combien de joueurs il est fait : solo, solo ou en groupe, ou à nombre fixe.
 - **TestOdyssée** — Tu peux quitter un donjon à tout moment, par le menu ou par le bouton de l'encadré du donjon : tu ressors devant la porte.

@@ -11,6 +11,7 @@ import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { clesDe, serrures } from './etat.js';
 import { aCote } from './plan.js';
 import { Raid } from '../combat/raid.js';
+import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { CombatMiroir, brancher } from '../combat/vue.js';
 
 const melange = (a) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
@@ -101,11 +102,11 @@ export const Mecaniques = {
     const quetes = (d.journal || []).map((q) => {
       const S = e.salles[q.salle], s = d.salles.find((x) => x.id === q.salle);
       const avance = s.type === 'serrures' ? ` (${serrures(d, e)}/${s.pnj.length} serrures)` : s.type === 'lumiere' ? ` (${Math.min(5, S.donnees.feux || 0)}/5 dans le brasier)` : '';
-      const propre = this.queteJournal?.(d, q);
+      const propre = this.queteJournal?.(d, q) || this.queteVoies?.(d, q);
       if (propre) return { label: q.nom, right: propre.faite ? '✔' : '…', q, txt: propre.txt };
       return { label: q.nom, right: S.faite ? '✔' : '…', q, txt: S.faite ? 'Terminée.' : q.but + avance };
     });
-    const objets = [...clesDe(d, e, this.moi).map((k) => ({ label: d.pnj[k].cle, right: '×1', txt: 'Une clé de l\'ascenseur. Elle disparaît si tu quittes le donjon.' })), ...(this.objetsJournal?.(d) || [])];
+    const objets = [...clesDe(d, e, this.moi).map((k) => ({ label: d.pnj[k].cle, right: '×1', txt: 'Une clé de l\'ascenseur. Elle disparaît si tu quittes le donjon.' })), ...(this.objetsJournal?.(d) || []), ...(this.objetsVoies?.(d) || [])];
     const items = [{ label: '— Quêtes —', disabled: true }, ...(quetes.length ? quetes : [{ label: 'Aucune', disabled: true }]), { label: '— Objets de quête —', disabled: true }, ...(objets.length ? objets : [{ label: 'Aucun', disabled: true }])];
     for (;;) {
       const r = await g.ui.list({ title: `Journal · ${d.nom}`, items, cls: 'shop', cancel: -1, start: 1 });
@@ -116,32 +117,33 @@ export const Mecaniques = {
 
   /* ---------------- boss à affronter à plusieurs ---------------- */
   async bossRaid(d, k) {
-    const g = this.game, ui = g.ui, p = d.pnj[k], e = this.etats[d.id], salle = d.salles.find((s) => s.type === 'raid');
-    if (e.fini) return;
+    const g = this.game, ui = g.ui, p = d.pnj[k], e = this.etats[d.id];
+    const salle = d.salles.find((s) => s.type === 'raid' && s.pnj?.includes(k)) || d.salles.find((s) => s.type === 'raid');
+    if (e.fini || e.salles[salle.id].faite) return;
     if (e.salles[salle.id].combat) { await ui.say('Le combat a déjà commencé sans toi...'); return; }
-    await ui.say(d.textes.masque);
-    const r = await this.demande(d.id, { a: 'pret', party: copie(g.state.party) });
+    await ui.say(p.avant || d.textes.masque, { speaker: p.avant ? p.nom : undefined });
+    const r = await this.demande(d.id, { a: 'pret', salle: salle.id, party: copie(g.state.party) });
     if (!r.ok) { await ui.say(r.why === 'reseau' ? 'L\'hôte du salon ne répond pas...' : '...'); return; }
     // attente des autres : Échap pour partir
     const debut = this.debutRaid ? Promise.resolve(this.debutRaid) : new Promise((res) => { this.attenteRaid = res; });
     this.debutRaid = null;
     let parti = false;
     const box = ui.dialogBox();
-    const maj = () => { const S = this.etats[d.id].salles[salle.id]; ui.typePage(box, `Prêts : ${S.prets.length}/${Math.max(S.prets.length, this.presents(d))}. En attente des autres joueurs… (Échap : partir)`, { last: true }); };
+    const maj = () => { const S = this.etats[d.id].salles[salle.id]; ui.typePage(box, `Prêts : ${S.prets.length}/${Math.max(S.prets.length, this.presentsIds(d, salle).length)}. En attente des autres joueurs… (Échap : partir)`, { last: true }); };
     maj(); const iv = setInterval(maj, 1000);
     const pop = g.input.push((key) => { if (key === 'b') { parti = true; this.attenteRaid?.(null); } });
     const msg = await debut;
     pop(); clearInterval(iv); ui.closeDialog(); this.attenteRaid = null;
-    if (parti || !msg) { await this.demande(d.id, { a: 'pasPret' }); return; }
-    await this.combatRaid(d, p, msg);
+    if (parti || !msg) { await this.demande(d.id, { a: 'pasPret', salle: salle.id }); return; }
+    await this.combatRaid(d, p, msg, salle);
   },
-  async combatRaid(d, p, intro) {
-    const g = this.game, ui = g.ui;
+  async combatRaid(d, p, intro, salle) {
+    const g = this.game, ui = g.ui, cle = `${d.id}|${salle.id}`;
     g.sound.play('legend'); g.view.shake = 0.4; await ui.flash(2, '#ffffff', 70);
-    await ui.say(d.textes.cri, { speaker: p.nom });
+    if (p.cri || d.textes.cri) await ui.say(p.cri || d.textes.cri, { speaker: p.nom });
     this.miroirHote = this.H?.info.hostId;
     const miroir = this.miroir = new CombatMiroir({ moi: this.moi, party: g.state.party, intro, boss: intro.boss });
-    const envoyer = (action) => { if (this.hote) this.actionRaid(this.moi, d.id, action); else this.H.send('host', { t: 'djRA', id: d.id, action }); };
+    const envoyer = (action) => { if (this.hote) this.actionRaid(this.moi, cle, action); else this.H.send('host', { t: 'djRA', id: cle, action }); };
     const curtain = await g.encounterIntro('legend'); curtain.remove();
     g.musicLock = true;
     const defaire = brancher(g.bv, miroir, this.moi);
@@ -156,9 +158,16 @@ export const Mecaniques = {
     }
     this.miroir = null;
     g.sound.stopMusic(0.1); g.sound.current = null; g.updateZone();
-    if (res === 'win') {
+    const dernier = salle === d.salles[d.salles.length - 1];
+    if (res === 'win' && !dernier) {
+      // boss en chemin : la suite s'ouvre (le donjon s'en charge)
       g.sound.play('victory');
-      await ui.say(d.textes.apres, { speaker: p.nom });
+      if (p.apres) await ui.say(p.apres, { speaker: p.nom });
+      for (const m of g.state.party) healFull(m);
+      g.updateZone();
+    } else if (res === 'win') {
+      g.sound.play('victory');
+      await ui.say(p.apres || d.textes.apres, { speaker: p.nom });
       for (const [k, n] of Object.entries(d.recompense?.objets || {})) { g.give(k, n); g.sound.sfx('item'); await ui.say(`${g.state.name} reçoit ${n > 1 ? n + ' × ' : ''}${itemName(k)} !\nIl est rangé dans le Sac.`); }
       for (const m of g.state.party) healFull(m);
       g.updateZone();
@@ -168,23 +177,27 @@ export const Mecaniques = {
   /* ---------------- côté hôte ---------------- */
   /** toutes les demi-secondes : lancer le combat quand tous les joueurs présents sont prêts */
   verifierRaid(d) {
-    const salle = d.salles.find((s) => s.type === 'raid'); if (!salle) return;
+    for (const salle of d.salles) if (salle.type === 'raid') this.verifierRaidSalle(d, salle);
+  },
+  verifierRaidSalle(d, salle) {
     const e = this.etats[d.id], S = e.salles[salle.id];
     if (S.faite || S.combat || !S.prets.length) return;
-    const presents = this.presentsIds(d);
+    const presents = this.presentsIds(d, salle);
     const prets = S.prets.filter((q) => presents.includes(q));
-    if (prets.length < S.prets.length) { for (const q of S.prets.filter((x) => !presents.includes(x))) this.traiter(d.id, q, { a: 'pasPret' }); return; }
+    if (prets.length < S.prets.length) { for (const q of S.prets.filter((x) => !presents.includes(x))) this.traiter(d.id, q, { a: 'pasPret', salle: salle.id }); return; }
     if (!presents.every((q) => S.prets.includes(q))) return;
-    const p = Object.values(d.pnj).find((q) => q.raid), equipes = this.equipesRaid[d.id] || {};
+    const k = salle.pnj?.find((q) => d.pnj[q]?.raid), p = k ? d.pnj[k] : Object.values(d.pnj).find((q) => q.raid), equipes = this.equipesRaid[d.id] || {};
     const joueurs = prets.filter((q) => validParty(equipes[q])).map((q) => ({ id: q, nom: this.nomDe(q), party: copie(equipes[q]) }));
     if (!joueurs.length) return;
     const boss = createMon(p.espece, p.niveau, { iv: Array(6).fill(31), shiny: false });
     boss.stats[0] *= joueurs.length; boss.hp = boss.stats[0];
-    const raid = new Raid({ joueurs, boss: { mon: boss, cls: p.cls, nom: p.nom, bs: p.bs }, blocs: 3 });
-    this.raids[d.id] = { raid, ids: joueurs.map((j) => j.id), boss: { cls: p.cls, nom: p.nom, bs: p.bs } };
-    this.traiter(d.id, this.moi, { a: 'raid', etape: 'debut' });
+    if (p.moves) boss.moves = p.moves.map((id) => ({ id, pp: MOVES[id].pp }));
+    const raid = new Raid({ joueurs, boss: { mon: boss, cls: p.cls, nom: p.nom, bs: p.bs }, blocs: p.blocs || 3, immunite: p.immunite, boost: p.boost });
+    const cle = `${d.id}|${salle.id}`;
+    this.raids[cle] = { raid, ids: joueurs.map((j) => j.id), boss: { cls: p.cls, nom: p.nom, bs: p.bs }, d: d.id, salle: salle.id };
+    this.traiter(d.id, this.moi, { a: 'raid', salle: salle.id, etape: 'debut' });
     const evs = raid.start();
-    this.diffuserRaid(d.id, { etape: 'debut', evs, photo: raid.photo(), boss: this.raids[d.id].boss });
+    this.diffuserRaid(cle, { etape: 'debut', evs, photo: raid.photo(), boss: this.raids[cle].boss });
   },
   diffuserRaid(id, m) {
     const R = this.raids[id]; if (!R) return;
@@ -203,7 +216,7 @@ export const Mecaniques = {
     this.diffuserRaid(id, { etape: 'tour', evs, photo: raid.photo() });
     if (raid.state === 'over') {
       delete this.raids[id];
-      this.traiter(id, this.moi, { a: 'raid', etape: 'fin', result: raid.result, vainqueurs: R.ids });
+      this.traiter(R.d, this.moi, { a: 'raid', salle: R.salle, etape: 'fin', result: raid.result, vainqueurs: R.ids });
     }
   },
   retirerRaid(qui) {
@@ -220,10 +233,11 @@ export const Mecaniques = {
     if (m.etape === 'debut') { if (this.attenteRaid) this.attenteRaid(m); else this.debutRaid = m; return; }
     this.miroir?.recevoir(m);
   },
-  presentsIds(d) {
-    const g = this.game, out = [];
-    if (g.state && g.mapObj?.id === d.carte) out.push(this.moi);
-    for (const o of g.link?.others.values() || []) if (o.map === d.carte) out.push(String(o.id));
+  /** joueurs présents dans la salle du combat (salles séparées : sur sa carte) */
+  presentsIds(d, salle) {
+    const g = this.game, out = [], carte = salle?.carte || d.carte;
+    if (g.state && g.mapObj?.id === carte) out.push(this.moi);
+    for (const o of g.link?.others.values() || []) if (o.map === carte) out.push(String(o.id));
     return out;
   },
 };

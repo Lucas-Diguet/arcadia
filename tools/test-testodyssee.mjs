@@ -178,6 +178,91 @@ for (const d of DONJONS) {
   }
 }
 
+/* ---------------- Sanctuaire des Trois Voies ---------------- */
+{
+  const d = DONJONS.find((q) => q.id === 'voies'), cartes = construireSalles(d), M = Object.fromEntries(cartes.map((m) => [m.salle, m]));
+  const V4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  // chaînage des salles : N mène à S de la salle suivante, les trois chemins se rejoignent dans le couloir
+  const vers = (a) => M[a].donjon.versSuivante?.map;
+  ok(vers('s1') === M.s2.id && !M.s2.donjon.versSuivante, 'voies : salle 1 → salle 2, pas de passage direct après la salle 2');
+  ok(vers('s3s') === M.s4s.id && vers('s3f1') === M.s3f2.id && vers('s3f2') === M.s4f.id && vers('s3c1') === M.s3c2.id && vers('s3c2') === M.s4c.id, 'voies : chaque épreuve mène à sa salle des codes');
+  ok(['s4s', 's4f', 's4c'].every((k) => vers(k) === M.s5.id) && vers('s5') === M.s6.id, 'voies : les trois salles des codes mènent au couloir, puis au gardien');
+  ok(!M.s3s.donjon.plan.sortie && !M.s3f1.donjon.plan.sortie && !M.s3c1.donjon.plan.sortie && !M.s5.donjon.plan.sortie, 'voies : pas de demi-tour après une porte, ni depuis le couloir commun');
+  ok(Object.values(d.salles.find((x) => x.id === 's2').voies).every((id) => M[id]), 'voies : chaque porte mène à une épreuve');
+  // dans chaque salle, portes et passage ouverts, objets retirés : on va de S à N
+  for (const m of cartes) {
+    const P = m.donjon.plan;
+    for (const l of Object.values(P.portes)) for (const [x, y] of l) ouvrir(m, x, y);
+    for (const c of ['K', 'V', 'J', 'L']) for (const [x, y] of P.objets[c] || []) ouvrir(m, x, y);
+    if (P.suivante) passageSuivant(m, true);
+    const vu = m.reach(...P.depart);
+    if (P.suivante) ok(vu[P.suivante[1] * m.w + P.suivante[0]], `voies : ${m.salle}, on va de l'entrée à la sortie`);
+    for (const [k, [[x, y]]] of Object.entries(P.pnj)) ok(V4.some(([dx, dy]) => vu[(y + dy) * m.w + x + dx]), `voies : ${m.salle}, on peut parler à ${k}`);
+  }
+  // salle 1 : trois dalles, un donjon à trois
+  const s1 = construireSalles(d)[0];
+  ok(s1.donjon.plan.dalles.length === 3 && requisSalle(d, d.salles[0], 3, 1) === 3 && texteJoueurs(d) === 'Donjon à 3 joueurs', 'voies : trois dalles, trois joueurs');
+  // les portes des voies : une par joueur
+  {
+    const e = nouvelEtat(d), r1 = appliquer(d, e, 'a', { a: 'voie', salle: 's2', voie: 'Z' }), r2 = appliquer(d, e, 'b', { a: 'voie', salle: 's2', voie: 'Z' }), r3 = appliquer(d, e, 'a', { a: 'voie', salle: 's2', voie: 'Y' });
+    ok(r1.ok && !r2.ok && r2.why === 'prise' && !r3.ok && r3.why === 'deja', 'voies : une porte prise se ferme aux autres, et on ne prend qu\'une porte');
+    ok(ouverte(d, e, 's3s') && !ouverte(d, e, 's4s') && !ouverte(d, e, 's3f2') && !ouverte(d, e, 's5'), 'voies : chaque chemin s\'ouvre de son côté');
+  }
+  // l'énigme des menteurs : une seule solution, et aucune phrase n'est de trop
+  {
+    const R = d.menteurs.regles, sols = (sauf) => { const out = []; for (let k = 0; k < 32; k++) { const v = [0, 1, 2, 3, 4].map((i) => !!(k >> i & 1)); if (R.every((f, i) => i === sauf || f(v) === v[i])) out.push(v); } return out; };
+    const s = sols(-1);
+    ok(s.length === 1 && s[0].every((x, i) => x === d.menteurs.sinceres.includes(i)), 'voies : l\'énigme des menteurs a une seule solution, celle du jeu');
+    ok([0, 1, 2, 3, 4].every((k) => sols(k).length > 1), 'voies : sans n\'importe laquelle des phrases, l\'énigme n\'a plus une seule solution');
+  }
+  // caisses : on ne passe pas sans pousser, on passe en poussant
+  {
+    const m = construireSalles(d).find((q) => q.salle === 's3c1'), P = m.donjon.plan, N = P.suivante;
+    const caisses0 = new Set(P.objets.L.map(([x, y]) => cle(x, y))), mur = (x, y) => !m.in(x, y) || m.get(x, y) === T.CAVEWALL || (m.get(x, y) === T.BLOCK && !caisses0.has(cle(x, y)));
+    const resoudre = (pousser) => {
+      const k0 = cle(...P.depart) + '|' + [...caisses0].sort().join(';'), vu = new Set([k0]), file = [[P.depart, caisses0]];
+      while (file.length) {
+        const [[x, y], cs] = file.shift();
+        if (x === N[0] && y === N[1] + 1) return true;
+        for (const [dx, dy] of V4) {
+          const nx = x + dx, ny = y + dy; if (mur(nx, ny) || P.pnj.r?.some(([a, b]) => a === nx && b === ny)) continue;
+          let ncs = cs;
+          if (cs.has(cle(nx, ny))) { if (!pousser) continue; const bx = nx + dx, by = ny + dy; if (mur(bx, by) || cs.has(cle(bx, by)) || P.pnj.r?.some(([a, b]) => a === bx && b === by)) continue; ncs = new Set(cs); ncs.delete(cle(nx, ny)); ncs.add(cle(bx, by)); }
+          const kk = cle(nx, ny) + '|' + [...ncs].sort().join(';'); if (!vu.has(kk)) { vu.add(kk); file.push([[nx, ny], ncs]); }
+        }
+      }
+      return false;
+    };
+    ok(!resoudre(false) && resoudre(true), 'voies : les caisses barrent la sortie, et on passe en les poussant');
+  }
+  // grille à interrupteur : en marchant on n'a pas le temps, en courant si
+  {
+    const m = construireSalles(d).find((q) => q.salle === 's3c2'), P = m.donjon.plan, [ix, iy] = P.objets.I[0], [jx, jy] = P.objets.J[0];
+    ouvrir(m, jx, jy);
+    const dist = new Map([[cle(ix, iy), 0]]), file = [[ix, iy]];
+    while (file.length) { const [x, y] = file.shift(); for (const [dx, dy] of V4) { const k = cle(x + dx, y + dy); if (dist.has(k) || !walkable(m.get(x + dx, y + dy))) continue; dist.set(k, dist.get(cle(x, y)) + 1); file.push([x + dx, y + dy]); } }
+    const n = dist.get(cle(jx, jy)), t = d.salles.find((q) => q.id === 's3c2').minuteur;
+    ok(n * 0.2 > t && n * 0.1 < t, `voies : la grille se rejoint en courant, pas en marchant (${n} cases, ${t} s)`);
+  }
+  // codes : chaque grande porte n'a qu'une bonne combinaison parmi les quatre de son coffre
+  for (let k = 0; k < 50; k++) {
+    let r = k + 1; const rnd = () => { r = (r * 1664525 + 1013904223) >>> 0; return r / 4294967296; };
+    const sec = d.preparer(rnd), tous = Object.values(sec.codes).flat();
+    let bon = new Set(tous).size === 6 && tous.every((n) => n >= 10 && n <= 99);
+    for (const v of ['s', 'f', 'c']) {
+      const mot = sec.motifs[v], autres = ['s', 'f', 'c'].filter((q) => q !== v);
+      bon &&= mot.length === 4 && autres.every((q) => mot.filter((x) => x === q).length === 2);
+      const combos = new Set();
+      for (const oa of [[0, 1], [1, 0]]) for (const ob of [[0, 1], [1, 0]]) { const vu = { [autres[0]]: 0, [autres[1]]: 0 }, o = { [autres[0]]: oa, [autres[1]]: ob }; combos.add(mot.map((q) => String(sec.codes[q][o[q][vu[q]++]])).join('')); }
+      bon &&= combos.size === 4 && combos.has(sec.portes[v]);
+    }
+    if (!bon) { ok(false, `voies : codes de la descente ${k}`); break; }
+  }
+  ok(true, 'voies : codes tirés au sort, une seule bonne combinaison par porte');
+  let r0 = 7; const e0 = nouvelEtat(d, { rng: () => { r0 = (r0 * 1664525 + 1013904223) >>> 0; return r0 / 4294967296; } });
+  ok(e0.secret?.portes?.s?.length === 8, 'voies : l\'état d\'une descente porte ses codes');
+}
+
 /* ---------------- panneau d'entrée (standard de tous les donjons) ---------------- */
 ok(texteJoueurs({ joueurs: { mode: 'solo' } }) === 'Donjon solo' && texteJoueurs({ joueurs: { mode: 'exact', n: 4 } }) === 'Donjon à 4 joueurs' && /solo ou en groupe \(3 joueurs recommandés\)/.test(texteJoueurs({ joueurs: { mode: 'groupe', n: 3 } })), 'panneau : les trois façons de dire le nombre de joueurs');
 for (const d of DONJONS) {

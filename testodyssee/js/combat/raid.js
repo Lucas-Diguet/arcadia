@@ -5,7 +5,8 @@
 // partout (PV, statuts, modifications de stats). L'hôte fait tourner ce combat et diffuse les événements.
 //
 // Barre de vie à blocs (façon PokéRogue) : un coup ne fait jamais tomber plus d'un bloc, et chaque bloc cassé
-// augmente la Vitesse du boss d'un cran.
+// augmente la Vitesse du boss d'un cran (ou la stat donnée par o.boost). Avec o.immunite = 'physique', le boss ne
+// craint pas les attaques physiques tant que son premier bloc tient.
 import { Battle } from '../../../odyssee/js/core/battle.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { monName, isFainted } from '../../../odyssee/js/core/mon.js';
@@ -21,6 +22,18 @@ class Manche extends Battle {
   nm(i) { const m = this.act(i); return i === 1 ? monName(m) : `${monName(m)} ${deNom(this.joueur.nom)}`; }
   tie() { return this.rng() < 0.5 ? -1 : 1; }
   awardExp() {}
+  /** premier bloc intact : les attaques physiques ne passent pas */
+  useMove(i, a, first) {
+    const mv = MOVES[a.id];
+    if (i === 0 && a.type === 'move' && mv?.c === 'physical' && this.raid.immunise()) {
+      const m = this.act(0), slot = a.slot ?? m.moves.findIndex((q) => q.id === mv.id);
+      if (slot >= 0 && m.moves[slot]) m.moves[slot].pp = Math.max(0, m.moves[slot].pp - 1);
+      this.say(`${this.Nm(0)} utilise ${mv.n} !`);
+      this.say(`Le bouclier de ${monName(this.act(1))} repousse les coups physiques !`);
+      return;
+    }
+    return super.useMove(i, a, first);
+  }
   hp(i, delta, cause) {
     if (i === 1 && delta < 0) delta = this.raid.plafond(delta);
     const avant = this.act(1).hp, r = super.hp(i, delta, cause);
@@ -61,6 +74,8 @@ export class Raid {
   constructor(o) {
     this.rng = o.rng || Math.random;
     this.blocs = o.blocs || 3;
+    this.immunite = o.immunite || null;
+    this.statBloc = o.boost || 6;   // stat qui monte à chaque bloc cassé (2 : Attaque, 6 : Vitesse)
     this.boss = { mon: o.boss.mon, nom: monName(o.boss.mon), dresseur: { cls: o.boss.cls || '', name: o.boss.nom || monName(o.boss.mon), bs: o.boss.bs, prize: 0, ai: 'smart', items: {} } };
     this.joueurs = o.joueurs.map((j) => ({ id: String(j.id), nom: j.nom, party: j.party, etat: 'choix' }));
     this.manches = this.joueurs.map((j) => new Manche(this, j, this.rng));
@@ -76,6 +91,7 @@ export class Raid {
   seuils() { const M = this.bossMon.stats[0]; return Array.from({ length: this.blocs + 1 }, (_, k) => Math.round((k * M) / this.blocs)); }
   /** bloc courant (1 = le dernier) */
   bloc(hp = this.bossMon.hp) { const t = this.seuils(); for (let k = 1; k <= this.blocs; k++) if (hp <= t[k]) return k; return this.blocs; }
+  immunise() { return this.immunite === 'physique' && this.bloc() === this.blocs; }
   /** un coup ne descend pas sous le bas du bloc courant */
   plafond(delta) { const hp = this.bossMon.hp, bas = this.seuils()[this.bloc(hp) - 1]; return Math.max(delta, bas - hp); }
   blocsCasses(manche, avant) {
@@ -86,7 +102,7 @@ export class Raid {
       if (avant > t[k] && apres <= t[k]) {
         manche.ev.push({ t: 'bloc', reste: k });
         manche.say(`Un bouclier de ${this.boss.nom} se brise !`);
-        manche.boost(1, 6, 1, false);
+        manche.boost(1, this.statBloc, 1, false);
       }
     }
   }

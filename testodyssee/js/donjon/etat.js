@@ -10,24 +10,34 @@
 //             les serrures. Une clé pas encore posée retourne à son PNJ si son porteur quitte le donjon
 //   libre   : rien à faire (salle de passage, casse-tête sans porte)
 //   autres  : leur avancée est notée par le jeu avec l'action « maj » (donjon des miroirs)
-//   raid    : le combat contre le boss se lance quand tous les joueurs présents sont prêts (l'hôte en décide)
+//   raid    : le combat contre le boss se lance quand tous les joueurs présents dans sa salle sont prêts (l'hôte en décide)
+//   voies   : chaque porte (s.voies) ne laisse passer qu'un seul joueur ; libre pour le reste
+//
+// Chemins qui se séparent : s.apres (salles à terminer avant celle-ci) remplace l'ordre de la liste.
 
 export function nouvelEtat(def, o = {}) {
   const joueurs = Math.max(1, o.joueurs || 1);
   const salles = {};
-  for (const s of def.salles) salles[s.id] = { faite: s.type === 'libre', battus: [], pris: {}, dalles: 0, cles: {}, prets: [], combat: false, donnees: {} };
-  return {
+  for (const s of def.salles) salles[s.id] = { faite: s.type === 'libre' || s.type === 'voies', battus: [], pris: {}, dalles: 0, cles: {}, prets: [], combat: false, donnees: {} };
+  const e = {
     id: def.id, run: o.run || 1, v: 0, joueurs, fini: false,
     salles,
     boss: o.bossPv ? { pv: o.bossPv * (joueurs + 1), max: o.bossPv * (joueurs + 1) } : null,
     vainqueurs: [],
   };
+  // ce que le donjon tire au sort à chaque descente (codes…) : l'hôte le tire, les autres reçoivent son état
+  if (def.preparer) e.secret = def.preparer(o.rng || Math.random);
+  return e;
 }
 
 const salleDe = (def, pnj) => def.salles.find((s) => s.pnj?.includes(pnj));
+/** salle de combat à plusieurs : celle demandée, sinon la première */
+export const salleRaid = (def, id) => def.salles.find((q) => q.type === 'raid' && (!id || q.id === id));
 
 /** une salle est accessible quand toutes celles d'avant sont terminées */
 export function ouverte(def, e, salleId) {
+  const cible = def.salles.find((s) => s.id === salleId);
+  if (cible?.apres) return cible.apres.every((id) => e.salles[id]?.faite);
   for (const s of def.salles) { if (s.id === salleId) return true; if (!e.salles[s.id].faite) return false; }
   return false;
 }
@@ -115,8 +125,18 @@ export function appliquer(def, e, qui, m, o = {}) {
       if (s.pnj.every((p) => S.cles[p]?.mise)) S.faite = true;
       return res(true, true);
     }
+    case 'voie': {
+      // un joueur franchit une porte de la salle des voies : elle se referme pour les autres
+      const s = def.salles.find((q) => q.type === 'voies' && q.id === m.salle); if (!s || !s.voies?.[m.voie]) return res(false, false, 'inconnu');
+      const V = (e.salles[s.id].donnees.voies ||= {});
+      if (V[m.voie] && V[m.voie] !== qui) return res(false, false, 'prise');
+      if (Object.entries(V).some(([k, q]) => q === qui && k !== m.voie)) return res(false, false, 'deja');
+      if (V[m.voie] === qui) return res(true, false);
+      V[m.voie] = qui;
+      return res(true, true);
+    }
     case 'pret': case 'pasPret': {
-      const s = def.salles.find((q) => q.type === 'raid');
+      const s = salleRaid(def, m.salle);
       if (!s || e.salles[s.id].faite || !ouverte(def, e, s.id)) return res(false, false, 'ferme');
       const S = e.salles[s.id], dedans = S.prets.includes(qui);
       if (m.a === 'pret' && !dedans) { S.prets.push(qui); return res(true, true); }
@@ -125,11 +145,12 @@ export function appliquer(def, e, qui, m, o = {}) {
     }
     case 'raid': {
       // décidé par l'hôte : début (m.etape 'debut') ou fin du combat (m.etape 'fin', m.result)
-      const s = def.salles.find((q) => q.type === 'raid'); if (!s) return res(false, false);
+      const s = salleRaid(def, m.salle); if (!s) return res(false, false);
       const S = e.salles[s.id];
       if (m.etape === 'debut') { S.combat = true; return res(true, true); }
       S.combat = false; S.prets = [];
-      if (m.result === 'win') { S.faite = true; e.fini = true; for (const q of m.vainqueurs || []) if (!e.vainqueurs.includes(String(q))) e.vainqueurs.push(String(q)); }
+      // le donjon ne finit qu'avec le combat de sa dernière salle (un boss en chemin ne fait qu'ouvrir la suite)
+      if (m.result === 'win') { S.faite = true; if (s === def.salles[def.salles.length - 1]) e.fini = true; for (const q of m.vainqueurs || []) if (!e.vainqueurs.includes(String(q))) e.vainqueurs.push(String(q)); }
       return res(true, true);
     }
     case 'maj': {
