@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 3.92 — 3 novembre 2026
+- **TestOdyssée** — Pyramide de l'Ascension : l'escalier des étages mène bien à la salle suivante quand on marche dessus.
+
 ## 3.91 — 3 novembre 2026
 - **TestOdyssée** — Sanctuaire des Trois Voies :
   - Le panneau de la salle des voies est au centre du triangle des statues.

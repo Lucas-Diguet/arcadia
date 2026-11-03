@@ -61,7 +61,7 @@ export const Pyramide = {
         P.objets.E.forEach(([x, y], k) => {
           const la = S.faite && k === n % P.objets.E.length, deja = m.get(x, y) === T.STAIRS;
           if (la === deja) return;
-          if (la) { m.set(x, y, T.STAIRS); m.warp(x, y, { map: sm.id, x: sm.donjon.plan.depart[0], y: sm.donjon.plan.depart[1], dir: 'up' }); }
+          if (la) { m.set(x, y, T.STAIRS); m.warp(x, y, { map: sm.id, x: sm.donjon.plan.depart[0], y: sm.donjon.plan.depart[1], dir: 'up', step: true }); }
           else { m.set(x, y, T.CAVE); m.warps.delete(cle(x, y)); }
           if (g.mapObj === m) g.view.rebuildAt(x, y);
         });
