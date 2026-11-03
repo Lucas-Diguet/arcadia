@@ -3,8 +3,14 @@
 import { Game } from '../../odyssee/js/game.js';
 import { partyScreen, dexScreen, mapScreen, optionsScreen } from '../../odyssee/js/ui/screens.js';
 
+const CLE_TEST = 'testodyssee-mode-test';
+
 export class TestGame extends Game {
   save() { return true; }
+
+  /** mode test : on entre seul partout (dalles, portes des voies) et on peut passer les combats */
+  get modeTest() { if (this._modeTest == null) { try { this._modeTest = localStorage.getItem(CLE_TEST) === '1' || new URLSearchParams(location.search).has('test'); } catch (e) { this._modeTest = false; } } return this._modeTest; }
+  set modeTest(v) { this._modeTest = !!v; try { localStorage.setItem(CLE_TEST, v ? '1' : '0'); } catch (e) {} this.donjons?.majPanneau(); }
 
   // le labo ajoute ses propres règles de déplacement (glace, reflet) : voir donjon/miroirs.js
   tryStep(d) {
@@ -16,6 +22,7 @@ export class TestGame extends Game {
   }
   // donjon clair : fond de combat clair (Odyssée prend le fond de grotte pour toute carte de grotte)
   async runBattle(o) {
+    if (this.modeTest && await this.ui.yesNo('Mode test : passer ce combat (compté comme gagné) ?')) return 'win';
     const m = this.mapObj;
     if (m?.style !== 'clair') return super.runBattle(o);
     const avant = [m.floor, m.battleBg]; m.floor = 'clair'; m.battleBg = 'league';
@@ -31,8 +38,9 @@ export class TestGame extends Game {
     const opts = [['ÉQUIPE', 'party'], ['SAC', 'bag'], ['POKéDEX', 'dex']];
     if (this.canField('vol')) opts.push(['VOL', 'fly']);
     if (this.donjons?.dansUnDonjon()) opts.push(['JOURNAL', 'journal'], ['QUITTER LE DONJON', 'quitter']);
+    if (this.modeTest && this.donjons?.sallesDuDonjon().length > 1) opts.push(['ALLER À UNE SALLE', 'salle']);
     if (this.donjons?.dansLeReflet()) opts.push(['REVENIR AU DÉBUT DE LA SALLE', 'debut']);
-    opts.push(['CARTE', 'map'], ['CHANGER DE LIEU', 'lieu'], ['OPTIONS', 'opt'], ['FERMER', 'close']);
+    opts.push(['CARTE', 'map'], ['CHANGER DE LIEU', 'lieu'], [this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON', 'test'], ['OPTIONS', 'opt'], ['FERMER', 'close']);
     let idx = Math.min(this._menuIdx || 0, opts.length - 1);
     try {
       for (;;) {
@@ -46,6 +54,11 @@ export class TestGame extends Game {
         else if (k === 'fly') { if (this.player.surf || !this.mapObj.outdoor) { await this.ui.say('On ne peut pas s\'envoler d\'ici.'); continue; } if (await this.fly()) break; }
         else if (k === 'map') await mapScreen(this);
         else if (k === 'journal') await this.donjons.journal();
+        else if (k === 'test') {
+          this.modeTest = !this.modeTest; opts[r][0] = this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON';
+          await this.ui.say(this.modeTest ? 'Mode test activé : tu peux entrer seul partout, aller dans n\'importe quelle salle d\'un donjon et passer les combats.' : 'Mode test désactivé.');
+        }
+        else if (k === 'salle') { if (await this.donjons.allerSalle()) break; }
         else if (k === 'quitter') { if (await this.donjons.quitter()) break; }
         else if (k === 'opt') await optionsScreen(this);
         else if (k === 'debut') { if (await this.ui.yesNo('Revenir à l\'entrée de la salle ? Copycat reprendra sa place.')) { await this.donjons.recommencerSalle(); break; } }

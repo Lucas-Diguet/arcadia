@@ -129,8 +129,9 @@ export function appliquer(def, e, qui, m, o = {}) {
       // un joueur franchit une porte de la salle des voies : elle se referme pour les autres
       const s = def.salles.find((q) => q.type === 'voies' && q.id === m.salle); if (!s || !s.voies?.[m.voie]) return res(false, false, 'inconnu');
       const V = (e.salles[s.id].donnees.voies ||= {});
-      if (V[m.voie] && V[m.voie] !== qui) return res(false, false, 'prise');
-      if (Object.entries(V).some(([k, q]) => q === qui && k !== m.voie)) return res(false, false, 'deja');
+      // mode test (un seul joueur) : toutes les portes lui sont ouvertes
+      if (!m.test && V[m.voie] && V[m.voie] !== qui) return res(false, false, 'prise');
+      if (!m.test && Object.entries(V).some(([k, q]) => q === qui && k !== m.voie)) return res(false, false, 'deja');
       if (V[m.voie] === qui) return res(true, false);
       V[m.voie] = qui;
       return res(true, true);

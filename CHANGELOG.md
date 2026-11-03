@@ -1,5 +1,15 @@
 # Journal des versions — Arcadia
 
+## 3.87 — 3 novembre 2026
+- **TestOdyssée** — Le panneau devant chaque donjon est maintenant juste à côté de l'allée, près de la porte.
+- **TestOdyssée** — Nouveau mode test dans le menu : on entre seul dans les donjons à plusieurs, on va directement dans n'importe quelle salle et on peut passer les combats.
+- **TestOdyssée** — Sanctuaire des Trois Voies :
+  - Nouvelle phrase sur le panneau d'entrée, et plus de statue égarée devant les entrées des salles.
+  - Les statues du trio des lacs sont bien plus grandes et forment un triangle au centre de la salle des voies.
+  - Les statues de l'épreuve de la Sagesse sont alignées au centre.
+  - Épreuve du Courage refaite : une salle en croix où chaque interrupteur ouvre la grille suivante quelques secondes, une dresseuse en embuscade, des caisses à pousser. Coincé derrière une grille, on recommence la salle.
+  - Les salles des codes sont bien plus grandes, avec des rochers, et plongées dans le noir : seul le coffre brille, au centre.
+
 ## 3.86 — 3 novembre 2026
 - **TestOdyssée** — nouveau donjon à trois : le Sanctuaire des Trois Voies.
   - Trois dalles à tenir ensemble, puis trois portes : chacun choisit la sienne, et personne ne peut le suivre.

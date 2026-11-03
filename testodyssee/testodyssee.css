@@ -31,3 +31,6 @@
 .raid-eq.out { opacity: .45; filter: grayscale(1); }
 .raid-eq.hit { animation: raid-hit .45s; }
 @keyframes raid-hit { 0%, 100% { transform: none; } 25% { transform: translateX(calc(var(--bp) * -2)); } 75% { transform: translateX(calc(var(--bp) * 2)); } }
+
+/* Sanctuaire des Trois Voies : le coffre brille dans le noir */
+.testody-lueur { position: absolute; z-index: 13; width: calc(var(--px) * 46); height: calc(var(--px) * 46); margin: calc(var(--px) * -26) 0 0 calc(var(--px) * -23); border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255, 236, 150, .75) 0%, rgba(255, 210, 90, .35) 35%, rgba(255, 200, 80, 0) 70%); mix-blend-mode: screen; }

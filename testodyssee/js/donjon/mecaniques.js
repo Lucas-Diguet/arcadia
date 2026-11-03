@@ -120,6 +120,12 @@ export const Mecaniques = {
     const g = this.game, ui = g.ui, p = d.pnj[k], e = this.etats[d.id];
     const salle = d.salles.find((s) => s.type === 'raid' && s.pnj?.includes(k)) || d.salles.find((s) => s.type === 'raid');
     if (e.fini || e.salles[salle.id].faite) return;
+    // mode test : on peut passer le combat (compté comme gagné)
+    if (g.modeTest && await ui.yesNo('Mode test : passer ce combat (compté comme gagné) ?')) {
+      await this.demande(d.id, { a: 'raid', salle: salle.id, etape: 'fin', result: 'win', vainqueurs: [this.moi] });
+      if (salle === d.salles[d.salles.length - 1]) for (const [k, n] of Object.entries(d.recompense?.objets || {})) { g.give(k, n); g.sound.sfx('item'); await ui.say(`${g.state.name} reçoit ${n > 1 ? n + ' × ' : ''}${itemName(k)} !`); }
+      return;
+    }
     if (e.salles[salle.id].combat) { await ui.say('Le combat a déjà commencé sans toi...'); return; }
     await ui.say(p.avant || d.textes.masque, { speaker: p.avant ? p.nom : undefined });
     const r = await this.demande(d.id, { a: 'pret', salle: salle.id, party: copie(g.state.party) });

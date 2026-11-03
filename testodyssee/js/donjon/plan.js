@@ -1,6 +1,6 @@
 // testodyssee/js/donjon/plan.js — un donjon dessiné en texte devient une carte d'Odyssée (sans DOM).
 // Une lettre = une case. Légende commune ci-dessous ; chaque donjon ajoute ses PNJ et son décor (def.pnj, def.decor).
-import { T } from '../../../odyssee/js/world/tiles.js';
+import { T, walkable } from '../../../odyssee/js/world/tiles.js';
 import { GameMap } from '../../../odyssee/js/world/mapgen.js';
 
 export const LEGENDE = {
@@ -89,6 +89,7 @@ export function construireSalles(def) {
     const m = construireCarte({ ...def, carte: id, plan: s.plan, salles: [] });
     m.zone(0, 0, m.w - 1, m.h - 1, { name: s.nom, music: s.musique || def.musique || 'cave', salle: s.id });
     m.salle = s.id;
+    if (s.sombre) m.dark = 'arene';   // dans le noir, même avec Flash
     return m;
   });
   // salle suivante : s.suivante, sinon celle d'après dans la liste (une salle des voies n'a pas de suite directe) ;
@@ -183,10 +184,21 @@ export const textePanneau = (def) => [def.nom, def.entree, texteJoueurs(def)].fi
  * relie le donjon à son extérieur (def.exterieur() construit une carte d'Odyssée en plein air et renvoie
  * { carte, porte: [x, y] }) : la porte de l'extérieur mène à l'arrivée S, la sortie D ramène devant la porte.
  */
+/** le panneau d'entrée : juste à côté de l'allée, une ou deux cases devant la porte */
+function poserPanneau(def, carte, [px, py]) {
+  for (const [dx, dy] of [[1, 2], [-1, 2], [2, 1], [-2, 1], [1, 3], [-1, 3], [2, 2], [-2, 2]]) {
+    const x = px + dx, y = py + dy;
+    if (!carte.in(x, y) || !walkable(carte.get(x, y)) || carte.warpAt(x, y) || carte.deco.some((q) => q.x === x && q.y === y)) continue;
+    carte.sign(x, y, textePanneau(def));
+    return;
+  }
+  throw new Error(`Panneau d'entrée de ${def.id} : pas de place près de la porte`);
+}
+
 export function relierExterieur(def, m) {
   if (!def.exterieur) return null;
-  const { carte, porte, panneau } = def.exterieur();
-  if (panneau) carte.sign(panneau[0], panneau[1], textePanneau(def));
+  const { carte, porte } = def.exterieur();
+  if (def.entree) poserPanneau(def, carte, porte);
   const P = m.donjon.plan, [px, py] = porte;
   carte.warp(px, py, { map: m.id, x: P.depart[0], y: P.depart[1], dir: 'up' });
   if (P.sortie) {

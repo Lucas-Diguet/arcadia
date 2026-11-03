@@ -5,7 +5,9 @@
 import { T, walkable, DIRS } from '../../../odyssee/js/world/tiles.js';
 import { ASSETS, loadImg } from '../../../odyssee/js/assets.js';
 import { el, esc } from '../../../odyssee/js/ui/ui.js';
-import { ouvrir } from './plan.js';
+import { createMon } from '../../../odyssee/js/core/mon.js';
+import * as THREE from 'three';
+import { battu } from './etat.js';
 
 const cle = (x, y) => x + ',' + y;
 const estVoies = (d) => d.salles.some((s) => s.type === 'voies');
@@ -48,6 +50,8 @@ export const Voies = {
   /** le chemin de ce joueur (s, f ou c), d'après la porte qu'il a prise */
   maVoie(d) {
     const s2 = d.salles.find((s) => s.type === 'voies'); if (!s2) return null;
+    // sur un chemin : c'est celui de la salle où l'on est (en mode test, on peut les avoir tous pris)
+    const ici = this.salleCarte(d, this.game.mapObj || {}); if (ici?.voie) return ici.voie;
     const V = this.dv(d, s2.id).voies || {};
     const lettre = Object.keys(V).find((k) => V[k] === this.moi);
     return lettre ? d.objets[lettre].voie : null;
@@ -70,13 +74,13 @@ export const Voies = {
             this.decorSol(m, x, y, S.faite && !D.parchemin ? 'itemball' : null);
           } else if (o.type === 'coffre') this.decor(m, x, y, D.coffre ? 'coffre_ouvert' : 'coffre');
           else if (o.type === 'porteCode') this.decor(m, x, y, D.porte ? null : i === (l.length >> 1) ? 'porte_code' : 'porte_vide');
-          else if (o.type === 'porteMinute') this.decor(m, x, y, this.minuteur?.carte === m.id ? null : 'porte_grille');
-          else if (o.type === 'interrupteur') this.decoSol(m, x, y, this.minuteur?.carte === m.id ? 'interrupteur_on' : 'interrupteur');
+          else if (o.type === 'grille') this.decor(m, x, y, this.grilleOuverte(m, c) ? null : i === (l.length >> 1) ? 'porte_grille' : 'porte_vide');
+          else if (o.type === 'interrupteur') this.decoSol(m, x, y, o.ouvre.some((q) => this.grilleOuverte(m, q)) ? 'interrupteur_on' : 'interrupteur');
         });
       }
     }
     // nouvelle descente : les caisses reprennent leur place
-    if (this.runVoies !== e.run) { this.runVoies = e.run; for (const s of d.salles) { const m = this.game.world.maps[s.carte]; if (m?.caissesOrigine) this.remettreCaisses(m); } this.minuteur = null; }
+    if (this.runVoies !== e.run) { this.runVoies = e.run; this.grilles = {}; for (const s of d.salles) { const m = this.game.world.maps[s.carte]; if (m?.caissesOrigine) this.remettreCaisses(m); } this.appliquerVoies(d); }
   },
   /** objet posé au sol qui bloque le passage (parchemin) : prop, ou rien */
   decorSol(m, x, y, k) { this.decor(m, x, y, k); },
@@ -104,11 +108,11 @@ export const Voies = {
   /* ---------------- salle des voies ---------------- */
   async porteVoie(d, s, lettre) {
     const g = this.game, ui = g.ui, o = d.objets[lettre], nom = d.voies[o.voie], V = this.dv(d, s.id).voies || {};
-    if (V[lettre]) { await ui.say(`La Porte ${nom === 'Courage' ? 'du' : 'de la'} ${nom} est scellée.\n${this.nomDe(V[lettre])} a pris ce chemin.`); return; }
+    if (V[lettre] && !g.modeTest) { await ui.say(`La Porte ${nom === 'Courage' ? 'du' : 'de la'} ${nom} est scellée.\n${this.nomDe(V[lettre])} a pris ce chemin.`); return; }
     await ui.say(d.inscriptions[o.voie]);
     const de = nom === 'Courage' ? 'du' : 'de la';
     if (!(await ui.yesNo(`Franchir la Porte ${de} ${nom} ? Elle se refermera derrière toi : tes coéquipiers ne pourront plus emprunter ce chemin, et tu ne pourras plus faire demi-tour.`))) return;
-    const r = await this.demande(d.id, { a: 'voie', salle: s.id, voie: lettre });
+    const r = await this.demande(d.id, { a: 'voie', salle: s.id, voie: lettre, test: !!g.modeTest });
     if (!r.ok) { await ui.say(r.why === 'prise' ? 'Trop tard : quelqu\'un vient de franchir cette porte.' : r.why === 'deja' ? 'Tu as déjà choisi ton chemin.' : r.why === 'reseau' ? 'L\'hôte du salon ne répond pas...' : '...'); return; }
     g.sound.sfx('bang'); g.view.shake = 0.2;
     const cible = d.salles.find((q) => q.id === s.voies[lettre]), cm = this.game.world.maps[cible.carte], [x, y] = cm.donjon.plan.depart;
@@ -177,7 +181,8 @@ export const Voies = {
     if (!this.caisseEn(m, x, y)) return false;
     p.dir = dir; p.walking = false;
     const bx = x + dx, by = y + dy, t = m.get(bx, by);
-    if (!walkable(t) || t === T.CAVEDOOR || g.occupied(bx, by) || m.warpAt(bx, by) || m.deco.some((q) => q.x === bx && q.y === by && q.k !== 'exitlight')) {
+    const special = Object.entries(m.donjon.plan.objets).some(([c, l]) => c !== 'L' && l.some(([a, b]) => a === bx && b === by));
+    if (special || !walkable(t) || t === T.CAVEDOOR || g.occupied(bx, by) || m.warpAt(bx, by) || m.deco.some((q) => q.x === bx && q.y === by && q.k !== 'exitlight')) {
       if (p.bumpT <= 0) { g.sound.sfx('bump'); p.bumpT = 0.3; }
       return true;
     }
@@ -193,36 +198,90 @@ export const Voies = {
     if (!(await this.game.ui.yesNo('Un levier. Remettre les caisses à leur place ?'))) return;
     this.remettreCaisses(m); this.game.sound.sfx('pc');
   },
-  /** après un pas : l'interrupteur ouvre la grille pour quelques secondes */
-  apresPasVoies() {
+  /* grilles du Courage : ouvertes jusqu'à une heure donnée (this.grilles[carte][lettre]) */
+  grilleOuverte(m, c) { const f = this.grilles?.[m.id]?.[c]; return !!f && performance.now() < f; },
+  /** après un pas : interrupteur (ouvre des grilles quelques secondes), embuscade d'un dresseur */
+  async apresPasVoies() {
     const g = this.game, m = g.mapObj, d = [...this.defs.values()].find((q) => estVoies(q) && this.estDans(q)); if (!d) return;
-    const P = m.donjon?.plan, I = P?.objets?.I; if (!I) return;
-    if (!I.some(([x, y]) => x === g.player.x && y === g.player.y)) return;
-    const s = this.salleCarte(d, m), duree = s.minuteur || 6;
-    const neuf = this.minuteur?.carte !== m.id;
-    this.minuteur = { carte: m.id, fin: performance.now() + duree * 1000 };
-    if (neuf) { g.sound.sfx('pc'); this.appliquerVoies(d); g.ui.toast(`La grille s'ouvre... ${duree} secondes !`, 1800); }
+    const P = m.donjon?.plan; if (!P) return;
+    const p = g.player, ici = (c) => (P.objets[c] || []).some(([x, y]) => x === p.x && y === p.y);
+    for (const [c, o] of Object.entries(d.objets)) {
+      if (o.type === 'interrupteur' && ici(c)) {
+        const fin = performance.now() + o.duree * 1000;
+        this.grilles ||= {}; const G = (this.grilles[m.id] ||= {});
+        for (const q of o.ouvre) G[q] = fin;
+        g.sound.sfx('pc'); this.appliquerVoies(d);
+        g.ui.toast(`Clic ! ${o.ouvre.length > 1 ? 'Des grilles s\'ouvrent' : 'Une grille s\'ouvre'}... ${o.duree} secondes !`, 1600);
+      }
+      if (o.type === 'embuscade' && ici(c) && !battu(this.etats[d.id], d, o.pnj) && !g.busy) await this.embuscade(d, o.pnj);
+    }
+  },
+  /** un dresseur qui attaque dès qu'on passe devant lui */
+  async embuscade(d, k) {
+    const g = this.game, p = d.pnj[k];
+    g.busy = true;
+    try {
+      g.sound.sfx('bang');
+      if (p.embuscade) await g.ui.say(p.embuscade, { speaker: `${p.cls} ${p.nom}` });
+      const r = await this.demande(d.id, { a: 'prendre', pnj: k }); if (!r.ok) return;
+      const party = p.equipe.map(([sp, lvl]) => createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false }));
+      const res = await this.combat(p, party);
+      if (res === 'win') await this.demande(d.id, { a: 'gagne', pnj: k });
+      else { await this.demande(d.id, { a: 'lacher', pnj: k }); await this.defaite(d); }
+    } finally { g.busy = false; }
   },
   tickVoies() {
     const g = this.game, d = [...this.defs.values()].find((q) => estVoies(q)); if (!d) return;
-    // la grille se referme à la fin du temps (jamais sur quelqu'un)
-    if (this.minuteur && performance.now() > this.minuteur.fin) {
-      const m = g.world.maps[this.minuteur.carte], J = m.donjon.plan.objets.J || [];
-      const dessus = g.mapObj === m && J.some(([x, y]) => (g.player.x === x && g.player.y === y) || (g.player.move && g.player.move.tx === x && g.player.move.ty === y));
-      if (!dessus) { this.minuteur = null; if (g.mapObj === m) g.sound.sfx('bang'); this.appliquerVoies(d); }
+    // grilles qui se referment (jamais sur quelqu'un) ; coincé derrière une grille : retour à l'entrée de la salle
+    for (const [id, G] of Object.entries(this.grilles || {})) {
+      const m = g.world.maps[id], maintenant = performance.now();
+      for (const [c, fin] of Object.entries(G)) {
+        if (maintenant < fin) continue;
+        const dessus = g.mapObj === m && (m.donjon.plan.objets[c] || []).some(([x, y]) => (g.player.x === x && g.player.y === y) || (g.player.move && g.player.move.tx === x && g.player.move.ty === y));
+        if (dessus) continue;
+        delete G[c];
+        if (g.mapObj === m) g.sound.sfx('bang');
+        this.appliquerVoies(d);
+        if (g.mapObj === m && !g.busy && !g.bv.alive) this.coinceVoies(d, m);
+      }
     }
-    if (!g.state || !this.estDans(d)) return;
+    if (!g.state || !this.estDans(d)) { this.lueur?.remove(); this.lueur = null; return; }
     this.dessinerStatues(d);
+    this.lueurCoffre(d);
+  },
+  /** derrière une grille fermée, sans chemin vers l'entrée : on recommence la salle */
+  coinceVoies(d, m) {
+    const g = this.game, P = m.donjon.plan, [sx, sy] = P.depart, vu = m.reach(g.player.x, g.player.y);
+    if (vu[sy * m.w + sx]) return;
+    this.taches.push(async () => {
+      await g.ui.say('La grille s\'est refermée derrière toi... Tu es ramené à l\'entrée de la salle. Tout est à refaire !');
+      if (m.caissesOrigine) this.remettreCaisses(m);
+      delete this.grilles?.[m.id];
+      this.appliquerVoies(d);
+      await g.warp({ map: m.id, x: sx, y: sy, dir: 'up' }, 'exit');
+    });
+  },
+  /** dans le noir, le coffre brille */
+  lueurCoffre(d) {
+    const g = this.game, m = g.mapObj, H = m.dark && m.donjon?.plan.objets.H?.[0];
+    if (!H || g.bv.alive) { if (this.lueur) this.lueur.style.display = 'none'; return; }
+    if (!this.lueur) { this.lueur = el('div', 'testody-lueur'); g.ui.root.appendChild(this.lueur); }
+    const v = g.view, cv = v.renderer?.domElement || document.getElementById('gl'), rect = cv.getBoundingClientRect(), box = g.ui.root.getBoundingClientRect();
+    const p = new THREE.Vector3(H[0] + 0.5, 0.3, H[1] + 0.5).project(v.camera);
+    const x = rect.left - box.left + (p.x + 1) / 2 * rect.width, y = rect.top - box.top + (1 - p.y) / 2 * rect.height;
+    const ok = p.z < 1 && x > -200 && y > -200 && x < box.width + 200 && y < box.height + 200;
+    this.lueur.style.display = ok ? '' : 'none';
+    this.lueur.style.left = `${x}px`; this.lueur.style.top = `${y}px`;
   },
   /** statues de Pokémon sur leur socle : l'image du Pokémon, en pierre */
   dessinerStatues(d) {
     const g = this.game, m = g.mapObj, P = m.donjon?.plan; if (!P) return;
     this.imgStatues ||= {};
     for (const [c, l] of Object.entries(P.objets)) {
-      const sp = d.objets[c].sp; if (sp) for (const [x, y] of l) this.statue(g, `statue:${x},${y}`, sp, x, y);
+      const o = d.objets[c]; if (o.sp) for (const [x, y] of l) this.statue(g, `statue:${x},${y}`, o.sp, x, y, o.grand ? 0.8 : 0.32);
     }
   },
-  statue(g, id, sp, x, y) {
+  statue(g, id, sp, x, y, echelle) {
     const v = g.view;
     if (v.actors.has(id)) return;
     const im = this.imgStatues[sp];
@@ -237,7 +296,7 @@ export const Voies = {
       return;
     }
     if (!im) return;
-    const a = v.imageActor(id, im, 0.32);
+    const a = v.imageActor(id, im, echelle);
     v.place(a, x, y, 0.32);
   },
 
@@ -264,6 +323,8 @@ export const Voies = {
       const n = this.nombre(d, v, s.parchemin);
       l.push({ label: `Parchemin ${s.parchemin === 1 ? 'de l\'épreuve' : 'des gardiens'}`, right: String(n), txt: `Un parchemin trouvé sur ton chemin. Il porte le nombre ${n}.` });
     }
+    // mode test : tous les nombres et le code, pour jouer les trois chemins seul
+    if (this.game.modeTest && this.etats[d.id].secret) { const sec = this.etats[d.id].secret; l.push({ label: 'Codes (mode test)', right: '', txt: `${Object.entries(sec.codes).map(([q, c]) => `${d.voies[q]} : ${c.join(' et ')}`).join('\n')}\nGrande porte : ${sec.portes[v]}` }); }
     const s4 = d.salles.find((s) => s.voie === v && s.parchemin === 2);
     if (s4 && this.dv(d, s4.id).coffre) l.push({ label: 'Inscription du coffre', right: '', txt: `« ${this.etats[d.id].secret.motifs[v].map((q) => d.voies[q]).join(', ')} »` });
     return l;

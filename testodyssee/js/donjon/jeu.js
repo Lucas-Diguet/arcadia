@@ -218,6 +218,16 @@ export class Donjons {
     await g.warp({ map: dehors.map, x: dehors.x, y: dehors.y, dir: 'down' }, 'exit');
     return true;
   }
+  /** salles séparées du donjon où l'on est (mode test : y aller directement) */
+  sallesDuDonjon() { const d = [...this.defs.values()].find((q) => this.estDans(q)); return d?.cartes?.length > 1 ? d.salles.filter((s) => s.carte) : []; }
+  async allerSalle() {
+    const g = this.game, l = this.sallesDuDonjon(); if (!l.length) return false;
+    const r = await g.ui.list({ title: 'Aller à une salle', items: [...l.map((s) => ({ label: s.nom })), { label: 'Retour' }], cls: 'shop', cancel: l.length });
+    if (r < 0 || r >= l.length) return false;
+    const m = g.world.maps[l[r].carte], [x, y] = m.donjon.plan.depart;
+    await g.warp({ map: m.id, x, y, dir: 'up' }, 'exit');
+    return true;
+  }
   dansUnDonjon() { return [...this.defs.values()].some((q) => this.estDans(q)); }
   /** on quitte un donjon (autre lieu, changement de lieu) : les objets de quête disparaissent */
   sortir(d) {
@@ -263,7 +273,7 @@ export class Donjons {
     let n = 0;
     if (g.state && g.mapObj.id === carte && !g.player.move && sur.has(g.player.x + ',' + g.player.y)) n++;
     for (const o of g.link?.others.values() || []) if (o.map === carte && sur.has(o.x + ',' + o.y)) n++;
-    this.traiter(d.id, this.moi, { a: 'dalles', salle: s.id, n, requis: requisSalle(d, s, P.dalles.length, this.presents(d)) });
+    this.traiter(d.id, this.moi, { a: 'dalles', salle: s.id, n, requis: this.game.modeTest ? 1 : requisSalle(d, s, P.dalles.length, this.presents(d)) });
   }
 
   majPanneau() {

@@ -29,7 +29,7 @@ function exterieur() {
   for (const [x, y] of [[9, 11], [24, 11], [9, 18], [24, 18]]) m.prop('lamp', x, y);
   m.prop('banc', 12, 16); m.prop('banc', 21, 16);
   m.zone(0, 0, 33, 25, { name: 'Cour de Didier', music: 'city' });
-  return { carte: m, porte: [b.doorX, b.doorY], panneau: [b.doorX + 3, 20] };
+  return { carte: m, porte: [b.doorX, b.doorY] };
 }
 
 export default {

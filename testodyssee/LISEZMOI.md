@@ -205,9 +205,13 @@ retour possible.
      vérifiée par les tests ; toucher un menteur coûte des PV comme chez Didier).
    - Force : deux Karatékas, puis le Gardien de la Force (combat à blocs en solo) : immunisé aux attaques physiques
      tant que son premier bloc tient (`immunite: 'physique'`), Attaque en hausse à chaque bloc cassé (`boost: 2`).
-   - Courage : des caisses à pousser (un levier les remet en place) et un dresseur, puis une grille qu'un
-     interrupteur ouvre 6 secondes (il faut courir) et un dernier dresseur.
-4. **Salles des Codes**, la même pour chacun : cinq gardiens (un deuxième parchemin), un coffre qui s'ouvre avec ses
+   - Courage : une salle en croix. L'interrupteur du bas ouvre la grille de gauche 5 secondes ; derrière, une
+     dresseuse attaque au passage (`embuscade`), et l'interrupteur du bout rouvre la gauche et ouvre la droite
+     3 secondes ; avant la droite, des caisses à pousser (un levier les remet en place) ; l'interrupteur de droite
+     ouvre la grille du haut, devant la sortie. Coincé derrière une grille refermée : retour à l'entrée de la salle,
+     tout est à refaire. Chaque interrupteur dit quelles grilles il ouvre (`ouvre`) et combien de temps (`duree`).
+4. **Salles des Codes**, la même grande salle pour chacun, dans le noir (`sombre: true`, Flash n'y fait rien),
+   le coffre qui brille au centre : cinq gardiens (un deuxième parchemin), un coffre qui s'ouvre avec ses
    deux nombres (dans un sens ou dans l'autre) et donne l'ordre du code, par exemple « Force, Force, Courage,
    Courage » : le code à huit chiffres de la grande porte est fait des nombres des deux autres chemins, à se dire
    à l'oral. Codes et ordres sont tirés au sort à chaque descente par l'hôte (`preparer` du donjon) ; des quatre
@@ -218,6 +222,12 @@ retour possible.
 
 Un combat à plusieurs (`raid`) se lance quand tous les joueurs présents sur la carte de sa salle sont prêts : il peut
 y en avoir plusieurs dans un donjon, et seul celui de la dernière salle termine le donjon.
+
+### Le mode test
+
+Menu MODE TEST (ou `?test` dans l'adresse) : les dalles s'ouvrent avec un seul joueur, toutes les portes des voies
+s'ouvrent, ALLER À UNE SALLE mène dans n'importe quelle salle du donjon, chaque combat propose d'être passé (compté
+comme gagné), et le journal du Sanctuaire donne tous les nombres et le code de la grande porte.
 
 ### Pokémon et objets exclusifs
 

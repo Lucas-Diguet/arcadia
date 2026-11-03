@@ -27,7 +27,7 @@ function exterieur() {
   for (const [x, y] of [[6, 8], [25, 9], [6, 15], [25, 15], [9, 21], [23, 21]]) m.prop('deadtree', x, y);
   m.prop('gargouille', b.x - 1, b.doorY); m.prop('gargouille', b.x + b.w, b.doorY);
   m.zone(0, 0, 31, 25, { name: 'Cimetière des Murmures', music: 'mystic' });
-  return { carte: m, porte: [b.doorX, b.doorY], panneau: [b.doorX + 2, 19] };
+  return { carte: m, porte: [b.doorX, b.doorY] };
 }
 
 export default {

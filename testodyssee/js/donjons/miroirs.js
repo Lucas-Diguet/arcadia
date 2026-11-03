@@ -24,7 +24,7 @@ function exterieur() {
   for (const [x, y] of [[7, 7], [24, 7], [6, 16], [25, 16]]) m.prop('snowpine', x, y);
   m.prop('lanterne', b.doorX - 2, b.doorY + 2); m.prop('lanterne', b.doorX + 2, b.doorY + 2);
   m.zone(0, 0, 31, 25, { name: 'Parvis des Miroirs', music: 'snow', theme: 'snow' });
-  return { carte: m, porte: [b.doorX, b.doorY], panneau: [b.doorX + 2, 19] };
+  return { carte: m, porte: [b.doorX, b.doorY] };
 }
 
 export default {

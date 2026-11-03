@@ -6,6 +6,7 @@ import { installerContenu } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
 import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures } from '../testodyssee/js/donjon/etat.js';
 import { createMon } from '../odyssee/js/core/mon.js';
+import { MOVES } from '../odyssee/js/data/moves.js';
 import { SPECIES } from '../odyssee/js/data/species.js';
 import { ITEMS } from '../odyssee/js/core/items.js';
 import { buildWorld } from '../odyssee/js/world/region.js';
@@ -185,15 +186,15 @@ for (const d of DONJONS) {
   // chaînage des salles : N mène à S de la salle suivante, les trois chemins se rejoignent dans le couloir
   const vers = (a) => M[a].donjon.versSuivante?.map;
   ok(vers('s1') === M.s2.id && !M.s2.donjon.versSuivante, 'voies : salle 1 → salle 2, pas de passage direct après la salle 2');
-  ok(vers('s3s') === M.s4s.id && vers('s3f1') === M.s3f2.id && vers('s3f2') === M.s4f.id && vers('s3c1') === M.s3c2.id && vers('s3c2') === M.s4c.id, 'voies : chaque épreuve mène à sa salle des codes');
+  ok(vers('s3s') === M.s4s.id && vers('s3f1') === M.s3f2.id && vers('s3f2') === M.s4f.id && vers('s3c') === M.s4c.id, 'voies : chaque épreuve mène à sa salle des codes');
   ok(['s4s', 's4f', 's4c'].every((k) => vers(k) === M.s5.id) && vers('s5') === M.s6.id, 'voies : les trois salles des codes mènent au couloir, puis au gardien');
-  ok(!M.s3s.donjon.plan.sortie && !M.s3f1.donjon.plan.sortie && !M.s3c1.donjon.plan.sortie && !M.s5.donjon.plan.sortie, 'voies : pas de demi-tour après une porte, ni depuis le couloir commun');
+  ok(!M.s3s.donjon.plan.sortie && !M.s3f1.donjon.plan.sortie && !M.s3c.donjon.plan.sortie && !M.s5.donjon.plan.sortie, 'voies : pas de demi-tour après une porte, ni depuis le couloir commun');
   ok(Object.values(d.salles.find((x) => x.id === 's2').voies).every((id) => M[id]), 'voies : chaque porte mène à une épreuve');
   // dans chaque salle, portes et passage ouverts, objets retirés : on va de S à N
   for (const m of cartes) {
     const P = m.donjon.plan;
     for (const l of Object.values(P.portes)) for (const [x, y] of l) ouvrir(m, x, y);
-    for (const c of ['K', 'V', 'J', 'L']) for (const [x, y] of P.objets[c] || []) ouvrir(m, x, y);
+    for (const c of ['K', 'V', 'J', 'O', 'T', 'L']) for (const [x, y] of P.objets[c] || []) ouvrir(m, x, y);
     if (P.suivante) passageSuivant(m, true);
     const vu = m.reach(...P.depart);
     if (P.suivante) ok(vu[P.suivante[1] * m.w + P.suivante[0]], `voies : ${m.salle}, on va de l'entrée à la sortie`);
@@ -215,34 +216,45 @@ for (const d of DONJONS) {
     ok(s.length === 1 && s[0].every((x, i) => x === d.menteurs.sinceres.includes(i)), 'voies : l\'énigme des menteurs a une seule solution, celle du jeu');
     ok([0, 1, 2, 3, 4].every((k) => sols(k).length > 1), 'voies : sans n\'importe laquelle des phrases, l\'énigme n\'a plus une seule solution');
   }
-  // caisses : on ne passe pas sans pousser, on passe en poussant
+  // Courage : la croix, ses grilles, ses interrupteurs et ses caisses
   {
-    const m = construireSalles(d).find((q) => q.salle === 's3c1'), P = m.donjon.plan, N = P.suivante;
-    const caisses0 = new Set(P.objets.L.map(([x, y]) => cle(x, y))), mur = (x, y) => !m.in(x, y) || m.get(x, y) === T.CAVEWALL || (m.get(x, y) === T.BLOCK && !caisses0.has(cle(x, y)));
+    const m = construireSalles(d).find((q) => q.salle === 's3c'), P = m.donjon.plan, N = P.suivante, O = P.objets;
+    const sw = (c) => d.objets[c], grilles = new Set(['J', 'O', 'T'].flatMap((c) => O[c].map(([x, y]) => cle(x, y))));
+    // chaque interrupteur rouvre la grille de son bras (pour en sortir) et ouvre la suivante
+    ok(sw('I').ouvre.join() === 'J' && sw('C').ouvre.join() === 'J,O' && sw('U').ouvre.join() === 'O,T', 'voies : Courage, les interrupteurs s\'enchaînent (bas → gauche → droite → haut)');
+    // les caisses barrent la grille de droite ; on y arrive en les poussant
+    const caisses0 = new Set(O.L.map(([x, y]) => cle(x, y)));
+    const mur = (x, y) => !m.in(x, y) || m.get(x, y) === T.CAVEWALL || grilles.has(cle(x, y)) || (m.get(x, y) === T.BLOCK && !caisses0.has(cle(x, y)));
+    const devantO = new Set(O.O.map(([x, y]) => cle(x - 1, y)));
     const resoudre = (pousser) => {
       const k0 = cle(...P.depart) + '|' + [...caisses0].sort().join(';'), vu = new Set([k0]), file = [[P.depart, caisses0]];
       while (file.length) {
         const [[x, y], cs] = file.shift();
-        if (x === N[0] && y === N[1] + 1) return true;
+        if (devantO.has(cle(x, y))) return true;
         for (const [dx, dy] of V4) {
-          const nx = x + dx, ny = y + dy; if (mur(nx, ny) || P.pnj.r?.some(([a, b]) => a === nx && b === ny)) continue;
+          const nx = x + dx, ny = y + dy; if (mur(nx, ny)) continue;
           let ncs = cs;
-          if (cs.has(cle(nx, ny))) { if (!pousser) continue; const bx = nx + dx, by = ny + dy; if (mur(bx, by) || cs.has(cle(bx, by)) || P.pnj.r?.some(([a, b]) => a === bx && b === by)) continue; ncs = new Set(cs); ncs.delete(cle(nx, ny)); ncs.add(cle(bx, by)); }
+          if (cs.has(cle(nx, ny))) { if (!pousser) continue; const bx = nx + dx, by = ny + dy; if (mur(bx, by) || cs.has(cle(bx, by))) continue; ncs = new Set(cs); ncs.delete(cle(nx, ny)); ncs.add(cle(bx, by)); }
           const kk = cle(nx, ny) + '|' + [...ncs].sort().join(';'); if (!vu.has(kk)) { vu.add(kk); file.push([[nx, ny], ncs]); }
         }
       }
       return false;
     };
-    ok(!resoudre(false) && resoudre(true), 'voies : les caisses barrent la sortie, et on passe en les poussant');
+    ok(!resoudre(false) && resoudre(true), 'voies : Courage, les caisses barrent la grille de droite, on passe en les poussant');
+    // temps : la course passe, la marche non (grilles ouvertes, caisses ôtées)
+    for (const [x, y] of O.L) ouvrir(m, x, y);
+    const dist = (a, buts) => { const D = new Map([[cle(...a), 0]]), f = [a]; while (f.length) { const [x, y] = f.shift(); for (const [dx, dy] of V4) { const k = cle(x + dx, y + dy); if (D.has(k) || (!walkable(m.get(x + dx, y + dy)) && !grilles.has(k))) continue; D.set(k, D.get(cle(x, y)) + 1); f.push([x + dx, y + dy]); } } return Math.min(...buts.map(([x, y]) => D.get(cle(x, y)) ?? Infinity)); };
+    for (const [c, cible] of [['C', 'O'], ['U', 'T']]) {
+      const n = dist(O[c][0], O[cible]), t = sw(c).duree;
+      ok(n * 0.2 > t && n * 0.1 < t, `voies : Courage, de l'interrupteur ${c} à la grille ${cible} il faut courir (${n} cases, ${t} s)`);
+    }
+    ok(dist(O.I[0], O.J) * 0.2 < sw('I').duree, 'voies : Courage, la première grille se rejoint en marchant');
+    ok(P.pnj.r && O['!'].length === 3, 'voies : Courage, le dresseur attaque quand on passe devant lui');
   }
-  // grille à interrupteur : en marchant on n'a pas le temps, en courant si
-  {
-    const m = construireSalles(d).find((q) => q.salle === 's3c2'), P = m.donjon.plan, [ix, iy] = P.objets.I[0], [jx, jy] = P.objets.J[0];
-    ouvrir(m, jx, jy);
-    const dist = new Map([[cle(ix, iy), 0]]), file = [[ix, iy]];
-    while (file.length) { const [x, y] = file.shift(); for (const [dx, dy] of V4) { const k = cle(x + dx, y + dy); if (dist.has(k) || !walkable(m.get(x + dx, y + dy))) continue; dist.set(k, dist.get(cle(x, y)) + 1); file.push([x + dx, y + dy]); } }
-    const n = dist.get(cle(jx, jy)), t = d.salles.find((q) => q.id === 's3c2').minuteur;
-    ok(n * 0.2 > t && n * 0.1 < t, `voies : la grille se rejoint en courant, pas en marchant (${n} cases, ${t} s)`);
+  // salles des codes : grandes, dans le noir, le coffre au centre
+  for (const k of ['s4s', 's4f', 's4c']) {
+    const m = M[k], P = m.donjon.plan, [hx, hy] = P.objets.H[0];
+    ok(m.dark === 'arene' && P.sol.length > 700 && hx === P.suivante[0] && Math.abs(hy - m.h / 2) <= 1, `voies : ${k}, grande salle dans le noir, coffre au centre`);
   }
   // codes : chaque grande porte n'a qu'une bonne combinaison parmi les quatre de son coffre
   for (let k = 0; k < 50; k++) {
@@ -273,7 +285,7 @@ for (const d of DONJONS) {
   ok(panneaux.length === 1 && panneaux[0][1].split('\n').length === 3 && panneaux[0][1].split('\n')[2] === texteJoueurs(d), `${d.id} : un panneau d'entrée de trois pages dehors`);
   if (panneaux.length) {
     const [x, y] = panneaux[0][0].split(',').map(Number), vu = dehors.reach(px, py + 2);
-    ok(Math.abs(x - px) <= 4 && Math.abs(y - py) <= 16 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vu[(y + dy) * dehors.w + x + dx]), `${d.id} : le panneau est près de la porte et on peut le lire`);
+    ok(Math.abs(x - px) <= 2 && y - py >= 1 && y - py <= 3 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vu[(y + dy) * dehors.w + x + dx]), `${d.id} : le panneau est près de la porte et on peut le lire`);
   }
 }
 
@@ -388,6 +400,21 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   ok(raid.action('1', { type: 'move', idx: 0 }) === null, 'on attend le choix de tout le monde');
   raid.retirer('2', 'Amiel a quitté le combat.');
   ok(raid.avancer() && raid.turn === 1, 'le départ d\'un joueur débloque le tour');
+  // gardien de la Force : immunisé aux attaques physiques tant que son premier bloc tient, Attaque en hausse à chaque bloc
+  {
+    const mv = (k) => Object.values(MOVES).find((m) => m.key === k).id;
+    const essai = (attaque) => {
+      const b = createMon(68, 25, { shiny: false }); b.moves = [{ id: mv('splash'), pp: 40 }];
+      const j = createMon(65, 60, { shiny: false }); j.moves = [{ id: mv(attaque), pp: 30 }];
+      const r = new Raid({ joueurs: [{ id: '1', nom: 'Lucas', party: [j] }], boss: { mon: b, nom: 'Gardien' }, blocs: 3, immunite: 'physique', boost: 2, rng: () => 0.5 });
+      r.start(); const avant = b.hp; r.action('1', { type: 'move', idx: 0 });
+      return { degats: avant - b.hp, r };
+    };
+    const phys = essai('mega-punch'), spe = essai('psychic');
+    ok(phys.degats === 0 && spe.degats > 0, `gardien de la Force : les coups physiques ne passent pas, les spéciaux si (${phys.degats}, ${spe.degats})`);
+    ok(spe.r.bloc() < 3 ? spe.r.manches[0].sides[1].v.st[1] > 0 : true, 'gardien de la Force : son Attaque monte quand un bloc casse');
+    ok(!spe.r.immunise() || spe.r.bloc() === 3, 'gardien de la Force : l\'immunité tombe avec le premier bloc');
+  }
 }
 
 /* ---------------- lieux et équipes ---------------- */
