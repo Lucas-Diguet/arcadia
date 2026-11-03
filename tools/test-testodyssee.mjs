@@ -4,6 +4,7 @@ import { DONJONS } from '../testodyssee/js/donjons/index.js';
 import { construireCarte, construireSalles, passageSuivant, lirePlan, regionDe, ouvrir, aCote, relierExterieur, texteJoueurs } from '../testodyssee/js/donjon/plan.js';
 import { installerContenu } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
+import { Groupe } from '../testodyssee/js/combat/groupe.js';
 import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures } from '../testodyssee/js/donjon/etat.js';
 import { createMon } from '../odyssee/js/core/mon.js';
 import { MOVES } from '../odyssee/js/data/moves.js';
@@ -415,6 +416,28 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
     ok(phys.r.bloc() < 3 ? phys.r.manches[0].sides[1].v.st[1] > 0 : true, 'gardien de la Force : son Attaque monte quand un bloc casse');
     ok(!phys.r.immunise() || phys.r.bloc() === 3, 'gardien de la Force : l\'immunité tombe avec le premier bloc');
   }
+}
+
+/* ---------------- combat de groupe (couples de la Pyramide, sentinelles des Trois Voies) ---------------- */
+{
+  let fins = {}, bloque = 0, envoisOk = true;
+  for (let t = 0; t < 120; t++) {
+    const n = t % 2 ? 2 : 3;
+    const joueurs = Array.from({ length: n }, (_, i) => ({ id: String(i + 1), nom: 'J' + i, party: [createMon(6, 30), createMon(9, 30), createMon(3, 30)] }));
+    const reserve = Array.from({ length: n === 2 ? 4 : 9 }, (_, i) => createMon([16, 19, 41, 66, 74, 92, 95, 129, 52][i % 9], 30));
+    const G = new Groupe({ joueurs, dresseur: { cls: 'Duo', nom: 'Lise et Léo' }, reserve, rng: Math.random });
+    const evs = G.start();
+    envoisOk &&= evs.filter((e) => e.t === 'send' && e.side === 1).length === n && G.ciblesAdverses().length === n;
+    for (let k = 0; k < 400 && G.state !== 'over'; k++) for (const id of G.attendus()) G.action(id, G.state === 'switch' ? { type: 'switch', idx: -1 } : { type: 'move', idx: k % 4, cible: k % 3 });
+    if (G.state !== 'over') bloque++;
+    fins[G.result] = (fins[G.result] || 0) + 1;
+  }
+  ok(envoisOk, 'combat de groupe : autant de Pokémon adverses en jeu que de joueurs');
+  ok(!bloque && fins.win > 0, `combat de groupe : les combats se terminent (${JSON.stringify(fins)})`);
+  // un joueur part : les autres continuent
+  const G = new Groupe({ joueurs: [{ id: '1', nom: 'A', party: [createMon(6, 40)] }, { id: '2', nom: 'B', party: [createMon(9, 40)] }], dresseur: { nom: 'Duo' }, reserve: [createMon(16, 20), createMon(19, 20)] });
+  G.start(); G.action('1', { type: 'move', idx: 0, cible: 1 }); G.retirer('2', 'B part.');
+  ok(G.avancer() && G.turn === 1, 'combat de groupe : le départ d\'un joueur débloque le tour');
 }
 
 /* ---------------- lieux et équipes ---------------- */
