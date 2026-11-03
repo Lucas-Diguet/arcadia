@@ -10,7 +10,7 @@
 //            Au bout de chaque épreuve : un parchemin avec un nombre à deux chiffres.
 // Salles 4 : la même grande salle pour les trois, dans le noir (le coffre brille au centre). Cinq dresseurs (un deuxième parchemin), un coffre qui s'ouvre avec ses
 //            deux nombres et donne l'ordre du code de la grande porte, code fait des nombres des deux autres.
-// Salle 5 : un couloir commun, trois dresseurs à affronter à trois (combats triples, à venir).
+// Salle 5 : un couloir commun, trois sentinelles à affronter à trois contre trois (neuf Pokémon chacune).
 // Salle 6 : le gardien des Trois Voies, à trois contre un.
 import { GameMap, rng } from '../../../odyssee/js/world/mapgen.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
@@ -162,9 +162,13 @@ export default {
     },
     r: { id: 'c3-1', cls: 'Dompteuse', nom: 'Sacha', sprite: 'fillette2', dir: 'right', equipe: [[58, 22], [77, 22], [37, 23]], embuscade: 'Halte ! Personne ne passe sans m\'affronter !' },
     ...pnj4(),
-    x: { id: 'c5-1', cls: 'Sentinelle', nom: 'Bleue', sprite: 'vieil_homme', dir: 'down', toujours: true, trio: true, dit: 'Les sentinelles vous affronteront à trois contre trois... quand ce combat sera prêt. Passez, aventuriers.' },
-    y: { id: 'c5-2', cls: 'Sentinelle', nom: 'Rouge', sprite: 'vieil_homme', dir: 'down', toujours: true, trio: true, dit: 'Les sentinelles vous affronteront à trois contre trois... quand ce combat sera prêt. Passez, aventuriers.' },
-    z: { id: 'c5-3', cls: 'Sentinelle', nom: 'Verte', sprite: 'vieil_homme', dir: 'down', toujours: true, trio: true, dit: 'Les sentinelles vous affronteront à trois contre trois... quand ce combat sera prêt. Passez, aventuriers.' },
+    // sentinelles du couloir : à trois contre trois, neuf Pokémon chacune, l'une après l'autre
+    x: { id: 'c5-1', cls: 'Sentinelle', nom: 'Bleue', sprite: 'vieil_homme', dir: 'down', groupe: true, avant: ['Halte, aventuriers. Vous voici de nouveau réunis.', 'Montrez-moi que vous savez vous battre ensemble !'], apres: 'Bien. Avancez.',
+      equipe: [[60, 21], [72, 21], [118, 21], [129, 20], [116, 21], [54, 22], [86, 21], [90, 21], [98, 22]] },
+    y: { id: 'c5-2', cls: 'Sentinelle', nom: 'Rouge', sprite: 'vieil_homme', dir: 'down', groupe: true, avant: ['Mes Pokémon brûlent d\'impatience.', 'À trois contre trois !'], apres: 'Votre flamme est plus forte que la mienne.',
+      equipe: [[37, 22], [58, 22], [77, 22], [4, 21], [126, 22], [218, 21], [228, 22], [240, 21], [255, 22]] },
+    z: { id: 'c5-3', cls: 'Sentinelle', nom: 'Verte', sprite: 'vieil_homme', dir: 'down', groupe: true, avant: ['Dernière sentinelle avant le cœur du sanctuaire.', 'Voyons si votre lien tient jusqu\'au bout.'], apres: 'Le Gardien vous attend.',
+      equipe: [[43, 22], [69, 22], [102, 22], [1, 21], [152, 21], [187, 22], [191, 21], [270, 22], [273, 22]] },
     M: {
       id: 'gardien-voies', cls: '', nom: 'Gardien des Trois Voies', sprite: 'vieil_homme', dir: 'down', raid: true, espece: 151, niveau: 30, blocs: 3,
       avant: ['Trois chemins, trois épreuves... et vous voilà réunis.', 'Voyons si ce lien tient face à moi.'],
@@ -265,7 +269,7 @@ export default {
     { id: 's4s', nom: 'Salle des Codes (Sagesse)', type: 'combat', voie: 's', pnj: [...LETTRES4.s], parchemin: 2, sombre: true, apres: ['s3s'], suivante: 's5', plan: plan4('s') },
     { id: 's4f', nom: 'Salle des Codes (Force)', type: 'combat', voie: 'f', pnj: [...LETTRES4.f], parchemin: 2, sombre: true, apres: ['s3f2'], suivante: 's5', plan: plan4('f') },
     { id: 's4c', nom: 'Salle des Codes (Courage)', type: 'combat', voie: 'c', pnj: [...LETTRES4.c], parchemin: 2, sombre: true, apres: ['s3c'], suivante: 's5', plan: plan4('c') },
-    { id: 's5', nom: 'Couloir des Sentinelles', type: 'libre', apres: ['s4s', 's4f', 's4c'], plan: [
+    { id: 's5', nom: 'Couloir des Sentinelles', type: 'groupe', pnj: ['x', 'y', 'z'], apres: ['s4s', 's4f', 's4c'], plan: [
       '#########',
       '####N####',
       '###...###',

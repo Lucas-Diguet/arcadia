@@ -12,7 +12,9 @@ import { clesDe, serrures } from './etat.js';
 import { aCote } from './plan.js';
 import { Raid } from '../combat/raid.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
-import { CombatMiroir, brancher } from '../combat/vue.js';
+import { CombatMiroir, GroupeMiroir, brancher, brancherGroupe } from '../combat/vue.js';
+import { Groupe } from '../combat/groupe.js';
+import { battu } from './etat.js';
 
 const melange = (a) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const copie = (o) => JSON.parse(JSON.stringify(o));
@@ -118,11 +120,16 @@ export const Mecaniques = {
   /* ---------------- boss à affronter à plusieurs ---------------- */
   async bossRaid(d, k) {
     const g = this.game, ui = g.ui, p = d.pnj[k], e = this.etats[d.id];
-    const salle = d.salles.find((s) => s.type === 'raid' && s.pnj?.includes(k)) || d.salles.find((s) => s.type === 'raid');
+    const salle = d.salles.find((s) => (s.type === 'raid' || s.type === 'groupe') && s.pnj?.includes(k)) || d.salles.find((s) => s.type === 'raid');
     if (e.fini || e.salles[salle.id].faite) return;
+    // combats de groupe : un dresseur après l'autre
+    if (salle.type === 'groupe') {
+      const suivant = salle.pnj.find((q) => !battu(e, d, q));
+      if (suivant !== k) { await ui.say('« Battez d\'abord celui qui vous barre la route. »', { speaker: `${p.cls} ${p.nom}`.trim() }); return; }
+    }
     // mode test : on peut passer le combat (compté comme gagné)
     if (g.modeTest && await ui.yesNo('Mode test : passer ce combat (compté comme gagné) ?')) {
-      await this.demande(d.id, { a: 'raid', salle: salle.id, etape: 'fin', result: 'win', vainqueurs: [this.moi] });
+      await this.demande(d.id, { a: 'raid', salle: salle.id, pnj: k, etape: 'fin', result: 'win', vainqueurs: [this.moi] });
       if (salle === d.salles[d.salles.length - 1]) for (const [k, n] of Object.entries(d.recompense?.objets || {})) { g.give(k, n); g.sound.sfx('item'); await ui.say(`${g.state.name} reçoit ${n > 1 ? n + ' × ' : ''}${itemName(k)} !`); }
       return;
     }
@@ -148,11 +155,12 @@ export const Mecaniques = {
     g.sound.play('legend'); g.view.shake = 0.4; await ui.flash(2, '#ffffff', 70);
     if (p.cri || d.textes.cri) await ui.say(p.cri || d.textes.cri, { speaker: p.nom });
     this.miroirHote = this.H?.info.hostId;
-    const miroir = this.miroir = new CombatMiroir({ moi: this.moi, party: g.state.party, intro, boss: intro.boss });
+    const Miroir = intro.groupe ? GroupeMiroir : CombatMiroir;
+    const miroir = this.miroir = new Miroir({ moi: this.moi, party: g.state.party, intro, boss: intro.boss });
     const envoyer = (action) => { if (this.hote) this.actionRaid(this.moi, cle, action); else this.H.send('host', { t: 'djRA', id: cle, action }); };
     const curtain = await g.encounterIntro('legend'); curtain.remove();
     g.musicLock = true;
-    const defaire = brancher(g.bv, miroir, this.moi);
+    const defaire = (intro.groupe ? brancherGroupe : brancher)(g.bv, miroir, this.moi);
     let res;
     try { res = await g.bv.runPvp(miroir, miroir.duel(envoyer), { bg: 'cave' }); }
     finally { defaire(); g.bv.close(); g.musicLock = false; }
@@ -165,7 +173,11 @@ export const Mecaniques = {
     this.miroir = null;
     g.sound.stopMusic(0.1); g.sound.current = null; g.updateZone();
     const dernier = salle === d.salles[d.salles.length - 1];
-    if (res === 'win' && !dernier) {
+    if (res === 'win' && salle.type === 'groupe') {
+      g.sound.play('victory');
+      if (p.apres) await ui.say(p.apres, { speaker: `${p.cls} ${p.nom}`.trim() });
+      g.updateZone();
+    } else if (res === 'win' && !dernier) {
       // boss en chemin : la suite s'ouvre (le donjon s'en charge)
       g.sound.play('victory');
       if (p.apres) await ui.say(p.apres, { speaker: p.nom });
@@ -183,7 +195,7 @@ export const Mecaniques = {
   /* ---------------- côté hôte ---------------- */
   /** toutes les demi-secondes : lancer le combat quand tous les joueurs présents sont prêts */
   verifierRaid(d) {
-    for (const salle of d.salles) if (salle.type === 'raid') this.verifierRaidSalle(d, salle);
+    for (const salle of d.salles) if (salle.type === 'raid' || salle.type === 'groupe') this.verifierRaidSalle(d, salle);
   },
   verifierRaidSalle(d, salle) {
     const e = this.etats[d.id], S = e.salles[salle.id];
@@ -192,14 +204,24 @@ export const Mecaniques = {
     const prets = S.prets.filter((q) => presents.includes(q));
     if (prets.length < S.prets.length) { for (const q of S.prets.filter((x) => !presents.includes(x))) this.traiter(d.id, q, { a: 'pasPret', salle: salle.id }); return; }
     if (!presents.every((q) => S.prets.includes(q))) return;
-    const k = salle.pnj?.find((q) => d.pnj[q]?.raid), p = k ? d.pnj[k] : Object.values(d.pnj).find((q) => q.raid), equipes = this.equipesRaid[d.id] || {};
+    const k = salle.type === 'groupe' ? salle.pnj.find((q) => !battu(e, d, q)) : salle.pnj?.find((q) => d.pnj[q]?.raid), p = k ? d.pnj[k] : Object.values(d.pnj).find((q) => q.raid), equipes = this.equipesRaid[d.id] || {};
     const joueurs = prets.filter((q) => validParty(equipes[q])).map((q) => ({ id: q, nom: this.nomDe(q), party: copie(equipes[q]) }));
     if (!joueurs.length) return;
+    const cle = `${d.id}|${salle.id}`, infos = { cls: p.cls, nom: p.nom, bs: p.bs || p.sprite };
+    if (salle.type === 'groupe') {
+      // combat de groupe : tous les joueurs présents contre autant de Pokémon du dresseur en jeu à la fois
+      const reserve = p.equipe.map(([sp, lvl]) => createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false }));
+      const combat = new Groupe({ joueurs, dresseur: infos, reserve, places: p.places || joueurs.length });
+      this.raids[cle] = { raid: combat, ids: joueurs.map((j) => j.id), boss: infos, d: d.id, salle: salle.id, pnj: k };
+      this.traiter(d.id, this.moi, { a: 'raid', salle: salle.id, etape: 'debut' });
+      const evs = combat.start();
+      this.diffuserRaid(cle, { etape: 'debut', groupe: true, evs, photo: combat.photo(), boss: infos });
+      return;
+    }
     const boss = createMon(p.espece, p.niveau, { iv: Array(6).fill(31), shiny: false });
     boss.stats[0] *= joueurs.length; boss.hp = boss.stats[0];
     if (p.moves) boss.moves = p.moves.map((id) => ({ id, pp: MOVES[id].pp }));
     const raid = new Raid({ joueurs, boss: { mon: boss, cls: p.cls, nom: p.nom, bs: p.bs }, blocs: p.blocs || 3, immunite: p.immunite, boost: p.boost });
-    const cle = `${d.id}|${salle.id}`;
     this.raids[cle] = { raid, ids: joueurs.map((j) => j.id), boss: { cls: p.cls, nom: p.nom, bs: p.bs }, d: d.id, salle: salle.id };
     this.traiter(d.id, this.moi, { a: 'raid', salle: salle.id, etape: 'debut' });
     const evs = raid.start();
@@ -222,7 +244,7 @@ export const Mecaniques = {
     this.diffuserRaid(id, { etape: 'tour', evs, photo: raid.photo() });
     if (raid.state === 'over') {
       delete this.raids[id];
-      this.traiter(R.d, this.moi, { a: 'raid', salle: R.salle, etape: 'fin', result: raid.result, vainqueurs: R.ids });
+      this.traiter(R.d, this.moi, { a: 'raid', salle: R.salle, pnj: R.pnj, etape: 'fin', result: raid.result, vainqueurs: R.ids });
     }
   },
   retirerRaid(qui) {

@@ -140,8 +140,8 @@ export function brancher(bv, miroir, moi) {
   bv.play = async (evs) => {
     if (!miroir.equipiers && bv.root) {
       bv.root.classList.add('raid');
-      miroir.equipiers = new Equipiers(bv.root, moi); miroir.equipiers.maj(miroir.dernier);
-      marquerBlocs(bv, miroir);
+      miroir.equipiers = new Equipiers(bv.root, moi); miroir.equipiers.maj(miroir.dernier, miroir.groupe ? miroir : undefined);
+      if (!miroir.groupe) marquerBlocs(bv, miroir);
     }
     for (const e of evs) {
       if (e.t === 'raid-equipier') { if (e.k === 'hp' || e.k === 'faint' || e.k === 'hit') miroir.equipiers?.flash(e.own); continue; }
@@ -165,3 +165,110 @@ function marquerBlocs(bv, miroir, reste) {
   cpt.innerHTML = Array.from({ length: n }, (_, k) => `<b class="${k < r ? 'on' : ''}"></b>`).join('');
 }
 export const nomBoss = (m) => monName(m);
+
+/**
+ * combat de groupe vu par un joueur (combat/groupe.js) : son Pokémon face à celui qu'il vise ; les autres Pokémon
+ * adverses et ses équipiers dans l'encadré. Avant chaque attaque, s'il y a plusieurs adversaires, on choisit sa cible.
+ */
+export class GroupeMiroir extends CombatMiroir {
+  constructor(o) {
+    const p = o.intro.photo, places = p.adverses.filter((a) => !a.vide);
+    // le constructeur du miroir attend un boss : on lui donne le premier adversaire, puis on met en place les emplacements
+    super({ ...o, intro: { ...o.intro, photo: { ...p, boss: places[0] } } });
+    this.groupe = true;
+    const moi = p.joueurs.findIndex((j) => j.id === this.moi);
+    this.sides[1].party = p.adverses.map((a) => (a.vide ? createMon(places[0].sp, places[0].lvl, { shiny: false }) : createMon(a.sp, a.lvl, { shiny: false })));
+    this.cible = places[Math.max(0, moi) % places.length].place;
+    this.sides[1].active = this.cible;
+    this.photo(p);
+  }
+  get foe() { return this.sides[1].party[this.sides[1].active]; }
+  photo(p) {
+    if (!this.groupe) return super.photo({ ...p, boss: p.boss || p.adverses?.find((a) => !a.vide) || { hp: 0, max: 1 } });
+    this.dernier = p;
+    for (const a of p.adverses) {
+      let m = this.sides[1].party[a.place];
+      if (a.vide) { if (m) m.hp = 0; continue; }
+      if (!m || m.sp !== a.sp || m.lvl !== a.lvl) m = this.sides[1].party[a.place] = createMon(a.sp, a.lvl, { shiny: false });
+      m.stats[0] = a.max; m.hp = a.hp; m.status = a.status;
+    }
+    // la cible est tombée : on vise un autre adversaire encore debout
+    if (p.adverses[this.cible]?.vide) { const autre = p.adverses.find((a) => !a.vide); if (autre) { this.cible = autre.place; this.changeCible = true; } }
+    this.sides[1].active = this.cible;
+    const j = p.joueurs.find((q) => q.id === this.moi);
+    if (j) {
+      j.party.forEach((q, i) => { const m = this.sides[0].party[i]; if (!m) return; m.hp = q.hp; m.status = q.status; q.moves.forEach((x, k) => { if (m.moves[k]) m.moves[k].pp = x.pp; }); });
+      this.sides[0].active = j.active; this.forced = !!j.forced;
+      this.dehors = j.etat === 'dehors'; this.need[0] = j.etat === 'remplacer';
+    }
+    this.turn = p.turn;
+    if (p.state === 'over') { this.state = 'over'; this.result = p.result; }
+    else if (this.dehors) { this.state = 'over'; this.result = 'out'; }
+    else this.state = p.state === 'switch' ? 'switch' : 'choose';
+    this.equipiers?.maj(p, this);
+  }
+  traduire(evs) {
+    const out = [];
+    for (let k = 0; k < evs.length; k++) {
+      const e = evs[k];
+      if (e.t === 'end') { out.push(e); continue; }
+      if (e.t === 'out' || e.t === 'switch-prompt') { out.push({ ...e, t: 'raid-' + e.t }); continue; }
+      // ce qui arrive aux autres adversaires : leur ligne de l'encadré clignote
+      if (e.side === 1 && e.place != null && e.place !== this.cible) { if (e.t !== 'move') out.push({ t: 'raid-adverse', place: e.place, k: e.t }); continue; }
+      if (e.side === 0 && e.own !== this.moi) { if (e.t === 'move') out.push({ t: 'move', side: 0, move: e.move, type: e.type }); else out.push({ t: 'raid-equipier', own: e.own, k: e.t }); continue; }
+      if (e.t === 'send' && e.side === 1) { out.push({ ...e, idx: e.place }); continue; }
+      out.push(e);
+    }
+    return out;
+  }
+  duel(envoyer) {
+    const d = super.duel(envoyer);
+    d.sendAct = (n, action) => envoyer({ type: action.type, idx: action.idx, cible: this.cible });
+    return d;
+  }
+}
+
+/** encadré du combat de groupe : équipiers, puis les autres adversaires */
+Equipiers.prototype.majGroupe = function (p, miroir) {
+  const autres = p.joueurs.filter((j) => j.id !== this.moi);
+  const ligne = (nom, m, cls, attr) => { const r = m ? Math.max(0, m.hp / m.max) : 0; return `<div class="raid-eq${cls}" ${attr}><img src="${m ? ASSETS.icon(m.sp) : ''}" alt=""><div><b>${esc(nom)}</b><span>${m ? 'N.' + m.lvl : ''}</span><i><u style="width:${r * 100}%;background:${hpCol(r)}"></u></i></div></div>`; };
+  this.el.innerHTML = autres.map((j) => ligne(j.nom, j.party[j.active], j.etat === 'dehors' ? ' out' : '', `data-id="${esc(j.id)}"`)).join('');
+  this.el.style.display = autres.length ? '' : 'none';
+  // les autres Pokémon du dresseur, en haut à droite
+  if (!this.adv) { this.adv = el('div', 'raid-equipe raid-adverses'); this.el.parentNode.appendChild(this.adv); }
+  const enJeu = p.adverses.filter((a) => !a.vide), adv = enJeu.filter((a) => a.place !== miroir.cible), reserve = p.reste - enJeu.length;
+  this.adv.innerHTML = adv.map((a) => ligne(monName(createMon(a.sp, a.lvl, { shiny: false })), a, ' adv', `data-place="${a.place}"`)).join('')
+    + (reserve > 0 ? `<div class="raid-eq adv reste">Encore ${reserve} en réserve</div>` : '');
+  this.adv.style.display = this.adv.innerHTML ? '' : 'none';
+};
+const majBase = Equipiers.prototype.maj;
+Equipiers.prototype.maj = function (p, miroir) { return p?.adverses && miroir ? this.majGroupe(p, miroir) : majBase.call(this, p); };
+Equipiers.prototype.flashAdverse = function (place) { const q = this.adv?.querySelector(`[data-place="${place}"]`); if (!q) return; q.classList.remove('hit'); void q.offsetWidth; q.classList.add('hit'); };
+
+/** branche le combat de groupe : choix de la cible avant d'attaquer, adversaires dans l'encadré */
+export function brancherGroupe(bv, miroir, moi) {
+  const defaire = brancher(bv, miroir, moi), choisir = bv.chooseAction.bind(bv), play = bv.play;
+  const montrerCible = async () => { bv.setHud(1, miroir.foe); await bv.loadSide(1); bv.st.foe.visible = true; miroir.equipiers?.maj(miroir.dernier, miroir); };
+  bv.chooseAction = async () => {
+    if (miroir.changeCible) { miroir.changeCible = false; await montrerCible(); }
+    for (;;) {
+      const a = await choisir();
+      if (!a || a.type !== 'move') return a;
+      const vivants = miroir.dernier.adverses.filter((x) => !x.vide);
+      if (vivants.length < 2) return a;
+      const noms = vivants.map((x) => `${monName(miroir.sides[1].party[x.place])} (${x.hp}/${x.max} PV)`);
+      const r = await bv.ui.list({ title: 'Viser quel Pokémon ?', items: [...noms.map((l) => ({ label: l })), { label: 'Retour' }], cls: 'psub', cancel: vivants.length, start: Math.max(0, vivants.findIndex((x) => x.place === miroir.cible)) });
+      if (r < 0 || r >= vivants.length) continue;
+      if (vivants[r].place !== miroir.cible) { miroir.cible = vivants[r].place; miroir.sides[1].active = miroir.cible; await montrerCible(); }
+      return a;
+    }
+  };
+  bv.play = async (evs) => {
+    const reste = [];
+    for (const e of evs) { if (e.t === 'raid-adverse') { if (e.k === 'hp' || e.k === 'faint' || e.k === 'hit') miroir.equipiers?.flashAdverse(e.place); continue; } reste.push(e); }
+    await play(reste);
+    if (miroir.changeCible && miroir.state !== 'over') { miroir.changeCible = false; await montrerCible(); }
+    miroir.equipiers?.maj(miroir.dernier, miroir);
+  };
+  return () => { bv.play = play; bv.chooseAction = choisir; defaire(); };
+}

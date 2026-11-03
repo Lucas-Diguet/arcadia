@@ -73,7 +73,7 @@ export class Donjons {
           if (sr) return !e.salles[sr.id].faite;
           return p.boss || p.raid ? !e.fini : !battu(e, d, k);
         },
-        talk: async () => (p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
+        talk: async () => (p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid || p.groupe ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
       });
     }
   }
@@ -293,6 +293,7 @@ export class Donjons {
       else if (s.type === 'boss') txt = e.boss ? `${e.boss.pv}/${e.boss.max} PV` : '—';
       else if (s.type === 'serrures') txt = `serrures ${Object.values(S.cles).filter((c) => c.mise).length}/${s.pnj.length}`;
       else if (s.type === 'raid') txt = S.combat ? 'combat en cours' : `prêts ${S.prets.length}`;
+      else if (s.type === 'groupe') txt = S.combat ? 'combat en cours' : `${S.battus.length}/${s.pnj.length} vaincus`;
       else if (s.type === 'enigme') txt = 'lis le panneau';
       else if (s.type === 'libre') txt = 'à explorer';
       else if (s.type === 'lumiere') txt = (S.donnees.feux || 0) < 5 ? `brasier ${S.donnees.feux || 0}/5` : `soleils ${(S.donnees.soleils || []).length}/2`;

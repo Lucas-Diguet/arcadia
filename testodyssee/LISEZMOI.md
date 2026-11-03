@@ -216,11 +216,15 @@ retour possible.
    Courage » : le code à huit chiffres de la grande porte est fait des nombres des deux autres chemins, à se dire
    à l'oral. Codes et ordres sont tirés au sort à chaque descente par l'hôte (`preparer` du donjon) ; des quatre
    combinaisons, une seule ouvre.
-5. **Couloir des Sentinelles** : les combats à trois contre trois viendront ici.
+5. **Couloir des Sentinelles** : trois sentinelles, à affronter l'une après l'autre, chacune à trois contre trois
+   (salle `type: 'groupe'`, `pnj` dans l'ordre). Le dresseur garde trois Pokémon en jeu et remplace ceux qui tombent
+   par ceux de sa réserve (neuf chacune) ; chaque joueur choisit le Pokémon qu'il vise après son attaque, les autres
+   adversaires et les équipiers sont dans les encadrés. Pas de soin entre deux sentinelles.
 6. **Cœur du Sanctuaire** : le Gardien des Trois Voies, à trois contre un. Récompenses : la CT Abri et la Relique de
    Triforce.
 
-Un combat à plusieurs (`raid`) se lance quand tous les joueurs présents sur la carte de sa salle sont prêts : il peut
+Un combat à plusieurs (`raid`, ou `groupe` : moteur `js/combat/groupe.js`, autant de Pokémon adverses en jeu que de
+joueurs, `places` pour en fixer le nombre) se lance quand tous les joueurs présents sur la carte de sa salle sont prêts : il peut
 y en avoir plusieurs dans un donjon, et seul celui de la dernière salle termine le donjon.
 
 ### Le mode test

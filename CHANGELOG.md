@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 3.89 — 3 novembre 2026
+- **TestOdyssée** — Sanctuaire des Trois Voies : le Couloir des Sentinelles est ouvert. Trois sentinelles, l'une après l'autre, chacune à trois contre trois.
+  - Après avoir choisi son attaque, on choisit le Pokémon adverse qu'on vise.
+  - Les autres Pokémon du dresseur et ceux qui restent en réserve s'affichent en haut à droite, vos équipiers à gauche.
+
 ## 3.88 — 3 novembre 2026
 - **TestOdyssée** — Sanctuaire des Trois Voies : le Gardien de la Force ne craint plus les attaques spéciales tant que son premier bouclier tient (les coups physiques, eux, passent).
 

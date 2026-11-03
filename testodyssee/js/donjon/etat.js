@@ -11,6 +11,7 @@
 //   libre   : rien à faire (salle de passage, casse-tête sans porte)
 //   autres  : leur avancée est notée par le jeu avec l'action « maj » (donjon des miroirs)
 //   raid    : le combat contre le boss se lance quand tous les joueurs présents dans sa salle sont prêts (l'hôte en décide)
+//   groupe  : ses dresseurs (s.pnj) se combattent l'un après l'autre, à tous les joueurs présents contre plusieurs Pokémon
 //   voies   : chaque porte (s.voies) ne laisse passer qu'un seul joueur ; libre pour le reste
 //
 // Chemins qui se séparent : s.apres (salles à terminer avant celle-ci) remplace l'ordre de la liste.
@@ -32,7 +33,7 @@ export function nouvelEtat(def, o = {}) {
 
 const salleDe = (def, pnj) => def.salles.find((s) => s.pnj?.includes(pnj));
 /** salle de combat à plusieurs : celle demandée, sinon la première */
-export const salleRaid = (def, id) => def.salles.find((q) => q.type === 'raid' && (!id || q.id === id));
+export const salleRaid = (def, id) => def.salles.find((q) => (q.type === 'raid' || q.type === 'groupe') && (!id || q.id === id));
 
 /** une salle est accessible quand toutes celles d'avant sont terminées */
 export function ouverte(def, e, salleId) {
@@ -150,6 +151,8 @@ export function appliquer(def, e, qui, m, o = {}) {
       const S = e.salles[s.id];
       if (m.etape === 'debut') { S.combat = true; return res(true, true); }
       S.combat = false; S.prets = [];
+      // salle de combats de groupe : un dresseur de moins ; terminée quand tous sont battus
+      if (s.type === 'groupe') { if (m.result === 'win' && m.pnj && !S.battus.includes(m.pnj)) S.battus.push(m.pnj); if (s.pnj.every((p) => S.battus.includes(p))) S.faite = true; return res(true, true); }
       // le donjon ne finit qu'avec le combat de sa dernière salle (un boss en chemin ne fait qu'ouvrir la suite)
       if (m.result === 'win') { S.faite = true; if (s === def.salles[def.salles.length - 1]) e.fini = true; for (const q of m.vainqueurs || []) if (!e.vainqueurs.includes(String(q))) e.vainqueurs.push(String(q)); }
       return res(true, true);
