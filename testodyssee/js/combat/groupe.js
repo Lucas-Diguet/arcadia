@@ -16,6 +16,8 @@ class Manche extends Battle {
     this.g = g; this.pid = j.id; this.joueur = j;
   }
   nm(i) { const m = this.act(i); return i === 1 ? monName(m) : `${monName(m)} ${deNom(this.joueur.nom)}`; }
+  /** un joueur qui tient plusieurs places : on ne rappelle pas un Pokémon déjà en jeu à une autre place */
+  canSwitchTo(idx) { return super.canSwitchTo(idx) && !this.g.enJeuAilleurs(this.joueur, idx); }
   tie() { return this.rng() < 0.5 ? -1 : 1; }
   awardExp() {}
   checkFaints() {
@@ -41,7 +43,8 @@ class Manche extends Battle {
 
 export class Groupe {
   /**
-   * @param o.joueurs  [{ id, nom, party }]           équipes déjà copiées (le combat les modifie)
+   * @param o.joueurs  [{ id, nom, party, places? }]  équipes déjà copiées (le combat les modifie) ; places : Pokémon
+   *                                                 en jeu à la fois pour ce joueur (mode test, combat seul contre deux)
    * @param o.dresseur { cls, nom, bs }               le dresseur (ou le couple : « Duo Lise et Léo »)
    * @param o.reserve  [mon, …]                       ses Pokémon, dans l'ordre d'envoi
    * @param o.places   Pokémon adverses en jeu à la fois (par défaut : autant que de joueurs)
@@ -49,8 +52,14 @@ export class Groupe {
   constructor(o) {
     this.rng = o.rng || Math.random;
     this.reserve = o.reserve;
+    this.pluriel = !!o.dresseur.pluriel;
     this.dresseur = { cls: o.dresseur.cls || '', name: o.dresseur.nom, bs: o.dresseur.bs, prize: 0, ai: 'smart', items: {} };
-    this.joueurs = o.joueurs.map((j) => ({ id: String(j.id), nom: j.nom, party: j.party, etat: 'choix' }));
+    // une place par Pokémon en jeu : un joueur à plusieurs places a une place « id#k » par Pokémon, même équipe
+    this.joueurs = [];
+    for (const j of o.joueurs) {
+      const n = Math.max(1, j.places || 1);
+      for (let k = 0; k < n; k++) this.joueurs.push({ id: n > 1 ? `${j.id}#${k}` : String(j.id), pid: String(j.id), k, nom: j.nom, party: j.party, etat: 'choix' });
+    }
     this.manches = this.joueurs.map((j) => new Manche(this, j, this.rng));
     // un camp par emplacement adverse : même réserve, Pokémon en jeu et effets à part
     const n = Math.min(o.places || this.joueurs.length, this.reserve.length);
@@ -62,8 +71,19 @@ export class Groupe {
     this.state = 'choose'; this.result = null; this.turn = 0;
     this.ev = []; this.choix = new Map();
     for (const j of this.joueurs) if (!j.party.some((m) => m.hp > 0)) j.etat = 'dehors';
+    // plusieurs places : un Pokémon différent à chacune (pas assez de Pokémon en forme : places en moins)
+    for (const j of this.joueurs) {
+      if (j.etat === 'dehors' || !j.k) continue;
+      const m = this.manche(j.id), i = this.remplacant(j);
+      if (i < 0) j.etat = 'dehors'; else m.sides[0].active = i;
+    }
   }
   manche(id) { return this.manches.find((m) => m.pid === String(id)); }
+  /** places du même joueur */
+  soeurs(j) { return this.joueurs.filter((q) => q.pid === j.pid && q !== j); }
+  enJeuAilleurs(j, idx) { return this.soeurs(j).some((q) => q.etat !== 'dehors' && this.manche(q.id).sides[0].active === idx); }
+  /** un Pokémon en forme que ce joueur peut encore envoyer à cette place */
+  remplacant(j) { return j.party.findIndex((q, i) => q.hp > 0 && !this.enJeuAilleurs(j, i)); }
   joueur(id) { return this.joueurs.find((j) => j.id === String(id)); }
   /** Pokémon adverse de l'emplacement k (null s'il n'y a plus personne) */
   adverse(k) { const s = this.places[k]; const m = s && s.active != null ? this.reserve[s.active] : null; return m && !isFainted(m) ? m : null; }
@@ -83,35 +103,41 @@ export class Groupe {
 
   start() {
     const t = this.dresseur;
-    this.say(`${t.cls ? t.cls + ' ' : ''}${t.name} veut se battre !`);
-    this.places.forEach((s, k) => { this.ev.push({ t: 'send', side: 1, idx: s.active, place: k }); this.say(`${t.name} envoie ${monName(this.reserve[s.active])} !`); });
+    this.say(`${t.cls ? t.cls + ' ' : ''}${t.name} ${this.pluriel ? 'veulent' : 'veut'} se battre !`);
+    this.places.forEach((s, k) => { this.ev.push({ t: 'send', side: 1, idx: s.active, place: k }); this.say(`${t.name} ${this.pluriel ? 'envoient' : 'envoie'} ${monName(this.reserve[s.active])} !`); });
     for (const m of this.manches) {
       const j = this.joueur(m.pid); if (j.etat === 'dehors') continue;
-      m.sides[0].active = Math.max(0, j.party.findIndex((q) => q.hp > 0));
+      if (!j.k) m.sides[0].active = Math.max(0, j.party.findIndex((q) => q.hp > 0));
       this.ev.push({ t: 'send', side: 0, idx: m.sides[0].active, own: m.pid });
       this.say(`${j.nom} envoie ${monName(m.act(0))} !`);
     }
     return this.flush();
   }
+  /** places dont on attend le choix (identifiants de place) */
   attendus() {
     if (this.state === 'over') return [];
     const want = this.state === 'switch' ? 'remplacer' : 'choix';
     return this.joueurs.filter((j) => j.etat === want).map((j) => j.id);
   }
-  /** choix : { type: 'move', idx, cible } | { type: 'switch', idx } | { type: 'forfeit' } */
+  /** joueurs dont on attend un choix */
+  attendusJoueurs() { return [...new Set(this.attendus().map((id) => this.joueur(id).pid))]; }
+  /**
+   * choix d'un joueur : { type: 'move', idx, cible } | { type: 'switch', idx } | { type: 'forfeit' }, ou pour un
+   * joueur à plusieurs places { type: 'multi', actions: [choix de la place 0, de la place 1…] }
+   */
   action(id, a) {
     id = String(id);
-    const j = this.joueur(id);
-    if (!j || !this.attendus().includes(id) || !a || typeof a.type !== 'string') return null;
-    if (a.type === 'forfeit') { this.retirer(id, `${j.nom} abandonne le combat.`); return this.avancer(); }
-    this.choix.set(id, a);
+    const att = this.attendus(), places = this.joueurs.filter((j) => j.pid === id && att.includes(j.id));
+    if (!places.length || !a || typeof a.type !== 'string') return null;
+    if (a.type === 'forfeit') { this.retirer(id, `${places[0].nom} abandonne le combat.`); return this.avancer(); }
+    for (const j of places) this.choix.set(j.id, a.type === 'multi' ? a.actions?.[j.k] || { type: 'move', idx: 0 } : a);
     return this.avancer();
   }
+  /** un joueur quitte le combat (toutes ses places) */
   retirer(id, texte) {
-    const j = this.joueur(id); if (!j || j.etat === 'dehors') return;
-    j.etat = 'dehors'; this.choix.delete(String(id));
+    const l = this.joueurs.filter((q) => (q.pid === String(id) || q.id === String(id)) && q.etat !== 'dehors'); if (!l.length) return;
+    for (const j of l) { j.etat = 'dehors'; this.choix.delete(j.id); this.ev.push({ t: 'out', own: j.id }); }
     if (texte) this.say(texte);
-    this.ev.push({ t: 'out', own: j.id });
     if (!this.joueurs.some((q) => q.etat !== 'dehors') && this.state !== 'over') this.fin('lose');
   }
   avancer() {
@@ -126,7 +152,8 @@ export class Groupe {
       if (j.etat !== 'remplacer') continue;
       const m = this.manche(j.id), a = this.choix.get(j.id) || {};
       let idx = a.idx;
-      if (!Number.isInteger(idx) || !j.party[idx] || j.party[idx].hp <= 0) idx = j.party.findIndex((q) => q.hp > 0);
+      if (!Number.isInteger(idx) || !j.party[idx] || j.party[idx].hp <= 0 || this.enJeuAilleurs(j, idx)) idx = this.remplacant(j);
+      if (idx < 0) { j.etat = 'dehors'; this.ev.push({ t: 'out', own: j.id }); continue; }
       this.dans(m, () => m.doSwitch(0, idx, true));
       j.etat = 'choix';
     }
@@ -189,7 +216,7 @@ export class Groupe {
       if (this.envoyes < this.reserve.length) {
         s.active = this.envoyes++; s.v = new Battle({ player: { name: '', party: [m] }, foe: { name: '', party: [m], trainer: this.dresseur } }).sides[1].v;
         this.ev.push({ t: 'send', side: 1, idx: s.active, place: k });
-        this.say(`${this.dresseur.name} envoie ${monName(this.reserve[s.active])} !`);
+        this.say(`${this.dresseur.name} ${this.pluriel ? 'envoient' : 'envoie'} ${monName(this.reserve[s.active])} !`);
       } else s.vide = true;
     });
     if (this.reserve.every((m) => isFainted(m))) { this.fin('win'); return; }
@@ -197,7 +224,7 @@ export class Groupe {
       if (j.etat !== 'choix') continue;
       const m = this.manche(j.id);
       if (!isFainted(m.act(0))) continue;
-      if (j.party.some((q) => q.hp > 0)) { j.etat = 'remplacer'; this.ev.push({ t: 'switch-prompt', own: j.id }); }
+      if (this.remplacant(j) >= 0) { j.etat = 'remplacer'; this.ev.push({ t: 'switch-prompt', own: j.id }); }
       else { j.etat = 'dehors'; this.say(`${j.nom} n'a plus de Pokémon en forme !`); this.ev.push({ t: 'out', own: j.id }); }
     }
     if (!this.joueurs.some((j) => j.etat !== 'dehors')) this.fin('lose');
@@ -214,7 +241,7 @@ export class Groupe {
       turn: this.turn, state: this.state, result: this.result,
       adverses: this.places.map((s, k) => { const m = this.adverse(k); return m ? { place: k, idx: s.active, sp: m.sp, lvl: m.lvl, hp: m.hp, max: m.stats[0], status: m.status || null } : { place: k, vide: true }; }),
       reste: this.reserve.filter((m) => !isFainted(m)).length,
-      joueurs: this.joueurs.map((j) => ({ id: j.id, nom: j.nom, etat: j.etat, active: this.manche(j.id).sides[0].active, forced: this.manche(j.id).forcedAction(0) ? 1 : 0,
+      joueurs: this.joueurs.map((j) => ({ id: j.id, pid: j.pid, k: j.k, nom: j.nom, etat: j.etat, active: this.manche(j.id).sides[0].active, forced: this.manche(j.id).forcedAction(0) ? 1 : 0,
         party: j.party.map((q) => ({ sp: q.sp, lvl: q.lvl, hp: q.hp, max: q.stats[0], status: q.status || null, moves: q.moves.map((x) => ({ id: x.id, pp: x.pp })) })) })),
     };
   }

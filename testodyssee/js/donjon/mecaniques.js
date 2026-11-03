@@ -14,7 +14,9 @@ import { Raid } from '../combat/raid.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { CombatMiroir, GroupeMiroir, brancher, brancherGroupe } from '../combat/vue.js';
 import { Groupe } from '../combat/groupe.js';
-import { battu } from './etat.js';
+import { battu, prisPar } from './etat.js';
+import { DIRS, walkable } from '../../../odyssee/js/world/tiles.js';
+import { wait } from '../../../odyssee/js/ui/ui.js';
 
 const melange = (a) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const copie = (o) => JSON.parse(JSON.stringify(o));
@@ -117,6 +119,71 @@ export const Mecaniques = {
     }
   },
 
+  /* ---------------- dresseurs qui repèrent le joueur ---------------- */
+  /** après un pas : un dresseur (def.pnj[k].vue cases) voit le joueur droit devant lui, vient à lui et le défie */
+  async regards() {
+    const g = this.game, d = [...this.defs.values()].find((q) => this.estDans(q)); if (!d || g.busy || !g.state) return false;
+    const p = g.player, m = g.mapObj, e = this.etats[d.id];
+    for (const n of g.npcs) {
+      const k = Object.keys(d.pnj).find((c) => `${d.id}:${d.pnj[c].id}` === n.id), def = k && d.pnj[k];
+      if (!def?.vue || battu(e, d, k) || prisPar(e, d, k)) continue;
+      const [dx, dy] = DIRS[n.dir];
+      for (let s = 1; s <= def.vue; s++) {
+        const x = n.x + dx * s, y = n.y + dy * s;
+        if (x === p.x && y === p.y) { await this.repere(d, k, n); return true; }
+        if (!walkable(m.get(x, y)) || g.npcs.some((q) => q !== n && q.x === x && q.y === y)) break;
+      }
+    }
+    return false;
+  },
+  async repere(d, k, n) {
+    const g = this.game, ui = g.ui, def = d.pnj[k], p = g.player;
+    const k2 = def.duoAvec, n2 = k2 && g.npcs.find((q) => q.id === `${d.id}:${d.pnj[k2].id}`);
+    g.busy = true;
+    try {
+      g.sound.sfx('bang'); n.bang = true; if (n2) n2.bang = true; await wait(650); n.bang = false; if (n2) n2.bang = false;
+      // chacun vient se placer à côté du joueur
+      const venir = (q) => { const pas = Math.abs(p.x - q.x) + Math.abs(p.y - q.y) - 1; return pas > 0 ? g.npcWalk(q, q.dir, pas) : Promise.resolve(); };
+      await Promise.all([venir(n), n2 ? venir(n2) : null]);
+      p.dir = { up: 'down', down: 'up', left: 'right', right: 'left' }[n.dir];
+      if (def.defi) await ui.say(def.defi, { speaker: n2 ? `${def.cls}s ${def.nom} et ${d.pnj[k2].nom}` : `${def.cls} ${def.nom}` });
+      if (n2) { await this.combatDuoLocal(d, [k, k2]); return; }
+      const r = await this.demande(d.id, { a: 'prendre', pnj: k }); if (!r.ok) return;
+      const party = def.equipe.map(([sp, lvl]) => createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false }));
+      const res = await this.combat(def, party);
+      if (res === 'win') await this.demande(d.id, { a: 'gagne', pnj: k });
+      else { await this.demande(d.id, { a: 'lacher', pnj: k }); await this.defaite(d); }
+    } finally { g.busy = false; }
+  },
+  /** deux dresseurs contre le joueur seul : deux Pokémon de chaque côté (le combat tourne chez le joueur) */
+  async combatDuoLocal(d, ks) {
+    const g = this.game, [a, b] = ks.map((k) => d.pnj[k]);
+    for (const k of ks) await this.demande(d.id, { a: 'prendre', pnj: k });
+    const mons = (q) => q.equipe.map(([sp, lvl]) => createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false }));
+    const ma = mons(a), mb = mons(b), reserve = [];
+    for (let i = 0; i < Math.max(ma.length, mb.length); i++) { if (ma[i]) reserve.push(ma[i]); if (mb[i]) reserve.push(mb[i]); }
+    const dresseur = { cls: `${a.cls}s`, nom: `${a.nom} et ${b.nom}`, bs: a.bs || a.sprite, pluriel: true };
+    let res = 'win';
+    if (!(g.modeTest && await g.ui.yesNo('Mode test : passer ce combat (compté comme gagné) ?'))) res = await this.combatGroupeLocal(dresseur, reserve, 2);
+    if (res === 'win') { for (const k of ks) await this.demande(d.id, { a: 'gagne', pnj: k }); if (a.perd) await g.ui.say(a.perd, { speaker: dresseur.cls + ' ' + dresseur.nom }); }
+    else { for (const k of ks) await this.demande(d.id, { a: 'lacher', pnj: k }); await this.defaite(d); }
+  },
+  /** combat de groupe joué sur place, sans l'hôte (un seul joueur, plusieurs Pokémon en jeu) */
+  async combatGroupeLocal(dresseur, reserve, places) {
+    const g = this.game, combat = new Groupe({ joueurs: [{ id: this.moi, nom: g.state.name, party: copie(g.state.party), places }], dresseur, reserve, places });
+    const intro = { etape: 'debut', groupe: true, evs: combat.start(), photo: combat.photo(), boss: dresseur };
+    const miroir = new GroupeMiroir({ moi: this.moi, party: g.state.party, intro, boss: dresseur });
+    const envoyer = (action) => { const evs = combat.action(this.moi, action); if (evs) setTimeout(() => miroir.recevoir({ etape: 'tour', evs, photo: combat.photo() }), 0); };
+    g.musicLock = true; g.sound.play('trainer');
+    const curtain = await g.encounterIntro('trainer'); curtain.remove();
+    const defaire = brancherGroupe(g.bv, miroir, this.moi);
+    let res;
+    try { res = await g.bv.runPvp(miroir, miroir.duel(envoyer), { bg: 'cave' }); }
+    finally { defaire(); g.bv.close(); g.musicLock = false; }
+    g.sound.stopMusic(0.1); g.sound.current = null; g.updateZone();
+    return res === 'out' ? 'lose' : res;
+  },
+
   /* ---------------- boss à affronter à plusieurs ---------------- */
   async bossRaid(d, k) {
     const g = this.game, ui = g.ui, p = d.pnj[k], e = this.etats[d.id];
@@ -135,7 +202,7 @@ export const Mecaniques = {
     }
     if (e.salles[salle.id].combat) { await ui.say('Le combat a déjà commencé sans toi...'); return; }
     await ui.say(p.avant || d.textes.masque, { speaker: p.avant ? p.nom : undefined });
-    const r = await this.demande(d.id, { a: 'pret', salle: salle.id, party: copie(g.state.party) });
+    const r = await this.demande(d.id, { a: 'pret', salle: salle.id, party: copie(g.state.party), test: !!g.modeTest });
     if (!r.ok) { await ui.say(r.why === 'reseau' ? 'L\'hôte du salon ne répond pas...' : '...'); return; }
     // attente des autres : Échap pour partir
     const debut = this.debutRaid ? Promise.resolve(this.debutRaid) : new Promise((res) => { this.attenteRaid = res; });
@@ -207,11 +274,14 @@ export const Mecaniques = {
     const k = salle.type === 'groupe' ? salle.pnj.find((q) => !battu(e, d, q)) : salle.pnj?.find((q) => d.pnj[q]?.raid), p = k ? d.pnj[k] : Object.values(d.pnj).find((q) => q.raid), equipes = this.equipesRaid[d.id] || {};
     const joueurs = prets.filter((q) => validParty(equipes[q])).map((q) => ({ id: q, nom: this.nomDe(q), party: copie(equipes[q]) }));
     if (!joueurs.length) return;
+    // mode test, seul contre un combat de groupe : on envoie ses premiers Pokémon, un par place
+    const seulTest = salle.type === 'groupe' && joueurs.length === 1 && this.testRaid?.[joueurs[0].id];
+    if (seulTest) joueurs[0].places = p.places || 3;
     const cle = `${d.id}|${salle.id}`, infos = { cls: p.cls, nom: p.nom, bs: p.bs || p.sprite };
     if (salle.type === 'groupe') {
       // combat de groupe : tous les joueurs présents contre autant de Pokémon du dresseur en jeu à la fois
       const reserve = p.equipe.map(([sp, lvl]) => createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false }));
-      const combat = new Groupe({ joueurs, dresseur: infos, reserve, places: p.places || joueurs.length });
+      const combat = new Groupe({ joueurs, dresseur: infos, reserve, places: p.places || (seulTest ? joueurs[0].places : joueurs.length) });
       this.raids[cle] = { raid: combat, ids: joueurs.map((j) => j.id), boss: infos, d: d.id, salle: salle.id, pnj: k };
       this.traiter(d.id, this.moi, { a: 'raid', salle: salle.id, etape: 'debut' });
       const evs = combat.start();
@@ -221,7 +291,7 @@ export const Mecaniques = {
     const boss = createMon(p.espece, p.niveau, { iv: Array(6).fill(31), shiny: false });
     boss.stats[0] *= joueurs.length; boss.hp = boss.stats[0];
     if (p.moves) boss.moves = p.moves.map((id) => ({ id, pp: MOVES[id].pp }));
-    const raid = new Raid({ joueurs, boss: { mon: boss, cls: p.cls, nom: p.nom, bs: p.bs }, blocs: p.blocs || 3, immunite: p.immunite, boost: p.boost });
+    const raid = new Raid({ joueurs, boss: { mon: boss, cls: p.cls, nom: p.nom, bs: p.bs }, blocs: p.blocs || 3, immunite: p.immunite, boost: p.boost, effets: p.effets, soin: p.soinBlocs });
     this.raids[cle] = { raid, ids: joueurs.map((j) => j.id), boss: { cls: p.cls, nom: p.nom, bs: p.bs }, d: d.id, salle: salle.id };
     this.traiter(d.id, this.moi, { a: 'raid', salle: salle.id, etape: 'debut' });
     const evs = raid.start();

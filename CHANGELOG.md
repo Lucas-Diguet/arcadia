@@ -1,5 +1,16 @@
 # Journal des versions — Arcadia
 
+## 3.91 — 3 novembre 2026
+- **TestOdyssée** — Sanctuaire des Trois Voies :
+  - Le panneau de la salle des voies est au centre du triangle des statues.
+  - Salles des codes : le passage vers la suite s'ouvre dès que la grande porte s'ouvre. Les gardiens guettent et viennent vous défier s'ils vous voient.
+  - Épreuve du Courage, refaite : salle et couloirs bien plus grands, barre de la croix allongée, grilles qui ferment tout le couloir, la dresseuse du côté du centre, caisses un peu plus dures, et un PC discret dans le mur pour les remettre en place. Une fois la dernière grille passée, elle ne vous bloque plus.
+  - Épreuve de la Force : les deux Karatékas, face à face sur les flancs, viennent ensemble vous défier à deux contre un : vous envoyez vos deux premiers Pokémon.
+  - Couloir des Sentinelles plus large, sentinelles sur les côtés. En mode test, on peut les affronter seul avec ses trois premiers Pokémon.
+  - Le Gardien des Trois Voies a cinq boucliers, chacun avec son effet quand il se brise (stats en hausse, pièges de roc, Attaques baissées, Pokémon mis K.O.), et un Soin qui rend deux boucliers.
+  - Un bouclier qui se brise se voit bien mieux. Le Gardien de la Force ne dit plus qu'il est immunisé : on lit simplement « Ça n'affecte pas… ».
+- **TestOdyssée** — Pyramide de l'Ascension : si votre adversaire d'arène a perdu en route, vous affrontez son reflet à sa place.
+
 ## 3.90 — 3 novembre 2026
 - **TestOdyssée** — Nouveau donjon : la Pyramide de l'Ascension, à 3 ou 4 joueurs, avec une équipe de niveau 35.
   - Rien ne soigne vos Pokémon en montant, sauf une fontaine à mi-chemin. Vos objets de soin sont mis de côté à l'entrée et rendus à la sortie.

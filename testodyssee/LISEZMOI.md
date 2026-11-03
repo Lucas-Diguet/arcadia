@@ -155,6 +155,15 @@ tombe à la moitié de ses PV, puis à 1 PV, puis plus rien. `raid: true, espece
 `sprites.js`), `bs` le dessin en combat s'il est différent. `equipe` : numéros des Pokémon et niveaux. `gardien: true`
 pour le PNJ qui ouvre le donjon, `boss: true` pour le boss.
 
+`vue: 6` : le dresseur guette droit devant lui (`dir`) sur 6 cases ; s'il voit le joueur, il vient à lui et le défie
+(`defi` : sa phrase). `duoAvec: 'q'` : les deux dresseurs viennent ensemble et se battent à deux contre le joueur seul,
+qui envoie alors ses deux premiers Pokémon (combat de groupe joué sur place).
+
+Boss à blocs (`raid: true`) : `blocs`, `boost` (stat qui monte à chaque bloc, 0 : aucune), `moves`, `immunite`, et
+`effets` : ce qui arrive quand un bloc se brise, indexé par le nombre de blocs restants (`boostTout`, `piegeRoc`,
+`baisseAttaques`, `ko` : un Pokémon d'un joueur pas encore visé est mis K.O.). Chaque effet ne joue qu'une fois par
+combat, même si le boss se soigne ; `soinBlocs: 2` : son attaque de soin rend deux blocs.
+
 ### Le journal
 
 `journal` liste les sous-quêtes du donjon (une par salle à suivre), affichées dans le menu JOURNAL avec les objets de
@@ -204,25 +213,33 @@ retour possible.
 3. **Épreuves** (un joueur chacune), avec un parchemin à deux chiffres au bout :
    - Sagesse : cinq statues, certaines mentent toujours ; on touche celles qui disent vrai (une seule solution,
      vérifiée par les tests ; toucher un menteur coûte des PV comme chez Didier).
-   - Force : deux Karatékas, puis le Gardien de la Force (combat à blocs en solo) : immunisé aux attaques spéciales
-     tant que son premier bloc tient (`immunite: 'speciale'` ; `'physique'` pour l'inverse), Attaque en hausse à chaque bloc cassé (`boost: 2`).
-   - Courage : une salle en croix. L'interrupteur du bas ouvre la grille de gauche 5 secondes ; derrière, une
-     dresseuse attaque au passage (`embuscade`), et l'interrupteur du bout rouvre la gauche et ouvre la droite
-     3 secondes ; avant la droite, des caisses à pousser (un levier les remet en place) ; l'interrupteur de droite
-     ouvre la grille du haut, devant la sortie. Coincé derrière une grille refermée : retour à l'entrée de la salle,
-     tout est à refaire. Chaque interrupteur dit quelles grilles il ouvre (`ouvre`) et combien de temps (`duree`).
+   - Force : deux Karatékas face à face sur les flancs, qui viennent ensemble au joueur (combat à deux contre un, ses
+     deux premiers Pokémon en jeu), puis le Gardien de la Force (combat à blocs en solo) : les attaques spéciales ne
+     l'affectent pas tant que son premier bloc tient (`immunite: 'speciale'` ; `'physique'` pour l'inverse), Attaque
+     en hausse à chaque bloc cassé (`boost: 2`).
+   - Courage : une grande salle en croix, couloirs de cinq cases. L'interrupteur du bas ouvre la grille de gauche
+     5 secondes ; avant elle, côté centre, une dresseuse attaque au passage (`embuscade`) ; l'interrupteur du bout
+     rouvre la gauche et ouvre la droite 4 secondes ; avant la droite, des caisses à pousser (au moins 8 poussées,
+     un PC dans le mur du couloir d'entrée les remet en place) ; l'interrupteur de droite ouvre la grille du haut.
+     Chaque grille ferme tout le couloir. Coincé derrière une grille refermée, sans interrupteur ni sortie à portée :
+     retour à l'entrée de la salle, tout est à refaire (la dernière grille passée, on est passé). Chaque interrupteur
+     dit quelles grilles il ouvre (`ouvre`) et combien de temps (`duree`).
 4. **Salles des Codes**, la même grande salle pour chacun, dans le noir (`sombre: true`, Flash n'y fait rien),
    le coffre qui brille au centre : cinq gardiens (un deuxième parchemin), un coffre qui s'ouvre avec ses
    deux nombres (dans un sens ou dans l'autre) et donne l'ordre du code, par exemple « Force, Force, Courage,
    Courage » : le code à huit chiffres de la grande porte est fait des nombres des deux autres chemins, à se dire
    à l'oral. Codes et ordres sont tirés au sort à chaque descente par l'hôte (`preparer` du donjon) ; des quatre
-   combinaisons, une seule ouvre.
-5. **Couloir des Sentinelles** : trois sentinelles, à affronter l'une après l'autre, chacune à trois contre trois
+   combinaisons, une seule ouvre. Les gardiens guettent (`vue`) et viennent défier qui passe devant eux ; la sortie
+   s'ouvre avec la grande porte (`ouvertPar: 'porte'`).
+5. **Couloir des Sentinelles** : trois sentinelles sur les flancs, à affronter l'une après l'autre, chacune à trois contre trois
    (salle `type: 'groupe'`, `pnj` dans l'ordre). Le dresseur garde trois Pokémon en jeu et remplace ceux qui tombent
    par ceux de sa réserve (neuf chacune) ; chaque joueur choisit le Pokémon qu'il vise après son attaque, les autres
-   adversaires et les équipiers sont dans les encadrés. Pas de soin entre deux sentinelles.
-6. **Cœur du Sanctuaire** : le Gardien des Trois Voies, à trois contre un. Récompenses : la CT Abri et la Relique de
-   Triforce.
+   adversaires et les équipiers sont dans les encadrés. Pas de soin entre deux sentinelles. En mode test, seul, on
+   envoie ses trois premiers Pokémon (un joueur peut tenir plusieurs places : `places` dans `Groupe`).
+6. **Cœur du Sanctuaire** : le Gardien des Trois Voies (Mew), à trois contre un, cinq blocs. Premier bloc brisé :
+   toutes ses stats montent et des pièges de roc blessent chaque Pokémon qui entre ; deuxième : Attaque et Attaque
+   Spéciale des Pokémon en jeu baissées de deux crans et un Pokémon K.O. ; troisième et quatrième : un autre K.O.,
+   jamais deux fois le même joueur. Son Soin rend deux blocs. Récompenses : la CT Abri et la Relique de Triforce.
 
 Un combat à plusieurs (`raid`, ou `groupe` : moteur `js/combat/groupe.js`, autant de Pokémon adverses en jeu que de
 joueurs, `places` pour en fixer le nombre) se lance quand tous les joueurs présents sur la carte de sa salle sont prêts : il peut
@@ -247,7 +264,8 @@ du Sac (poches Soins et Baies) sont mis de côté en entrant et rendus en sortan
 8. **Arènes** (`type: 'arene'`, `portes` : les lettres des portes qui y mènent) : les portes I et II mènent au Levant,
    III et IV au Couchant. Quand les joueurs attendus parlent au juge, l'hôte lance le duel : combat entre joueurs
    d'Odyssée, équipes telles quelles. Le perdant redescend, le gagnant est soigné et monte. Seul dans son arène (à 3,
-   ou si l'autre a perdu en route) : le reflet de l'équipe d'un joueur de l'autre arène, à PV pleins.
+   ou si personne d'autre n'est venu par ses portes) : le reflet de l'équipe d'un joueur de l'autre arène, à PV
+   pleins. L'adversaire prévu a perdu en route : c'est son reflet qui le remplace (l'hôte garde son équipe).
 9. **Sommet** (`type: 'sommet'`, `couchant: true` : soleil couchant) : quand les deux arènes ont rendu leur verdict,
    duel entre les gagnants. Le vainqueur reçoit le Symbole d'Or ; tous deux redescendent. Seul gagnant : le sommet
    est à lui.

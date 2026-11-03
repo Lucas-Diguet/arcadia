@@ -74,7 +74,7 @@ export const Voies = {
             this.decorSol(m, x, y, S.faite && !D.parchemin ? 'itemball' : null);
           } else if (o.type === 'coffre') this.decor(m, x, y, D.coffre ? 'coffre_ouvert' : 'coffre');
           else if (o.type === 'porteCode') this.decor(m, x, y, D.porte ? null : i === (l.length >> 1) ? 'porte_code' : 'porte_vide');
-          else if (o.type === 'grille') this.decor(m, x, y, this.grilleOuverte(m, c) ? null : i === (l.length >> 1) ? 'porte_grille' : 'porte_vide');
+          else if (o.type === 'grille') this.decor(m, x, y, this.grilleOuverte(m, c) ? null : 'porte_grille');
           else if (o.type === 'interrupteur') this.decoSol(m, x, y, o.ouvre.some((q) => this.grilleOuverte(m, q)) ? 'interrupteur_on' : 'interrupteur');
         });
       }
@@ -169,7 +169,7 @@ export const Voies = {
     if (code !== this.etats[d.id].secret.portes[s.voie]) { g.sound.sfx('bump'); await ui.say('Rien ne se passe. Ce n\'est pas le bon code.'); return; }
     await this.maj(d, s.id, { porte: true });
     g.sound.sfx('badge'); g.view.shake = 0.3;
-    await ui.say('La grande porte s\'ouvre dans un grondement !');
+    await ui.say(['La grande porte s\'ouvre dans un grondement !', 'Le passage vers la suite est juste derrière.']);
   },
 
   /* ---------------- épreuve du Courage : caisses et interrupteur ---------------- */
@@ -249,10 +249,14 @@ export const Voies = {
     this.dessinerStatues(d);
     this.lueurCoffre(d);
   },
-  /** derrière une grille fermée, sans chemin vers l'entrée : on recommence la salle */
+  /**
+   * derrière une grille fermée, sans chemin vers l'entrée, ni vers un interrupteur, ni vers la sortie : on recommence
+   * la salle (une fois la dernière grille passée, on est passé)
+   */
   coinceVoies(d, m) {
-    const g = this.game, P = m.donjon.plan, [sx, sy] = P.depart, vu = m.reach(g.player.x, g.player.y);
-    if (vu[sy * m.w + sx]) return;
+    const g = this.game, P = m.donjon.plan, [sx, sy] = P.depart, vu = m.reach(g.player.x, g.player.y), at = ([x, y]) => vu[y * m.w + x];
+    const inters = Object.entries(P.objets).filter(([c]) => d.objets[c].type === 'interrupteur').flatMap(([, l]) => l);
+    if (at([sx, sy]) || (P.suivante && at(P.suivante)) || (P.objets.K || []).some(([x, y]) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => at([x + a, y + b]))) || inters.some(at)) return;
     this.taches.push(async () => {
       await g.ui.say('La grille s\'est refermée derrière toi... Tu es ramené à l\'entrée de la salle. Tout est à refaire !');
       if (m.caissesOrigine) this.remettreCaisses(m);

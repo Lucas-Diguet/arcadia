@@ -145,13 +145,24 @@ export function brancher(bv, miroir, moi) {
     }
     for (const e of evs) {
       if (e.t === 'raid-equipier') { if (e.k === 'hp' || e.k === 'faint' || e.k === 'hit') miroir.equipiers?.flash(e.own); continue; }
-      if (e.t === 'raid-bloc') { bv.sound.sfx('hitstrong'); bv.st.screenFlash = 0.7; await wait(120); bv.st.screenFlash = 0; marquerBlocs(bv, miroir, e.reste); continue; }
+      if (e.t === 'raid-bloc') { await blocBrise(bv, miroir, e.reste); continue; }
       if (e.t === 'raid-out' || e.t === 'raid-switch-prompt') continue;
       await play([e]);
     }
-    miroir.equipiers?.maj(miroir.dernier);
+    miroir.equipiers?.maj(miroir.dernier, miroir.groupe ? miroir : undefined);
   };
   return () => { bv.play = play; };
+}
+/** un bloc se brise : flash, secousse, éclats sur la barre et bandeau au centre de l'écran */
+async function blocBrise(bv, miroir, reste) {
+  bv.sound.sfx('hitstrong');
+  const hud = bv.root?.querySelector('.bhud.foe');
+  if (hud) { hud.classList.remove('raid-casse'); void hud.offsetWidth; hud.classList.add('raid-casse'); }
+  if (bv.root) { const b = el('div', 'raid-bandeau', `Bouclier brisé !<small>${reste} restant${reste > 1 ? 's' : ''}</small>`); bv.root.appendChild(b); setTimeout(() => b.remove(), 1500); }
+  for (let k = 0; k < 4; k++) { bv.st.screenFlash = k % 2 ? 0.35 : 0.9; bv.st.shakeX = k % 2 ? -7 : 7; bv.st.shakeY = k % 2 ? 3 : -3; await wait(70); }
+  bv.st.screenFlash = 0; bv.st.shakeX = 0; bv.st.shakeY = 0;
+  marquerBlocs(bv, miroir, reste);
+  await wait(500);
 }
 /** la barre de vie du boss découpée en blocs */
 function marquerBlocs(bv, miroir, reste) {
@@ -176,13 +187,27 @@ export class GroupeMiroir extends CombatMiroir {
     // le constructeur du miroir attend un boss : on lui donne le premier adversaire, puis on met en place les emplacements
     super({ ...o, intro: { ...o.intro, photo: { ...p, boss: places[0] } } });
     this.groupe = true;
-    const moi = p.joueurs.findIndex((j) => j.id === this.moi);
+    // un joueur peut tenir plusieurs places (mode test, combat seul contre deux) : on en montre une à la fois
+    this.mesPlaces = p.joueurs.filter((j) => (j.pid ?? j.id) === this.moi).map((j) => j.k || 0);
+    this.multi = this.mesPlaces.length > 1; this.place = this.mesPlaces[0] || 0;
+    const moi = p.joueurs.findIndex((j) => (j.pid ?? j.id) === this.moi);
     this.sides[1].party = p.adverses.map((a) => (a.vide ? createMon(places[0].sp, places[0].lvl, { shiny: false }) : createMon(a.sp, a.lvl, { shiny: false })));
     this.cible = places[Math.max(0, moi) % places.length].place;
     this.sides[1].active = this.cible;
     this.photo(p);
   }
   get foe() { return this.sides[1].party[this.sides[1].active]; }
+  /** identifiant de la place montrée */
+  get monId() { return this.multi ? `${this.moi}#${this.place}` : this.moi; }
+  canSwitchTo(idx) { return super.canSwitchTo(idx) && !(this.dernier?.joueurs || []).some((q) => q.pid === this.moi && q.id !== this.monId && q.etat !== 'dehors' && q.active === idx); }
+  /** montre une autre de ses places (choix de chacun de ses Pokémon) */
+  async afficher(k, bv) {
+    this.place = k;
+    const j = this.dernier.joueurs.find((q) => q.id === this.monId); if (!j) return;
+    this.sides[0].active = j.active; this.forced = !!j.forced;
+    bv.setHud(0, this.me); await bv.loadSide(0); bv.st.me.visible = true;
+    this.equipiers?.maj(this.dernier, this);
+  }
   photo(p) {
     if (!this.groupe) return super.photo({ ...p, boss: p.boss || p.adverses?.find((a) => !a.vide) || { hp: 0, max: 1 } });
     this.dernier = p;
@@ -195,11 +220,14 @@ export class GroupeMiroir extends CombatMiroir {
     // la cible est tombée : on vise un autre adversaire encore debout
     if (p.adverses[this.cible]?.vide) { const autre = p.adverses.find((a) => !a.vide); if (autre) { this.cible = autre.place; this.changeCible = true; } }
     this.sides[1].active = this.cible;
-    const j = p.joueurs.find((q) => q.id === this.moi);
+    const mes = p.joueurs.filter((q) => (q.pid ?? q.id) === this.moi);
+    // la place montrée est sortie : on montre une autre place encore en jeu
+    if (this.multi && mes.find((q) => q.k === this.place)?.etat === 'dehors') { const autre = mes.find((q) => q.etat !== 'dehors'); if (autre) { this.place = autre.k; this.changePlace = true; } }
+    const j = mes.find((q) => q.id === this.monId);
     if (j) {
       j.party.forEach((q, i) => { const m = this.sides[0].party[i]; if (!m) return; m.hp = q.hp; m.status = q.status; q.moves.forEach((x, k) => { if (m.moves[k]) m.moves[k].pp = x.pp; }); });
       this.sides[0].active = j.active; this.forced = !!j.forced;
-      this.dehors = j.etat === 'dehors'; this.need[0] = j.etat === 'remplacer';
+      this.dehors = mes.every((q) => q.etat === 'dehors'); this.need[0] = mes.some((q) => q.etat === 'remplacer');
     }
     this.turn = p.turn;
     if (p.state === 'over') { this.state = 'over'; this.result = p.result; }
@@ -215,7 +243,7 @@ export class GroupeMiroir extends CombatMiroir {
       if (e.t === 'out' || e.t === 'switch-prompt') { out.push({ ...e, t: 'raid-' + e.t }); continue; }
       // ce qui arrive aux autres adversaires : leur ligne de l'encadré clignote
       if (e.side === 1 && e.place != null && e.place !== this.cible) { if (e.t !== 'move') out.push({ t: 'raid-adverse', place: e.place, k: e.t }); continue; }
-      if (e.side === 0 && e.own !== this.moi) { if (e.t === 'move') out.push({ t: 'move', side: 0, move: e.move, type: e.type }); else out.push({ t: 'raid-equipier', own: e.own, k: e.t }); continue; }
+      if (e.side === 0 && e.own !== this.monId) { if (e.t === 'move') out.push({ t: 'move', side: 0, move: e.move, type: e.type }); else out.push({ t: 'raid-equipier', own: e.own, k: e.t }); continue; }
       if (e.t === 'send' && e.side === 1) { out.push({ ...e, idx: e.place }); continue; }
       out.push(e);
     }
@@ -223,16 +251,16 @@ export class GroupeMiroir extends CombatMiroir {
   }
   duel(envoyer) {
     const d = super.duel(envoyer);
-    d.sendAct = (n, action) => envoyer({ type: action.type, idx: action.idx, cible: this.cible });
+    d.sendAct = (n, action) => envoyer(action.type === 'multi' ? action : { type: action.type, idx: action.idx, cible: this.cible });
     return d;
   }
 }
 
 /** encadré du combat de groupe : équipiers, puis les autres adversaires */
 Equipiers.prototype.majGroupe = function (p, miroir) {
-  const autres = p.joueurs.filter((j) => j.id !== this.moi);
+  const ici = miroir.monId || this.moi, autres = p.joueurs.filter((j) => j.id !== ici);
   const ligne = (nom, m, cls, attr) => { const r = m ? Math.max(0, m.hp / m.max) : 0; return `<div class="raid-eq${cls}" ${attr}><img src="${m ? ASSETS.icon(m.sp) : ''}" alt=""><div><b>${esc(nom)}</b><span>${m ? 'N.' + m.lvl : ''}</span><i><u style="width:${r * 100}%;background:${hpCol(r)}"></u></i></div></div>`; };
-  this.el.innerHTML = autres.map((j) => ligne(j.nom, j.party[j.active], j.etat === 'dehors' ? ' out' : '', `data-id="${esc(j.id)}"`)).join('');
+  this.el.innerHTML = autres.map((j) => ligne(j.pid === this.moi ? monName(createMon(j.party[j.active].sp, j.party[j.active].lvl, { shiny: false })) : j.nom, j.party[j.active], j.etat === 'dehors' ? ' out' : '', `data-id="${esc(j.id)}"`)).join('');
   this.el.style.display = autres.length ? '' : 'none';
   // les autres Pokémon du dresseur, en haut à droite
   if (!this.adv) { this.adv = el('div', 'raid-equipe raid-adverses'); this.el.parentNode.appendChild(this.adv); }
@@ -249,8 +277,7 @@ Equipiers.prototype.flashAdverse = function (place) { const q = this.adv?.queryS
 export function brancherGroupe(bv, miroir, moi) {
   const defaire = brancher(bv, miroir, moi), choisir = bv.chooseAction.bind(bv), play = bv.play;
   const montrerCible = async () => { bv.setHud(1, miroir.foe); await bv.loadSide(1); bv.st.foe.visible = true; miroir.equipiers?.maj(miroir.dernier, miroir); };
-  bv.chooseAction = async () => {
-    if (miroir.changeCible) { miroir.changeCible = false; await montrerCible(); }
+  const choisirUn = async () => {
     for (;;) {
       const a = await choisir();
       if (!a || a.type !== 'move') return a;
@@ -263,11 +290,27 @@ export function brancherGroupe(bv, miroir, moi) {
       return a;
     }
   };
+  bv.chooseAction = async () => {
+    if (miroir.changeCible) { miroir.changeCible = false; await montrerCible(); }
+    if (miroir.changePlace) { miroir.changePlace = false; await miroir.afficher(miroir.place, bv); }
+    if (!miroir.multi) return choisirUn();
+    // plusieurs Pokémon en jeu : un choix pour chacun, puis on revient au premier
+    const places = miroir.dernier.joueurs.filter((q) => q.pid === miroir.moi && q.etat === 'choix').map((q) => q.k), actions = [];
+    for (const k of places) {
+      if (k !== miroir.place) await miroir.afficher(k, bv);
+      const a = await choisirUn();
+      if (!a || a.type === 'forfeit') { if (miroir.place !== places[0]) await miroir.afficher(places[0], bv); return a; }
+      actions[k] = { type: a.type, idx: a.idx, cible: miroir.cible };
+    }
+    if (places.length && miroir.place !== places[0]) await miroir.afficher(places[0], bv);
+    return { type: 'multi', actions };
+  };
   bv.play = async (evs) => {
     const reste = [];
     for (const e of evs) { if (e.t === 'raid-adverse') { if (e.k === 'hp' || e.k === 'faint' || e.k === 'hit') miroir.equipiers?.flashAdverse(e.place); continue; } reste.push(e); }
     await play(reste);
     if (miroir.changeCible && miroir.state !== 'over') { miroir.changeCible = false; await montrerCible(); }
+    if (miroir.changePlace && miroir.state !== 'over') { miroir.changePlace = false; await miroir.afficher(miroir.place, bv); }
     miroir.equipiers?.maj(miroir.dernier, miroir);
   };
   return () => { bv.play = play; bv.chooseAction = choisir; defaire(); };

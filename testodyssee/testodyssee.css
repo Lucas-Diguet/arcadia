@@ -42,3 +42,11 @@
 .testody-couchant { position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background: radial-gradient(circle at 62% 9%, rgba(255, 214, 120, .95) 0, rgba(255, 190, 90, .9) 5%, rgba(255, 140, 50, .45) 8%, rgba(255, 120, 40, 0) 22%),
     linear-gradient(180deg, rgba(255, 110, 40, .38) 0%, rgba(255, 150, 60, .16) 50%, rgba(120, 40, 20, .22) 100%); }
+/* bouclier du boss brisé */
+.bhud.foe.raid-casse { animation: raid-casse .7s ease-out; }
+@keyframes raid-casse { 0% { transform: translateX(0) scale(1); filter: brightness(2.2); } 20% { transform: translateX(-6px) scale(1.06); } 40% { transform: translateX(6px) scale(1.04); filter: brightness(1.6); } 70% { transform: translateX(-3px); } 100% { transform: none; filter: none; } }
+.raid-bandeau { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); z-index: 20; pointer-events: none; text-align: center;
+  font-weight: 900; font-size: calc(var(--bp) * 16); letter-spacing: .04em; color: #ffe27a; text-shadow: 0 0 calc(var(--bp) * 4) #ff8a00, 0 calc(var(--bp) * 1.5) 0 #6a2a00;
+  animation: raid-bandeau 1.5s ease-out forwards; }
+.raid-bandeau small { display: block; font-size: .42em; color: #fff; letter-spacing: 0; text-shadow: 0 calc(var(--bp) * 1) 0 #000; }
+@keyframes raid-bandeau { 0% { opacity: 0; transform: translate(-50%, -50%) scale(1.8); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%) scale(.96); } }

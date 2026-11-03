@@ -6,8 +6,12 @@
 //
 // Barre de vie à blocs (façon PokéRogue) : un coup ne fait jamais tomber plus d'un bloc, et chaque bloc cassé
 // augmente la Vitesse du boss d'un cran (ou la stat donnée par o.boost). Avec o.immunite = 'physique' ou 'speciale',
-// le boss ne craint pas les attaques de cette catégorie tant que son premier bloc tient.
-import { Battle } from '../../../odyssee/js/core/battle.js';
+// le boss ne craint pas les attaques de cette catégorie tant que son premier bloc tient (« Ça n'affecte pas… »).
+// o.effets : ce qui arrive quand un bloc se brise ({ [blocs restants]: ['boostTout', 'piegeRoc', 'baisseAttaques', 'ko'] }),
+// une seule fois par combat même si le boss se soigne ; 'ko' met K.O. le Pokémon d'un joueur pas encore visé.
+// o.soin : ce que rend une attaque de soin du boss, en blocs.
+import { Battle, typeEff } from '../../../odyssee/js/core/battle.js';
+import { SPECIES } from '../../../odyssee/js/data/species.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { monName, isFainted } from '../../../odyssee/js/core/mon.js';
 
@@ -29,12 +33,23 @@ class Manche extends Battle {
       const m = this.act(0), slot = a.slot ?? m.moves.findIndex((q) => q.id === mv.id);
       if (slot >= 0 && m.moves[slot]) m.moves[slot].pp = Math.max(0, m.moves[slot].pp - 1);
       this.say(`${this.Nm(0)} utilise ${mv.n} !`);
-      this.say(`Le bouclier de ${monName(this.act(1))} repousse les attaques ${mv.c === 'physical' ? 'physiques' : 'spéciales'} !`);
+      this.say(`Ça n'affecte pas ${this.nm(1)}...`);
       return;
     }
     return super.useMove(i, a, first);
   }
+  /** pièges de roc : chaque Pokémon qui entre en jeu chez les joueurs est blessé */
+  doSwitch(i, idx, afterFaint, trigger) {
+    const r = super.doSwitch(i, idx, afterFaint, trigger);
+    const m = this.act(0);
+    if (i === 0 && this.raid.roc && m && !isFainted(m)) {
+      const n = Math.max(1, Math.floor(m.stats[0] * typeEff('rock', SPECIES[m.sp].t) / 8));
+      this.say(`Des pierres pointues blessent ${this.nm(0)} !`); this.ev.push({ t: 'hit', side: 0 }); this.hp(0, -n);
+    }
+    return r;
+  }
   hp(i, delta, cause) {
+    if (i === 1 && delta > 0 && this.raid.soin) delta = Math.round(this.raid.soin * this.raid.bossMon.stats[0] / this.raid.blocs);
     if (i === 1 && delta < 0) delta = this.raid.plafond(delta);
     const avant = this.act(1).hp, r = super.hp(i, delta, cause);
     if (i === 1) this.raid.blocsCasses(this, avant);
@@ -75,7 +90,9 @@ export class Raid {
     this.rng = o.rng || Math.random;
     this.blocs = o.blocs || 3;
     this.immunite = o.immunite || null;
-    this.statBloc = o.boost || 6;   // stat qui monte à chaque bloc cassé (2 : Attaque, 6 : Vitesse)
+    this.statBloc = o.boost ?? 6;   // stat qui monte à chaque bloc cassé (2 : Attaque, 6 : Vitesse ; 0 : aucune)
+    this.effets = o.effets || {}; this.soin = o.soin || 0;
+    this.effetsFaits = new Set(); this.koJoueurs = new Set(); this.roc = false;
     this.boss = { mon: o.boss.mon, nom: monName(o.boss.mon), dresseur: { cls: o.boss.cls || '', name: o.boss.nom || monName(o.boss.mon), bs: o.boss.bs, prize: 0, ai: 'smart', items: {} } };
     this.joueurs = o.joueurs.map((j) => ({ id: String(j.id), nom: j.nom, party: j.party, etat: 'choix' }));
     this.manches = this.joueurs.map((j) => new Manche(this, j, this.rng));
@@ -102,8 +119,29 @@ export class Raid {
       if (avant > t[k] && apres <= t[k]) {
         manche.ev.push({ t: 'bloc', reste: k });
         manche.say(`Un bouclier de ${this.boss.nom} se brise !`);
-        manche.boost(1, this.statBloc, 1, false);
+        if (this.statBloc) manche.boost(1, this.statBloc, 1, false);
+        if (!this.effetsFaits.has(k)) { this.effetsFaits.add(k); for (const f of this.effets[k] || []) this.effet(manche, f); }
       }
+    }
+  }
+  /** fait agir une autre manche pendant l'action en cours : ses événements suivent ceux de l'action */
+  chez(manche, q, fn) {
+    if (q === manche) return fn();
+    const avant = q.ev; q.ev = [];
+    try { fn(); } finally { for (const e of q.ev) { if (e.side === 0) e.own = q.pid; manche.ev.push(e); } q.ev = avant; }
+  }
+  effet(manche, f) {
+    const nom = this.boss.nom, debout = this.manches.filter((q) => this.joueur(q.pid).etat === 'choix' && !isFainted(q.act(0)));
+    if (f === 'boostTout') { manche.say(`${nom} rassemble toute sa puissance !`); for (const sid of [2, 3, 4, 5, 6]) manche.boost(1, sid, 1, false); }
+    else if (f === 'piegeRoc') { this.roc = true; manche.say('Des pierres pointues flottent autour de vos Pokémon !'); }
+    else if (f === 'baisseAttaques') {
+      manche.say(`${nom} libère une onde d'intimidation !`);
+      for (const q of debout) this.chez(manche, q, () => { q.boost(0, 2, -2, false); q.boost(0, 4, -2, false); });
+    } else if (f === 'ko') {
+      const l = debout.filter((q) => !this.koJoueurs.has(this.joueur(q.pid).id)); if (!l.length) return;
+      const q = l[Math.floor(this.rng() * l.length)]; this.koJoueurs.add(this.joueur(q.pid).id);
+      manche.say(`${nom} concentre sa puissance sur ${q.nm(0)} !`);
+      this.chez(manche, q, () => { q.ev.push({ t: 'hit', side: 0 }); q.hp(0, -q.act(0).hp); q.checkFaints(); });
     }
   }
 
@@ -111,7 +149,7 @@ export class Raid {
   dans(m, fn) {
     m.ev = [];
     const r = fn();
-    for (const e of m.ev) { if (e.side === 0) e.own = m.pid; this.ev.push(e); }
+    for (const e of m.ev) { if (e.side === 0 && e.own == null) e.own = m.pid; this.ev.push(e); }
     m.ev = [];
     return r;
   }

@@ -88,7 +88,7 @@ export class Donjons {
     for (const s of d.salles) {
       if (!s.carte) continue;
       const m = g.world.maps[s.carte];
-      if (passageSuivant(m, e.salles[s.id].faite || s.type === 'libre' || !!s.porte) && g.mapObj === m) { const [x, y] = m.donjon.plan.suivante; g.view.decoAt.delete(x + ',' + y); const dd = m.deco.find((q) => q.x === x && q.y === y); if (dd) g.view.decoAt.set(x + ',' + y, dd); g.view.rebuildAt(x, y); }
+      if (passageSuivant(m, s.ouvertPar ? !!e.salles[s.id].donnees[s.ouvertPar] : e.salles[s.id].faite || s.type === 'libre' || !!s.porte) && g.mapObj === m) { const [x, y] = m.donjon.plan.suivante; g.view.decoAt.delete(x + ',' + y); const dd = m.deco.find((q) => q.x === x && q.y === y); if (dd) g.view.decoAt.set(x + ',' + y, dd); g.view.rebuildAt(x, y); }
     }
     for (const s of d.salles) {
       if (!s.porte) continue;
@@ -172,6 +172,7 @@ export class Donjons {
   traiter(id, qui, m) {
     const d = this.defs.get(id); if (!d || !m || typeof m.a !== 'string') return { ok: false, why: 'inconnu' };
     if (validParty(m.party)) (this.equipesRaid[id] ||= {})[String(qui)] = m.party;
+    if (m.a === 'pret') (this.testRaid ||= {})[String(qui)] = !!m.test;
     const r = appliquer(d, this.etats[id], qui, m, this.options(d, m));
     if (r.change) this.diffuser(id);
     return { ok: r.ok, why: r.why };

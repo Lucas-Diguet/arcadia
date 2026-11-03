@@ -113,9 +113,11 @@ export const Pyramide = {
   /** perdu : on est ramené dehors, sans récompense */
   async elimine(d, texte) {
     const g = this.game;
+    // l'hôte garde l'équipe : son clone remplacera ce joueur dans son arène
+    const party = copie(g.state.party);
     for (const m of g.state.party) healFull(m);
     await g.ui.say(texte || d.textes.perdu);
-    await this.demande(d.id, { a: 'elimine' });
+    await this.demande(d.id, { a: 'elimine', party });
     const dehors = g.world.maps[d.carte].outside;
     await g.warp({ map: dehors.map, x: dehors.x, y: dehors.y, dir: 'down' }, 'exit');
   },
@@ -201,7 +203,7 @@ export const Pyramide = {
         if (S.pris[k] || S.battus.includes(k) || !(l.length >= 2 || (l.length === 1 && S.donnees.seul?.[k]))) continue;
         const joueurs = l.slice(0, 2).filter((q) => validParty(equipes[q])).map((q) => ({ id: q, nom: this.nomDe(q), party: copie(equipes[q]) }));
         if (!joueurs.length) continue;
-        const p = d.pnj[k], infos = { cls: p.cls, nom: p.nom, bs: p.bs || p.sprite };
+        const p = d.pnj[k], infos = { cls: p.cls, nom: p.nom, bs: p.bs || p.sprite, pluriel: true };
         const reserve = p.equipe.map(([sp, lvl]) => createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false }));
         const combat = new Groupe({ joueurs, dresseur: infos, reserve, places: 2 }), id = `${d.id}|${s.id}|${k}`;
         this.raids[id] = { raid: combat, ids: joueurs.map((j) => j.id), boss: infos, d: d.id, salle: s.id, pnj: k, fin: (result) => this.traiter(d.id, this.moi, { a: 'coupleFin', pnj: k, result }) };
@@ -237,7 +239,7 @@ export const Pyramide = {
       const res = await this.duelPyr(msg), adv = msg.ids.find((q) => q !== this.moi);
       gagnant = res === 'win' ? this.moi : res === 'lose' ? adv : msg.ids[0];
     } else if (msg.etape === 'reflet') {
-      await ui.say(d.textes.reflet, { speaker: titre });
+      await ui.say(msg.remplace ? d.textes.refletRemplace.replace('{nom}', msg.nom) : d.textes.reflet, { speaker: titre });
       const party = msg.party.map((m) => { const c = copie(m); healFull(c); delete c._ko; return c; });
       const res = await this.combat({ cls: 'Reflet', nom: `de ${msg.nom}`, bs: msg.bs || 'player_m', perd: '...' }, party);
       gagnant = res === 'win' ? this.moi : null;
@@ -306,6 +308,9 @@ export const Pyramide = {
   /** le reflet que va affronter celui qui est seul dans son arène : l'équipe d'un joueur de l'autre arène */
   refletPyr(d, s, q) {
     const e = this.etats[d.id], sv = d.salles.find((x) => x.type === 'voies'), V = e.salles[sv.id].donnees.voies || {}, equipes = this.equipesRaid[d.id] || {};
+    // l'adversaire prévu a perdu en route : son clone le remplace
+    const elimine = [...new Set(s.portes.map((l) => V[l]).filter((x) => x && x !== q && e.dehors.includes(x) && validParty(equipes[x])))];
+    if (elimine.length) return { etape: 'reflet', nom: this.nomDe(elimine[0]), party: copie(equipes[elimine[0]]), remplace: true };
     const autre = d.salles.find((x) => x.type === 'arene' && x !== s);
     let src = [...new Set((autre?.portes || []).map((l) => V[l]).filter((x) => x && x !== q && validParty(equipes[x])))];
     if (!src.length) src = Object.keys(equipes).filter((x) => x !== q && validParty(equipes[x]));

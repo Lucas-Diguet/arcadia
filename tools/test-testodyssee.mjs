@@ -6,7 +6,7 @@ import { installerContenu } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
 import { Groupe } from '../testodyssee/js/combat/groupe.js';
 import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures, actifs, attendusArene, attendusSommet, areneEnCours } from '../testodyssee/js/donjon/etat.js';
-import { createMon } from '../odyssee/js/core/mon.js';
+import { createMon, isFainted } from '../odyssee/js/core/mon.js';
 import { MOVES } from '../odyssee/js/data/moves.js';
 import { SPECIES } from '../odyssee/js/data/species.js';
 import { ITEMS } from '../odyssee/js/core/items.js';
@@ -250,7 +250,18 @@ for (const d of DONJONS) {
       ok(n * 0.2 > t && n * 0.1 < t, `voies : Courage, de l'interrupteur ${c} à la grille ${cible} il faut courir (${n} cases, ${t} s)`);
     }
     ok(dist(O.I[0], O.J) * 0.2 < sw('I').duree, 'voies : Courage, la première grille se rejoint en marchant');
-    ok(P.pnj.r && O['!'].length === 3, 'voies : Courage, le dresseur attaque quand on passe devant lui');
+    ok(P.pnj.r && O['!'].length === 5 && O['!'].every(([x]) => x > O.J[0][0] && x < P.pnj.r[0][0]), 'voies : Courage, le dresseur attaque quand on passe devant lui, du bon côté de la grille');
+    ok(['J', 'O', 'T'].every((c) => O[c].length === 5), 'voies : Courage, chaque grille ferme tout le couloir');
+    // les caisses : un peu plus de poussées qu'avant (au moins 8)
+    {
+      const minPoussees = () => { const k0 = [cle(...P.depart), [...caisses0].sort().join(';')].join('|'), D = new Map([[k0, 0]]), dq = [[P.depart, caisses0, 0]];
+        while (dq.length) { const [[x, y], cs, n] = dq.shift(); if (devantO.has(cle(x, y))) return n;
+          for (const [dx, dy] of V4) { const nx = x + dx, ny = y + dy; if (mur(nx, ny)) continue; let ncs = cs, c = 0;
+            if (cs.has(cle(nx, ny))) { const bx = nx + dx, by = ny + dy; if (mur(bx, by) || cs.has(cle(bx, by))) continue; ncs = new Set(cs); ncs.delete(cle(nx, ny)); ncs.add(cle(bx, by)); c = 1; }
+            const kk = cle(nx, ny) + '|' + [...ncs].sort().join(';'); if (D.has(kk) && D.get(kk) <= n + c) continue; D.set(kk, n + c); if (c) dq.push([[nx, ny], ncs, n + c]); else dq.unshift([[nx, ny], ncs, n]); } }
+        return -1; };
+      const n = minPoussees(); ok(n >= 8, `voies : Courage, il faut au moins 8 poussées pour passer (${n})`);
+    }
   }
   // salles des codes : grandes, dans le noir, le coffre au centre
   for (const k of ['s4s', 's4f', 's4c']) {
@@ -480,6 +491,62 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
     ok(phys.r.bloc() < 3 ? phys.r.manches[0].sides[1].v.st[1] > 0 : true, 'gardien de la Force : son Attaque monte quand un bloc casse');
     ok(!phys.r.immunise() || phys.r.bloc() === 3, 'gardien de la Force : l\'immunité tombe avec le premier bloc');
   }
+}
+
+/* ---------------- gardien des Trois Voies : cinq blocs, effets une seule fois, soin de deux blocs ---------------- */
+{
+  const d = DONJONS.find((q) => q.id === 'voies'), P = d.pnj.M, mv = (k) => Object.values(MOVES).find((m) => m.key === k).id;
+  const boss = createMon(P.espece, P.niveau, { shiny: false }); boss.stats[0] *= 3; boss.hp = boss.stats[0];
+  boss.moves = P.moves.map((id) => ({ id, pp: MOVES[id].pp }));
+  const joueurs = ['1', '2', '3'].map((id) => ({ id, nom: 'J' + id, party: [createMon(143, 60, { shiny: false }), createMon(76, 60, { shiny: false })] }));
+  const r = new Raid({ joueurs, boss: { mon: boss, nom: 'Gardien' }, blocs: P.blocs, boost: P.boost, effets: P.effets, soin: P.soinBlocs, rng: () => 0.3 });
+  r.start();
+  const t = r.seuils(), m0 = r.manches[0];
+  const casser = (k) => { r.dans(m0, () => { m0.hp(1, -(boss.hp - t[k] + 1)); }); r.bilan(); };
+  casser(4);
+  ok(r.roc && [2, 3, 4, 5, 6].every((s) => m0.sides[1].v.st[s - 1] === 1), 'gardien : premier bloc brisé, toutes ses stats montent et les pièges de roc sont posés');
+  casser(3);
+  const ko1 = [...r.koJoueurs];
+  ok(ko1.length === 1 && r.manches.filter((q) => !isFainted(q.act(0))).every((q) => q.sides[0].v.st[1] === -2 && q.sides[0].v.st[3] === -2), 'gardien : deuxième bloc, Attaques baissées de deux crans et un Pokémon mis K.O.');
+  // soin : deux blocs reviennent, mais les effets ne se rejouent pas
+  const avantSoin = boss.hp; r.dans(m0, () => m0.hp(1, 10));
+  ok(Math.abs(boss.hp - avantSoin - 2 * boss.stats[0] / P.blocs) <= 1, 'gardien : son soin rend deux blocs');
+  casser(4); casser(3);
+  ok(r.koJoueurs.size === 1 && m0.sides[1].v.st[1] === 1, 'gardien : les effets des blocs ne se rejouent pas après un soin');
+  casser(2); casser(1);
+  ok(r.koJoueurs.size === 3, 'gardien : chaque joueur perd un Pokémon, jamais deux fois le même joueur');
+  // pièges de roc : le Pokémon qui entre est blessé
+  const q = r.manches.find((x) => isFainted(x.act(0))), j = r.joueur(q.pid), entre = j.party.findIndex((x) => x.hp > 0), pv = j.party[entre].hp;
+  r.dans(q, () => q.doSwitch(0, entre, true));
+  ok(j.party[entre].hp < pv, 'gardien : les pièges de roc blessent le Pokémon qui entre');
+  // gardien de la Force : le message classique
+  const b = createMon(68, 25, { shiny: false }); b.moves = [{ id: mv('splash'), pp: 40 }];
+  const jj = createMon(65, 60, { shiny: false }); jj.moves = [{ id: mv('psychic'), pp: 30 }];
+  const rf = new Raid({ joueurs: [{ id: '1', nom: 'Lucas', party: [jj] }], boss: { mon: b, nom: 'Gardien' }, blocs: 3, immunite: 'speciale', boost: 2, rng: () => 0.5 });
+  rf.start(); const evs = rf.action('1', { type: 'move', idx: 0 });
+  ok(evs.some((e) => e.t === 'msg' && /^Ça n'affecte pas/.test(e.text)) && !evs.some((e) => e.t === 'msg' && /bouclier|immunis/i.test(e.text)), 'gardien de la Force : « Ça n\'affecte pas… », sans parler d\'immunité');
+}
+
+/* ---------------- un joueur à plusieurs places (mode test, duo de Karatékas) ---------------- */
+{
+  let bloque = 0, fins = {}, doublon = false;
+  for (let t = 0; t < 60; t++) {
+    const party = [[156, 30], [159, 30], [25, 30], [17, 29], [42, 29], [75, 30]].map(([sp, l]) => createMon(sp, l, { shiny: false }));
+    const reserve = [[60, 22], [72, 22], [118, 22], [129, 21], [116, 21], [54, 22]].map(([sp, l]) => createMon(sp, l, { shiny: false }));
+    const G = new Groupe({ joueurs: [{ id: '1', nom: 'Lucas', party, places: 3 }], dresseur: { nom: 'Sentinelle' }, reserve, places: 3, rng: Math.random });
+    G.start();
+    let n = 0;
+    while (G.state !== 'over' && n++ < 300) {
+      const actives = G.joueurs.filter((j) => j.etat !== 'dehors').map((j) => G.manche(j.id).sides[0].active);
+      if (new Set(actives).size !== actives.length) doublon = true;
+      const att = G.attendus(); if (!att.length) break;
+      G.action('1', { type: 'multi', actions: G.joueurs.map((j) => (G.state === 'switch' ? { type: 'switch', idx: 0 } : { type: 'move', idx: Math.floor(Math.random() * 4), cible: Math.floor(Math.random() * 3) })) });
+    }
+    if (G.state !== 'over') bloque++;
+    fins[G.result] = (fins[G.result] || 0) + 1;
+  }
+  ok(!bloque && !doublon, `seul à trois places : les combats finissent, jamais deux fois le même Pokémon en jeu (${bloque} bloqués)`);
+  ok(fins.win > 0, `seul à trois places : on peut gagner (${JSON.stringify(fins)})`);
 }
 
 /* ---------------- combat de groupe (couples de la Pyramide, sentinelles des Trois Voies) ---------------- */

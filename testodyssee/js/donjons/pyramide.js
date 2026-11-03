@@ -347,6 +347,7 @@ export default {
     rendus: 'Tes objets de soin te sont rendus.',
     arene: ['Deux portes mènent à cette arène, et deux aventuriers s\'y affrontent.', 'Le perdant redescend. Le gagnant est soigné et monte au sommet.'],
     reflet: 'Personne d\'autre n\'est venu par ces portes. Tu vas affronter le reflet d\'un autre aventurier.',
+    refletRemplace: '{nom} n\'a pas tenu jusqu\'ici : tu vas affronter son reflet à sa place.',
     sommet: ['Bienvenue au sommet.', 'Il n\'y a de place ici que pour un seul.'],
     gagneArene: 'Ta victoire est reconnue. Tes Pokémon sont soignés : monte au sommet !',
     perduArene: 'Le duel est perdu. Tu redescends au pied de la pyramide.',
