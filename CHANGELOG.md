@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 3.59 — 3 novembre 2026
+- **TestOdyssée** — Correction : « Changer de lieu » laissait l'écran tout noir. L'écran de choix s'affiche de nouveau.
+
 ## 3.58 — 2 novembre 2026
 - **TestOdyssée** — nouveau donjon : le donjon de Didier, à faire à trois.
   - Un grand panneau accueille les aventuriers, et un ascenseur à trois serrures attend au centre de la salle.

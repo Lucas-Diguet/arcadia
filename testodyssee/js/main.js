@@ -108,6 +108,8 @@ async function ecranChoix(ui, sound, lieux) {
   let prev = {}; try { prev = JSON.parse(localStorage.getItem(CHOIX_KEY) || '{}'); } catch (e) {}
   const scr = el('div', 'title-scr testody-scr', `<div class="logo"><div class="logo-main">TESTODYSSÉE</div><div class="logo-sub">le labo d'Odyssée</div></div><div class="testody-aide box">Choisis un lieu et une équipe : tu y apparais directement, comme dans le vrai jeu.<br>Rien n'est sauvegardé, ta partie d'Odyssée ne craint rien.</div>`);
   ui.root.appendChild(scr);
+  ui.closeDialog();
+  ui.fade(false, 250);
   sound.play('cave');
   try {
     for (;;) {
