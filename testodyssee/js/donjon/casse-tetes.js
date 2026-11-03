@@ -37,6 +37,25 @@ export function explorerGlace(glace, libre, x, y) {
   return dist;
 }
 
+/**
+ * plus court chemin en glissant depuis (x, y) jusqu'à une case de buts (Set de cles) : les cases où l'on s'arrête,
+ * départ compris, ou null si aucun but n'est atteignable
+ */
+export function cheminGlace(glace, libre, x, y, buts) {
+  const prec = new Map([[cle(x, y), null]]), file = [[x, y]];
+  while (file.length) {
+    const [cx, cy] = file.shift(), k = cle(cx, cy);
+    if (buts.has(k)) { const ch = []; for (let c = k; c; c = prec.get(c)) ch.unshift(c.split(',').map(Number)); return ch; }
+    for (const [dx, dy] of Object.values(DIRS)) {
+      const g = glisser(glace, libre, cx, cy, dx, dy);
+      if (!g.length) continue;
+      const [ex, ey] = g[g.length - 1], kk = cle(ex, ey);
+      if (!prec.has(kk)) { prec.set(kk, k); file.push([ex, ey]); }
+    }
+  }
+  return null;
+}
+
 /** direction après un miroir : « / » (bas-gauche vers haut-droite) ou « \ » */
 export function renvoyer(o, dx, dy) { return o === '/' ? [-dy, -dx] : [dy, dx]; }
 /**

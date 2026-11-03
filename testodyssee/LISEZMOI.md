@@ -76,6 +76,31 @@ touchent pas (comme le bureau de Pierre) ne se rejoignent que par un ascenseur.
 Les décors disponibles sont ceux d'Odyssée : la liste `deco`, `nature` et `mobilier` de `odyssee/js/data/sprites.js`.
 Une lettre inconnue arrête le labo avec un message qui donne sa ligne et sa colonne.
 
+### Le panneau d'entrée (tous les donjons)
+
+Dehors, à côté de la porte, un panneau se lit en trois pages : le nom du donjon, une phrase (`entree`) et le nombre de
+joueurs (`joueurs`). `exterieur()` renvoie sa place (`panneau: [x, y]`) ; le labo le pose.
+
+| `joueurs` | Dernière page | Le donjon |
+|---|---|---|
+| `{ mode: 'solo' }` | Donjon solo | fait pour être seul : chacun a le sien (`solo: true`) |
+| `{ mode: 'groupe', n: 3 }` | Donjon solo ou en groupe (3 joueurs recommandés) | une seule partie pour le groupe, rien ne bloque |
+| `{ mode: 'exact', n: 4 }` | Donjon à 4 joueurs | des mécaniques demandent tout le monde ; la salle de dalles de l'entrée demande alors 4 joueurs sur les dalles (`requis` d'une salle pour un autre nombre) |
+
+La même indication s'affiche dans la liste des lieux, après le niveau (`niveau`).
+
+Le menu (QUITTER LE DONJON) et le bouton de l'encadré du donjon ramènent dehors, devant la porte. Un donjon solo se
+remet à zéro ; dans un donjon de groupe, seul le joueur qui part s'en va et ses clés pas encore posées retournent à
+leur PNJ.
+
+### Le PC d'aide (seulement dans les salles où on le décide)
+
+Lettre d'objet `{ type: 'pc', decor: 'pc', salle: 's2' }`, et dans la salle `aide: { indice, simplifier, resoudre }`.
+Pour une salle de glace : l'indice trace au sol le chemin vers le prochain miroir de poche (ou la sortie) ; `simplifier`
+est une liste de cases `[x, y, '.' ou 'X']` (sol où l'on s'arrête, ou cristal) calculée à l'avance et vérifiée par les
+tests (jamais coincé, plus court) ; « Résoudre » donne les miroirs qui manquent et passe à la salle suivante. L'aide
+utilisée est notée dans le journal.
+
 ### L'extérieur
 
 `exterieur()` construit l'extérieur du donjon avec les outils d'Odyssée (`GameMap`, `building`, `prop`, `sign`, comme
@@ -147,8 +172,8 @@ Seul, niveau 35, cinq salles séparées :
 1. **Énigme** : le panneau au centre montre une horloge vue dans un miroir (3 h 40) et les trois réponses, avec une
    flèche vers leur miroir (`<-` gauche, `↑` milieu, `->` droite). Le bon miroir (gauche, 8 h 20) s'efface et
    découvre le passage ; les deux autres se brisent et font tomber l'équipe à la moitié de ses PV.
-2. **Galerie de Glace** (40 × 27) : cinq petits miroirs sur la glace. Trois sont des miroirs de poche (dans le
-   journal), deux sont piégés et envoient une copie du premier Pokémon en forme de l'équipe.
+2. **Galerie de Glace** (40 × 27) : un PC d'aide à l'entrée (indice, salle simplifiée, solution). Cinq petits miroirs sur la glace. Trois sont des miroirs de poche (dans le
+   journal), deux sont piégés et envoient une copie du premier Pokémon encore debout de l'équipe.
 3. **Grand Miroir Gelé** (40 × 27) : objets et parchemins à garder, et le robot Réflecteur (M. Mime, Qulbutoké,
    Milobellus, tous avec Voile Miroir), le plus loin à atteindre, qui donne la CT Voile Miroir.
 4. **Salle du Brasier** : rencontres à 60 % Funécire, 10 % Mélancolux, 15 % Sorbébé, 10 % Sorboul, 5 % Hexagel.

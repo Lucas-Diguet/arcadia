@@ -161,12 +161,26 @@ export function aCote(m, P, c) {
 }
 
 /**
+ * nombre de joueurs d'un donjon, tel qu'il s'affiche (panneau d'entrée, liste des lieux) :
+ * solo (fait pour être seul, chacun a le sien), groupe (n conseillés, rien ne bloque), exact (n obligatoires)
+ */
+export function texteJoueurs(def) {
+  const j = def.joueurs || { mode: 'groupe', n: 1 };
+  if (j.mode === 'solo') return 'Donjon solo';
+  if (j.mode === 'exact') return `Donjon à ${j.n} joueurs`;
+  return `Donjon solo ou en groupe (${j.n} joueurs recommandés)`;
+}
+/** le panneau d'entrée, dehors à côté de la porte : nom, phrase, nombre de joueurs (une page chacun) */
+export const textePanneau = (def) => [def.nom, def.entree, texteJoueurs(def)].filter(Boolean).join('\n');
+
+/**
  * relie le donjon à son extérieur (def.exterieur() construit une carte d'Odyssée en plein air et renvoie
  * { carte, porte: [x, y] }) : la porte de l'extérieur mène à l'arrivée S, la sortie D ramène devant la porte.
  */
 export function relierExterieur(def, m) {
   if (!def.exterieur) return null;
-  const { carte, porte } = def.exterieur();
+  const { carte, porte, panneau } = def.exterieur();
+  if (panneau) carte.sign(panneau[0], panneau[1], textePanneau(def));
   const P = m.donjon.plan, [px, py] = porte;
   carte.warp(px, py, { map: m.id, x: P.depart[0], y: P.depart[1], dir: 'up' });
   if (P.sortie) {
@@ -179,3 +193,4 @@ export function relierExterieur(def, m) {
   m.donjon.exterieur = { carte, porte };
   return carte;
 }
+

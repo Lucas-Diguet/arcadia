@@ -2,6 +2,7 @@
 // puis ceux d'Odyssée (villes, routes, grottes et lieux annexes), pour tester comme si on était dans le vrai jeu.
 import { T, walkable } from '../../odyssee/js/world/tiles.js';
 import { nearestWalkable } from '../../odyssee/js/world/mapgen.js';
+import { texteJoueurs } from './donjon/plan.js';
 
 const libre = (m, x, y) => walkable(m.get(x, y)) && ![T.DOOR, T.CAVEDOOR, T.MAT, T.STAIRS].includes(m.get(x, y)) && !m.warpAt(x, y) && !m.npcs.some((n) => n.x === x && n.y === y);
 
@@ -19,8 +20,9 @@ export function listerLieux(world, donjons) {
   for (const d of donjons) {
     // devant l'entrée quand le donjon a un extérieur, sinon directement à l'intérieur
     const m = world.maps[d.carte], E = m.donjon.exterieur;
-    if (E) out.labo.push({ nom: d.nom, note: d.niveau, map: E.carte.id, x: E.porte[0], y: E.porte[1] + 2, dir: 'up', equipe: d.equipe });
-    else { const [x, y] = m.donjon.plan.depart; out.labo.push({ nom: d.nom, note: d.niveau, map: d.carte, x, y, dir: 'up', equipe: d.equipe }); }
+    const note = [d.niveau, texteJoueurs(d)].filter(Boolean).join(' · ');
+    if (E) out.labo.push({ nom: d.nom, note, map: E.carte.id, x: E.porte[0], y: E.porte[1] + 2, dir: 'up', equipe: d.equipe });
+    else { const [x, y] = m.donjon.plan.depart; out.labo.push({ nom: d.nom, note, map: d.carte, x, y, dir: 'up', equipe: d.equipe }); }
   }
   for (const t of Object.values(world.towns)) {
     const [x, y] = t.centerDoor ? pres(W, t.centerDoor[0], t.centerDoor[1] + 1) : pres(W, t.x + (t.w >> 1), t.y + (t.h >> 1));

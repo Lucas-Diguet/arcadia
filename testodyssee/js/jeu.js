@@ -30,7 +30,7 @@ export class TestGame extends Game {
     this.busy = true;
     const opts = [['ÉQUIPE', 'party'], ['SAC', 'bag'], ['POKéDEX', 'dex']];
     if (this.canField('vol')) opts.push(['VOL', 'fly']);
-    if (this.donjons?.dansUnDonjon()) opts.push(['JOURNAL', 'journal']);
+    if (this.donjons?.dansUnDonjon()) opts.push(['JOURNAL', 'journal'], ['QUITTER LE DONJON', 'quitter']);
     if (this.donjons?.dansLeReflet()) opts.push(['REVENIR AU DÉBUT DE LA SALLE', 'debut']);
     opts.push(['CARTE', 'map'], ['CHANGER DE LIEU', 'lieu'], ['OPTIONS', 'opt'], ['FERMER', 'close']);
     let idx = Math.min(this._menuIdx || 0, opts.length - 1);
@@ -46,6 +46,7 @@ export class TestGame extends Game {
         else if (k === 'fly') { if (this.player.surf || !this.mapObj.outdoor) { await this.ui.say('On ne peut pas s\'envoler d\'ici.'); continue; } if (await this.fly()) break; }
         else if (k === 'map') await mapScreen(this);
         else if (k === 'journal') await this.donjons.journal();
+        else if (k === 'quitter') { if (await this.donjons.quitter()) break; }
         else if (k === 'opt') await optionsScreen(this);
         else if (k === 'debut') { if (await this.ui.yesNo('Revenir à l\'entrée de la salle ? Copycat reprendra sa place.')) { await this.donjons.recommencerSalle(); break; } }
         else if (k === 'lieu') { this.onChangerLieu?.(); break; }

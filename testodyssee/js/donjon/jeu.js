@@ -9,7 +9,7 @@
 import { createMon, healFull } from '../../../odyssee/js/core/mon.js';
 import { itemName } from '../../../odyssee/js/core/items.js';
 import { el, esc } from '../../../odyssee/js/ui/ui.js';
-import { nouvelEtat, appliquer, battu, prisPar, requisDalles } from './etat.js';
+import { nouvelEtat, appliquer, battu, prisPar, requisSalle } from './etat.js';
 import { construireCarte, construireSalles, relierExterieur, fermer, ouvrir, decorPorte, passageSuivant } from './plan.js';
 import { Mecaniques } from './mecaniques.js';
 import { Miroirs } from './miroirs.js';
@@ -41,6 +41,11 @@ export class Donjons {
     }
     this.panel = el('div', 'dj-panel box'); this.panel.style.display = 'none';
     game.ui.root.appendChild(this.panel);
+    // bouton « Quitter le donjon » de l'encadré
+    this.panel.addEventListener('click', (ev) => {
+      if (!ev.target.closest('.dj-quitter') || !game.state || game.busy || game.bv.alive) return;
+      game.busy = true; this.quitter().catch((e) => console.error(e)).finally(() => { game.busy = false; });
+    });
     // les messages du donjon ne passent pas par la liaison d'Odyssée (elle les mettrait de côté)
     const link = game.link;
     if (link) { const orig = link.receive.bind(link); link.receive = (from, m) => { if (typeof m?.t === 'string' && m.t.startsWith('dj')) return; orig(from, m); }; }
@@ -192,6 +197,17 @@ export class Donjons {
     if (this.miroir && !this.hote && !ids.has(String(this.miroirHote))) this.miroir.recevoir({ parti: true });
     this.wasHost = this.hote;
   }
+  /** quitter le donjon (menu, ou bouton de l'encadré) : retour dehors, devant la porte */
+  async quitter() {
+    const g = this.game, d = [...this.defs.values()].find((q) => this.estDans(q));
+    if (!d) return false;
+    const q = d.solo ? 'Quitter le donjon ? Il sera remis à zéro.' : this.presents(d) > 1 ? 'Quitter le donjon ? Les autres pourront continuer sans toi.' : 'Quitter le donjon ?';
+    if (!(await g.ui.yesNo(q))) return false;
+    const dehors = g.world.maps[d.carte].outside;
+    if (!dehors) { this.onQuitter?.(); return true; }
+    await g.warp({ map: dehors.map, x: dehors.x, y: dehors.y, dir: 'down' }, 'exit');
+    return true;
+  }
   dansUnDonjon() { return [...this.defs.values()].some((q) => this.estDans(q)); }
   /** on quitte un donjon (autre lieu, changement de lieu) : les objets de quête disparaissent */
   sortir(d) {
@@ -231,23 +247,25 @@ export class Donjons {
   verifierDalles(d) {
     const e = this.etats[d.id], s = d.salles.find((q) => q.type === 'dalles');
     if (!s || e.salles[s.id].faite) return;
-    const g = this.game, P = g.world.maps[d.carte].donjon.plan, sur = new Set(P.dalles.map(([x, y]) => x + ',' + y));
+    // salles séparées : les dalles sont sur la carte de leur salle
+    const g = this.game, carte = s.carte || d.carte, P = g.world.maps[carte].donjon.plan, sur = new Set(P.dalles.map(([x, y]) => x + ',' + y));
     let n = 0;
-    if (g.state && g.mapObj.id === d.carte && !g.player.move && sur.has(g.player.x + ',' + g.player.y)) n++;
-    for (const o of g.link?.others.values() || []) if (o.map === d.carte && sur.has(o.x + ',' + o.y)) n++;
-    this.traiter(d.id, this.moi, { a: 'dalles', salle: s.id, n, requis: requisDalles(P.dalles.length, this.presents(d)) });
+    if (g.state && g.mapObj.id === carte && !g.player.move && sur.has(g.player.x + ',' + g.player.y)) n++;
+    for (const o of g.link?.others.values() || []) if (o.map === carte && sur.has(o.x + ',' + o.y)) n++;
+    this.traiter(d.id, this.moi, { a: 'dalles', salle: s.id, n, requis: requisSalle(d, s, P.dalles.length, this.presents(d)) });
   }
 
   majPanneau() {
     const g = this.game, d = [...this.defs.values()].find((q) => this.estDans(q));
     if (!d) { this.panel.style.display = 'none'; return; }
-    const e = this.etats[d.id], P = g.world.maps[d.carte].donjon.plan, lignes = [];
+    const e = this.etats[d.id], lignes = [];
     for (const s of d.salles) {
       const S = e.salles[s.id];
       let txt = '';
       if (s.type === 'accueil') txt = S.faite ? 'ouverte' : 'parle au gardien';
       else if (s.type === 'combat') txt = `${S.battus.length}/${s.pnj.length} vaincus`;
-      else if (s.type === 'dalles') txt = S.faite ? 'faite' : `dalles ${S.dalles}/${requisDalles(P.dalles.length, Math.max(1, this.presents(d)))}`;
+      const P = g.world.maps[s.carte || d.carte].donjon.plan;
+      if (s.type === 'dalles') txt = S.faite ? 'faite' : `dalles ${S.dalles}/${requisSalle(d, s, P.dalles.length, Math.max(1, this.presents(d)))}`;
       else if (s.type === 'boss') txt = e.boss ? `${e.boss.pv}/${e.boss.max} PV` : '—';
       else if (s.type === 'serrures') txt = `serrures ${Object.values(S.cles).filter((c) => c.mise).length}/${s.pnj.length}`;
       else if (s.type === 'raid') txt = S.combat ? 'combat en cours' : `prêts ${S.prets.length}`;
@@ -258,7 +276,7 @@ export class Donjons {
       if (s.type === 'libre') { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
     }
-    const html = `<div class="dj-t">${esc(d.nom)}</div>${lignes.join('')}`;
+    const html = `<div class="dj-t">${esc(d.nom)}</div>${lignes.join('')}<button type="button" class="dj-quitter" tabindex="-1">Quitter le donjon</button>`;
     if (html !== this.panelHtml) { this.panelHtml = html; this.panel.innerHTML = html; }
     this.panel.style.display = '';
   }

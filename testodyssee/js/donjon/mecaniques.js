@@ -101,6 +101,8 @@ export const Mecaniques = {
     const quetes = (d.journal || []).map((q) => {
       const S = e.salles[q.salle], s = d.salles.find((x) => x.id === q.salle);
       const avance = s.type === 'serrures' ? ` (${serrures(d, e)}/${s.pnj.length} serrures)` : s.type === 'lumiere' ? ` (${Math.min(5, S.donnees.feux || 0)}/5 dans le brasier)` : '';
+      const propre = this.queteJournal?.(d, q);
+      if (propre) return { label: q.nom, right: propre.faite ? '✔' : '…', q, txt: propre.txt };
       return { label: q.nom, right: S.faite ? '✔' : '…', q, txt: S.faite ? 'Terminée.' : q.but + avance };
     });
     const objets = [...clesDe(d, e, this.moi).map((k) => ({ label: d.pnj[k].cle, right: '×1', txt: 'Une clé de l\'ascenseur. Elle disparaît si tu quittes le donjon.' })), ...(this.objetsJournal?.(d) || [])];

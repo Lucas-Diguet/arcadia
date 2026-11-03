@@ -26,16 +26,18 @@ function exterieur() {
   m.prop('lanterne', b.doorX - 1, 10); m.prop('lanterne', b.doorX + 1, 10); m.prop('lanterne', b.doorX - 1, 15); m.prop('lanterne', b.doorX + 1, 15);
   for (const [x, y] of [[6, 8], [25, 9], [6, 15], [25, 15], [9, 21], [23, 21]]) m.prop('deadtree', x, y);
   m.prop('gargouille', b.x - 1, b.doorY); m.prop('gargouille', b.x + b.w, b.doorY);
-  m.sign(b.doorX + 2, 19, 'CIMETIÈRE DES MURMURES\nLe fossoyeur Anselme veille sur la crypte.');
   m.zone(0, 0, 31, 25, { name: 'Cimetière des Murmures', music: 'mystic' });
-  return { carte: m, porte: [b.doorX, b.doorY] };
+  return { carte: m, porte: [b.doorX, b.doorY], panneau: [b.doorX + 2, 19] };
 }
 
 export default {
   id: 'crypte',
   carte: 'labo:crypte',
   nom: 'Crypte des Murmures',
-  niveau: 'niv. 20 à 30, de 1 à 4 joueurs',
+  niveau: 'niv. 20 à 30',
+  // panneau d'entrée : nom, phrase, nombre de joueurs (plan.js, texteJoueurs)
+  entree: 'On y descend à plusieurs. On en remonte... parfois.',
+  joueurs: { mode: 'groupe', n: 3 },
   exterieur,
   musique: 'tower',
   plan: [

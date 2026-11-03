@@ -8,13 +8,13 @@ import { T, walkable, DIRS } from '../../../odyssee/js/world/tiles.js';
 import { loadImg } from '../../../odyssee/js/assets.js';
 import { el } from '../../../odyssee/js/ui/ui.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
-import { glisser, faisceau, refleter, cle } from './casse-tetes.js';
+import { glisser, faisceau, refleter, cle, cheminGlace } from './casse-tetes.js';
 import { ouvrir } from './plan.js';
 import { IMAGES } from '../contenu.js';
 import { dessinerFaisceaux } from '../rendu.js';
 
 const estMiroirs = (d) => d.salles.some((s) => s.type === 'reflet' || s.type === 'lumiere');
-const TYPES = new Set(['enigme', 'miroirMural', 'miroirPoche', 'robot', 'brasier', 'soleil', 'miroirFixe', 'socle', 'plaque']);
+const TYPES = new Set(['enigme', 'miroirMural', 'miroirPoche', 'robot', 'brasier', 'soleil', 'miroirFixe', 'socle', 'plaque', 'pc']);
 const idAttaque = (key) => Object.values(MOVES).find((m) => m.key === key).id;
 const copieSoignee = (party) => party.map((m) => { const c = JSON.parse(JSON.stringify(m)); healFull(c); delete c._ko; return c; });
 
@@ -27,6 +27,8 @@ export const Miroirs = {
       if (!TYPES.has(o.type)) continue;
       for (const [x, y] of l) m.object(x, y, { use: () => this.objetMiroirs(d, c, x, y) });
     }
+    // la glace d'origine, pour défaire une simplification quand le donjon recommence
+    if (m.glace) m.glaceOrigine = new Set(m.glace);
   },
   dm(d, salle) { return this.etats[d.id].salles[salle].donnees || {}; },
   salleDe(d, type) { return d.salles.find((s) => s.type === type); },
@@ -63,8 +65,19 @@ export const Miroirs = {
       }
     }
     }
+    // salles simplifiées par le PC : cases où l'on s'arrête en plus (sol ou cristal)
+    for (const s of d.salles) {
+      if (!s.aide?.simplifier || !s.carte) continue;
+      const m = this.game.world.maps[s.carte], on = !!this.dm(d, s.id).simple, ici = this.game.mapObj === m;
+      for (const [px, py, c] of s.aide.simplifier) {
+        const x = px + 1, y = py + 1, k = cle(x, y);
+        if (c === 'X') this.decor(m, x, y, on ? 'cristal' : null);
+        const glace = !on && m.glaceOrigine.has(k);
+        if (glace !== m.glace.has(k)) { if (glace) m.glace.add(k); else m.glace.delete(k); if (ici) this.game.view.rebuildAt(x, y); }
+      }
+    }
     // le reflet revient à sa place quand le donjon recommence
-    if (!this.reflet || this.reflet.run !== this.etats[d.id].run) this.placerReflet(d);
+    if (!this.reflet || this.reflet.run !== this.etats[d.id].run) { this.placerReflet(d); this.indice = null; }
     this.lumiereVue = null;
   },
 
@@ -81,6 +94,7 @@ export const Miroirs = {
       case 'miroirFixe': return this.miroirFixe(d, x, y);
       case 'socle': return this.socle(d, x, y);
       case 'plaque': return this.plaque(d);
+      case 'pc': return this.pcAide(d, d.salles.find((s) => s.id === o.salle));
     }
   },
 
@@ -115,6 +129,7 @@ export const Miroirs = {
     if (!piege) {
       g.sound.sfx('item');
       await this.maj(d, 's2', { pris: { ...(D2.pris || {}), [k]: 'poche' } });
+      this.effacerIndice();
       await ui.say(`${g.state.name} ramasse un Miroir de poche !\nIl est rangé dans le journal du donjon. (${this.miroirsEnPoche(d)} en poche)`);
       return;
     }
@@ -308,6 +323,68 @@ export const Miroirs = {
     await g.warp({ map: m.id, x, y, dir: 'up' }, 'exit');
   },
 
+  /* ---------------- PC d'aide (salles à casse-tête, posé quand on le demande) ---------------- */
+  async pcAide(d, s) {
+    const g = this.game, ui = g.ui, A = s.aide || {}, D = this.dm(d, s.id);
+    const opts = [];
+    if (A.indice) opts.push(['Un indice', 'indice']);
+    if (A.simplifier) opts.push([D.simple ? 'Remettre la salle comme avant' : 'Simplifier la salle', 'simplifier']);
+    if (A.resoudre) opts.push(['Résoudre et passer à la salle suivante', 'resoudre']);
+    opts.push(['Rien', 'rien']);
+    const r = opts[await ui.ask('Un vieux PC. L\'écran affiche : « Besoin d\'aide pour cette salle ? »', opts.map(([l]) => l))][1];
+    if (r === 'rien') return;
+    const aides = [...(D.aides || [])];
+    if (r === 'indice') {
+      const ch = this.indiceGlace(d, s);
+      if (!ch) { await ui.say('« Plus rien à trouver ici. Le passage est en haut de la salle. »'); return; }
+      aides.push('indice');
+      await this.maj(d, s.id, { aides });
+      g.sound.sfx('pc');
+      await ui.say(ch.but === 'sortie' ? '« Tu as tous les miroirs de poche. Voici le chemin vers la sortie. »' : '« Voici le chemin vers le miroir de poche le plus proche. Il reste tracé au sol jusqu\'à ce que tu le ramasses. »');
+      return;
+    }
+    if (r === 'simplifier') {
+      const on = !D.simple;
+      if (on) aides.push('simplifier');
+      await this.maj(d, s.id, { simple: on, aides });
+      this.effacerIndice();
+      g.sound.sfx('pc'); g.view.shake = 0.15;
+      await ui.say(on ? '« La salle a été simplifiée : de nouvelles prises sont apparues sur la glace. »' : '« La salle est revenue comme avant. »');
+      return;
+    }
+    if (!(await ui.yesNo('Passer directement à la salle suivante ? Le PC te donnera les miroirs de poche qui te manquent.'))) return;
+    const m = this.carteDe(d, s), P = m.donjon.plan, pris = { ...(D.pris || {}) };
+    for (const [c, l] of Object.entries(P.objets)) if (d.objets[c].type === 'miroirPoche' && !d.objets[c].piege) for (const [x, y] of l) if (!pris[cle(x, y)]) pris[cle(x, y)] = 'poche';
+    aides.push('résolu');
+    await this.maj(d, s.id, { pris, aides });
+    this.effacerIndice();
+    g.sound.sfx('item');
+    await ui.say(`« Salle résolue. » ${g.state.name} a maintenant ${this.miroirsEnPoche(d)} miroirs de poche.`);
+    const w = m.donjon.versSuivante;
+    if (w) await g.warp(w, 'exit');
+  },
+  /** chemin en glissant vers le miroir de poche le plus proche (ou la sortie), tracé au sol */
+  indiceGlace(d, s) {
+    const g = this.game, m = this.carteDe(d, s), P = m.donjon.plan, D = this.dm(d, s.id), p = g.player;
+    const buts = new Set();
+    for (const [c, l] of Object.entries(P.objets)) if (d.objets[c].type === 'miroirPoche' && !d.objets[c].piege) for (const [x, y] of l) if (!D.pris?.[cle(x, y)]) for (const [dx, dy] of Object.values(DIRS)) buts.add(cle(x + dx, y + dy));
+    const but = buts.size ? 'miroir' : 'sortie';
+    if (!buts.size) { if (!P.suivante) return null; buts.add(cle(...P.suivante)); }
+    const libre = (x, y) => m.in(x, y) && walkable(m.get(x, y));
+    const ch = cheminGlace(m.glace, libre, p.x, p.y, buts);
+    if (!ch) return null;
+    this.indice = { carte: m.id, traits: [ch], dessine: false };
+    return { but, ch };
+  },
+  effacerIndice() { if (this.indice) { this.indice = null; if (this.game.view.__faisceaux) dessinerFaisceaux(this.game.view, []); } },
+  /** journal : la quête des miroirs de poche (et l'aide reçue du PC) */
+  queteJournal(d, q) {
+    if (q.id !== 'poche') return null;
+    const D = this.dm(d, q.salle), n = Object.values(D.pris || {}).filter((v) => v === 'poche').length;
+    const aides = D.aides || [], note = aides.length ? `\nAide du PC : ${[...new Set(aides)].join(', ')}.` : '';
+    return { faite: n >= 3, txt: (n >= 3 ? 'Terminée.' : `${q.but} (${n}/3)`) + note };
+  },
+
   /* ---------------- branchements (jeu.js du labo et classe Donjons) ---------------- */
   /** le donjon des miroirs où se trouve le joueur, s'il y est */
   miroirsIci() { for (const d of this.defs.values()) if (estMiroirs(d) && this.estDans(d)) return d; return null; },
@@ -317,6 +394,8 @@ export const Miroirs = {
     const vue = d && g.mapObj?.salle ? d.salles.find((s) => s.id === g.mapObj.salle)?.vue || 1 : 1;
     if (g.state && vue !== this.vueVoulue) { this.vueVoulue = vue; g.onVue?.(vue); }
     if (!d) { if (g.view.actors.has('copycat')) g.view.removeActor('copycat'); return; }
+    // indice du PC : tracé au sol tant qu'on est dans sa salle
+    if (this.indice && g.mapObj.id === this.indice.carte && (!this.indice.dessine || g.view.__faisceauxRoot !== g.view.root)) { dessinerFaisceaux(g.view, this.indice.traits); this.indice.dessine = true; }
     if (this.salleDe(d, 'lumiere')) this.dessinerLumiere(d);
     if (this.salleDe(d, 'reflet')) this.dessinerReflet(dt);
   },

@@ -23,16 +23,17 @@ function exterieur() {
   for (const [x, y] of [[9, 12], [22, 12], [9, 18], [22, 18]]) m.prop('cristal', x, y);
   for (const [x, y] of [[7, 7], [24, 7], [6, 16], [25, 16]]) m.prop('snowpine', x, y);
   m.prop('lanterne', b.doorX - 2, b.doorY + 2); m.prop('lanterne', b.doorX + 2, b.doorY + 2);
-  m.sign(b.doorX + 2, 19, 'DONJON DES MIROIRS\nCe que tu vois n\'est pas toujours ce qui est.');
   m.zone(0, 0, 31, 25, { name: 'Parvis des Miroirs', music: 'snow', theme: 'snow' });
-  return { carte: m, porte: [b.doorX, b.doorY] };
+  return { carte: m, porte: [b.doorX, b.doorY], panneau: [b.doorX + 2, 19] };
 }
 
 export default {
   id: 'miroirs',
   carte: 'labo:miroirs',
   nom: 'Donjon des Miroirs',
-  niveau: 'niv. 35, en solo',
+  niveau: 'niv. 35',
+  entree: 'Ce que tu vois n\'est pas toujours ce qui est. Et ce qui te regarde n\'est pas toujours toi...',
+  joueurs: { mode: 'solo' },
   solo: true,
   style: 'clair',
   musique: 'mystic',
@@ -60,6 +61,7 @@ export default {
     o: { type: 'socle', decor: 'socle' },
     E: { type: 'plaque', decor: 'stele' },
     K: { type: 'copycat', sol: true },
+    c: { type: 'pc', decor: 'pc', salle: 's2' },
   },
   // une carte par salle : on passe de l'une à l'autre par N (en haut) et on revient par D (en bas)
   salles: [
@@ -75,7 +77,10 @@ export default {
       '#####S#####',
       '#####D#####',
     ] },
-    { id: 's2', nom: 'Galerie de Glace', type: 'libre', plan: [
+    { id: 's2', nom: 'Galerie de Glace', type: 'libre',
+      // PC d'aide à l'entrée : indice (chemin vers le prochain miroir de poche), salle simplifiée, solution
+      aide: { indice: true, simplifier: [[20, 13, 'X'], [35, 5, '.'], [20, 14, 'X'], [18, 25, 'X'], [18, 5, 'X'], [21, 24, 'X']], resoudre: true },
+      plan: [
       '#####################N####################',
       '#iXXiiiXXiiiiiiiiiiiiiiXiXiiXiXiXiiiiXiii#',
       '#iiiiiiiiXiiiiiiiiiiiiiiiXiiiiiXiiiiiiiii#',
@@ -105,7 +110,7 @@ export default {
       '#iiiiiiiiXiiiiiXii.XXiiiiii.XiiXXiiiXiiiX#',
       '#iiiiiiXiiXXXiiiiiXiiiiiiiiiXiiiiiiiiiiXi#',
       '#........................................#',
-      '#####################S####################',
+      '#####################Sc###################',
       '#####################D####################',
     ] },
     { id: 's3', nom: 'Grand Miroir Gelé', type: 'libre', plan: [
@@ -191,6 +196,7 @@ export default {
   ],
   journal: [
     { id: 'enigme', nom: 'L\'énigme des miroirs', salle: 's1', but: 'Lis le panneau et touche le miroir qui porte la bonne réponse.' },
+    { id: 'poche', nom: 'Les miroirs de poche', salle: 's2', but: 'Trois miroirs de poche sont posés sur la glace de la Galerie. Attention aux miroirs piégés.' },
     { id: 'brasier', nom: 'Rallumer le brasier', salle: 's4', but: 'Les Pokémon de Feu laissent des Feux Follets. Il en faut 5 dans le brasier.' },
     { id: 'reflet', nom: 'Affronter son reflet', salle: 's5', but: 'Copycat refait tes pas en miroir. Arrive à côté de lui.' },
   ],

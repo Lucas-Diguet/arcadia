@@ -1,10 +1,10 @@
 // tools/test-testodyssee.mjs — TestOdyssée : plans des donjons et règles partagées du groupe.
 // node tools/test-testodyssee.mjs
 import { DONJONS } from '../testodyssee/js/donjons/index.js';
-import { construireCarte, construireSalles, passageSuivant, lirePlan, regionDe, ouvrir, aCote, relierExterieur } from '../testodyssee/js/donjon/plan.js';
+import { construireCarte, construireSalles, passageSuivant, lirePlan, regionDe, ouvrir, aCote, relierExterieur, texteJoueurs } from '../testodyssee/js/donjon/plan.js';
 import { installerContenu } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
-import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, clesDe, serrures } from '../testodyssee/js/donjon/etat.js';
+import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures } from '../testodyssee/js/donjon/etat.js';
 import { createMon } from '../odyssee/js/core/mon.js';
 import { SPECIES } from '../odyssee/js/data/species.js';
 import { ITEMS } from '../odyssee/js/core/items.js';
@@ -12,7 +12,7 @@ import { buildWorld } from '../odyssee/js/world/region.js';
 import { listerLieux } from '../testodyssee/js/lieux.js';
 import { EQUIPES } from '../testodyssee/js/equipes.js';
 import { walkable, T } from '../odyssee/js/world/tiles.js';
-import { cle, explorerGlace, faisceau, resoudreReflet } from '../testodyssee/js/donjon/casse-tetes.js';
+import { cle, explorerGlace, faisceau, resoudreReflet, cheminGlace } from '../testodyssee/js/donjon/casse-tetes.js';
 
 installerContenu();
 let fails = 0, checks = 0;
@@ -110,6 +110,33 @@ for (const d of DONJONS) {
     ok(coince === 0, `miroirs : ${id}, on ne reste jamais coincé sur la glace (${coince})`);
     ok(sortieMin >= 15 && objMin >= mini, `miroirs : ${id}, assez difficile (sortie en ${sortieMin} glissades, objet le plus proche en ${objMin})`);
   }
+  // PC d'aide de la Galerie : à l'entrée, la salle simplifiée reste sans piège et devient plus courte
+  {
+    const m = carte('s2'), P = m.donjon.plan, S2 = d.salles.find((s) => s.id === 's2'), [pcx, pcy] = P.objets.c[0];
+    ok(Math.abs(pcx - P.depart[0]) <= 2 && Math.abs(pcy - P.depart[1]) <= 1 && walkable(m.get(pcx, pcy - 1)), 'miroirs : le PC est à l\'entrée de la Galerie');
+    const cases = ['p', 'q'].flatMap((c) => P.objets[c]), reels = P.objets.p;
+    const mesure = (glace, bloc) => {
+      let pire = 0, coince = 0, sortie = 0;
+      for (let mask = 0; mask < 1 << cases.length; mask++) {
+        const pris = new Set(cases.filter((_, i) => mask >> i & 1).map(([x, y]) => cle(x, y)));
+        const objets = new Set(cases.map(([x, y]) => cle(x, y)));
+        const libre = (x, y) => m.in(x, y) && !bloc.has(cle(x, y)) && (pris.has(cle(x, y)) || (walkable(m.get(x, y)) && !objets.has(cle(x, y))));
+        const vu = explorerGlace(glace, libre, ...P.depart);
+        if (!vu.has(cle(...P.suivante))) return null;
+        if (mask === 0) { sortie = vu.get(cle(...P.suivante)); for (const [x, y] of reels) pire = Math.max(pire, Math.min(...[[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => vu.get(cle(x + dx, y + dy)) ?? Infinity))); }
+        for (const k of vu.keys()) { if (k === cle(...P.suivante)) continue; const [x, y] = k.split(',').map(Number); if (!explorerGlace(glace, libre, x, y).has(cle(...P.depart))) coince++; }
+      }
+      return { pire, coince, sortie };
+    };
+    const avant = mesure(m.glace, new Set()), glace = new Set(m.glace), bloc = new Set();
+    for (const [x, y, c] of S2.aide.simplifier) { glace.delete(cle(x + 1, y + 1)); if (c === 'X') bloc.add(cle(x + 1, y + 1)); }
+    const apres = mesure(glace, bloc);
+    ok(apres && apres.coince === 0, 'miroirs : Galerie simplifiée, on ne reste jamais coincé');
+    ok(apres && apres.sortie < avant.sortie && apres.pire < avant.pire, `miroirs : Galerie simplifiée plus courte (sortie ${avant.sortie} → ${apres?.sortie}, miroir le plus loin ${avant.pire} → ${apres?.pire})`);
+    const buts = new Set(reels.flatMap(([x, y]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => cle(x + dx, y + dy))));
+    const ch = cheminGlace(m.glace, (x, y) => m.in(x, y) && walkable(m.get(x, y)), pcx, pcy - 1, buts);
+    ok(ch && ch.length > 1, `miroirs : l'indice du PC trouve un chemin vers un miroir de poche (${ch ? ch.length - 1 : 0} glissades)`);
+  }
   // salle du brasier : rien d'éclairé au départ ; une seule solution, avec les 3 miroirs de poche et au moins 4 miroirs tournés
   {
     const m = carte('s4'), P = m.donjon.plan;
@@ -151,6 +178,20 @@ for (const d of DONJONS) {
   }
 }
 
+/* ---------------- panneau d'entrée (standard de tous les donjons) ---------------- */
+ok(texteJoueurs({ joueurs: { mode: 'solo' } }) === 'Donjon solo' && texteJoueurs({ joueurs: { mode: 'exact', n: 4 } }) === 'Donjon à 4 joueurs' && /solo ou en groupe \(3 joueurs recommandés\)/.test(texteJoueurs({ joueurs: { mode: 'groupe', n: 3 } })), 'panneau : les trois façons de dire le nombre de joueurs');
+for (const d of DONJONS) {
+  ok(d.entree && d.joueurs && ['solo', 'groupe', 'exact'].includes(d.joueurs.mode), `${d.id} : phrase et nombre de joueurs du panneau d'entrée`);
+  const m = d.plan ? construireCarte(d) : construireSalles(d)[0], dehors = relierExterieur(d, m);
+  const [px, py] = dehors ? m.donjon.exterieur.porte : [0, 0];
+  const panneaux = dehors ? [...dehors.signs].filter(([, t]) => t.startsWith(d.nom + '\n')) : [];
+  ok(panneaux.length === 1 && panneaux[0][1].split('\n').length === 3 && panneaux[0][1].split('\n')[2] === texteJoueurs(d), `${d.id} : un panneau d'entrée de trois pages dehors`);
+  if (panneaux.length) {
+    const [x, y] = panneaux[0][0].split(',').map(Number), vu = dehors.reach(px, py + 2);
+    ok(Math.abs(x - px) <= 4 && Math.abs(y - py) <= 16 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vu[(y + dy) * dehors.w + x + dx]), `${d.id} : le panneau est près de la porte et on peut le lire`);
+  }
+}
+
 let erreur = null;
 try { lirePlan({ id: 'x', plan: ['#Z#', '#S#'], pnj: {}, decor: {} }); } catch (e) { erreur = e.message; }
 ok(/lettre inconnue/.test(erreur || ''), 'une lettre inconnue du plan est signalée');
@@ -179,6 +220,7 @@ ok(appliquer(d, e, A, { a: 'prendre', pnj: 'c' }).ok && appliquer(d, e, A, { a: 
 ok(ouverte(d, e, 's2') && !ouverte(d, e, 's3'), 'la salle 2 s\'ouvre, pas la 3');
 for (const k of ['d', 'e', 'f']) { appliquer(d, e, B, { a: 'prendre', pnj: k }); appliquer(d, e, B, { a: 'gagne', pnj: k }); }
 ok(e.salles.s2.faite, 'salle 2 terminée');
+ok(requisSalle({ joueurs: { mode: 'exact', n: 4 } }, {}, 4, 1) === 4 && requisSalle({ joueurs: { mode: 'exact', n: 4 } }, {}, 4, 6) === 4 && requisSalle({}, { requis: 2 }, 4, 1) === 2 && requisSalle({ joueurs: { mode: 'groupe', n: 3 } }, {}, 3, 2) === 2, 'dalles : nombre fixe pour un donjon à n joueurs');
 ok(requisDalles(3, 1) === 1 && requisDalles(3, 2) === 2 && requisDalles(3, 5) === 3 && requisDalles(3, 0) === 1, 'dalles requises selon le groupe');
 appliquer(d, e, A, { a: 'dalles', n: 1, requis: 2 });
 ok(!e.salles.s3.faite && e.salles.s3.dalles === 1, 'une dalle sur deux : rien ne s\'ouvre');

@@ -159,6 +159,15 @@ export function appliquer(def, e, qui, m, o = {}) {
 
 /** nombre de joueurs requis sur les dalles */
 export const requisDalles = (nbDalles, presents) => Math.max(1, Math.min(nbDalles, presents));
+/**
+ * joueurs à tenir sur les dalles d'une salle : salle.requis s'il est donné, le nombre du donjon pour un donjon
+ * « à n joueurs » (la porte ne s'ouvre qu'à n), sinon autant que de joueurs présents
+ */
+export function requisSalle(def, salle, nbDalles, presents) {
+  if (salle.requis) return salle.requis;
+  if (def.joueurs?.mode === 'exact') return def.joueurs.n;
+  return requisDalles(nbDalles, presents);
+}
 
 /** clés qu'un joueur a sur lui (pas encore posées) */
 export const clesDe = (def, e, qui) => {

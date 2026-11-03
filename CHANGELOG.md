@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 3.85 — 3 novembre 2026
+- **TestOdyssée** — Devant chaque donjon, un panneau donne son nom, une phrase d'ambiance et pour combien de joueurs il est fait : solo, solo ou en groupe, ou à nombre fixe.
+- **TestOdyssée** — Tu peux quitter un donjon à tout moment, par le menu ou par le bouton de l'encadré du donjon : tu ressors devant la porte.
+- **TestOdyssée** — Donjon des Miroirs : un PC à l'entrée de la Galerie de Glace donne un indice, simplifie la salle ou la résout pour toi. L'aide reçue est notée dans le journal.
+
 ## 3.84 — 3 novembre 2026
 - **TestOdyssée** — nouveau jeu : le labo d'Odyssée. Choisis un lieu et une équipe prête, et tu y apparais directement, seul ou à plusieurs.
   - Tous les lieux d'Odyssée sont proposés (villes, routes, grottes, lieux annexes), en plus des donjons en test.

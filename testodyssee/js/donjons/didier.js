@@ -28,16 +28,17 @@ function exterieur() {
   m.prop('fontaine', b.doorX, 14);
   for (const [x, y] of [[9, 11], [24, 11], [9, 18], [24, 18]]) m.prop('lamp', x, y);
   m.prop('banc', 12, 16); m.prop('banc', 21, 16);
-  m.sign(b.doorX + 3, 20, 'DONJON DE DIDIER\nSalle des marchés au sous-sol. Tenue correcte exigée.');
   m.zone(0, 0, 33, 25, { name: 'Cour de Didier', music: 'city' });
-  return { carte: m, porte: [b.doorX, b.doorY] };
+  return { carte: m, porte: [b.doorX, b.doorY], panneau: [b.doorX + 3, 20] };
 }
 
 export default {
   id: 'didier',
   carte: 'labo:didier',
   nom: 'Donjon de Didier',
-  niveau: 'niv. 45, de 1 à 3 joueurs',
+  niveau: 'niv. 45',
+  entree: 'Ici, une mauvaise réponse coûte plus cher qu\'une mauvaise position.',
+  joueurs: { mode: 'groupe', n: 3 },
   exterieur,
   musique: 'tower',
   equipe: 'didier',
