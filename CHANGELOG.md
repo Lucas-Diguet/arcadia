@@ -1,5 +1,9 @@
 # Journal des versions — Arcadia
 
+## 3.93 — 3 novembre 2026
+- **TestOdyssée** — Les dalles de la Pyramide de l'Ascension sont de nouveau visibles sur le sol de sable.
+- **TestOdyssée** — En mode test, l'encadré du donjon indique qu'une seule dalle suffit.
+
 ## 3.92 — 3 novembre 2026
 - **TestOdyssée** — Pyramide de l'Ascension : l'escalier des étages mène bien à la salle suivante quand on marche dessus.
 

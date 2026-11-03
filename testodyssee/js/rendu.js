@@ -17,7 +17,7 @@ export function brancherRendu() {
     const m = this.map, A = this.A.cells;
     if (m.glace?.has(x + ',' + y)) return { c: A[CLAIR.glace] };
     const st = STYLES[m.style];
-    if (st && SOLS.has(m.get(x, y)) && this.decoAt.get(x + ',' + y)?.k !== 'exitlight') { const c = cellule(A, st.sol); if (c) return { c }; }
+    if (st && SOLS.has(m.get(x, y)) && !['exitlight', 'carpet'].includes(this.decoAt.get(x + ',' + y)?.k)) { const c = cellule(A, st.sol); if (c) return { c }; }
     return sol.call(this, x, y);
   };
   // murs de grotte dessinés avec les textures claires, le temps de construire le morceau de carte

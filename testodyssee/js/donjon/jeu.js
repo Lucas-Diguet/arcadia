@@ -298,7 +298,7 @@ export class Donjons {
       if (s.type === 'accueil') txt = S.faite ? 'ouverte' : 'parle au gardien';
       else if (s.type === 'combat') txt = `${S.battus.length}/${s.pnj.length} vaincus`;
       const P = g.world.maps[s.carte || d.carte].donjon.plan;
-      if (s.type === 'dalles') txt = S.faite ? 'faite' : `dalles ${S.dalles}/${requisSalle(d, s, P.dalles.length, Math.max(1, this.presents(d)))}`;
+      if (s.type === 'dalles') txt = S.faite ? 'faite' : `dalles ${S.dalles}/${g.modeTest ? 1 : requisSalle(d, s, P.dalles.length, Math.max(1, this.presents(d)))}`;
       else if (s.type === 'boss') txt = e.boss ? `${e.boss.pv}/${e.boss.max} PV` : '—';
       else if (s.type === 'serrures') txt = `serrures ${Object.values(S.cles).filter((c) => c.mise).length}/${s.pnj.length}`;
       else if (s.type === 'raid') txt = S.combat ? 'combat en cours' : `prêts ${S.prets.length}`;
