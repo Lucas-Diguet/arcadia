@@ -187,6 +187,25 @@ export function appliquer(def, e, qui, m, o = {}) {
       if (m.fini) e.fini = true;
       return res(true, true);
     }
+    case 'choixStarter': {
+      // la table du Temple : un joueur choisit une Poké Ball (m.n, ou null pour reposer la sienne)
+      const S = e.salles[m.salle]; if (!S) return res(false, false, 'inconnu');
+      const D = S.donnees, A = (D.attrib ||= {}), C = (D.choix ||= {}), X = (D.exclus ||= {});
+      if (A[qui] != null) return res(false, false, 'deja');
+      if (D.duel?.ids.includes(qui)) return res(false, false, 'duel');
+      if (m.n != null && Object.values(A).includes(m.n)) return res(false, false, 'pris');
+      if (m.n != null && (X[qui] || []).includes(m.n)) return res(false, false, 'exclu');
+      if (m.n == null) delete C[qui]; else C[qui] = m.n;
+      return res(true, true);
+    }
+    case 'starterDuelFin': {
+      // fin d'un duel pour une Poké Ball : le perdant repose la sienne et ne peut plus la reprendre
+      const S = e.salles[m.salle]; if (!S?.donnees.duel) return res(true, false);
+      const D = S.donnees, { ids, n } = D.duel, gagnant = ids.includes(String(m.gagnant)) ? String(m.gagnant) : ids[0];
+      for (const q of ids) if (q !== gagnant) { delete D.choix[q]; ((D.exclus ||= {})[q] ||= []).push(n); }
+      D.duel = null;
+      return res(true, true);
+    }
     case 'ramasse': {
       // objet de soin partagé : le premier qui le prend l'a, il disparaît pour les autres
       const S = e.salles[m.salle]; if (!S || typeof m.objet !== 'string') return res(false, false, 'inconnu');
@@ -300,3 +319,22 @@ export const clesDe = (def, e, qui) => {
 };
 /** nombre de serrures remplies */
 export const serrures = (def, e) => { const s = def.salles.find((q) => q.type === 'serrures'); return s ? Object.values(e.salles[s.id].cles).filter((c) => c.mise).length : 0; };
+
+/**
+ * la table du Temple (côté hôte) : quand chaque joueur présent sans compagnon a choisi, les choix uniques sont
+ * attribués et deux joueurs qui veulent la même Poké Ball se départagent en duel. Renvoie les données à mettre à jour
+ * ({ attrib, choix, duel }), ou null s'il n'y a rien à faire.
+ */
+export function resoudreStarters(D, presents, graine = () => 1) {
+  if (D.duel) return null;
+  const A = { ...(D.attrib || {}) }, C = { ...(D.choix || {}) };
+  const attendus = presents.map(String).filter((q) => A[q] == null);
+  if (!attendus.length || attendus.some((q) => C[q] == null)) return null;
+  let duel = null, change = false;
+  for (const n of [...new Set(attendus.map((q) => C[q]))]) {
+    const l = attendus.filter((q) => C[q] === n);
+    if (l.length === 1) { A[l[0]] = n; delete C[l[0]]; change = true; }
+    else if (!duel) { duel = { ids: l.slice(0, 2), n, seed: graine() }; change = true; }
+  }
+  return change ? { attrib: A, choix: C, duel } : null;
+}

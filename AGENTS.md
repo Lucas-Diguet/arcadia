@@ -128,6 +128,7 @@ Ajouter `[skip changelog]` dans le message d'un commit purement technique pour q
   seuls et duos (à deux joueurs), objets partagés, escalier tiré par l'hôte, fontaine, grottes par porte, arènes (`arene`) et sommet (`sommet`) en duel entre joueurs.
   Mine Effondrée (2 à 4, `donjons/mine.js`, `donjon/mine.js`) : poste de contrôle à un joueur (plan en direct, barrières, cages), plafonds fissurés.
   Train Fantôme (`donjons/train.js`, `donjon/train.js`) : horloge tenue par l'hôte, voitures qui se décrochent, voie ferrée de rattrapage.
+  Temple des Éléments (`donjons/temple.js`, `donjon/temple.js`) : salle des dalles commune, temple à trois (une porte par joueur, table de trois Poké Balls départagée en duel) ou en solo (dalle d'or au niveau 40) ; formes du Temple (Pokémon connus d'un autre type, `testodyssee/js/formes.js`, images recolorées dans `testodyssee/img/temple/`). Ne jamais montrer les évolutions finales des Pokémon créés pour l'auteur, hors du jeu.
   Île privée du labo (`testodyssee/js/ile/` : `modele.js` sans DOM, `jeu.js`) : une île par joueur gardée dans le navigateur, mode construction case par case,
   Borne d'arcade (casse-briques, points d'usine), usine à pièges, caserne et salles d'entraînement (essai en intrus, salle collée sur l'île) : `testodyssee/js/ile/usine.js` (sans DOM), `casse-briques.js` ; vérifiés par `test-testodyssee.mjs`.
   mairie, musée, trophées des badges et des donjons ; vérifiée par `test-testodyssee.mjs`.

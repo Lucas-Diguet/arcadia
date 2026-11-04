@@ -294,6 +294,33 @@ arrière de celle-ci est condamnée. En route : dresseurs qui guettent, voiture-
 fourgon à bagages (caisses à pousser, `caisses: true`, un PC les remet en place). Le Contrôleur Fantôme attend dans
 la locomotive ; au terminus sans victoire, tout le monde se retrouve sur le quai.
 
+### Le Temple des Éléments
+
+`js/donjons/temple.js` (salles), `js/donjon/temple.js` (mécaniques), à faire deux fois avec les mêmes salles. Salle des
+Dalles commune : trois joueurs sur les trois dalles ouvrent la petite porte (le temple à trois, niveaux 20 à 30) ; un
+joueur qui a un Pokémon au niveau 40 sur la dalle d'or ouvre la grande porte pour lui seul (`grandePorte`, refermée
+dès qu'il l'a passée : le temple en solo, niveaux 50 à 60). Chaque salle a sa `branche` (`groupe` ou `solo`) ; l'encadré
+ne montre que celles de la branche où l'on est.
+
+- À trois : Salle des Trois Portes (`voies`, une personne par porte), un chemin par joueur, une clé au bout
+  (`cle:<joueur>` dans la salle du chemin), Salle des Clés (porte aux trois gemmes, `ins:f`, `ins:e`, `ins:p`, puis
+  `porte`), Gardien à trois contre trois (salle `groupe`), et la table : trois Poké Balls. Chacun choisit
+  (`choixStarter`) ; quand tous les présents ont choisi, l'hôte attribue les choix uniques et départage deux joueurs
+  qui veulent la même par un duel entre joueurs, Pokémon soignés (`resoudreStarters`, `starterDuelFin` : le perdant
+  repose sa Poké Ball et ne peut plus la reprendre). À trois sur la même, le gagnant affronte le troisième.
+- En solo : mêmes salles, portes sans limite (`porteSolo`), un téléporteur dans la Salle des Clés ramène aux trois
+  portes ; derrière le Gardien, Évoli du Temple et trois pierres, dont on ne prend qu'une.
+- Les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes : objets `tuile`).
+
+### Les formes du Temple
+
+`js/formes.js` (sans DOM) : des versions alternatives de Pokémon connus (numéros 2010 à 2023), même silhouette et mêmes
+statistiques, autre type. Les attaques du type d'origine deviennent des attaques du nouveau type, de même catégorie
+et de puissance voisine (`forme`). Starters de Kanto : l'eau devient feu, le feu plante, la plante eau ; Évoli du Temple
+évolue avec trois pierres qui ne servent qu'à lui. Leurs images (face, dos, icône) sont des sprites HeartGold / SoulSilver
+recolorés, dans `img/temple/` (`temple-<nom>-f.png`, `-b`, `-i`). Les évolutions finales ne se montrent pas en dehors du
+jeu : l'auteur veut les découvrir en jouant.
+
 ### Le mode test
 
 Menu MODE TEST (ou `?test` dans l'adresse) : les dalles s'ouvrent avec un seul joueur, toutes les portes des voies

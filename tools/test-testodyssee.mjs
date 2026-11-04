@@ -5,7 +5,9 @@ import { construireCarte, construireSalles, passageSuivant, lirePlan, regionDe, 
 import { installerContenu } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
 import { Groupe } from '../testodyssee/js/combat/groupe.js';
-import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures, actifs, attendusArene, attendusSommet, areneEnCours } from '../testodyssee/js/donjon/etat.js';
+import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures, actifs, attendusArene, attendusSommet, areneEnCours, resoudreStarters } from '../testodyssee/js/donjon/etat.js';
+import { TEMPLE, STARTERS_TEMPLE } from '../testodyssee/js/formes.js';
+import { existsSync } from 'node:fs';
 import { createMon, isFainted } from '../odyssee/js/core/mon.js';
 import { MOVES } from '../odyssee/js/data/moves.js';
 import { SPECIES } from '../odyssee/js/data/species.js';
@@ -716,6 +718,51 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   ok(M.TROPHEES.every((t) => /^En récompense pour avoir (triomphé de l'arène|terminé) /.test(t.origine)) && M.TROPHEE.badge0.origine.includes('Sylvebourg'), 'île : chaque trophée dit ce qui l\'a rapporté');
   ok(M.etatIle({ nom: 'v1', fixes: {}, travaux: [], donjons: ['crypte'], musee: { 0: 'crypte' } }).musee.travaux[0]?.a === 'tr:crypte', 'île : les statues de l\'ancien musée sont gardées');
   ok(M.etatIle(JSON.parse(JSON.stringify(ile))).travaux.length === ile.travaux.length && M.etatIle(null).fixes.maison, 'île : la donnée se relit telle quelle');
+}
+
+/* ---------------- Temple des Éléments ---------------- */
+{
+  const d = DONJONS.find((q) => q.id === 'temple');
+  const cartes = construireSalles(d), par = Object.fromEntries(d.salles.map((s, i) => [s.id, cartes[i]]));
+  // les décors des chemins : lave, eau, herbes hautes, posés à leur place
+  for (const [id, t] of [['gf', T.LAVA], ['ge', T.WATER], ['gp', T.TALL]]) {
+    const m = par[id], P = m.donjon.plan;
+    for (const [c, l] of Object.entries(P.objets)) if (d.objets[c].type === 'tuile') for (const [x, y] of l) m.set(x, y, T[d.objets[c].t]);
+    const vu = m.reach(...P.depart), [nx, ny] = P.suivante, [kx, ky] = P.objets.K[0];
+    ok(vu[(ny + 1) * m.w + nx] && vu[ky * m.w + kx] && P.objets.K && Object.values(P.objets).flat().some(([x, y]) => m.get(x, y) === t), `temple : ${id} mène de l'entrée à la clé et à la sortie, entre ses ${t === T.LAVA ? 'laves' : t === T.WATER ? 'eaux' : 'herbes'}`);
+  }
+  ok(par.e1.donjon.plan.dalles.length === 3 && par.e1.donjon.plan.objets.X?.length === 1 && par.e1.donjon.plan.objets.G?.length === 3 && d.salles[0].requis === 3, 'temple : trois dalles pour la petite porte, une dalle d\'or et une grande porte');
+  ok(par.g2.donjon.versSuivante == null && par.gf.donjon.versSuivante?.map === par.g4.id && par.sf.donjon.versSuivante?.map === par.s4.id && par.g4.donjon.versSuivante?.map === par.g5.id && par.s4.donjon.versSuivante?.map === par.s5.id, 'temple : les chemins se rejoignent à la Salle des Clés, puis le Gardien');
+  ok(par.s4.donjon.plan.objets.T && !par.g4.donjon.plan.objets.T && par.g5.donjon.plan.objets.a && par.s5.donjon.plan.objets.e && par.s5.donjon.plan.objets.q, 'temple : téléporteur en solo seulement ; trois Poké Balls à trois, Évoli et ses pierres en solo');
+  // la table à trois
+  let e = nouvelEtat(d, { joueurs: 3 });
+  ok(appliquer(d, e, '1', { a: 'choixStarter', salle: 'g5', n: 0 }).ok && appliquer(d, e, '2', { a: 'choixStarter', salle: 'g5', n: 0 }).ok, 'temple : deux joueurs peuvent vouloir la même Poké Ball');
+  ok(resoudreStarters(e.salles.g5.donnees, ['1', '2', '3']) === null, 'temple : rien ne se décide tant que tout le monde n\'a pas choisi');
+  appliquer(d, e, '3', { a: 'choixStarter', salle: 'g5', n: 2 });
+  let r = resoudreStarters(e.salles.g5.donnees, ['1', '2', '3'], () => 7);
+  ok(r && r.attrib['3'] === 2 && r.duel?.ids.join() === '1,2' && r.duel.n === 0, 'temple : un choix seul est attribué, deux choix pareils font un duel');
+  appliquer(d, e, '0', { a: 'maj', salle: 'g5', donnees: r });
+  ok(!appliquer(d, e, '1', { a: 'choixStarter', salle: 'g5', n: 1 }).ok && !appliquer(d, e, '3', { a: 'choixStarter', salle: 'g5', n: 1 }).ok, 'temple : pendant un duel, les duellistes et les servis ne changent plus');
+  appliquer(d, e, '1', { a: 'starterDuelFin', salle: 'g5', gagnant: '1' });
+  ok(e.salles.g5.donnees.duel === null && e.salles.g5.donnees.choix['1'] === 0 && e.salles.g5.donnees.choix['2'] == null && !appliquer(d, e, '2', { a: 'choixStarter', salle: 'g5', n: 0 }).ok && !appliquer(d, e, '2', { a: 'choixStarter', salle: 'g5', n: 2 }).ok, 'temple : le perdant ne peut reprendre ni celle du duel, ni une déjà donnée');
+  appliquer(d, e, '2', { a: 'choixStarter', salle: 'g5', n: 1 });
+  r = resoudreStarters(e.salles.g5.donnees, ['1', '2', '3']); appliquer(d, e, '0', { a: 'maj', salle: 'g5', donnees: r });
+  ok(e.salles.g5.donnees.attrib['1'] === 0 && e.salles.g5.donnees.attrib['2'] === 1 && e.salles.g5.donnees.attrib['3'] === 2 && !e.salles.g5.donnees.duel, 'temple : à la fin, chacun a le sien');
+  // à trois sur la même : le gagnant affronte le troisième
+  e = nouvelEtat(d, { joueurs: 3 });
+  for (const q of ['1', '2', '3']) appliquer(d, e, q, { a: 'choixStarter', salle: 'g5', n: 1 });
+  r = resoudreStarters(e.salles.g5.donnees, ['1', '2', '3']); appliquer(d, e, '0', { a: 'maj', salle: 'g5', donnees: r });
+  appliquer(d, e, '1', { a: 'starterDuelFin', salle: 'g5', gagnant: '2' });
+  appliquer(d, e, '1', { a: 'choixStarter', salle: 'g5', n: 0 });
+  r = resoudreStarters(e.salles.g5.donnees, ['1', '2', '3']);
+  ok(r.attrib['1'] === 0 && r.duel?.ids.includes('2') && r.duel.ids.includes('3'), 'temple : à trois sur la même, le gagnant du premier duel affronte le troisième');
+  // les formes du Temple
+  const tp = (k) => SPECIES[TEMPLE[k]].t.join('/');
+  ok(tp('carapuce') === 'fire' && tp('salameche') === 'grass' && tp('bulbizarre') === 'water' && STARTERS_TEMPLE.every((q) => SPECIES[q]?.ev?.[0]), 'temple : Carapuce passe au feu, Salamèche à la plante, Bulbizarre à l\'eau');
+  ok(['pyroli', 'aquali', 'voltali'].map((k) => tp(k)).sort().join() === 'fire,grass,water' && SPECIES[TEMPLE.evoli].ev.every((v) => ITEMS[v.item]?.stone), 'temple : les trois évolutions d\'Évoli du Temple sont feu, eau et plante, par trois pierres à lui');
+  ok(Object.values(TEMPLE).every((id) => { const S = SPECIES[id]; return S.ls.length && S.ls.every(([, m]) => MOVES[m]) && ['f', 'b', 'i'].every((c) => existsSync(new URL(`../testodyssee/img/${S.img}-${c}.png`, import.meta.url))); }), 'temple : chaque forme a ses attaques et ses images');
+  ok(Object.values(TEMPLE).filter((id) => SPECIES[id].base && SPECIES[SPECIES[id].base].t[0] !== SPECIES[id].t[0]).every((id) => SPECIES[id].ls.every(([, m]) => MOVES[m].t !== SPECIES[SPECIES[id].base].t[0])), 'temple : une forme n\'apprend plus d\'attaques de son type d\'origine');
+  ok(SPECIES[TEMPLE.arceus].t.length === 3, 'temple : le Gardien a un Pokémon à trois types');
 }
 
 /* ---------------- île : borne, usine à pièges, caserne, salles d'entraînement ---------------- */

@@ -108,10 +108,11 @@ export const Voies = {
   /* ---------------- salle des voies ---------------- */
   async porteVoie(d, s, lettre) {
     const g = this.game, ui = g.ui, o = d.objets[lettre], nom = d.voies[o.voie], V = this.dv(d, s.id).voies || {};
-    if (V[lettre] && !g.modeTest) { await ui.say(`La Porte ${nom === 'Courage' ? 'du' : 'de la'} ${nom} est scellée.\n${this.nomDe(V[lettre])} a pris ce chemin.`); return; }
+    // « Porte du Courage », « Porte de l'Eau », « Porte de la Sagesse »
+    const de = d.voiesDe?.[o.voie] ?? (nom === 'Courage' ? 'du ' : 'de la ');
+    if (V[lettre] && !g.modeTest) { await ui.say(`La Porte ${de}${nom} est scellée.\n${this.nomDe(V[lettre])} a pris ce chemin.`); return; }
     await ui.say(d.inscriptions[o.voie]);
-    const de = nom === 'Courage' ? 'du' : 'de la';
-    if (!(await ui.yesNo(`Franchir la Porte ${de} ${nom} ? Elle se refermera derrière toi : tes coéquipiers ne pourront plus emprunter ce chemin, et tu ne pourras plus faire demi-tour.`))) return;
+    if (!(await ui.yesNo(`Franchir la Porte ${de}${nom} ? Elle se refermera derrière toi : tes coéquipiers ne pourront plus emprunter ce chemin, et tu ne pourras plus faire demi-tour.`))) return;
     const r = await this.demande(d.id, { a: 'voie', salle: s.id, voie: lettre, test: !!g.modeTest });
     if (!r.ok) { await ui.say(r.why === 'prise' ? 'Trop tard : quelqu\'un vient de franchir cette porte.' : r.why === 'deja' ? 'Tu as déjà choisi ton chemin.' : r.why === 'reseau' ? 'L\'hôte du salon ne répond pas...' : '...'); return; }
     g.sound.sfx('bang'); g.view.shake = 0.2;
@@ -306,7 +307,7 @@ export const Voies = {
 
   /** journal : où en est ce joueur sur son chemin */
   queteVoies(d, q) {
-    if (!estVoies(d)) return null;
+    if (d.id !== 'voies') return null;
     const v = this.maVoie(d), e = this.etats[d.id], fait = (id) => !!e.salles[id]?.faite;
     const mien = (f) => d.salles.find((s) => s.voie === v && f(s));
     let ok = false, txt = q.but;
@@ -320,7 +321,7 @@ export const Voies = {
   },
   /** journal : chemin choisi, parchemins et inscription du coffre */
   objetsVoies(d) {
-    if (!estVoies(d)) return [];
+    if (d.id !== 'voies') return [];
     const v = this.maVoie(d), l = []; if (!v) return l;
     for (const s of d.salles) {
       if (s.voie !== v || !s.parchemin || !this.dv(d, s.id).parchemin) continue;

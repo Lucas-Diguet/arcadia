@@ -73,3 +73,6 @@
 .arcade-titre { padding: calc(var(--px) * 1) calc(var(--px) * 6); color: #ffe050; background: #e84a3c; border: calc(var(--px) * .6) solid #1c1030; border-radius: calc(var(--px) * 1.5); font-weight: 700; letter-spacing: .12em; font-size: calc(var(--px) * 5); }
 .arcade canvas { width: min(80vw, calc(var(--px) * 200)); aspect-ratio: 4 / 3; image-rendering: pixelated; border: calc(var(--px) * 1) solid #10142a; border-radius: calc(var(--px) * 1); cursor: none; }
 .arcade-aide { color: #d8c8ff; font-size: calc(var(--px) * 3.6); }
+/* Temple des Éléments : le Pokémon d'une Poké Ball de la table */
+.starter-pic .temple-nom { text-align: center; font-weight: 700; font-size: calc(var(--px) * 5); }
+.starter-pic .temple-nom small { display: block; font-weight: 400; font-size: calc(var(--px) * 3.6); opacity: .8; }

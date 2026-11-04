@@ -3,6 +3,7 @@
 import { SPECIES } from '../../odyssee/js/data/species.js';
 import { ITEMS } from '../../odyssee/js/core/items.js';
 import { MOVES } from '../../odyssee/js/data/moves.js';
+import { especesTemple } from './formes.js';
 
 const IMG = new URL('../img/', import.meta.url).href;
 // (les images ne servent qu'au navigateur)
@@ -32,6 +33,9 @@ export const OBJETS = {
   'symbole-or-pyramide': { pocket: 'cles', price: 0, key: true, name: 'Symbole d\'Or de la Pyramide', img: 'pyramide/objet_symbole.png', desc: 'Remis à qui atteint le sommet de la Pyramide de l\'Ascension encore debout, et y bat le dernier adversaire.' },
   'bouchon-or': { pocket: 'objets', price: 0, name: 'Bouchon d\'Or', img: 'miroirs/objet_bouchon.png', iv: true, desc: 'Un bouchon doré et brillant. Il porte au maximum toutes les valeurs cachées (IV) d\'un Pokémon.' },
   'eclat-miroir': { pocket: 'cles', price: 0, key: true, name: 'Éclat de Miroir', img: 'miroirs/objet_eclat.png', desc: 'Un éclat qui reflète un lieu que tu n\'as jamais vu. Il ouvrira peut-être un autre donjon.' },
+  'pierre-feu-temple': { pocket: 'objets', price: 0, stone: 1, name: 'Pierre Feu du Temple', img: 'temple/pierre-feu.png', desc: 'Une pierre feu marquée d\'un éclat d\'or. Elle ne fait évoluer qu\'Évoli du Temple.' },
+  'pierre-eau-temple': { pocket: 'objets', price: 0, stone: 1, name: 'Pierre Eau du Temple', img: 'temple/pierre-eau.png', desc: 'Une pierre eau marquée d\'un éclat d\'or. Elle ne fait évoluer qu\'Évoli du Temple.' },
+  'pierre-plante-temple': { pocket: 'objets', price: 0, stone: 1, name: 'Pierre Plante du Temple', img: 'temple/pierre-plante.png', desc: 'Une pierre plante marquée d\'un éclat d\'or. Elle ne fait évoluer qu\'Évoli du Temple.' },
   'panini-chateauroux': { pocket: 'objets', price: 0, name: 'Panini de Châteauroux', img: 'panini.png', desc: 'Un panini encore tiède, jambon et fromage. Un souvenir du donjon de Didier.' },
 };
 
@@ -43,6 +47,7 @@ export const DECOR = [
   ...['train_quai', 'marchepied', 'traverse', 'comptoir'].map((k) => [k, IMG + 'train/' + k + '.png']),
   ...['barriere', 'cage', 'fissure', 'wagonnet', 'poste', 'entree_mine'].map((k) => [k, IMG + 'mine/' + k + '.png']),
   ...['pyramide', 'obelisque', 'porte_1', 'porte_2', 'porte_3', 'porte_4', 'porte_1_f', 'porte_2_f', 'porte_3_f', 'porte_4_f'].map((k) => [k, IMG + 'pyramide/' + k + '.png']),
+  ...['porte_feu', 'porte_feu_f', 'porte_eau', 'porte_eau_f', 'porte_plante', 'porte_plante_f', 'porte_grande', 'porte_grande_o', 'dalle_or', 'teleporteur', 'cle_feu', 'cle_eau', 'cle_plante'].map((k) => [k, IMG + 'temple/' + k + '.png']),
   ...['borne', 'piege_trou', 'piege_roche', 'piege_brume', 'piege_colle', 'piege_alarme', 'piege_renvoi', 'piege_degats1', 'piege_degats2', 'piege_degats3', 'piege_combat'].map((k) => [k, IMG + 'ile/' + k + '.png']),
   ...['porte_sagesse', 'porte_force', 'porte_courage', 'porte_sagesse_f', 'porte_force_f', 'porte_courage_f', 'porte_code', 'porte_grille', 'coffre', 'coffre_ouvert', 'interrupteur', 'interrupteur_on', 'socle_statue'].map((k) => [k, IMG + 'voies/' + k + '.png']),
 ];
@@ -52,15 +57,19 @@ let fait = false;
 /** ajoute espèces et objets aux tables d'Odyssée ; avec ASSETS (navigateur), branche aussi leurs images */
 export function installerContenu(ASSETS) {
   if (fait) return; fait = true;
+  Object.assign(ESPECES, especesTemple());
   for (const [id, s] of Object.entries(ESPECES)) SPECIES[id] = s;
   for (const [k, o] of Object.entries(OBJETS)) ITEMS[k] = o;
   if (!ASSETS) return;
   const front = ASSETS.front, item = ASSETS.item, cry = ASSETS.cry;
-  ASSETS.front = (id, shiny) => (ESPECES[id] ? IMG + ESPECES[id].img : front(id, shiny));
-  ASSETS.back = ((back) => (id, shiny) => (ESPECES[id] ? IMG + ESPECES[id].img : back(id, shiny)))(ASSETS.back);
-  ASSETS.icon = ((icon) => (id) => (ESPECES[id] ? IMG + ESPECES[id].img : icon(id)))(ASSETS.icon);
+  // une image pour tout (img en .png), ou trois : face, dos, icône (img-f, img-b, img-i)
+  const image = (id, c) => (ESPECES[id].img.endsWith('.png') ? IMG + ESPECES[id].img : `${IMG}${ESPECES[id].img}-${c}.png`);
+  ASSETS.front = (id, shiny) => (ESPECES[id] ? image(id, 'f') : front(id, shiny));
+  ASSETS.back = ((back) => (id, shiny) => (ESPECES[id] ? image(id, 'b') : back(id, shiny)))(ASSETS.back);
+  ASSETS.icon = ((icon) => (id) => (ESPECES[id] ? image(id, 'i') : icon(id)))(ASSETS.icon);
   ASSETS.item = (k) => (OBJETS[k]?.img ? IMG + OBJETS[k].img : item(k));
   const trainer = ASSETS.trainer;
   ASSETS.trainer = (k) => (DRESSEURS[k] ? IMG + DRESSEURS[k] : trainer(k));
-  ASSETS.cry = (id) => (ESPECES[id] ? 'synth:' + id : cry(id));
+  // une forme du Temple crie comme le Pokémon dont elle vient
+  ASSETS.cry = (id) => (ESPECES[id]?.base ? cry(ESPECES[id].base) : ESPECES[id] ? 'synth:' + id : cry(id));
 }

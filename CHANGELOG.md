@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 3.98 — 4 novembre 2026
+- **TestOdyssée** — Nouveau donjon : le Temple des Éléments, à faire à trois puis seul, avec les mêmes salles.
+  - Dans la première salle, trois joueurs sur les trois dalles ouvrent la petite porte. Un joueur qui a un Pokémon au niveau 40 sur la dalle d'or ouvre la grande porte, pour lui seul.
+  - À trois, chacun prend une porte (Feu, Eau ou Plante) et ramène la clé de son chemin. Les trois clés ouvrent la salle du Gardien, qui se bat à trois contre trois.
+  - Derrière lui, une table et trois Poké Balls. Chacun choisit la sienne ; deux joueurs qui veulent la même se départagent en duel.
+  - Seul, on fait les trois chemins l'un après l'autre (un téléporteur ramène aux trois portes). Le Gardien est bien plus fort, et derrière lui t'attendent un Évoli à part et trois pierres, dont tu ne prendras qu'une.
+  - Les chemins ne sont encore que des couloirs : leurs épreuves viendront plus tard.
+- **TestOdyssée** — De nouveaux Pokémon : les formes du Temple, des Pokémon que tu connais mais d'un autre type.
+
 ## 3.97 — 4 novembre 2026
 - **TestOdyssée** — Île privée : la borne d'arcade, l'usine à pièges et la caserne.
   - La borne d'arcade se pose sur l'île (catalogue, Loisirs). On y joue au casse-briques : chaque brique cassée rapporte un point d'usine, chaque mur fini quinze de plus.
