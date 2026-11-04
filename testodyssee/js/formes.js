@@ -2,8 +2,8 @@
 // formes régionales. Même silhouette, mêmes statistiques, autre type : les attaques du type d'origine sont remplacées
 // par des attaques du nouveau type, de même catégorie et de puissance voisine.
 //
-// Starters de Kanto : l'eau devient feu, le feu devient plante, la plante devient eau ; pas encore d'évolutions.
-// Leurs images (testodyssee/img/temple/) sont retouchées à la main : autre matière, autres formes.
+// Starters de Kanto : l'eau devient feu, le feu devient plante, la plante devient eau, avec leurs évolutions.
+// Leurs images (testodyssee/img/temple/) viennent des dessins de l'auteur, réduits en sprites.
 import { SPECIES } from '../../odyssee/js/data/species.js';
 import { MOVES } from '../../odyssee/js/data/moves.js';
 
@@ -42,15 +42,26 @@ export function forme(base, o) {
   return out;
 }
 
-export const TEMPLE = { carapuce: 2010, salameche: 2013, bulbizarre: 2016, arceus: 2023 };
+export const TEMPLE = {
+  carapuce: 2010, carabaffe: 2011, tortank: 2012,
+  salameche: 2013, reptincel: 2014, dracaufeu: 2015,
+  bulbizarre: 2016, herbizarre: 2017, florizarre: 2018,
+  arceus: 2023,
+};
 const T = TEMPLE, du = (n) => `${n} du Temple`;
 /** les espèces, construites à la demande (les tables d'Odyssée doivent être chargées) */
 export function especesTemple() {
   const f = (base, k, o) => [T[k], forme(base, { k: 'temple-' + k, img: 'temple/temple-' + k, ...o })];
   return Object.fromEntries([
-    f(7, 'carapuce', { n: du('Carapuce'), t: ['fire'], dex: 'Né près des sources chaudes du Temple. Sa carapace de basalte est fendue de lave, et sa queue brûle comme une torche.' }),
-    f(4, 'salameche', { n: du('Salamèche'), t: ['grass'], dex: 'Une pousse lui sort du crâne. La feuille au bout de sa queue grandit avec lui ; si elle fane, c\'est qu\'il est malade.' }),
-    f(1, 'bulbizarre', { n: du('Bulbizarre'), t: ['water'], dex: 'Il porte sur son dos un coquillage couché, couleur sable. Quand il y colle l\'oreille, il entend la mer.' }),
+    f(7, 'carapuce', { n: du('Carapuce'), t: ['fire'], ev: [{ to: T.carabaffe, lvl: 16 }], dex: 'Né près des sources chaudes du Temple. Sa carapace garde la chaleur pendant des jours.' }),
+    f(8, 'carabaffe', { n: du('Carabaffe'), t: ['fire'], ev: [{ to: T.tortank, lvl: 36 }], dex: 'Ses oreilles et sa queue brûlent sans jamais se consumer. Plus il est fier, plus elles flambent.' }),
+    f(9, 'tortank', { n: du('Tortank'), t: ['fire', 'steel'], plus: [[1, 'flash-cannon'], [1, 'iron-defense']], dex: 'Le gardien de feu du Temple.' }),
+    f(4, 'salameche', { n: du('Salamèche'), t: ['grass'], ev: [{ to: T.reptincel, lvl: 16 }], dex: 'Une crinière de feuilles lui pousse autour de la tête. Elle s\'ouvre au soleil.' }),
+    f(5, 'reptincel', { n: du('Reptincel'), t: ['grass'], ev: [{ to: T.dracaufeu, lvl: 36 }], dex: 'Des feuilles lui poussent le long de la queue. Il les fait claquer pour impressionner.' }),
+    f(6, 'dracaufeu', { n: du('Dracaufeu'), t: ['grass', 'flying'], dex: 'Le gardien des forêts du Temple.' }),
+    f(1, 'bulbizarre', { n: du('Bulbizarre'), t: ['water'], ev: [{ to: T.herbizarre, lvl: 16 }], dex: 'Il porte sur son dos un coquillage. Quand il y colle l\'oreille, il entend la mer.' }),
+    f(2, 'herbizarre', { n: du('Herbizarre'), t: ['water'], ev: [{ to: T.florizarre, lvl: 32 }], dex: 'Son coquillage prend des reflets de nacre, et du corail commence à y pousser.' }),
+    f(3, 'florizarre', { n: du('Florizarre'), t: ['water', 'poison'], dex: 'Le gardien des eaux du Temple.' }),
     f(493, 'arceus', { n: du('Arceus'), t: ['fire', 'water', 'grass'], plus: [[1, 'flamethrower'], [1, 'muddy-water'], [1, 'energy-ball']], dex: 'Le gardien du Temple des Éléments. Il porte en lui le feu, l\'eau et la plante.' }),
   ]);
 }

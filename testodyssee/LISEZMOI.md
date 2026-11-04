@@ -314,13 +314,13 @@ ne montre que celles de la branche où l'on est.
 
 ### Les formes du Temple
 
-`js/formes.js` (sans DOM) : des versions alternatives de Pokémon connus, d'un autre type. Pour l'instant, les trois
-petits starters de Kanto (numéros 2010, 2013, 2016 : l'eau devient feu, le feu plante, la plante eau ; pas encore
-d'évolutions) et l'Arceus du Gardien (2023). Les attaques du type d'origine deviennent des attaques du nouveau type, de
-même catégorie et de puissance voisine (`forme`). Leurs images (face, dos, icône, dans `img/temple/`) partent des
-sprites HeartGold / SoulSilver, retouchés pour changer la matière et la forme (carapace de basalte et queue de feu,
-feuille et pousse, coquillage pointu couleur sable à la place du bulbe). Les évolutions finales ne se montrent pas en dehors du jeu :
-l'auteur veut les découvrir en jouant.
+`js/formes.js` (sans DOM) : des versions alternatives de Pokémon connus, d'un autre type : les lignées des starters de
+Kanto (numéros 2010 à 2018 : l'eau devient feu, le feu plante, la plante eau ; évolutions aux mêmes niveaux) et
+l'Arceus du Gardien (2023). Les attaques du type d'origine deviennent des attaques du nouveau type, de même catégorie
+et de puissance voisine (`forme`). Leurs images (`img/temple/temple-<nom>-f.png`, `-b`, `-i`) viennent des dessins de
+l'auteur, réduits en sprites de 80 × 80 (fond retiré, palette limitée, trait sombre ; un dessin déjà en pixel art est
+repris case par case). Pas encore de dos dessiné : le dos est la face retournée. Les évolutions finales ne se montrent
+pas en dehors du jeu : l'auteur veut les découvrir en jouant.
 
 ### Le mode test
 

@@ -758,7 +758,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   ok(r.attrib['1'] === 0 && r.duel?.ids.includes('2') && r.duel.ids.includes('3'), 'temple : à trois sur la même, le gagnant du premier duel affronte le troisième');
   // les formes du Temple
   const tp = (k) => SPECIES[TEMPLE[k]].t.join('/');
-  ok(tp('carapuce') === 'fire' && tp('salameche') === 'grass' && tp('bulbizarre') === 'water' && STARTERS_TEMPLE.every((q) => SPECIES[q] && !SPECIES[q].ev), 'temple : Carapuce passe au feu, Salamèche à la plante, Bulbizarre à l\'eau (pas encore d\'évolutions)');
+  ok(tp('carapuce') === 'fire' && tp('salameche') === 'grass' && tp('bulbizarre') === 'water' && STARTERS_TEMPLE.every((q) => SPECIES[SPECIES[SPECIES[q].ev[0].to].ev[0].to]?.base), 'temple : Carapuce passe au feu, Salamèche à la plante, Bulbizarre à l\'eau, et leurs lignées entières');
   ok(Object.values(TEMPLE).every((id) => { const S = SPECIES[id]; return S.ls.length && S.ls.every(([, m]) => MOVES[m]) && ['f', 'b', 'i'].every((c) => existsSync(new URL(`../testodyssee/img/${S.img}-${c}.png`, import.meta.url))); }), 'temple : chaque forme a ses attaques et ses images');
   ok(Object.values(TEMPLE).filter((id) => SPECIES[id].base && SPECIES[SPECIES[id].base].t[0] !== SPECIES[id].t[0]).every((id) => SPECIES[id].ls.every(([, m]) => MOVES[m].t !== SPECIES[SPECIES[id].base].t[0])), 'temple : une forme n\'apprend plus d\'attaques de son type d\'origine');
   ok(SPECIES[TEMPLE.arceus].t.length === 3, 'temple : le Gardien a un Pokémon à trois types');
