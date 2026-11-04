@@ -16,6 +16,12 @@ export function brancherRendu() {
   P.groundCell = function (x, y) {
     const m = this.map, A = this.A.cells;
     if (m.glace?.has(x + ',' + y)) return { c: A[CLAIR.glace] };
+    // Routes Victoire : ponts de bois et rebords taillés dans la roche (pas d'eau ni d'herbe sous la grotte)
+    if (m.rv) {
+      const t = m.get(x, y);
+      if (t === T.BRIDGE) { const ew = [m.get(x - 1, y), m.get(x + 1, y)].some((q) => q === T.BRIDGE || q === T.CAVE) && m.elev[y * m.w + x - 1] !== 3; return { c: A.cave0, bridge: ew ? A.bridgeEW || A.bridge : A.bridge }; }
+      if (t === T.LEDGE || t === T.LEDGE_E || t === T.LEDGE_W) return { c: A.cavestairs };
+    }
     const st = STYLES[m.style];
     if (st && SOLS.has(m.get(x, y)) && !['exitlight', 'carpet'].includes(this.decoAt.get(x + ',' + y)?.k)) { const c = cellule(A, st.sol); if (c) return { c }; }
     return sol.call(this, x, y);

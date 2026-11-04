@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 3.105 — 4 novembre 2026
+- **TestOdyssée** — Nouveau : les Routes Victoire de Vert Feuille et d'Émeraude, sur leur plan d'origine, case par case, avec les graphismes d'Odyssée. Chacune se choisit seule dans les lieux du labo, ou toutes à la suite dans « Route Victoire (fusion) ».
+  - Tout y est : les dresseurs avec leurs équipes et leurs attaques d'origine, les objets (même cachés), les rochers à pousser, les rochers à briser, les boutons qui font tomber les barrières, le trou où l'on fait tomber un rocher à l'étage du dessous, l'eau et les rencontres sauvages des deux jeux.
+  - Les plateaux et les ponts marchent comme dans les jeux : on ne monte sur un plateau que par ses escaliers, et on passe sous les ponts.
+  - Émeraude : Timmy t'attend à l'entrée. Vert Feuille : le Maître des capacités apprend Damoclès une fois.
+  - Les cascades se descendent en surfant ; pour les remonter, il faudra Cascade.
+  - Les duos de dresseurs se battent comme un seul dresseur, et les attaques qu'Odyssée ne connaît pas encore sont remplacées.
+- **TestOdyssée** — Les CT trouvées sur les Routes Victoire (Draco-Griffe, Grêle, Psyko, Tempête de Sable, Surchauffe) ne servent qu'une fois, comme à l'époque. Grêle, Tempête de Sable, Danse Pluie et Zénith changent la météo pendant cinq tours.
+
 ## 3.104 — 4 novembre 2026
 - **TestOdyssée** — Temple des Éléments : chaque CT du solo ne s'apprend qu'à un starter de son type, même s'il ne la connaît pas d'habitude (Dracaufeu peut apprendre Éruption, le Tortank du Temple aussi, mais pas Giclédo). Un Pokémon qui n'apprend pas l'attaque par niveau ne peut l'apprendre qu'avec cette CT.
 

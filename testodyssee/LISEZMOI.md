@@ -409,6 +409,19 @@ Dans la donnée de l'île : `points`, `stock { article: nombre }`, `statues { 's
 2. Ce que voit le joueur dans `js/donjon/jeu.js` (dialogue d'un PNJ, ou vérification à chaque image comme les dalles,
    décidée par l'hôte).
 
+### Les Routes Victoire
+
+`tools/routes-victoire.py` recopie les Routes Victoire de Vert Feuille et d'Émeraude case par case depuis les
+décompilations pret (`python3 tools/routes-victoire.py chemin/pokefirered chemin/pokeemerald`) et écrit
+`js/rv/donnees.js` (ne pas le modifier à la main) : sol, murs, hauteurs, rebords, eau, cascades, échelles, dresseurs
+(équipes, attaques, objets tenus, valeurs cachées), objets, objets cachés, rochers, rochers fissurés, boutons et
+barrières, trous, rencontres. Les textes des dresseurs sont traduits à la main dans `js/rv/textes.js`.
+`js/rv/routes.js` bâtit les cartes (chaque route seule, puis la fusion où la sortie d'une route mène à l'entrée de la
+suivante, dans l'ordre de `ROUTES`), `js/rv/jeu.js` ajoute les règles de la troisième génération : hauteurs (on change
+de niveau par une case de passage, hauteur 0, ou un pont, hauteur 15), cases fermées au nord, rocher qui tombe dans un
+trou, bouton qui ouvre une barrière, cascade qu'on descend seulement. HeartGold et Platine n'ont pas de plan dans
+leurs décompilations : il faudra les recopier à partir d'images.
+
 ## Passer un lieu dans Odyssée
 
 La carte construite par `plan.js` est une carte d'Odyssée ordinaire (`GameMap`). Pour l'intégrer : l'ajouter dans

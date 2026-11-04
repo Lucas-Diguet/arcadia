@@ -9,6 +9,9 @@ import { Groupe } from '../testodyssee/js/combat/groupe.js';
 import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures, actifs, attendusArene, attendusSommet, areneEnCours, resoudreStarters } from '../testodyssee/js/donjon/etat.js';
 import { TEMPLE, STARTERS_TEMPLE } from '../testodyssee/js/formes.js';
 import { existsSync } from 'node:fs';
+import { construireRoutes, ROUTES, FUSION } from '../testodyssee/js/rv/routes.js';
+import * as RVR from '../testodyssee/js/rv/routes.js';
+import { RV } from '../testodyssee/js/rv/donnees.js';
 import { createMon, isFainted } from '../odyssee/js/core/mon.js';
 import { MOVES } from '../odyssee/js/data/moves.js';
 import { SPECIES } from '../odyssee/js/data/species.js';
@@ -851,13 +854,76 @@ const world = buildWorld();
 for (const dd of DONJONS) { const cs = dd.plan ? [construireCarte(dd)] : construireSalles(dd); for (const c of cs) world.maps[c.id] = c; const e = relierExterieur(dd, cs[0]); if (e) world.maps[e.id] = e; }
 construireIle(world.maps, nouvelleIle('Test'));
 const lieux = listerLieux(world, DONJONS);
-ok(lieux.labo.length === DONJONS.length + 1 && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
+ok(lieux.labo.length === DONJONS.length + 1 + ROUTES.length + 1 && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
 for (const l of Object.values(lieux).flat()) {
   const m = world.maps[l.map];
   ok(m && walkable(m.get(l.x, l.y)) && !m.warpAt(l.x, l.y), `on apparaît sur une case libre : ${l.nom}`);
 }
 for (const E of EQUIPES) for (const [sp, lvl] of E.pokemon) ok(SPECIES[sp] && lvl > 0, `équipe ${E.id} : Pokémon ${sp}`);
 for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équipe ${E.id} : objet ${k}`);
+
+/* ---------------- Routes Victoire (plans d'origine) ---------------- */
+{
+  const maps = {}, L = construireRoutes(maps);
+  ok(L.length === ROUTES.length + 1, 'routes victoire : une par jeu, plus la fusion');
+  const DX = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const SAUTS = { [T.LEDGE]: 'down', [T.LEDGE_E]: 'right', [T.LEDGE_W]: 'left' };
+  /** tout ce qu'on atteint depuis une case, barrières ouvertes, rochers et rochers fissurés écartés (états : carte, x, y, hauteur) */
+  function atteint(map, x, y, z0 = 0) {
+    const vus = new Set(), file = [[map, x, y, z0]], cases = new Set();
+    const libreRV = (m, x, y) => { const t = m.get(x, y); return walkable(t) || t === T.BOULDER || t === T.SMASH || (m.rv.boutons.some((b) => b.ouvre.some(([a, c]) => a === x && c === y))); };
+    while (file.length) {
+      const [id, x, y, z] = file.pop(), cle = `${id}|${x},${y}|${z}`;
+      if (vus.has(cle)) continue; vus.add(cle); cases.add(`${id}|${x},${y}`);
+      const m = maps[id];
+      const w = m.warpAt(x, y);
+      if (w) { const h = RVR.hauteur(maps[w.map], w.x, w.y); file.push([w.map, w.x, w.y, w.z ?? h]); }
+      if (m.objectAt(x, y)?.type === 'rv-sortie') { if (m.rv.suite) { const [e, ex, ey] = RVR.ENTREES[m.rv.suite.split(':').pop()]; file.push([RVR.idCarte(m.rv.suite, e), ex, ey, 0]); } continue; }
+      for (const [d, [dx, dy]] of Object.entries(DX)) {
+        let tx = x + dx, ty = y + dy; const t = m.get(tx, ty), eau = t === T.WATER, ici = m.get(x, y) === T.WATER;
+        if (d !== 'down' && (m.rv.cascades.has(`${tx},${ty}`) || m.rv.cascades.has(`${x},${y}`))) continue;   // on descend les cascades
+        if (SAUTS[t] === d) { tx += dx; ty += dy; if (!libreRV(m, tx, ty)) continue; }
+        else if (eau) { /* Surf : on entre dans l'eau de n'importe quelle berge */ }
+        else if (!libreRV(m, tx, ty) || SAUTS[t]) continue;
+        else if (!ici && (RVR.fermee(m, x, y, d, tx, ty) || RVR.changeNiveau(z, RVR.hauteur(m, tx, ty)))) continue;
+        const h = RVR.hauteur(m, tx, ty), avant = RVR.hauteur(m, x, y);
+        file.push([id, tx, ty, h === 15 || avant === 15 ? z : h]);
+      }
+    }
+    return cases;
+  }
+  for (const l of L) {
+    const vus = atteint(l.map, l.x, l.y);
+    const pre = l.map.split(':').slice(0, -1).join(':'), fusion = pre.startsWith(FUSION);
+    const cartes = Object.values(maps).filter((m) => (fusion ? m.rv.fusion : m.rv.pre === pre));
+    let sorties = 0;
+    for (const m of cartes) {
+      for (const [c, o] of m.objects) if (o.type === 'rv-sortie' && vus.has(`${m.id}|${c}`)) sorties++;
+      const pres = (x, y) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => vus.has(`${m.id}|${x + a},${y + b}`));
+      for (const n of m.npcs) ok(pres(n.x, n.y), `${l.nom} : on atteint ${n.trainer ? n.trainer.cls + ' ' + n.trainer.name : n.name} (${m.id} ${n.x},${n.y})`);
+      for (const it of m.items) ok(pres(it.x, it.y) && ITEMS[it.item], `${l.nom} : on atteint l'objet ${it.item} (${m.id} ${it.x},${it.y})`);
+      for (const [c, o] of m.objects) if (o.type === 'rv-cache') ok(pres(...c.split(',').map(Number)), `${l.nom} : on atteint l'objet caché (${m.id} ${c})`);
+    }
+    ok(sorties > 0, `${l.nom} : on atteint la sortie depuis l'entrée`);
+  }
+  // les dresseurs gardent leurs équipes et leurs attaques d'origine
+  for (const m of Object.values(maps)) for (const n of m.npcs) if (n.trainer) for (const [sp, lvl, mv, item] of n.trainer.team) ok(SPECIES[sp] && lvl > 0 && (!mv || mv.every((x) => x === null || Object.values(MOVES).some((q) => q.key === x))) && (!item || ITEMS[item]), `routes victoire : équipe de ${n.trainer.name}`);
+  const naomi = Object.values(maps).find((m) => m.id === 'rv:vf:VictoryRoad_1F').npcs.find((n) => n.trainer?.name === 'Naomi').trainer;
+  const party = naomi.team.map(([sp, lvl]) => createMon(sp, lvl));
+  RVR.equipeOrigine(naomi.team, party);
+  ok(party[0].moves.map((x) => MOVES[x.id].key).join() === 'fury-swipes,screech,feint-attack,pay-day' && party[0].iv[0] === 12, 'routes victoire : Naomi joue les attaques de Vert Feuille');
+  const rolando = maps['rv:vf:VictoryRoad_1F'].npcs.find((n) => n.trainer?.name === 'Rolando').trainer, p2 = rolando.team.map(([sp, lvl]) => createMon(sp, lvl));
+  RVR.equipeOrigine(rolando.team, p2);
+  ok(p2[0].moves.length === 4 && MOVES[p2[0].moves[0].id].key === 'super-fang', 'routes victoire : une attaque absente d\'Odyssée est remplacée');
+  // hauteurs : plateau, passage, pont
+  ok(!RVR.changeNiveau(0, 4) && !RVR.changeNiveau(3, 0) && !RVR.changeNiveau(3, 15) && RVR.changeNiveau(3, 4) && !RVR.changeNiveau(4, 4), 'routes victoire : on change de niveau par un passage ou un pont');
+  // la fusion enchaîne les routes
+  const fin = Object.values(maps).filter((m) => m.rv.fusion && m.rv.route === ROUTES[0]);
+  ok(fin.every((m) => m.rv.suite === `${FUSION}:${ROUTES[1]}`), 'routes victoire : la fusion mène d\'une route à la suivante');
+  ok(maps['rv:vf:VictoryRoad_3F'].rv.trous.length === 1 && RV.vf.etages[1].rochers.some((r) => r[2]), 'routes victoire : le trou du 3F et le rocher qui tombe au 2F');
+  ok(maps['rv:em:VictoryRoad_B2F'].surf && maps['rv:em:VictoryRoad_B2F'].rv.cascades.size > 0, 'routes victoire : l\'eau et les cascades du SS2 d\'Émeraude');
+  ok(OBJETS['ct50-rv'] && refusCt('ct50-rv', 6) === 'Ne peut pas l\'apprendre', 'routes victoire : Surchauffe reste réservée (CT50 de Vert Feuille)');
+}
 
 console.log(fails ? `${fails} échec(s) sur ${checks} vérifications` : `TestOdyssée : ${checks} vérifications, tout est bon.`);
 process.exit(fails ? 1 : 0);

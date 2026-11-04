@@ -15,6 +15,11 @@ export const SPECTRE_PIERRE = 2001;
 // attaques créées pour le labo ; Éruption et Giclédo (et leur pendant Plante) perdent de la force avec les PV du lanceur
 export const ATTAQUES = {
   2101: { id: 2101, key: 'jaillisseve', n: 'Jaillissève', t: 'grass', c: 'special', p: 150, a: 100, pp: 5, pr: 0, tg: 11, m: { cat: 0, u: 'pv' } },
+  // attaques de météo (les CT des Routes Victoire et leurs dresseurs) : Odyssée ne connaît la météo que par les talents
+  201: { id: 201, key: 'sandstorm', n: 'Tempête de Sable', t: 'rock', c: 'status', p: 0, a: null, pp: 10, pr: 0, tg: 12, m: { cat: 10, u: 'meteo', meteo: 'sandstorm' } },
+  240: { id: 240, key: 'rain-dance', n: 'Danse Pluie', t: 'water', c: 'status', p: 0, a: null, pp: 5, pr: 0, tg: 12, m: { cat: 10, u: 'meteo', meteo: 'rain' } },
+  241: { id: 241, key: 'sunny-day', n: 'Zénith', t: 'fire', c: 'status', p: 0, a: null, pp: 5, pr: 0, tg: 12, m: { cat: 10, u: 'meteo', meteo: 'sun' } },
+  258: { id: 258, key: 'hail', n: 'Grêle', t: 'ice', c: 'status', p: 0, a: null, pp: 10, pr: 0, tg: 12, m: { cat: 10, u: 'meteo', meteo: 'hail' } },
   2102: { id: 2102, key: 'lame-de-fond', n: 'Lame de Fond', t: 'water', c: 'special', p: 130, a: 90, pp: 5, pr: 0, tg: 10, m: { cat: 7, st: [[4, -2]], stc: 100 } },
 };
 const PLUS_FORTES_A_PV_PLEINS = ['eruption', 'water-spout'];
@@ -47,6 +52,16 @@ export const ESPECES = {
 
 const PARCHEMIN = 'Un vieux parchemin trouvé dans le Donjon des Miroirs. Son texte parle d\'un autre lieu, encore inconnu.';
 export const OBJETS = {
+  // objets des Routes Victoire (rv/) : CT d'origine (à usage unique, comme en troisième génération) et objets absents d'Odyssée
+  'ct02-rv': { pocket: 'ct', price: 0, name: 'CT02 Draco-Griffe', img: 'miroirs/objet_ct.png', ct: 'dragon-claw', unique: true, desc: 'Apprend Draco-Griffe : de grandes griffes tranchantes. Comme dans les jeux de l\'époque, elle ne sert qu\'une fois.' },
+  'ct07-rv': { pocket: 'ct', price: 0, name: 'CT07 Grêle', img: 'miroirs/objet_ct.png', ct: 'hail', unique: true, desc: 'Apprend Grêle : une averse de grêle pendant cinq tours. Comme dans les jeux de l\'époque, elle ne sert qu\'une fois.' },
+  'ct29-rv': { pocket: 'ct', price: 0, name: 'CT29 Psyko', img: 'miroirs/objet_ct.png', ct: 'psychic', unique: true, desc: 'Apprend Psyko : une puissante attaque psychique. Comme dans les jeux de l\'époque, elle ne sert qu\'une fois.' },
+  'ct37-rv': { pocket: 'ct', price: 0, name: 'CT37 Tempête de Sable', img: 'miroirs/objet_ct.png', ct: 'sandstorm', unique: true, desc: 'Apprend Tempête de Sable : une tempête de sable pendant cinq tours. Comme dans les jeux de l\'époque, elle ne sert qu\'une fois.' },
+  'ct50-rv': { pocket: 'ct', price: 0, name: 'CT50 Surchauffe', img: 'miroirs/objet_ct.png', ct: 'overheat', unique: true, desc: 'Apprend Surchauffe : une attaque de feu dévastatrice, qui baisse l\'Attaque Spéciale du lanceur. Comme dans les jeux de l\'époque, elle ne sert qu\'une fois.' },
+  'max-elixir': { pocket: 'soin', price: 4500, ppAll: 99, name: 'Max Élixir', desc: 'Restaure tous les PP de toutes les attaques.' },
+  'max-revive': { pocket: 'soin', price: 4000, revive: 1, name: 'Rappel Max', desc: 'Ranime un Pokémon K.O. avec tous ses PV.' },
+  'pp-up': { pocket: 'objets', price: 9800, name: 'PP Plus', desc: 'Augmente les PP maximum d\'une attaque. Odyssée ne s\'en sert pas encore : il se garde dans le sac.' },
+  'guard-spec': { pocket: 'objets', price: 700, name: 'Défense Spéc.', desc: 'Empêche les stats de baisser pendant cinq tours. Odyssée ne s\'en sert pas encore : il se garde dans le sac.' },
   'eau-fraiche': { pocket: 'soin', price: 0, heal: 50, name: 'Eau Fraîche', icon: 'fresh-water', desc: 'Une eau limpide et glacée. Restaure 50 PV. Elle ne se garde pas hors du Donjon des Miroirs.' },
   'parchemin-miroirs-1': { pocket: 'cles', price: 0, key: true, name: 'Parchemin des Miroirs I', img: 'miroirs/objet_parchemin.png', desc: PARCHEMIN, lire: ['« Là où la lumière se brise, une porte attend. »', 'Le reste du texte est effacé.'] },
   'parchemin-miroirs-2': { pocket: 'cles', price: 0, key: true, name: 'Parchemin des Miroirs II', img: 'miroirs/objet_parchemin.png', desc: PARCHEMIN, lire: ['« Trois reflets, trois clés, un seul chemin. »', 'Une carte à moitié déchirée accompagne le texte.'] },
@@ -95,6 +110,13 @@ export function installerContenu(ASSETS) {
   Battle.prototype.movePower = function (i, d, mv) {
     if (mv.m?.u === 'pv') { const m = this.act(i); return Math.max(1, Math.floor((mv.p * m.hp) / m.stats[0])); }
     return puissance.call(this, i, d, mv);
+  };
+  // météo lancée par une attaque : cinq tours
+  const speciale = Battle.prototype.special;
+  Battle.prototype.special = function (i, d, mv) {
+    if (mv.m?.u !== 'meteo') return speciale.call(this, i, d, mv);
+    if (this.weather === mv.m.meteo) this.say('Mais cela échoue !'); else this.setWeather(mv.m.meteo, 5);
+    return true;
   };
   if (!ASSETS) return;
   const front = ASSETS.front, item = ASSETS.item, cry = ASSETS.cry;

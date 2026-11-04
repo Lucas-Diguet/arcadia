@@ -1,8 +1,11 @@
 // testodyssee/js/jeu.js — le jeu d'Odyssée, en version labo : rien n'est sauvegardé (la vraie partie d'Odyssée
 // n'est jamais touchée) et le menu propose de changer de lieu.
 import { Game } from '../../odyssee/js/game.js';
+import { T } from '../../odyssee/js/world/tiles.js';
 import { partyScreen, dexScreen, mapScreen, optionsScreen } from '../../odyssee/js/ui/screens.js';
 import { ILE } from './ile/modele.js';
+import { RoutesVictoire } from './rv/jeu.js';
+import { equipeOrigine } from './rv/routes.js';
 
 const CLE_TEST = 'testodyssee-mode-test';
 
@@ -17,6 +20,8 @@ export class TestGame extends Game {
   tryStep(d) {
     const D = this.donjons, p = this.player;
     if (D?.pasSpecial(d) || D?.pousser(d)) return;
+    // Routes Victoire : hauteurs, cases fermées d'un côté, rochers qui tombent dans les trous
+    if ((this.rv ||= new RoutesVictoire(this)).avantPas(d)) return;
     const depart = [p.x, p.y], avant = p.move;
     super.tryStep(d);
     if (!avant && p.move) D?.apresDepart(d, depart);
@@ -25,6 +30,8 @@ export class TestGame extends Game {
   }
   // donjon clair : fond de combat clair (Odyssée prend le fond de grotte pour toute carte de grotte)
   async runBattle(o) {
+    // dresseurs des Routes Victoire : les attaques, objets tenus et valeurs cachées du jeu d'origine
+    if (o.trainer?.rv && o.party) equipeOrigine(o.trainer.team, o.party);
     if (this.modeTest && await this.ui.yesNo('Mode test : passer ce combat (compté comme gagné) ?')) return 'win';
     const m = this.mapObj;
     if (m?.style !== 'clair') return super.runBattle(o);
@@ -37,9 +44,21 @@ export class TestGame extends Game {
     if (this.ile && this.state && (id === ILE || id?.startsWith(ILE + ':')) && (!this.world.maps[id] || this.ile.pour !== this.ile.cle || !this.ile.dedans())) this.ile.preparer();
     return super.setMap(id);
   }
+  /** rencontres des Routes Victoire : celles du jeu d'origine, de jour comme de nuit */
+  wildBattle(enc, o = {}) {
+    if (!this.mapObj?.rv || o.fixed) return super.wildBattle(enc, o);
+    let r = Math.random() * enc.reduce((a, x) => a + x[3], 0), e = enc[0];
+    for (const x of enc) { r -= x[3]; if (r <= 0) { e = x; break; } }
+    const lvl = e[1] + Math.floor(Math.random() * (e[2] - e[1] + 1)), lead = this.lead();
+    if (!lead || (this.state.repel > 0 && lead.lvl >= lvl)) return;
+    return super.wildBattle([[e[0], lvl, lvl, 1]], { ...o, fixed: true });
+  }
+  setTile(x, y, v) { super.setTile(x, y, v); if (v === T.BOULDER) this.rv?.rocherPose(x, y); }
+  warp(to, sfx) { (this.rv ||= new RoutesVictoire(this)).arrivee(to); return super.warp(to, sfx); }
+  rvApprendre(cle) { return (this.rv ||= new RoutesVictoire(this)).apprendre(cle); }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
   async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }
-  async onStep(mv) { await super.onStep(mv); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.donjons?.apresPasTemple(); if (!this.busy) await this.ile?.apresPas(); } }
+  async onStep(mv) { this.rv?.apresPas(mv); await super.onStep(mv); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.donjons?.apresPasTemple(); if (!this.busy) await this.ile?.apresPas(); } }
   load() { return null; }
 
   async startMenu() {
