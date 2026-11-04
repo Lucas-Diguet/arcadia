@@ -311,8 +311,10 @@ ne montre que celles de la branche où l'on est.
 - En solo : mêmes salles, portes sans limite (`porteSolo`), un téléporteur dans la Salle des Clés ramène aux trois
   portes ; derrière le Gardien, trois CT à usage unique, dont on ne prend qu'une (`cts`, `ctsChoix` : `fin` pour
   Éruption, Giclédo et Jaillissève ; `tot`, si le donjon arrive plus tôt dans le jeu, pour Surchauffe, Lame de Fond et
-  Tempête Verte). Elles ne s'apprennent qu'à un starter (`STARTERS` de `contenu.js` : ceux des jeux officiels, des
-  formes du Temple et d'Odyssée, et toute leur lignée).
+  Tempête Verte). Chacune ne s'apprend qu'à un starter du même type que l'attaque (`STARTERS` de `contenu.js` : ceux
+  des jeux officiels, des formes du Temple avec leur nouveau type, et d'Odyssée, avec toute leur lignée), même s'il ne
+  l'apprend pas d'habitude. Ces attaques, un Pokémon qui ne les apprend pas par niveau ne les apprend qu'avec cette CT
+  (`refusCt` : toute autre CT les lui refuse).
 - Les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes : objets `tuile`).
 
 ### Les formes du Temple

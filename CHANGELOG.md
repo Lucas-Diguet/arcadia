@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 3.104 — 4 novembre 2026
+- **TestOdyssée** — Temple des Éléments : chaque CT du solo ne s'apprend qu'à un starter de son type, même s'il ne la connaît pas d'habitude (Dracaufeu peut apprendre Éruption, le Tortank du Temple aussi, mais pas Giclédo). Un Pokémon qui n'apprend pas l'attaque par niveau ne peut l'apprendre qu'avec cette CT.
+
 ## 3.103 — 4 novembre 2026
 - **TestOdyssée** — Temple des Éléments, en solo : derrière le Gardien, trois CT à usage unique (Éruption, Giclédo et Jaillissève, une nouvelle attaque Plante). Tu n'en prends qu'une, et elle ne s'apprend qu'à un starter.
 - **TestOdyssée** — Éruption, Giclédo et Jaillissève frappent moins fort quand les PV de leur lanceur baissent.

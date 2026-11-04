@@ -2,7 +2,7 @@
 // node tools/test-testodyssee.mjs
 import { DONJONS } from '../testodyssee/js/donjons/index.js';
 import { construireCarte, construireSalles, passageSuivant, lirePlan, regionDe, ouvrir, aCote, relierExterieur, texteJoueurs } from '../testodyssee/js/donjon/plan.js';
-import { installerContenu, STARTERS } from '../testodyssee/js/contenu.js';
+import { installerContenu, STARTERS, refusCt, OBJETS } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
 import { Battle as BattleT } from '../odyssee/js/core/battle.js';
 import { Groupe } from '../testodyssee/js/combat/groupe.js';
@@ -766,6 +766,10 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   const idm = (k) => Object.values(MOVES).find((m) => m.key === k)?.id;
   ok(['fin', 'tot'].every((q) => d.cts[q].length === 3 && d.cts[q].every((k) => ITEMS[k]?.unique && ITEMS[k].starters && idm(ITEMS[k].ct))) && d.cts.fin.map((k) => MOVES[idm(ITEMS[k].ct)].t).sort().join() === 'fire,grass,water' && d.cts.tot.map((k) => MOVES[idm(ITEMS[k].ct)].t).sort().join() === 'fire,grass,water', 'temple : trois CT par jeu (feu, eau, plante), à usage unique et pour les starters');
   ok(STARTERS.has(9) && STARTERS.has(TEMPLE.tortank) && STARTERS.has(1003) && STARTERS.has(906) && !STARTERS.has(25) && !STARTERS.has(133), 'temple : les starters, ceux des jeux, du Temple et d\'Odyssée, et toute leur lignée');
+  ok(!refusCt('ct-eruption-temple', 6) && refusCt('ct-gicledo-temple', 6) && !refusCt('ct-eruption-temple', TEMPLE.tortank) && refusCt('ct-gicledo-temple', TEMPLE.tortank) && !refusCt('ct-jaillisseve-temple', TEMPLE.dracaufeu) && refusCt('ct-eruption-temple', 25), 'temple : la CT va au starter de son type (le Tortank du Temple prend Éruption, pas Giclédo), même s\'il ne l\'apprend pas d\'habitude');
+  OBJETS['ct-test-eruption'] = { ct: 'eruption' };
+  ok(refusCt('ct-test-eruption', 6) && !refusCt('ct-test-eruption', 157), 'temple : une autre CT Éruption ne va qu\'à ceux qui l\'apprennent d\'habitude (Typhlosion, pas Dracaufeu)');
+  delete OBJETS['ct-test-eruption'];
   {
     const b = new BattleT({ player: { name: 'A', party: [createMon(6, 50)] }, foe: { name: 'B', party: [createMon(9, 50)] } });
     const lanceur = b.act(0), mv = MOVES[idm('eruption')], plein = b.movePower(0, 1, mv);

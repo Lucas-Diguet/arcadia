@@ -21,6 +21,19 @@ const PLUS_FORTES_A_PV_PLEINS = ['eruption', 'water-spout'];
 /** les starters : ceux des jeux officiels, les formes du Temple, ceux d'Odyssée, et toute leur lignée */
 const LIGNEES = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393, 495, 498, 501, 650, 653, 656, 722, 725, 728, 810, 813, 816, 906, 909, 912, 1001, 1004, 1007, 2010, 2013, 2016];
 export const STARTERS = new Set(LIGNEES.flatMap((a) => [a, a + 1, a + 2]));
+/**
+ * qui peut apprendre l'attaque d'une CT ? Une CT de starter ne va qu'à un starter du même type que l'attaque (une forme
+ * du Temple compte avec son nouveau type), même s'il ne l'apprend pas d'habitude. Et ces attaques-là, un Pokémon qui ne
+ * les apprend pas par niveau ne les apprend qu'avec cette CT, jamais avec une autre. Renvoie null, ou la raison du refus.
+ */
+export function refusCt(objet, sp) {
+  const o = OBJETS[objet] || ITEMS[objet], mv = o && Object.values(MOVES).find((m) => m.key === o.ct), S = SPECIES[sp];
+  if (!mv || !S) return 'Impossible';
+  if (o.starters) return !STARTERS.has(sp) ? 'Pas un starter' : !S.t.includes(mv.t) ? 'Pas du bon type' : null;
+  const reservee = Object.values(OBJETS).some((q) => q.starters && q.ct === mv.key);
+  if (reservee && !(S.ls || []).some(([, id]) => id === mv.id)) return 'Ne peut pas l\'apprendre';
+  return null;
+}
 
 export const ESPECES = {
   [SPECTRE_PIERRE]: {
