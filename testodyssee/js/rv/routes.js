@@ -10,12 +10,12 @@ import { ITEMS } from '../../../odyssee/js/core/items.js';
 import { refreshStats } from '../../../odyssee/js/core/mon.js';
 
 // dans l'ordre de la fusion (HeartGold et Platine viendront s'y ajouter)
-export const ROUTES = ['vf', 'em', 'pt'];
+export const ROUTES = ['vf', 'hg', 'em', 'pt'];
 // la case par où l'on entre dans chaque route ; les autres sorties mènent à la Ligue
-export const ENTREES = { vf: ['VictoryRoad_1F', 11, 20], em: ['VictoryRoad_1F', 15, 40], pt: ['1f', 15, 78] };
+export const ENTREES = { vf: ['VictoryRoad_1F', 11, 20], em: ['VictoryRoad_1F', 15, 40], pt: ['1f', 15, 78], hg: ['1F', 46, 59] };
 export const FUSION = 'rv:fusion';
 
-const SOL = { '#': T.CAVEWALL, '.': T.CAVE, n: T.CAVE, p: T.CAVE, e: T.CAVE, '=': T.BRIDGE, '~': T.WATER, '|': T.WATER, v: T.LEDGE, '<': T.LEDGE_W, '>': T.LEDGE_E };
+const SOL = { '#': T.CAVEWALL, '.': T.CAVE, n: T.CAVE, p: T.CAVE, e: T.CAVE, '=': T.BRIDGE, '%': T.BRIDGE, '~': T.WATER, '|': T.WATER, v: T.LEDGE, '<': T.LEDGE_W, '>': T.LEDGE_E };
 const ETAGES = { '1f_room_1': 'Galerie', '1f_room_2': 'Profondeurs', '1f_room_3': 'Sortie des Profondeurs' };
 const k = (x, y) => `${x},${y}`;
 export const nomEtage = (id) => ETAGES[id] || id.replace('VictoryRoad_', '').toUpperCase().replace(/^B(\d)F$/, 'SS$1');
@@ -27,13 +27,15 @@ export function changeNiveau(z, h) { return !!z && !!h && h !== 15 && h !== z; }
 /** case fermée au nord : on n'en sort pas vers le haut, on n'y entre pas par le haut */
 export function fermee(m, x, y, d, tx, ty) { return (d === 'up' && m.nord.has(k(x, y))) || (d === 'down' && m.nord.has(k(tx, ty))); }
 /** la génération 4 : on monte sur un pont par ses bouts (p) et on ne le quitte que par eux ; dessous, on passe ;
- *  la paroi d'Escalade (e) se gravit tout droit, vers le haut ou vers le bas. Renvoie null si le pas est interdit, sinon « sur le pont ». */
+ *  (= au-dessus d'un passage, % au-dessus du vide) ; la paroi d'Escalade (e) se gravit tout droit, vers le haut ou vers le bas. Renvoie null si le pas est interdit, sinon « sur le pont ». */
 export function pasGen4(m, x, y, d, tx, ty, pont) {
   const a = m.rv.sol[y]?.[x], b = m.rv.sol[ty]?.[tx], vertical = d === 'up' || d === 'down';
   if ((a === 'e' || b === 'e') && !vertical) return null;
-  if (pont) return b === '=' ? true : b === 'p' ? false : null;
+  const pontB = b === '=' || b === '%';
+  if (pont) return pontB ? true : b === 'p' ? false : null;
+  if (b === '%') return a === 'p' ? true : null;   // pont au-dessus du vide : on n'y monte que par un bout
   if (a === '=' && b === 'p') return null;
-  return a === 'p' && b === '=';
+  return a === 'p' && pontB;
 }
 
 /** les cartes de toutes les routes, seules et en fusion ; renvoie les lieux où apparaître */
@@ -127,17 +129,18 @@ async function tuteur(api, id, attaque) {
   if (await g.rvApprendre?.(attaque)) api.f['TU:' + id] = true;
 }
 
-/** Timmy (Émeraude) : il attend l'entrée du 1F et défie le joueur quand il passe */
+/** Timmy (Émeraude) à l'entrée du 1F, Silver (HeartGold) au 3F : ils défient le joueur quand il passe */
 function poserDeclencheur(m, id, r, Dc) {
   const D = Dc.dresseur, tx = TEXTES[r]?.[D.texte] || {}, fid = `${id}:${D.texte}`;
   Dc.cases.forEach(([x, y], i) => m.object(x, y, {
     type: 'rv-declencheur',
     onStep: async (api) => {
       if (api.f['T:' + fid]) return false;
-      const res = await api.fight({ cls: D.cls, name: D.nom, team: D.equipe, ow: D.ow, bs: D.ow, items: D.items, intro: tx.intro, lose: tx.perd, rv: true, prize: 60 });
+      const team = D.equipes ? D.equipes[Math.floor(Math.random() * D.equipes.length)] : D.equipe;
+      const res = await api.fight({ cls: D.cls, name: D.nom, team, ow: D.ow, bs: D.ow, items: D.items, intro: tx.intro, lose: tx.perd, rv: true, prize: 60 });
       if (res !== 'win') return true;
       api.f['T:' + fid] = true;
-      const [ax, ay] = Dc.arrivee[i]; api.f['RVP:' + fid] = `${ax},${ay}`;
+      if (Dc.arrivee[i]) { const [ax, ay] = Dc.arrivee[i]; api.f['RVP:' + fid] = `${ax},${ay}`; }
       api.game.refreshNpcs();
       await api.say(tx.apres);
       return true;

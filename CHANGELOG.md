@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 3.107 — 4 novembre 2026
+- **TestOdyssée** — La Route Victoire de HeartGold rejoint le labo (1F, 2F, 3F), recopiée d'après les plans des étages. Les objets, les objets cachés, les rochers, les échelles et Silver sont à leur place d'origine ; Silver joue l'une de ses trois équipes, tirée au hasard.
+- **TestOdyssée** — La fusion enchaîne maintenant les quatre Routes Victoire dans l'ordre des jeux : Vert Feuille, HeartGold, Émeraude, Platine.
+- **TestOdyssée** — Nouvel objet : CT26 Séisme.
+
 ## 3.106 — 4 novembre 2026
 - **TestOdyssée** — La Route Victoire de Platine rejoint le labo, sur son plan d'origine : 1F, 2F, SS1 et les Profondeurs, avec leurs dresseurs, leurs objets, leurs rochers et leurs ponts. La fusion enchaîne maintenant Vert Feuille, Émeraude et Platine.
   - Sur un pont, on ne descend que par ses bouts ; dessous, on passe librement.

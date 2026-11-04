@@ -412,7 +412,7 @@ Dans la donnée de l'île : `points`, `stock { article: nombre }`, `statues { 's
 ### Les Routes Victoire
 
 `tools/routes-victoire.py` recopie les Routes Victoire de Vert Feuille, d'Émeraude et de Platine case par case depuis
-les décompilations pret (`python3 tools/routes-victoire.py chemin/pokefirered chemin/pokeemerald chemin/pokeplatinum` ;
+les décompilations pret (`python3 tools/routes-victoire.py chemin/pokefirered chemin/pokeemerald chemin/pokeplatinum chemin/pokeheartgold` ;
 pour Platine, les cases et leurs permissions viennent de `res/field/maps/data`) et écrit
 `js/rv/donnees.js` (ne pas le modifier à la main) : sol, murs, hauteurs, rebords, eau, cascades, échelles, dresseurs
 (équipes, attaques, objets tenus, valeurs cachées), objets, objets cachés, rochers, rochers fissurés, boutons et
@@ -423,7 +423,9 @@ de niveau par une case de passage, hauteur 0, ou un pont, hauteur 15), cases fer
 trou, bouton qui ouvre une barrière, cascade qu'on descend seulement ; et de la quatrième (Platine) : on monte sur un
 pont par ses bouts (`p`), on ne le quitte que par eux, on passe dessous ; la paroi d'Escalade (`e`) se gravit tout droit.
 Au 2F de Platine, deux objets restent dans des recoins qu'on ne rejoint pas encore. HeartGold n'a pas de plan dans sa
-décompilation : il se recopie à partir d'images.
+décompilation : ses étages sont recopiés à la main dans `tools/rv-heartgold.txt` (d'après des images prises en
+perspective, donc à une case ou deux près), et ses événements (échelles, objets, rochers, Silver) viennent de
+pokeheartgold. La fusion suit l'ordre des jeux : Vert Feuille, HeartGold, Émeraude, Platine.
 
 ## Passer un lieu dans Odyssée
 

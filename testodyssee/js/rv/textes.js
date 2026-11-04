@@ -35,6 +35,9 @@ export const TEXTES = {
     Felix: { intro: 'Je suis arrivé jusqu\'ici, mais le trac me donne un mal de ventre terrible...', perd: 'Ooh... Ça fait mal...', apres: ['Je ne peux pas m\'empêcher d\'être tendu, si près de la Ligue Pokémon.', 'J\'arrive à peine à faire semblant d\'être calme.'] },
     Wally: { intro: ['Timmy : Salut ! Tu es surpris de me voir ici, hein ?', 'Je suis arrivé jusqu\'ici, et c\'est grâce à toi !', 'Perdre contre toi la dernière fois m\'a rendu plus fort !', 'Je ne perdrai plus !'], perd: 'Ouah ! Tu es vraiment fort, finalement !', apres: 'Timmy : Je n\'ai pas pu te battre aujourd\'hui, mais un de ces jours, je te rattraperai !' },
   },
+  hg: {
+    Silver: { intro: ['Attends.', '... Tu vas défier la Ligue Pokémon ?', 'La Route Victoire touche à sa fin, c\'est sûr.', 'Mais tu as remarqué... ? Tu n\'as croisé aucun vrai Dresseur en chemin, pas vrai ?', 'Ils étaient tous sans courage !', 'Enfin, si tu es arrivé jusqu\'ici, tu n\'es pas comme eux.', 'Mais ! Ton voyage s\'arrête ici ! Parce que... ici et maintenant... je vais t\'écraser !'], perd: ['... Je n\'ai pas pu gagner...', 'J\'ai tout donné...', 'Ce que tu as et que je n\'ai pas...', 'Je commence à comprendre ce que m\'a dit ce Dresseur de Dragons...'], apres: ['..................', 'Je n\'ai pas renoncé à devenir le meilleur Dresseur...', 'Je vais comprendre pourquoi je ne gagne pas, et devenir plus fort...', 'Ce jour-là, je te défierai. Je t\'écraserai de toutes mes forces.', '... Hmpf ! D\'ici là, continue.'] },
+  },
   pt: {
     Bryce: { intro: 'Je suis Médium ! Je vois ton avenir !', perd: 'Soit ! Je vais te révéler ce que je sais de ton avenir... Hmm !', apres: 'Je le vois maintenant ! Tu vas affronter le Conseil 4 de la Ligue Pokémon !' },
     Miles: { intro: 'Mon Pokémon connaît le karaté ! Je te préviens, il est coriace !', perd: 'J\'ai trouvé plus fort que moi !', apres: 'Je suis arrivé jusqu\'ici grâce au karaté que j\'ai appris sur Internet !' },

@@ -20,7 +20,7 @@ export function brancherRendu() {
     if (m.rv) {
       const t = m.get(x, y);
       if (t === T.BRIDGE) {
-        const S = m.rv.sol, bout = (dx, dy) => { let i = 1; while (S[y + dy * i]?.[x + dx * i] === '=') i++; return S[y + dy * i]?.[x + dx * i] === 'p'; };
+        const S = m.rv.sol, bout = (dx, dy) => { let i = 1; while ('=%'.includes(S[y + dy * i]?.[x + dx * i] || '#')) i++; return S[y + dy * i]?.[x + dx * i] === 'p'; };
         const ew = m.rv.gen === 4 ? bout(1, 0) || bout(-1, 0) : [m.get(x - 1, y), m.get(x + 1, y)].some((q) => q === T.BRIDGE || q === T.CAVE) && m.elev[y * m.w + x - 1] !== 3;
         return { c: A.cave0, bridge: ew ? A.bridgeEW || A.bridge : A.bridge };
       }

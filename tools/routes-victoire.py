@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # tools/routes-victoire.py — recopie les Routes Victoire de Vert Feuille et d'Émeraude case par case, à partir des
 # décompilations pret (pokefirered, pokeemerald, pokeplatinum), dans testodyssee/js/rv/donnees.js.
-#   python3 tools/routes-victoire.py chemin/pokefirered chemin/pokeemerald chemin/pokeplatinum
+#   python3 tools/routes-victoire.py chemin/pokefirered chemin/pokeemerald chemin/pokeplatinum chemin/pokeheartgold
+# HeartGold : la décompilation n'a que les événements ; les cases viennent de tools/rv-heartgold.txt, recopié à la main.
 # On garde le plan d'origine : murs, sol, hauteurs (plateaux et ponts), rebords, eau, cascades, échelles,
 # dresseurs (équipes, attaques, objets), objets au sol et cachés, rochers, rochers fissurés, boutons et barrières,
 # trous, rencontres sauvages, maître des capacités. Les textes des dresseurs sont traduits à la main dans rv/textes.js.
@@ -319,8 +320,59 @@ def convertir_pt(R):
         etages.append(E)
     return etages, textes
 
+# --- HeartGold : les événements de la décompilation pokeheartgold, les cases de tools/rv-heartgold.txt ---
+HG_ETAGES = [('1F', '121_D43R0101'), ('2F', '171_D43R0102'), ('3F', '172_D43R0103')]
+HG_CT = {'tm26': ('earthquake', 26), 'tm79': ('dark-pulse', 79)}
+
+def objet_hg(script):
+    k = re.sub(r'^std_(itemball|hiddenitem)_d43r010\d_', '', script)
+    if k in HG_CT: CT[k.upper()] = HG_CT[k][0]; NUM_CT[k.upper()] = HG_CT[k][1]; return objet(k.upper())
+    return k.replace('_', '-')
+
+def convertir_hg(R):
+    plans, cur = {}, None
+    for l in open(os.path.join(ICI, 'rv-heartgold.txt'), encoding='utf-8'):
+        l = l.rstrip('\n')
+        if l.startswith('== '): cur = l[3:]; plans[cur] = []
+        elif cur and l and not l.startswith('#') or (cur and l.startswith('#') and len(l) == 64): plans[cur].append(l)
+    evs = {n: json.load(open(R + f'/files/fielddata/eventdata/zone_event/{f}.json')) for n, f in HG_ETAGES}
+    enc = {e['map']: e for e in list(json.load(open(R + '/files/fielddata/encountdata/gs_enc_data.json')).values())[0]}
+    ids = {m.group(1): int(m.group(2)) for m in re.finditer(r'#define (TRAINER_\w+)\s+(\d+)', open(R + '/include/constants/trainers.h').read())}
+    trainers = json.load(open(R + '/files/poketool/trainer/trainers.json'))['trainers']
+    etages = []
+    for n, f in HG_ETAGES:
+        sol = plans[n]; ev = evs[n]
+        E = {'id': n, 'gen': 4, 'w': 64, 'h': 64, 'sol': sol, 'haut': ['0' * 64] * 64, 'dresseurs': [], 'objets': [], 'caches': [], 'rochers': [], 'roches': [],
+             'boutons': [], 'trous': [], 'liens': [], 'sorties': [], 'pnj': []}
+        for o in ev['warps']:
+            d = o['header'].replace('MAP_VICTORY_ROAD_', '')
+            if d in evs:
+                to = evs[d]['warps'][o['anchor']]
+                E['liens'].append({'x': o['x'], 'y': o['z'], 'vers': d, 'vx': to['x'], 'vy': to['z']})
+            else: E['sorties'].append({'x': o['x'], 'y': o['z'], 'vers': o['header']})
+        for o in ev['objects']:
+            s, x, y = o['spriteId'], o['x'], o['z']
+            if s == 'SPRITE_MONSTARBALL': E['objets'].append([x, y, objet_hg(o['scriptId'])])
+            elif s == 'SPRITE_ROCK': E['rochers'].append([x, y])
+            elif s == 'SPRITE_BREAKROCK': E['roches'].append([x, y])
+        for o in ev['bgs']: E['caches'].append([o['x'], o['z'], objet_hg(o['scriptId'])])
+        # Silver attend au 3F : son équipe dépend du starter choisi (une des trois au hasard dans le labo)
+        for o in ev.get('coords', []):
+            if 'D43R0103_000' in o['scriptId']:
+                equipes = []
+                for cst in ('TRAINER_RIVAL_SILVER_5', 'TRAINER_RIVAL_SILVER_9', 'TRAINER_RIVAL_SILVER_13'):
+                    T = trainers[ids[cst]]
+                    equipes.append([[espece(p['species'][8:]), p['level'], [attaque(m[5:]) for m in p['moves'] if m != 'MOVE_NONE'], None, round(p['difficulty'] * 31 / 255)] for p in T['party']])
+                E['declencheurs'] = [{'cases': [[o['x'] + i, o['z']] for i in range(o['w'])], 'arrivee': [], 'dresseur': {'id': 'silver', 'cls': 'Rival', 'nom': 'Silver', 'items': {}, 'equipe': equipes[0], 'equipes': equipes, 'ow': 'voleur', 'texte': 'Silver'}}]
+        S = enc.get(f.split('_')[1], {})
+        if S.get('land', {}).get('rate'):
+            sp = lambda m: m['species']['day'] if isinstance(m['species']['day'], str) else m['species']['day']['HEARTGOLD']
+            E['sauvages'] = [[espece(sp(m)[8:]), m['level'], m['level'], p] for m, p in zip(S['land']['mons'], [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1])]
+        etages.append(E)
+    return etages
+
 def main():
-    frlg, em, pt = sys.argv[1], sys.argv[2], sys.argv[3]
+    frlg, em, pt, hg = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
     # Émeraude : Timmy attend à l'entrée du 1F (deux cases de déclenchement)
     def wally():
         trainers = open(em + '/src/data/trainers.h').read(); parties = open(em + '/src/data/trainer_parties.h').read()
@@ -332,7 +384,8 @@ def main():
                          {'VictoryRoad_1F': 'gVictoryRoad_1F', 'VictoryRoad_B1F': 'gVictoryRoad_B1F', 'VictoryRoad_B2F': 'gVictoryRoad_B2F'},
                          {'VictoryRoad_1F': {'declencheurs': [{'cases': [[2, 23], [3, 23]], 'depart': [[12, 24], [12, 24]], 'arrivee': [[2, 24], [3, 24]], 'dresseur': wally()}]}})
     ptd, tpt = convertir_pt(pt)
-    out = {'vf': {'nom': 'Vert Feuille', 'etages': vf}, 'em': {'nom': 'Émeraude', 'etages': emd}, 'pt': {'nom': 'Platine', 'etages': ptd}}
+    hgd = convertir_hg(hg)
+    out = {'vf': {'nom': 'Vert Feuille', 'etages': vf}, 'hg': {'nom': 'HeartGold', 'etages': hgd}, 'em': {'nom': 'Émeraude', 'etages': emd}, 'pt': {'nom': 'Platine', 'etages': ptd}}
     os.makedirs(os.path.dirname(SORTIE), exist_ok=True)
     with open(SORTIE, 'w') as f:
         f.write('// Généré par tools/routes-victoire.py à partir des décompilations pret (pokefirered, pokeemerald, pokeplatinum) — ne pas modifier à la main.\n')
