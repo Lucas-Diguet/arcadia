@@ -50,7 +50,7 @@ export function especesTemple() {
   return Object.fromEntries([
     f(7, 'carapuce', { n: du('Carapuce'), t: ['fire'], dex: 'Né près des sources chaudes du Temple. Sa carapace de basalte est fendue de lave, et sa queue brûle comme une torche.' }),
     f(4, 'salameche', { n: du('Salamèche'), t: ['grass'], dex: 'Une pousse lui sort du crâne. La feuille au bout de sa queue grandit avec lui ; si elle fane, c\'est qu\'il est malade.' }),
-    f(1, 'bulbizarre', { n: du('Bulbizarre'), t: ['water'], dex: 'Il porte sur son dos un coquillage d'escargot. Quand il y colle l\'oreille, il entend la mer.' }),
+    f(1, 'bulbizarre', { n: du('Bulbizarre'), t: ['water'], dex: 'Il porte sur son dos un coquillage d\'escargot. Quand il y colle l\'oreille, il entend la mer.' }),
     f(493, 'arceus', { n: du('Arceus'), t: ['fire', 'water', 'grass'], plus: [[1, 'flamethrower'], [1, 'muddy-water'], [1, 'energy-ball']], dex: 'Le gardien du Temple des Éléments. Il porte en lui le feu, l\'eau et la plante.' }),
   ]);
 }
