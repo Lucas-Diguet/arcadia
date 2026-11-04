@@ -19,10 +19,19 @@ export function brancherRendu() {
   // les dalles des donjons (et les cases à motif posées par le labo) restent visibles : le sol généré les laisse à nu
   const SOUS = new Set(['carpet', 'glace', 'sable', 'asph']);
   const pompe = Sol.prototype.pump;
+  // ponts sur la lave : le jeu dessine la lave et les planches (pas les pontons sur l'eau du sol généré) ;
+  // barrières des grottes : le sol de grotte dessous
   Sol.prototype.pump = function () {
     const m = this.map, nus = m?.deco ? new Set(m.deco.filter((d) => SOUS.has(d.k)).map((d) => d.x + ',' + d.y)) : null;
-    if (!nus?.size) return pompe.call(this);
-    m.get = function (x, y) { return nus.has(x + ',' + y) ? T.FLOOR : Object.getPrototypeOf(this).get.call(this, x, y); };
+    const lave = m?.biome === 'magma' && !m.outdoor, grotte = m && !m.outdoor && m.floor === 'cave';
+    if (!nus?.size && !lave && !grotte) return pompe.call(this);
+    m.get = function (x, y) {
+      if (nus?.has(x + ',' + y)) return T.FLOOR;
+      const t = Object.getPrototypeOf(this).get.call(this, x, y);
+      if (lave && t === T.BRIDGE) return T.LAVA;
+      if (grotte && (t === T.BARRIER_R || t === T.BARRIER_B)) return T.CAVE;
+      return t;
+    };
     try { return pompe.call(this); } finally { delete m.get; }
   };
   const sol = P.groundCell;
@@ -41,6 +50,8 @@ export function brancherRendu() {
       }
       if (t === T.LEDGE || t === T.LEDGE_E || t === T.LEDGE_W || m.rv.sol[y]?.[x] === 'e') return { c: A.cavestairs };
     }
+    // pont sur la lave (chemins du Temple) : la lave dessous, les planches en décalque
+    if (m.biome === 'magma' && !m.outdoor && m.get(x, y) === T.BRIDGE) return { anim: this.N.cells.lava };
     const st = STYLES[m.style];
     if (st && SOLS.has(m.get(x, y)) && !['exitlight', 'carpet'].includes(this.decoAt.get(x + ',' + y)?.k)) { const c = cellule(A, st.sol); if (c) return { c }; }
     return sol.call(this, x, y);
@@ -57,6 +68,7 @@ export function brancherRendu() {
   const carte = P.setMap;
   P.setMap = function (map) {
     carte.call(this, map);
+    const A = this.A?.cells; if (A && !A.dec_dalle_pontns) { A.dec_dalle_pontns = A.bridge; A.dec_dalle_pontew = A.bridgeEW || A.bridge; }
     // style clair : murs droits et blancs, sans les gradins de roche des grottes d'Odyssée
     const st = STYLES[map.style];
     if (st) { if (!st.relief) this.tiers = null; this.scene.background = new THREE.Color(st.fond); }

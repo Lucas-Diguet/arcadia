@@ -55,8 +55,8 @@ export class TestGame extends Game {
     if (!lead || (this.state.repel > 0 && lead.lvl >= lvl)) return;
     return super.wildBattle([[e[0], lvl, lvl, 1]], { ...o, fixed: true });
   }
-  setTile(x, y, v) { super.setTile(x, y, v); if (v === T.BOULDER) this.rv?.rocherPose(x, y); }
-  warp(to, sfx) { (this.rv ||= new RoutesVictoire(this)).arrivee(to); return super.warp(to, sfx); }
+  setTile(x, y, v) { super.setTile(x, y, v); if (v === T.BOULDER) { this.rv?.rocherPose(x, y); this.donjons?.rocherTemple?.(x, y); } }
+  warp(to, sfx) { (this.rv ||= new RoutesVictoire(this)).arrivee(to); this.donjons?.remiseTemple?.(to); return super.warp(to, sfx); }
   /** dans les donjons du labo, les capacités de terrain servent sans attendre les badges */
   canField(k) { return this.donjons?.dansUnDonjon?.() && k !== 'vol' ? this.hasField(k) : super.canField(k); }
   rvApprendre(cle) { return (this.rv ||= new RoutesVictoire(this)).apprendre(cle); }

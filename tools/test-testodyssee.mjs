@@ -728,35 +728,42 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
 {
   const d = DONJONS.find((q) => q.id === 'temple');
   const cartes = construireSalles(d), par = Object.fromEntries(d.salles.map((s, i) => [s.id, cartes[i]]));
-  // les décors des chemins : lave, eau, herbes hautes, posés à leur place
-  for (const [id, t] of [['gf', T.LAVA], ['ge', T.WATER], ['gp', T.TALL]]) {
+  // les couloirs du solo : lave, eau, herbes hautes, posés à leur place
+  for (const [id, t] of [['sf', T.LAVA], ['se', T.WATER], ['sp', T.TALL]]) {
     const m = par[id], P = m.donjon.plan;
     for (const [c, l] of Object.entries(P.objets)) if (d.objets[c].type === 'tuile') for (const [x, y] of l) m.set(x, y, T[d.objets[c].t]);
     const vu = m.reach(...P.depart), [nx, ny] = P.suivante, [kx, ky] = P.objets.K[0];
-    ok(vu[(ny + 1) * m.w + nx] && vu[ky * m.w + kx] && P.objets.K && Object.values(P.objets).flat().some(([x, y]) => m.get(x, y) === t), `temple : ${id} mène de l'entrée à la clé et à la sortie, entre ses ${t === T.LAVA ? 'laves' : t === T.WATER ? 'eaux' : 'herbes'}`);
+    ok(vu[(ny + 1) * m.w + nx] && vu[ky * m.w + kx] && Object.values(P.objets).flat().some(([x, y]) => m.get(x, y) === t), `temple : ${id} mène de l'entrée à la clé et à la sortie`);
   }
   ok(par.e1.donjon.plan.dalles.length === 3 && par.e1.donjon.plan.objets.X?.length === 1 && par.e1.donjon.plan.objets.G?.length === 3 && d.salles[0].requis === 3, 'temple : trois dalles pour la petite porte, une dalle d\'or et une grande porte');
-  ok(par.g2.donjon.versSuivante == null && par.gf.donjon.versSuivante?.map === par.g4.id && ['f', 'e', 'p'].every((c) => par[`s${c}1`].donjon.versSuivante?.map === par[`s${c}2`].id && par[`s${c}2`].donjon.versSuivante?.map === par[`s${c}3`].id && par[`s${c}3`].donjon.versSuivante?.map === par.s4.id) && par.g4.donjon.versSuivante?.map === par.g5.id && par.s4.donjon.versSuivante?.map === par.s5.id, 'temple : les chemins se rejoignent à la Salle des Clés, puis le Gardien');
-  // chemins du solo : trois salles par élément ; on y passe avec Éclate-Roc, Force, Surf, Cascade et Coupe
+  ok(par.g2.donjon.versSuivante == null && ['f', 'e', 'p'].every((c) => par[`g${c}1`].donjon.versSuivante?.map === par[`g${c}2`].id && par[`g${c}2`].donjon.versSuivante?.map === par[`g${c}3`].id && par[`g${c}3`].donjon.versSuivante?.map === par.g4.id) && par.sf.donjon.versSuivante?.map === par.s4.id && par.g4.donjon.versSuivante?.map === par.g5.id && par.s4.donjon.versSuivante?.map === par.s5.id, 'temple : les chemins se rejoignent à la Salle des Clés, puis le Gardien');
+  // chemins à trois : trois grandes salles par élément, avec de vrais casse-têtes (Éclate-Roc, Force et boutons, Surf, Cascade, Coupe)
   {
-    const TD = DONJONS.find((q) => q.id === 'temple'), MURS = new Set(['#', 'L', 'Y', 'u']);
+    const MURS = new Set(['#', 'L', 'Y', 'u', '%', '&', 'B']);
     for (const c of ['f', 'e', 'p']) for (const n of [1, 2, 3]) {
-      const s = TD.salles.find((q) => q.id === `s${c}${n}`), P = s.plan, at = (x, y) => P[y]?.[x] ?? '#';
+      const s = d.salles.find((q) => q.id === `g${c}${n}`), P = s.plan, at = (x, y) => P[y]?.[x] ?? '#';
       let dep; P.forEach((r, y) => { const x = r.indexOf('S'); if (x >= 0) dep = [x, y]; });
-      const vus = new Set([dep.join()]), file = [dep];
-      while (file.length) {
-        const [x, y] = file.pop();
-        for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
-          let tx = x + dx, ty = y + dy; const ch = at(tx, ty);
-          if (MURS.has(ch) || ((ch === '|' || at(x, y) === '|') && dx)) continue;
-          if (ch === 'v') { if (dy !== 1) continue; ty++; if (MURS.has(at(tx, ty))) continue; }
-          if (!vus.has(`${tx},${ty}`)) { vus.add(`${tx},${ty}`); file.push([tx, ty]); }
+      const parcours = (ferme) => {
+        const vus = new Set([dep.join()]), file = [dep];
+        while (file.length) {
+          const [x, y] = file.pop();
+          for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+            const tx = x + dx, ty = y + dy, ch = at(tx, ty);
+            if (MURS.has(ch) || ferme.has(ch) || ((ch === '|' || at(x, y) === '|') && dx)) continue;
+            if (!vus.has(`${tx},${ty}`)) { vus.add(`${tx},${ty}`); file.push([tx, ty]); }
+          }
         }
-      }
-      const buts = []; P.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === 'N' || ch === 'K') buts.push(`${x},${y}`); }));
-      const outils = { f: ['m', 'B'], e: ['~', '|'], p: ['C'] }[c];
-      ok(buts.length && buts.every((b) => vus.has(b)) && outils.every((o) => P.some((r) => r.includes(o))), `temple solo : la salle ${s.id} se traverse (${s.nom})`);
-      ok((n === 3) === !!s.cle && s.biome, `temple solo : ${s.id} a sa roche, et la clé est dans la troisième salle`);
+        return vus;
+      };
+      const ou = (chs) => { const l = []; P.forEach((r, y) => [...r].forEach((ch, x) => { if (chs.includes(ch)) l.push(`${x},${y}`); })); return l; };
+      const vus = parcours(new Set()), [N] = ou('N');
+      const portes = { f: '+-m', e: '+-|', p: 'C' }[c];
+      const objets = ou('IJOPVK');
+      ok(P.length >= 40 && P[0].length >= 56 && vus.has(N) && objets.every((b) => vus.has(b)) && ou('*^').every((b) => vus.has(b)), `temple : ${s.id} (${s.nom}) est grande et tout s'y atteint`);
+      ok(!parcours(new Set(portes)).has(N) && objets.length >= 4, `temple : ${s.id} ne se traverse pas sans ses capacités, et cache ses objets`);
+      // chaque bouton a son rocher en ligne, poussable jusqu'à lui
+      ok(ou('*^').every((b) => { const [x, y] = b.split(',').map(Number); return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + 3 * dx, y + 3 * dy) === 'B' && vus.has(`${x + 4 * dx},${y + 4 * dy}`)); }), `temple : dans ${s.id}, chaque bouton a son rocher à pousser`);
+      ok((n === 3) === !!s.cle && (n !== 3 || ou('K').length === 1) && s.biome && s.voie === c, `temple : ${s.id} a sa roche, et la clé est dans la troisième salle`);
     }
   }
   ok(par.s4.donjon.plan.objets.T && !par.g4.donjon.plan.objets.T && par.g5.donjon.plan.objets.a && par.s5.donjon.plan.objets.j && par.s5.donjon.plan.objets.l && !par.s5.donjon.plan.objets.a, 'temple : téléporteur en solo seulement ; trois Poké Balls à trois, trois CT en solo');

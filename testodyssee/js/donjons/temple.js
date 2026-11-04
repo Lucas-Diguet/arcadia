@@ -9,11 +9,12 @@
 // En solo : les mêmes salles, mais on fait les trois chemins l'un après l'autre (un téléporteur ramène à la salle des
 //   portes) ; derrière le Gardien, trois CT à usage unique pour un starter, dont on ne prend qu'une.
 //
-// À trois, les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes) ; en solo,
-// chacun fait trois salles (voir F1… P3).
+// À trois, chaque chemin a trois grandes salles (temple-chemins.js, dessinées par tools/temple-chemins.py) ; en solo,
+// les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes).
 import { GameMap, rng } from '../../../odyssee/js/world/mapgen.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 import { TEMPLE } from '../formes.js';
+import { F1, F2, F3, E1, E2, E3, P1, P2, P3 } from './temple-chemins.js';
 
 const CHEMINS = { f: 'Feu', e: 'Eau', p: 'Plante' };
 
@@ -62,186 +63,6 @@ const COULOIR = [
   '######S######',
 ];
 const couloir = (lettre) => COULOIR.map((r) => r.replace(/x/g, lettre));
-// les chemins du temple en solo : trois salles par élément, entre la Salle des Trois Portes et la Salle des Clés.
-// Feu : une montagne de lave (escaliers pour monter d'un plateau à l'autre, rebords pour redescendre), à franchir avec
-//   Éclate-Roc et Force. Eau : des bassins et des cascades, avec Surf et Cascade. Plante : une jungle à l'abandon,
-//   envahie d'arbres, de broussailles et de lianes, avec Coupe. La clé est au bout de la troisième salle.
-const F1 = [
-  '#########################',
-  '############N############',
-  '########....E....########',
-  '######LL.........LL######',
-  '#####LLL...LLL...LLL#####',
-  '#####LL....LLL....LL#####',
-  '######.............######',
-  '########E################',
-  '########m#######.########',
-  '#####........L......#####',
-  '####LL......LLL.....L####',
-  '####LLL......L.....LL####',
-  '####LL......B......LL####',
-  '#######vvv##E##vvv#######',
-  '######.............######',
-  '#####LL...........LL#####',
-  '####LLL....LLL....LLL####',
-  '####LL.....LLL.....LL####',
-  '#####.......S.......#####',
-];
-const F2 = [
-  '###########################',
-  '#############N#############',
-  '######LLLL...E...LLLL######',
-  '#####LLL...........LLL#####',
-  '#####L...............L#####',
-  '#######m###########m#######',
-  '#######E###########E#######',
-  '####LLL...LLLLLLL...LLL####',
-  '###LL.....LL...LL.....LL###',
-  '###L...................L###',
-  '###LL.....LL...LL.....LL###',
-  '####LLL...LLLLLLL...LLL####',
-  '#######B.#########.B#######',
-  '#######E###########E#######',
-  '#####......LLLLL......#####',
-  '####LL....LL...LL....LL####',
-  '####LLL..............LL####',
-  '####LL.......S......LLL####',
-];
-const F3 = [
-  '#########################',
-  '###########N#############',
-  '##########.K.############',
-  '########LL...LL##########',
-  '#######LLL...LLL#########',
-  '########LL#E#LL##########',
-  '######.....B.....########',
-  '#####LL...LLL...LL#######',
-  '####LLL...LLL...LLL######',
-  '####LL...........LL######',
-  '######...........########',
-  '########E################',
-  '#######.m.LLL...#########',
-  '######...LLLLL...########',
-  '#####LL...LLL...LL#######',
-  '####LLL.........LLL######',
-  '#####.......S.......#####',
-];
-const E1 = [
-  '###########################',
-  '#############N#############',
-  '############...############',
-  '##########~~~~~~~##########',
-  '#########~~~~~~~~~#########',
-  '########~~~~~~~~~~~########',
-  '#########~~~|||~~~#########',
-  '###########~|||~###########',
-  '#######.....~~~.....#######',
-  '######~~~~~~~~~~~~~~~######',
-  '#####~~~~~~~~~~~~~~~~~#####',
-  '#####~~~~~~.....~~~~~~#####',
-  '#####~~~~~.......~~~~~#####',
-  '######~~~~~.....~~~~~######',
-  '#######~~~~~~~~~~~~~~######',
-  '########~~~~~~~~~~~~#######',
-  '##########.......##########',
-  '#########.........#########',
-  '############S##############',
-];
-const E2 = [
-  '#############################',
-  '##############N##############',
-  '#############...#############',
-  '##########~~~~~~~~~##########',
-  '#########~~~~~~~~~~~#########',
-  '#####~~~~~~~#####~~~~~~~~####',
-  '####~~~~~~~#######~~|||~~####',
-  '####~~||~~##.....##~|||~~####',
-  '####~~||~~##.....##~~~~~~####',
-  '####~~~~~~###...###~~~~~~####',
-  '####.....~~~~~~~~~~~~.....###',
-  '###...........~...........###',
-  '###~~~~~~~~~~~~~~~~~~~~~~~###',
-  '###~~~~~~~~~.....~~~~~~~~~###',
-  '####~~~~~~~~.....~~~~~~~~####',
-  '#####~~~~~~~~~~~~~~~~~~~#####',
-  '#########...........#########',
-  '##############S##############',
-];
-const E3 = [
-  '###########################',
-  '#############N#############',
-  '############.K.############',
-  '###########.....###########',
-  '##########~~~~~~~##########',
-  '#########~~~~~~~~~#########',
-  '########~~~~|||~~~~########',
-  '#######~~~~~|||~~~~~#######',
-  '######~~~~~~~~~~~~~~~######',
-  '#####~~~~~~~~~~~~~~~~~#####',
-  '#####~~~~##~~~~~##~~~~#####',
-  '#####~~~~##~|||~##~~~~#####',
-  '#####~~~~##~|||~##~~~~#####',
-  '#####~~~~~~~~~~~~~~~~~#####',
-  '######~~~~~~~~~~~~~~~######',
-  '#######.............#######',
-  '##########...S...##########',
-];
-const P1 = [
-  '#########################',
-  '############N############',
-  '#######YYYYh.hYYYY#######',
-  '#####YYYuhhh.hhhuYYY#####',
-  '####YYhh"hhC"hhhh"hYY####',
-  '####Yw""YYYY.YYYY""wY####',
-  '####Y""hYYYY.YYYYuh"Y####',
-  '####YhC""hhhw""hhh""Y####',
-  '####YYYYYYYY"YYYYYYYY####',
-  '####Yh"""Ch""""hu"""Y####',
-  '####Y""YYYYYYYYYYY"hY####',
-  '####Yh"hfhh"w"hhfh""Y####',
-  '####YYYYYYYYYCYYYYYYY####',
-  '####Yuh""hhh""hhh""uY####',
-  '####Yw"hhYYY"YYYhh"wY####',
-  '#####YY"""hh"hh"""YY#####',
-  '#######YYYhh.hhYYY#######',
-  '############S############',
-];
-const P2 = [
-  '###########################',
-  '#############N#############',
-  '########YYYYY.YYYYY########',
-  '######YYuhh""C""hhuYY######',
-  '#####YYw""YYYYYYY""wYY#####',
-  '####YYh"hYYfffffYYh"hYY####',
-  '####Yhh""Yuf"""fuY""hhY####',
-  '####Y""hhYYf"w"fYYhh""Y####',
-  '####YC"YYYYYY"YYYYYY"CY####',
-  '####Y""Yuhh"""""hhuY""Y####',
-  '####Yhh"""YYY"YYY"""hhY####',
-  '####YYYYC"YhhhhhY"CYYYY####',
-  '####Yuhh""Y"w""Y""hhuY#####',
-  '####Yw""hhYY"""YYhh""wY####',
-  '#####YY"""hhh"hhh"""YY#####',
-  '#######YYYYhh.hhYYYY#######',
-  '#############S#############',
-];
-const P3 = [
-  '#########################',
-  '###########N#############',
-  '##########.K.############',
-  '########YYh"hYY##########',
-  '######YYuhhwhhuYY########',
-  '#####YYh""YYY""hYY#######',
-  '####YY""hYYYYYh""YY######',
-  '####Yhh"CYYYYYC"hhY######',
-  '####Y""hhwhhhwhh""Y######',
-  '####YYYYYYY"YYYYYYY######',
-  '####Yuhh"""""""hhuY######',
-  '####Yw""YYYYYYY""wY######',
-  '#####YYhh""C""hhYY#######',
-  '#######YYYh.hYYY#########',
-  '###########S#############',
-];
 // la Salle des Clés : la porte aux trois gemmes ; en solo, le téléporteur qui ramène aux trois portes
 const CLES = (solo) => [
   '###############',
@@ -282,11 +103,11 @@ const PORTES = (a, b, c) => [
   '###########D###########',
 ];
 
-// Pokémon sauvages des chemins du solo (niveaux 50 à 56)
+// Pokémon sauvages des chemins à trois (niveaux 20 à 28)
 export const SAUVAGES_TEMPLE = {
-  f: [[78, 50, 54, 25], [126, 50, 54, 25], [219, 50, 54, 20], [324, 50, 54, 20], [467, 54, 56, 10]],
-  e: [[171, 50, 54, 30], [119, 50, 54, 25], [186, 50, 54, 20], [230, 54, 56, 10], [130, 54, 56, 15]],
-  p: [[465, 50, 54, 25], [357, 50, 54, 20], [45, 50, 54, 20], [71, 50, 54, 20], [275, 52, 56, 15]],
+  f: [[77, 20, 25, 25], [126, 22, 26, 15], [218, 20, 25, 25], [322, 20, 25, 25], [324, 24, 28, 10]],
+  e: [[170, 20, 25, 30], [118, 20, 25, 25], [61, 22, 26, 20], [116, 20, 25, 20], [171, 26, 28, 5]],
+  p: [[114, 20, 25, 25], [44, 21, 25, 20], [70, 21, 25, 20], [274, 20, 25, 20], [357, 24, 28, 15]],
 };
 const SINGES = (n, boss) => [[512, n], [514, n], [516, n], [TEMPLE.arceus, boss]];
 
@@ -319,7 +140,7 @@ export default {
     L: { type: 'tuile', sol: true, t: 'LAVA' },
     '~': { type: 'tuile', sol: true, t: 'WATER' },
     '"': { type: 'tuile', sol: true, t: 'TALL' },
-    // les chemins du solo : rochers fissurés (Éclate-Roc), rochers à pousser (Force), escaliers et rebords, cascades,
+    // les chemins à trois : rochers fissurés (Éclate-Roc), rochers à pousser (Force), escaliers et rebords, cascades,
     // arbres, broussailles, petits arbres à couper (Coupe), herbes sombres, fleurs et lianes qui pendent
     m: { type: 'tuile', sol: true, t: 'SMASH' },
     B: { type: 'tuile', sol: true, t: 'BOULDER' },
@@ -332,6 +153,18 @@ export default {
     h: { type: 'tuile', sol: true, t: 'DARKTALL' },
     f: { type: 'tuile', sol: true, t: 'FLOWER' },
     w: { type: 'liane', sol: true, decor: 'liane' },
+    '=': { type: 'tuile', sol: true, t: 'BRIDGE' },
+    // un rocher poussé sur * ouvre les barrières +, sur ^ les barrières -
+    '*': { type: 'bouton', sol: true, decor: 'interrupteur', ouvre: '+' },
+    '^': { type: 'bouton', sol: true, decor: 'interrupteur', ouvre: '-' },
+    '+': { type: 'tuile', sol: true, t: 'BARRIER_R' },
+    '-': { type: 'tuile', sol: true, t: 'BARRIER_R' },
+    // des objets au fond des culs-de-sac
+    I: { type: 'ramasser', objet: 'max-revive' },
+    J: { type: 'ramasser', objet: 'full-restore' },
+    O: { type: 'ramasser', objet: 'rare-candy' },
+    P: { type: 'ramasser', objet: 'pp-up' },
+    V: { type: 'ramasser', objet: 'ultra-ball', n: 3 },
     K: { type: 'cle', sol: true },
     Q: { type: 'porteCles', decor: 'porte_vide' },
     T: { type: 'teleporteur', sol: true, decor: 'teleporteur' },
@@ -375,23 +208,23 @@ export default {
       '########D########',
     ] },
     // à trois
-    { id: 'g2', nom: 'Salle des Trois Portes', type: 'voies', branche: 'groupe', voies: { F: 'gf', A: 'ge', H: 'gp' }, plan: PORTES('F', 'A', 'H') },
-    { id: 'gf', nom: 'Chemin du Feu', type: 'libre', branche: 'groupe', voie: 'f', cle: 'f', apres: ['g2'], suivante: 'g4', plan: couloir('L') },
-    { id: 'ge', nom: 'Chemin de l\'Eau', type: 'libre', branche: 'groupe', voie: 'e', cle: 'e', apres: ['g2'], suivante: 'g4', plan: couloir('~') },
-    { id: 'gp', nom: 'Chemin de la Plante', type: 'libre', branche: 'groupe', voie: 'p', cle: 'p', apres: ['g2'], suivante: 'g4', plan: couloir('"') },
-    { id: 'g4', nom: 'Salle des Clés', type: 'libre', branche: 'groupe', ouvertPar: 'porte', apres: ['gf', 'ge', 'gp'], plan: CLES(false) },
+    { id: 'g2', nom: 'Salle des Trois Portes', type: 'voies', branche: 'groupe', voies: { F: 'gf1', A: 'ge1', H: 'gp1' }, plan: PORTES('F', 'A', 'H') },
+    { id: 'gf1', nom: 'Pentes du Volcan', type: 'libre', branche: 'groupe', voie: 'f', biome: 'magma', sauvages: 'f', apres: ['g2'], plan: F1 },
+    { id: 'gf2', nom: 'Gradins de Lave', type: 'libre', branche: 'groupe', voie: 'f', biome: 'magma', sauvages: 'f', apres: ['gf1'], plan: F2 },
+    { id: 'gf3', nom: 'Cratère', type: 'libre', branche: 'groupe', voie: 'f', biome: 'magma', sauvages: 'f', cle: 'f', apres: ['gf2'], suivante: 'g4', plan: F3 },
+    { id: 'ge1', nom: 'Bassin Profond', type: 'libre', branche: 'groupe', voie: 'e', biome: 'mer', sauvages: 'e', apres: ['g2'], plan: E1 },
+    { id: 'ge2', nom: 'Grotte des Cascades', type: 'libre', branche: 'groupe', voie: 'e', biome: 'mer', sauvages: 'e', apres: ['ge1'], plan: E2 },
+    { id: 'ge3', nom: 'Source', type: 'libre', branche: 'groupe', voie: 'e', biome: 'mer', sauvages: 'e', cle: 'e', apres: ['ge2'], suivante: 'g4', plan: E3 },
+    { id: 'gp1', nom: 'Jardin Abandonné', type: 'libre', branche: 'groupe', voie: 'p', biome: 'terre', sauvages: 'p', apres: ['g2'], plan: P1 },
+    { id: 'gp2', nom: 'Jungle Profonde', type: 'libre', branche: 'groupe', voie: 'p', biome: 'terre', sauvages: 'p', apres: ['gp1'], plan: P2 },
+    { id: 'gp3', nom: 'Cœur de la Jungle', type: 'libre', branche: 'groupe', voie: 'p', biome: 'terre', sauvages: 'p', cle: 'p', apres: ['gp2'], suivante: 'g4', plan: P3 },
+    { id: 'g4', nom: 'Salle des Clés', type: 'libre', branche: 'groupe', ouvertPar: 'porte', apres: ['gf3', 'ge3', 'gp3'], plan: CLES(false) },
     { id: 'g5', nom: 'Salle du Gardien', type: 'groupe', branche: 'groupe', pnj: ['M'], apres: ['g4'], suivante: null, table: 'starters', plan: GARDIEN('#....[abc]....#', 'M') },
     // en solo
     { id: 's2', nom: 'Salle des Trois Portes', type: 'libre', branche: 'solo', suivante: null, plan: PORTES('R', 'U', 'W').map((r) => r.replace('D', '#')) },
-    { id: 'sf1', nom: 'Pentes du Volcan', type: 'libre', branche: 'solo', chemin: 'f', biome: 'magma', sauvages: 'f', plan: F1 },
-    { id: 'sf2', nom: 'Gradins de Lave', type: 'libre', branche: 'solo', biome: 'magma', sauvages: 'f', plan: F2 },
-    { id: 'sf3', nom: 'Cratère', type: 'libre', branche: 'solo', biome: 'magma', sauvages: 'f', cle: 'f', suivante: 's4', plan: F3 },
-    { id: 'se1', nom: 'Bassin Profond', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', sauvages: 'e', plan: E1 },
-    { id: 'se2', nom: 'Grotte des Cascades', type: 'libre', branche: 'solo', biome: 'mer', sauvages: 'e', plan: E2 },
-    { id: 'se3', nom: 'Source', type: 'libre', branche: 'solo', biome: 'mer', sauvages: 'e', cle: 'e', suivante: 's4', plan: E3 },
-    { id: 'sp1', nom: 'Jardin Abandonné', type: 'libre', branche: 'solo', chemin: 'p', biome: 'terre', sauvages: 'p', jungle: true, plan: P1 },
-    { id: 'sp2', nom: 'Jungle Profonde', type: 'libre', branche: 'solo', biome: 'terre', sauvages: 'p', jungle: true, plan: P2 },
-    { id: 'sp3', nom: 'Cœur de la Jungle', type: 'libre', branche: 'solo', biome: 'terre', sauvages: 'p', jungle: true, cle: 'p', suivante: 's4', plan: P3 },
+    { id: 'sf', nom: 'Chemin du Feu', type: 'libre', branche: 'solo', chemin: 'f', cle: 'f', suivante: 's4', plan: couloir('L') },
+    { id: 'se', nom: 'Chemin de l\'Eau', type: 'libre', branche: 'solo', chemin: 'e', cle: 'e', suivante: 's4', plan: couloir('~') },
+    { id: 'sp', nom: 'Chemin de la Plante', type: 'libre', branche: 'solo', chemin: 'p', cle: 'p', suivante: 's4', plan: couloir('"') },
     { id: 's4', nom: 'Salle des Clés', type: 'libre', branche: 'solo', ouvertPar: 'porte', plan: CLES(true) },
     { id: 's5', nom: 'Salle du Gardien', type: 'combat', branche: 'solo', pnj: ['Z'], apres: ['s4'], suivante: null, table: 'solo', plan: GARDIEN('#....[jkl]....#', 'Z') },
   ],

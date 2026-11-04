@@ -315,12 +315,21 @@ ne montre que celles de la branche où l'on est.
   des jeux officiels, des formes du Temple avec leur nouveau type, et d'Odyssée, avec toute leur lignée), même s'il ne
   l'apprend pas d'habitude. Ces attaques, un Pokémon qui ne les apprend pas par niveau ne les apprend qu'avec cette CT
   (`refusCt` : toute autre CT les lui refuse).
-- Les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes : objets `tuile`).
+- En solo, les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes : objets `tuile`).
 
-En solo, chaque chemin a trois salles (`F1`… `P3` dans `js/donjons/temple.js`) : lettres `m` rocher fissuré, `B` rocher à
-pousser, `E` escalier, `v` rebord, `|` cascade, `Y` arbre, `u` broussaille, `C` petit arbre à couper, `h` herbe sombre,
-`f` fleurs, `w` liane qui pend (on passe dessous). Chaque salle a sa roche (`biome` : `magma`, `mer`, `terre`) et ses
-Pokémon sauvages (`SAUVAGES_TEMPLE`). La capacité Cascade du labo (`js/cascade.js`) remonte les cascades en surfant.
+À trois, chaque chemin a trois grandes salles (60 × 44 cases, `F1`… `P3` dans `js/donjons/temple-chemins.js`), dessinées
+par `python3 tools/temple-chemins.py [graine]` (ne pas modifier le fichier à la main) : des cavités reliées par des
+galeries qui tournent, des boucles et des culs-de-sac avec un objet au fond, la sortie loin de l'arrivée. Le chemin
+principal est coupé par des obstacles, et le générateur vérifie que la sortie n'est pas atteignable sans eux :
+- Feu : un bouton (`*` ou `^`) sur lequel pousser un rocher `B` avec Force, qui abaisse les barrières `+` ou `-`
+  (`rocherTemple`), et un rocher fissuré `m` (Éclate-Roc). Lacs de lave traversés par des ponts `=`, coulées, roches.
+- Eau : des cascades `|` à remonter en surfant (Cascade) vers les cavités du haut, et des boutons.
+- Plante : de petits arbres `C` à couper, dans une jungle d'arbres `Y`, de broussailles `u`, d'herbes `h` et `"`, de
+  fleurs `f` et de lianes `w`.
+Objets : `I` Rappel Max, `J` Guérison, `O` Super Bonbon, `P` PP Plus, `V` trois Hyper Balls ; `K` la clé (troisième salle).
+En revenant dans une salle, rochers, pierres et arbres reprennent leur place (`remiseTemple`) : rien n'y reste coincé ;
+les barrières déjà abaissées le restent. Chaque salle a sa roche (`biome` : `magma`, `mer`, `terre`) et ses Pokémon
+sauvages (`SAUVAGES_TEMPLE`, niveaux 20 à 28). La capacité Cascade du labo (`js/cascade.js`) remonte les cascades en surfant.
 
 ### Les formes du Temple
 

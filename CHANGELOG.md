@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 4.05 — 5 novembre 2026
+- **TestOdyssée** — Temple des Éléments : les trois salles de chaque chemin passent dans le temple à trois, et le solo retrouve ses couloirs pour l'instant.
+- **TestOdyssée** — Les salles des chemins sont bien plus grandes et ne sont plus en ligne droite : des cavités reliées par des galeries qui tournent, des boucles, des culs-de-sac avec un objet au fond. Il faut chercher la sortie.
+  - Chemin du Feu : lacs et coulées de lave traversés par des ponts de bois, roches, rochers fissurés, et des rochers à pousser sur des boutons pour abaisser les barrières.
+  - Chemin de l'Eau : de grands bassins, et des cascades à remonter pour atteindre les grottes du haut.
+  - Chemin de la Plante : une jungle très dense, avec de petits arbres à couper pour se frayer un passage.
+  - En revenant dans une salle, les rochers reprennent leur place : on ne peut plus rester coincé.
+  - Les Pokémon sauvages des chemins sont au niveau du temple à trois (20 à 28).
+
 ## 4.04 — 4 novembre 2026
 - **TestOdyssée** — Les dalles du Sanctuaire des Trois Voies, du Temple des Éléments et des autres donjons sont de nouveau visibles avec les nouveaux décors d'Odyssée.
 - **TestOdyssée** — Sanctuaire des Trois Voies : la Salle des Trois Voies est plus haute, les statues sont plus loin des portes.

@@ -39,12 +39,43 @@ export const Temple = {
         if (TYPES.has(o.type)) m.object(x, y, { use: () => this.objetTemple(d, m, c, x, y) });
       }
     }
+    // ponts sur la lave : des planches posées en décalque (le rendu met la lave dessous)
+    if (m.biome === 'magma') for (const [x, y] of P.objets['='] || []) {
+      const ns = m.get(x - 1, y) === T.LAVA || m.get(x + 1, y) === T.LAVA;
+      m.deco.push({ k: 'dalle', g: ns ? 'pontns' : 'pontew', x, y });
+    }
     // la table : un comptoir, avec une Poké Ball dessus là où il y a quelque chose à prendre
     const balles = new Set(Object.entries(P.objets).filter(([c]) => ['starter', 'ct'].includes(d.objets[c].type)).flatMap(([, l]) => l.map(([x, y]) => cle(x, y))));
     for (const dd of m.deco) if (dd.k === 'counter') { dd.front = 'counterfront'; dd.top = 'lab'; dd.ball = balles.has(cle(dd.x, dd.y)); }
     // la grande porte : un seul dessin, au milieu de ses trois cases
     if (P.objets.G) { const [x, y] = P.objets.G[1]; const dd = m.deco.find((q) => q.x === x && q.y === y); if (dd) dd.k = 'porte_grande'; }
     if (P.objets.Q) { const [x, y] = P.objets.Q[1]; const dd = m.deco.find((q) => q.x === x && q.y === y); if (dd) dd.k = 'porte_grande'; }
+  },
+  /** un rocher poussé sur un bouton d'un chemin : ses barrières tombent */
+  rocherTemple(x, y) {
+    const g = this.game, m = g.mapObj, d = this.defs?.get('temple'); if (!d || m?.donjon?.def?.id !== 'temple') return;
+    const P = m.donjon.plan, st = g.state;
+    for (const [c, l] of Object.entries(P.objets)) {
+      const o = d.objets[c]; if (o.type !== 'bouton' || !l.some(([bx, by]) => bx === x && by === y)) continue;
+      const f = `TPB:${m.id}:${c}`; if (st.flags[f]) return;
+      st.flags[f] = true;
+      const dd = m.deco.find((q) => q.x === x && q.y === y && q.k === 'interrupteur'); if (dd) dd.k = 'interrupteur_on';
+      for (const [bx, by] of P.objets[o.ouvre] || []) g.setTile(bx, by, T.CAVE);
+      g.sound.sfx('bang'); g.view.shake = 0.15;
+      this.taches.push(() => g.ui.say('Clac ! Quelque part, une barrière s\'abaisse.'));
+    }
+  },
+  /** en entrant dans un chemin : rochers, arbres et pierres reviennent à leur place (rien n'y reste coincé) ;
+   *  les barrières déjà ouvertes le restent */
+  remiseTemple(to) {
+    const g = this.game, d = this.defs?.get('temple'), m = g.world.maps[to?.map];
+    if (!d || m?.donjon?.def !== d || g.mapObj === m) return;
+    const S = d.salles.find((q) => q.carte === m.id); if (!S?.voie) return;
+    const st = g.state, P = m.donjon.plan, t = (st.tiles ||= {})[m.id] = {};
+    for (const [c, l] of Object.entries(P.objets)) {
+      const o = d.objets[c]; if (o.type !== 'bouton' || !st.flags[`TPB:${m.id}:${c}`]) continue;
+      for (const [bx, by] of P.objets[o.ouvre] || []) t[cle(bx, by)] = T.CAVE;
+    }
   },
   salleTemple(d, m = this.game.mapObj) { return m && d.salles.find((s) => s.carte === m.id); },
   dt(d, sid) { return this.etats[d.id].salles[sid].donnees || {}; },
