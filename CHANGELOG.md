@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 3.100 — 4 novembre 2026
+- **TestOdyssée** — Temple des Éléments : les trois starters du Temple retouchés. Bulbizarre porte maintenant un coquillage rond d'escargot, Salamèche perd ses rayures et Carapuce le petit nuage de fumée.
+
 ## 3.99 — 4 novembre 2026
 - **TestOdyssée** — Île privée :
   - L'adjointe garde des dispositions de ton île (jusqu'à six). Tu peux tout recommencer sans rien perdre, puis remettre une ancienne disposition quand tu veux.

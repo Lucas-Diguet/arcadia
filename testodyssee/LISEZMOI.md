@@ -319,7 +319,7 @@ petits starters de Kanto (numéros 2010, 2013, 2016 : l'eau devient feu, le feu 
 d'évolutions) et l'Arceus du Gardien (2023). Les attaques du type d'origine deviennent des attaques du nouveau type, de
 même catégorie et de puissance voisine (`forme`). Leurs images (face, dos, icône, dans `img/temple/`) partent des
 sprites HeartGold / SoulSilver, retouchés pour changer la matière et la forme (carapace de basalte et queue de feu,
-feuille et pousse, coquillage à la place du bulbe). Les évolutions finales ne se montrent pas en dehors du jeu :
+feuille et pousse, coquillage d'escargot à la place du bulbe). Les évolutions finales ne se montrent pas en dehors du jeu :
 l'auteur veut les découvrir en jouant.
 
 ### Le mode test
