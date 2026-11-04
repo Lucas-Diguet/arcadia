@@ -33,9 +33,6 @@ export const OBJETS = {
   'symbole-or-pyramide': { pocket: 'cles', price: 0, key: true, name: 'Symbole d\'Or de la Pyramide', img: 'pyramide/objet_symbole.png', desc: 'Remis à qui atteint le sommet de la Pyramide de l\'Ascension encore debout, et y bat le dernier adversaire.' },
   'bouchon-or': { pocket: 'objets', price: 0, name: 'Bouchon d\'Or', img: 'miroirs/objet_bouchon.png', iv: true, desc: 'Un bouchon doré et brillant. Il porte au maximum toutes les valeurs cachées (IV) d\'un Pokémon.' },
   'eclat-miroir': { pocket: 'cles', price: 0, key: true, name: 'Éclat de Miroir', img: 'miroirs/objet_eclat.png', desc: 'Un éclat qui reflète un lieu que tu n\'as jamais vu. Il ouvrira peut-être un autre donjon.' },
-  'pierre-feu-temple': { pocket: 'objets', price: 0, stone: 1, name: 'Pierre Feu du Temple', img: 'temple/pierre-feu.png', desc: 'Une pierre feu marquée d\'un éclat d\'or. Elle ne fait évoluer qu\'Évoli du Temple.' },
-  'pierre-eau-temple': { pocket: 'objets', price: 0, stone: 1, name: 'Pierre Eau du Temple', img: 'temple/pierre-eau.png', desc: 'Une pierre eau marquée d\'un éclat d\'or. Elle ne fait évoluer qu\'Évoli du Temple.' },
-  'pierre-plante-temple': { pocket: 'objets', price: 0, stone: 1, name: 'Pierre Plante du Temple', img: 'temple/pierre-plante.png', desc: 'Une pierre plante marquée d\'un éclat d\'or. Elle ne fait évoluer qu\'Évoli du Temple.' },
   'panini-chateauroux': { pocket: 'objets', price: 0, name: 'Panini de Châteauroux', img: 'panini.png', desc: 'Un panini encore tiède, jambon et fromage. Un souvenir du donjon de Didier.' },
 };
 
@@ -48,7 +45,7 @@ export const DECOR = [
   ...['barriere', 'cage', 'fissure', 'wagonnet', 'poste', 'entree_mine'].map((k) => [k, IMG + 'mine/' + k + '.png']),
   ...['pyramide', 'obelisque', 'porte_1', 'porte_2', 'porte_3', 'porte_4', 'porte_1_f', 'porte_2_f', 'porte_3_f', 'porte_4_f'].map((k) => [k, IMG + 'pyramide/' + k + '.png']),
   ...['porte_feu', 'porte_feu_f', 'porte_eau', 'porte_eau_f', 'porte_plante', 'porte_plante_f', 'porte_grande', 'porte_grande_o', 'dalle_or', 'teleporteur', 'cle_feu', 'cle_eau', 'cle_plante'].map((k) => [k, IMG + 'temple/' + k + '.png']),
-  ...['borne', 'piege_trou', 'piege_roche', 'piege_brume', 'piege_colle', 'piege_alarme', 'piege_renvoi', 'piege_degats1', 'piege_degats2', 'piege_degats3', 'piege_combat'].map((k) => [k, IMG + 'ile/' + k + '.png']),
+  ...['borne', 'coffre_fort', 'drapeau', 'piege_trou', 'piege_roche', 'piege_brume', 'piege_colle', 'piege_alarme', 'piege_renvoi', 'piege_degats1', 'piege_degats2', 'piege_degats3', 'piege_combat'].map((k) => [k, IMG + 'ile/' + k + '.png']),
   ...['porte_sagesse', 'porte_force', 'porte_courage', 'porte_sagesse_f', 'porte_force_f', 'porte_courage_f', 'porte_code', 'porte_grille', 'coffre', 'coffre_ouvert', 'interrupteur', 'interrupteur_on', 'socle_statue'].map((k) => [k, IMG + 'voies/' + k + '.png']),
 ];
 export const IMAGES = { copycat: IMG + 'miroirs/copycat.png', horloge: IMG + 'miroirs/horloge.png' };

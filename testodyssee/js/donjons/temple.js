@@ -7,7 +7,7 @@
 //   joueur, une clé au bout de chacun ; les chemins se rejoignent dans la Salle des Clés, dont la porte s'ouvre avec
 //   les trois clés. Le Gardien des Éléments se bat à trois contre trois, et derrière lui, une table et trois Poké Balls.
 // En solo : les mêmes salles, mais on fait les trois chemins l'un après l'autre (un téléporteur ramène à la salle des
-//   portes) ; derrière le Gardien, Évoli du Temple et trois pierres, dont on ne prend qu'une.
+//   portes) ; derrière le Gardien, une table encore vide (sa récompense viendra plus tard).
 //
 // Les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes).
 import { GameMap, rng } from '../../../odyssee/js/world/mapgen.js';
@@ -135,14 +135,11 @@ export default {
     K: { type: 'cle', sol: true },
     Q: { type: 'porteCles', decor: 'porte_vide' },
     T: { type: 'teleporteur', sol: true, decor: 'teleporteur' },
-    // la table : trois Poké Balls (à trois), ou Évoli et trois pierres (en solo)
+    // la table : trois Poké Balls (à trois) ; en solo, elle attend sa récompense
     a: { type: 'starter', decor: 'counter', n: 0 },
     b: { type: 'starter', decor: 'counter', n: 1 },
     c: { type: 'starter', decor: 'counter', n: 2 },
-    e: { type: 'evoli', decor: 'counter' },
-    q: { type: 'pierre', decor: 'counter', objet: 'pierre-feu-temple' },
-    r: { type: 'pierre', decor: 'counter', objet: 'pierre-eau-temple' },
-    t: { type: 'pierre', decor: 'counter', objet: 'pierre-plante-temple' },
+    v: { type: 'tableSolo', decor: 'counter' },
   },
   pnj: {
     M: {
@@ -187,7 +184,7 @@ export default {
     { id: 'se', nom: 'Chemin de l\'Eau', type: 'libre', branche: 'solo', chemin: 'e', cle: 'e', suivante: 's4', plan: couloir('~') },
     { id: 'sp', nom: 'Chemin de la Plante', type: 'libre', branche: 'solo', chemin: 'p', cle: 'p', suivante: 's4', plan: couloir('"') },
     { id: 's4', nom: 'Salle des Clés', type: 'libre', branche: 'solo', ouvertPar: 'porte', plan: CLES(true) },
-    { id: 's5', nom: 'Salle du Gardien', type: 'combat', branche: 'solo', pnj: ['Z'], apres: ['s4'], suivante: null, table: 'evoli', plan: GARDIEN('#...[qert]....#', 'Z') },
+    { id: 's5', nom: 'Salle du Gardien', type: 'combat', branche: 'solo', pnj: ['Z'], apres: ['s4'], suivante: null, table: 'solo', plan: GARDIEN('#....[[v[]....#', 'Z') },
   ],
   inscriptions: {
     f: ['Porte du Feu.', 'Au bout du chemin, la Clé du Feu.'],

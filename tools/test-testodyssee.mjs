@@ -733,7 +733,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   }
   ok(par.e1.donjon.plan.dalles.length === 3 && par.e1.donjon.plan.objets.X?.length === 1 && par.e1.donjon.plan.objets.G?.length === 3 && d.salles[0].requis === 3, 'temple : trois dalles pour la petite porte, une dalle d\'or et une grande porte');
   ok(par.g2.donjon.versSuivante == null && par.gf.donjon.versSuivante?.map === par.g4.id && par.sf.donjon.versSuivante?.map === par.s4.id && par.g4.donjon.versSuivante?.map === par.g5.id && par.s4.donjon.versSuivante?.map === par.s5.id, 'temple : les chemins se rejoignent à la Salle des Clés, puis le Gardien');
-  ok(par.s4.donjon.plan.objets.T && !par.g4.donjon.plan.objets.T && par.g5.donjon.plan.objets.a && par.s5.donjon.plan.objets.e && par.s5.donjon.plan.objets.q, 'temple : téléporteur en solo seulement ; trois Poké Balls à trois, Évoli et ses pierres en solo');
+  ok(par.s4.donjon.plan.objets.T && !par.g4.donjon.plan.objets.T && par.g5.donjon.plan.objets.a && par.s5.donjon.plan.objets.v && !par.s5.donjon.plan.objets.a, 'temple : téléporteur en solo seulement ; trois Poké Balls à trois, une table vide en solo');
   // la table à trois
   let e = nouvelEtat(d, { joueurs: 3 });
   ok(appliquer(d, e, '1', { a: 'choixStarter', salle: 'g5', n: 0 }).ok && appliquer(d, e, '2', { a: 'choixStarter', salle: 'g5', n: 0 }).ok, 'temple : deux joueurs peuvent vouloir la même Poké Ball');
@@ -758,8 +758,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   ok(r.attrib['1'] === 0 && r.duel?.ids.includes('2') && r.duel.ids.includes('3'), 'temple : à trois sur la même, le gagnant du premier duel affronte le troisième');
   // les formes du Temple
   const tp = (k) => SPECIES[TEMPLE[k]].t.join('/');
-  ok(tp('carapuce') === 'fire' && tp('salameche') === 'grass' && tp('bulbizarre') === 'water' && STARTERS_TEMPLE.every((q) => SPECIES[q]?.ev?.[0]), 'temple : Carapuce passe au feu, Salamèche à la plante, Bulbizarre à l\'eau');
-  ok(['pyroli', 'aquali', 'voltali'].map((k) => tp(k)).sort().join() === 'fire,grass,water' && SPECIES[TEMPLE.evoli].ev.every((v) => ITEMS[v.item]?.stone), 'temple : les trois évolutions d\'Évoli du Temple sont feu, eau et plante, par trois pierres à lui');
+  ok(tp('carapuce') === 'fire' && tp('salameche') === 'grass' && tp('bulbizarre') === 'water' && STARTERS_TEMPLE.every((q) => SPECIES[q] && !SPECIES[q].ev), 'temple : Carapuce passe au feu, Salamèche à la plante, Bulbizarre à l\'eau (pas encore d\'évolutions)');
   ok(Object.values(TEMPLE).every((id) => { const S = SPECIES[id]; return S.ls.length && S.ls.every(([, m]) => MOVES[m]) && ['f', 'b', 'i'].every((c) => existsSync(new URL(`../testodyssee/img/${S.img}-${c}.png`, import.meta.url))); }), 'temple : chaque forme a ses attaques et ses images');
   ok(Object.values(TEMPLE).filter((id) => SPECIES[id].base && SPECIES[SPECIES[id].base].t[0] !== SPECIES[id].t[0]).every((id) => SPECIES[id].ls.every(([, m]) => MOVES[m].t !== SPECIES[SPECIES[id].base].t[0])), 'temple : une forme n\'apprend plus d\'attaques de son type d\'origine');
   ok(SPECIES[TEMPLE.arceus].t.length === 3, 'temple : le Gardien a un Pokémon à trois types');
@@ -806,6 +805,28 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   const libre = [[6, 18], [8, 16], [10, 18], [36, 23]].find(([x, y]) => M.collable(ile, S, x, y).ok);
   ok(libre && !M.collable(ile, S, 1, 1).ok, 'salle : collée sur l\'herbe libre, pas dans l\'eau');
   if (libre) { const t0 = ile.travaux.length; M.coller(ile, S, ...libre); ok(ile.travaux.length === t0 + S.length && !U.enStock(ile, 'pg:trou') && M.cheminLibre(ile), 'salle : collée d\'un bloc, le stock baisse et les chemins restent libres'); }
+  // les dispositions
+  {
+    const di = M.nouvelleIle('Dispo'); di.stock['pg:trou'] = 2;
+    M.poser(di, { a: 'arbre', x: 20, y: 20 }); M.poser(di, { a: 'pg:trou', x: 21, y: 20 }); M.poser(di, { a: 'pg:trou', x: 22, y: 20 });
+    di.donjons.push('crypte'); M.poser(di, { a: 'tr:crypte', x: 4, y: 4 }, 'musee');
+    M.enregistrerDisposition(di, 'Première');
+    const neuve = M.nouvelleIle('Dispo'); Object.assign(neuve, { stock: { ...di.stock }, dispositions: di.dispositions, donjons: di.donjons });
+    for (const t of di.travaux) if (M.ARTICLE[t.a].stock) U.ajouterStock(neuve, t.a, 1);
+    ok(neuve.travaux.length === 0 && U.enStock(neuve, 'pg:trou') === 2, 'île : remise à zéro, les pièges posés retournent au stock');
+    const r1 = M.chargerDisposition(neuve, neuve.dispositions[0], new Set(['crypte']));
+    ok(neuve.travaux.length === 3 && neuve.musee.travaux.length === 1 && U.enStock(neuve, 'pg:trou') === 0 && !Object.keys(r1.manque).length, 'île : une disposition gardée se remet telle quelle');
+    U.ajouterStock(neuve, 'pg:trou', 0); neuve.stock = {};
+    const r2 = M.chargerDisposition(neuve, neuve.dispositions[0], new Set());
+    ok(r2.manque['pg:trou'] === undefined && U.enStock(neuve, 'pg:trou') === 0 && r2.manque['tr:crypte'] === 1 && neuve.travaux.filter((t) => t.a === 'pg:trou').length === 2, 'île : en la remettant, les pièges déjà posés comptent, un trophée verrouillé reste de côté');
+    neuve.stock = {}; neuve.travaux = neuve.travaux.filter((t) => t.a !== 'pg:trou');
+    const r3 = M.chargerDisposition(neuve, neuve.dispositions[0], new Set(['crypte']));
+    ok(r3.manque['pg:trou'] === 2 && neuve.travaux.length === 1, 'île : sans le stock, les pièges restent de côté');
+    const mp = {}; M.construire(mp, M.nouvelleIle('Mairie'), {});
+    const ws = (id) => [...mp[id].warps.values()].map((w) => w.map);
+    ok(ws(`${M.ILE}:mairie`).includes(M.ETAGE1) && ws(M.ETAGE1).includes(M.BASE) && mp[M.BASE].objectAt(8, 2)?.coffre && mp[M.BASE].objectAt(10, 2)?.drapeau, 'île : la mairie a ses étages, le dernier garde le coffre-fort et le drapeau');
+    ok(M.ARTICLE.usine.b === 'house2' && M.ARTICLE.caserne.b === 'bighouse', 'île : l\'usine et la caserne ont échangé leurs bâtiments');
+  }
   const vieille = M.etatIle({ nom: 'ancienne', fixes: {}, travaux: [], donjons: [], musee: { travaux: [] } });
   ok(vieille.points === 0 && vieille.stock && vieille.plans.length === 0, 'usine : une île d\'avant l\'usine se relit');
 }

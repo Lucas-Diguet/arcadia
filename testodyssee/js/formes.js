@@ -2,8 +2,8 @@
 // formes régionales. Même silhouette, mêmes statistiques, autre type : les attaques du type d'origine sont remplacées
 // par des attaques du nouveau type, de même catégorie et de puissance voisine.
 //
-// Starters de Kanto : l'eau devient feu, le feu devient plante, la plante devient eau. Évoli du Temple évolue avec
-// trois pierres qui ne servent qu'à lui. Les images (recolorées) sont dans testodyssee/img/temple/.
+// Starters de Kanto : l'eau devient feu, le feu devient plante, la plante devient eau ; pas encore d'évolutions.
+// Leurs images (testodyssee/img/temple/) sont retouchées à la main : autre matière, autres formes.
 import { SPECIES } from '../../odyssee/js/data/species.js';
 import { MOVES } from '../../odyssee/js/data/moves.js';
 
@@ -42,31 +42,15 @@ export function forme(base, o) {
   return out;
 }
 
-export const TEMPLE = {
-  carapuce: 2010, carabaffe: 2011, tortank: 2012,
-  salameche: 2013, reptincel: 2014, dracaufeu: 2015,
-  bulbizarre: 2016, herbizarre: 2017, florizarre: 2018,
-  evoli: 2019, pyroli: 2020, aquali: 2021, voltali: 2022,
-  arceus: 2023,
-};
+export const TEMPLE = { carapuce: 2010, salameche: 2013, bulbizarre: 2016, arceus: 2023 };
 const T = TEMPLE, du = (n) => `${n} du Temple`;
 /** les espèces, construites à la demande (les tables d'Odyssée doivent être chargées) */
 export function especesTemple() {
   const f = (base, k, o) => [T[k], forme(base, { k: 'temple-' + k, img: 'temple/temple-' + k, ...o })];
   return Object.fromEntries([
-    f(7, 'carapuce', { n: du('Carapuce'), t: ['fire'], ev: [{ to: T.carabaffe, lvl: 16 }], dex: 'Né près des sources chaudes du Temple. Sa carapace, noire comme le charbon, garde la chaleur pendant des jours.' }),
-    f(8, 'carabaffe', { n: du('Carabaffe'), t: ['fire'], ev: [{ to: T.tortank, lvl: 36 }], dex: 'Sa queue fume quand il est en colère. On dit qu\'elle porte bonheur aux forgerons.' }),
-    f(9, 'tortank', { n: du('Tortank'), t: ['fire', 'steel'], plus: [[1, 'flash-cannon'], [1, 'iron-defense']], dex: 'Des canons de métal brûlant sortent de sa carapace. Il ne s\'en sert que pour protéger le Temple.' }),
-    f(4, 'salameche', { n: du('Salamèche'), t: ['grass'], ev: [{ to: T.reptincel, lvl: 16 }], dex: 'La feuille au bout de sa queue pousse avec lui. Si elle fane, c\'est qu\'il est malade.' }),
-    f(5, 'reptincel', { n: du('Reptincel'), t: ['grass'], ev: [{ to: T.dracaufeu, lvl: 36 }], dex: 'Il fait claquer sa queue comme un fouet de lianes. Il ne supporte pas qu\'on le prenne pour un simple lézard.' }),
-    f(6, 'dracaufeu', { n: du('Dracaufeu'), t: ['grass', 'flying'], dex: 'Il plane au-dessus des forêts. Là où il se pose, l\'herbe repousse.' }),
-    f(1, 'bulbizarre', { n: du('Bulbizarre'), t: ['water'], ev: [{ to: T.herbizarre, lvl: 16 }], dex: 'Le bulbe sur son dos est une poche d\'eau claire. Il s\'y abrite du soleil.' }),
-    f(2, 'herbizarre', { n: du('Herbizarre'), t: ['water'], ev: [{ to: T.florizarre, lvl: 32 }], dex: 'Sa poche d\'eau gonfle avant d\'éclore. Il cherche alors les rivières les plus fraîches.' }),
-    f(3, 'florizarre', { n: du('Florizarre'), t: ['water', 'poison'], dex: 'La fleur sur son dos boit la pluie. Son parfum calme les eaux agitées.' }),
-    f(133, 'evoli', { n: du('Évoli'), t: ['normal'], ev: [{ to: T.pyroli, item: 'pierre-feu-temple' }, { to: T.aquali, item: 'pierre-eau-temple' }, { to: T.voltali, item: 'pierre-plante-temple' }], dex: 'Un Évoli né au cœur du Temple. Les pierres ordinaires ne lui font rien : seules celles du Temple le changent.' }),
-    f(136, 'pyroli', { n: du('Pyroli'), t: ['grass'], dex: 'Une forme d\'Évoli que l\'on ne voit qu\'au Temple des Éléments.' }),
-    f(134, 'aquali', { n: du('Aquali'), t: ['fire'], dex: 'Une forme d\'Évoli que l\'on ne voit qu\'au Temple des Éléments.' }),
-    f(135, 'voltali', { n: du('Voltali'), t: ['water'], dex: 'Une forme d\'Évoli que l\'on ne voit qu\'au Temple des Éléments.' }),
+    f(7, 'carapuce', { n: du('Carapuce'), t: ['fire'], dex: 'Né près des sources chaudes du Temple. Sa carapace de basalte est fendue de lave, et sa queue brûle comme une torche.' }),
+    f(4, 'salameche', { n: du('Salamèche'), t: ['grass'], dex: 'Une pousse lui sort du crâne. La feuille au bout de sa queue grandit avec lui ; si elle fane, c\'est qu\'il est malade.' }),
+    f(1, 'bulbizarre', { n: du('Bulbizarre'), t: ['water'], dex: 'Il porte sur son dos un coquillage en spirale. Quand il y colle l\'oreille, il entend la mer.' }),
     f(493, 'arceus', { n: du('Arceus'), t: ['fire', 'water', 'grass'], plus: [[1, 'flamethrower'], [1, 'muddy-water'], [1, 'energy-ball']], dex: 'Le gardien du Temple des Éléments. Il porte en lui le feu, l\'eau et la plante.' }),
   ]);
 }

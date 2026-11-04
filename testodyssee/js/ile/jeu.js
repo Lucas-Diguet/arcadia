@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { T, DIRS, walkable } from '../../../odyssee/js/world/tiles.js';
 import { el, esc, wait } from '../../../odyssee/js/ui/ui.js';
+import { itemName } from '../../../odyssee/js/core/items.js';
 import { createMon, healFull, monName } from '../../../odyssee/js/core/mon.js';
 import { SPECIES } from '../../../odyssee/js/data/species.js';
 import { Raid } from '../combat/raid.js';
@@ -14,7 +15,7 @@ import { casseBriques } from './casse-briques.js';
 import {
   ILE, MUSEE, USINE, CASERNE, SALLE, ARRIVEE, PONTON, CLE_STOCKAGE, FIXES, TROPHEES, TROPHEE, CATALOGUE, ARTICLE, nouvelleIle, etatIle,
   debloques, trophePlace, posable, poser, reprendre, articleEn, fixeEn, construire, construireSalle, sallesMusee, liste, dansZone,
-  sorteZone, emprise, collage, collable, coller, besoins, ENTREE_SALLE, ESCALIER_SALLE, SALLE_W, SALLE_H, MAX_SALLES, MAX_PLANS,
+  sorteZone, emprise, collage, collable, coller, besoins, enregistrerDisposition, chargerDisposition, MAX_DISPOSITIONS, ENTREE_SALLE, ESCALIER_SALLE, SALLE_W, SALLE_H, MAX_SALLES, MAX_PLANS,
 } from './modele.js';
 import {
   PIEGES, PIEGE, STATUES, STATUE, GARDE, MODES, TYPE, VUE, MAX_STATUE, enStock, acheter, ameliorer, prixAmelioration, prix,
@@ -106,7 +107,9 @@ export class Ile {
     }
     for (;;) {
       const n = debloques(ile, g.state).length;
-      const k = await ui.list({ title: ile.nom, items: [{ label: 'Mode construction' }, { label: 'Mes trophées', right: `${n}/${TROPHEES.length}` }, { label: 'Renommer l\'île' }, { label: 'Remettre l\'île à zéro' }, { label: 'Au revoir' }], cls: 'shop', cancel: 4 });
+      const k0 = await ui.list({ title: ile.nom, items: [{ label: 'Mode construction' }, { label: 'Mes trophées', right: `${n}/${TROPHEES.length}` }, { label: 'Dispositions de l\'île', right: `${ile.dispositions.length}/${MAX_DISPOSITIONS}` }, { label: 'Renommer l\'île' }, { label: 'Remettre l\'île à zéro' }, { label: 'Au revoir' }], cls: 'shop', cancel: 5 });
+      if (k0 === 2) { if (await this.dispositions()) return; continue; }
+      const k = k0 > 2 ? k0 - 1 : k0;
       if (k === 0) {
         const f = FIXES.mairie, [x, y] = ile.fixes.mairie;
         await g.warp({ map: ILE, x: x + 2, y: y + f.taille[1], dir: 'down' }, 'exit');
@@ -116,15 +119,76 @@ export class Ile {
       if (k === 1) await this.listeTrophees();
       else if (k === 2) { const nom = await ui.nameEntry('Nom de ton île', ile.nom); if (nom) { ile.nom = nom.slice(0, 24); this.sauver(); this.refaire(); } }
       else if (k === 3) {
-        if (!(await ui.yesNo('Tout effacer et retrouver l\'île du premier jour ? Les trophées débloqués, les points, le stock et les salles d\'entraînement restent.'))) continue;
+        if (!(await ui.yesNo('Tout effacer et retrouver l\'île du premier jour ? Les trophées débloqués, les points, le stock, les dispositions et les salles d\'entraînement restent.'))) continue;
+        if (ile.dispositions.length < MAX_DISPOSITIONS && await ui.yesNo('Garder d\'abord l\'île actuelle dans les dispositions ? Tu pourras la remettre quand tu veux.')) { enregistrerDisposition(ile, `Avant la remise à zéro`); this.sauver(); }
         const neuve = nouvelleIle(ile.nom);
         // ce qui était posé sur l'île retourne au stock
         for (const t of ile.travaux) if (ARTICLE[t.a].stock) neuve.stock[t.a] = (neuve.stock[t.a] || 0) + 1;
         for (const [id, q] of Object.entries(ile.stock)) neuve.stock[id] = (neuve.stock[id] || 0) + q;
-        Object.assign(neuve, { donjons: ile.donjons, vuAdjointe: true, vuUsine: true, points: ile.points, statues: ile.statues, plans: ile.plans, voirPieges: ile.voirPieges });
+        Object.assign(neuve, { donjons: ile.donjons, vuAdjointe: true, vuUsine: true, points: ile.points, statues: ile.statues, plans: ile.plans, voirPieges: ile.voirPieges, dispositions: ile.dispositions, coffre: ile.coffre });
         this.ile = neuve; this.sauver(); this.refaire();
         await ui.say('C\'est fait : ton île est comme au premier jour.', sp);
       } else return;
+    }
+  }
+  /** les dispositions : garder l'île telle qu'elle est, et la remettre plus tard ; true si l'île a changé */
+  async dispositions() {
+    const g = this.game, ui = g.ui, ile = this.donnee(), sp = { speaker: 'Adjointe' };
+    for (;;) {
+      const L = ile.dispositions, items = L.map((d) => ({ label: d.nom, right: `${d.travaux.length + (d.musee?.length || 0)} objets` }));
+      if (L.length < MAX_DISPOSITIONS) items.push({ label: '+ Garder l\'île actuelle' });
+      items.push({ label: 'Retour' });
+      const i = await ui.list({ title: 'Dispositions de l\'île', items, cls: 'shop', cancel: items.length - 1 });
+      if (i < 0 || i === items.length - 1) return false;
+      if (i === L.length) {
+        const nom = (await ui.nameEntry('Nom de la disposition', `Disposition ${L.length + 1}`)) || `Disposition ${L.length + 1}`;
+        enregistrerDisposition(ile, nom.slice(0, 20)); this.sauver(); g.sound.sfx('save');
+        await ui.say(`C'est noté : « ${nom.slice(0, 20)} ». Tu pourras remettre l'île ainsi quand tu voudras.`, sp);
+        continue;
+      }
+      const d = L[i];
+      const r = await ui.list({ title: d.nom, items: [{ label: 'Remettre l\'île ainsi' }, { label: 'Remplacer par l\'île actuelle' }, { label: 'Renommer' }, { label: 'Supprimer' }, { label: 'Retour' }], cls: 'shop', cancel: 4 });
+      if (r === 0) {
+        if (!(await ui.yesNo(`Remettre l'île comme dans « ${d.nom} » ? Ce qui est posé maintenant sera rangé (pense à garder l'île actuelle d'abord si tu y tiens).`))) continue;
+        const { manque } = chargerDisposition(ile, d, new Set(debloques(ile, g.state)));
+        this.sauver(); this.refaire(); g.sound.sfx('levelup');
+        const m = Object.entries(manque);
+        await ui.say(m.length ? [`L'île est comme dans « ${d.nom} ».`, 'Il manquait : ' + m.map(([id, n]) => `${n} × ${ARTICLE[id].nom}`).join(', ') + '. Ils restent de côté.'] : `L'île est comme dans « ${d.nom} ».`, sp);
+        return true;
+      }
+      if (r === 1 && await ui.yesNo(`Remplacer « ${d.nom} » par l'île telle qu'elle est maintenant ?`)) { enregistrerDisposition(ile, d.nom, i); this.sauver(); g.sound.sfx('save'); }
+      else if (r === 2) { const nom = await ui.nameEntry('Nom de la disposition', d.nom); if (nom) { d.nom = nom.slice(0, 20); this.sauver(); } }
+      else if (r === 3 && await ui.yesNo(`Supprimer « ${d.nom} » ?`)) { L.splice(i, 1); this.sauver(); }
+    }
+  }
+  /* ---------------- le dernier étage de la mairie : la base secrète ---------------- */
+  async drapeau() { await this.game.ui.say(['Le drapeau de ton île.', 'Garde-le bien : un jour, d\'autres viendront peut-être le chercher.']); }
+  /** le coffre-fort : des points d'usine et des objets mis à l'abri */
+  async coffreFort() {
+    const g = this.game, ui = g.ui, ile = this.donnee(), C = ile.coffre, bag = g.state.bag;
+    for (;;) {
+      const n = Object.values(C.objets).reduce((a, q) => a + q, 0);
+      const k = await ui.list({ title: `Coffre-fort · ${C.points} points · ${n} objet${n > 1 ? 's' : ''}`, items: [{ label: 'Déposer des points d\'usine', right: `${ile.points}` }, { label: 'Reprendre des points d\'usine', right: `${C.points}` }, { label: 'Déposer un objet du Sac' }, { label: 'Reprendre un objet' }, { label: 'Fermer' }], cls: 'shop', cancel: 4 });
+      if (k < 0 || k === 4) return;
+      if (k === 0 || k === 1) {
+        const de = k === 0 ? ile.points : C.points; if (!de) { await ui.say('Il n\'y a rien à déplacer.'); continue; }
+        const q = [10, 50, de].filter((v, j, a) => v <= de && a.indexOf(v) === j);
+        const r = await ui.ask('Combien ?', q.map((v) => (v === de ? `Tout (${v})` : String(v))).concat(['Annuler']));
+        if (r < 0 || r >= q.length) continue;
+        if (k === 0) { ile.points -= q[r]; C.points += q[r]; } else { C.points -= q[r]; ile.points += q[r]; }
+        this.sauver(); g.sound.sfx('select');
+      } else {
+        const src = k === 2 ? bag : C.objets, l = Object.entries(src).filter(([, v]) => v > 0);
+        if (!l.length) { await ui.say(k === 2 ? 'Ton Sac est vide.' : 'Il n\'y a aucun objet dans le coffre.'); continue; }
+        const i = await ui.list({ title: k === 2 ? 'Déposer quel objet ?' : 'Reprendre quel objet ?', items: l.map(([id, v]) => ({ label: itemName(id), right: `× ${v}` })).concat([{ label: 'Retour' }]), cls: 'shop', cancel: l.length });
+        if (i < 0 || i >= l.length) continue;
+        const [id, v] = l[i], r = v > 1 ? await ui.ask(`${itemName(id)} : combien ?`, ['Un', `Tout (${v})`, 'Annuler']) : 0;
+        if (r < 0 || r > 1) continue;
+        const q = r === 0 ? 1 : v, dst = k === 2 ? C.objets : bag;
+        src[id] -= q; if (!src[id]) delete src[id];
+        dst[id] = (dst[id] || 0) + q;
+        this.sauver(); g.sound.sfx('item');
+      }
     }
   }
   async listeTrophees() {

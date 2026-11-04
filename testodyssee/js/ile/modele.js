@@ -13,7 +13,7 @@ import { applyOps } from '../../../odyssee/js/world/retouches.js';
 import { houseInterior, room } from '../../../odyssee/js/world/interiors.js';
 import { PIEGES, STATUES, GARDES, completerUsine, enStock, ajouterStock, nomGarde, GARDE } from './usine.js';
 
-export const ILE = 'labo:ile', MUSEE = 'labo:ile:musee', USINE = 'labo:ile:usine', CASERNE = 'labo:ile:caserne', SALLE = 'labo:ile:salle';
+export const ILE = 'labo:ile', MUSEE = 'labo:ile:musee', ETAGE1 = 'labo:ile:mairie:1', BASE = 'labo:ile:mairie:2', USINE = 'labo:ile:usine', CASERNE = 'labo:ile:caserne', SALLE = 'labo:ile:salle';
 export const W = 60, H = 44;
 export const PONTON = [30, 40];                // bout du ponton (le capitaine)
 export const ARRIVEE = [30, 37];               // là où l'on débarque
@@ -71,8 +71,8 @@ export const CATALOGUE = [
   { cat: 'Bâtiments', id: 'house', nom: 'Maison', b: 'house', taille: [4, 3] },
   { cat: 'Bâtiments', id: 'house2', nom: 'Grande maison', b: 'house2', taille: [5, 3] },
   { cat: 'Bâtiments', id: 'bighouse', nom: 'Résidence', b: 'bighouse', taille: [6, 4] },
-  { cat: 'Bâtiments', id: 'usine', nom: 'Usine à pièges', b: 'bighouse', toit: 'gray', taille: [6, 4], lieu: USINE, unique: true },
-  { cat: 'Bâtiments', id: 'caserne', nom: 'Caserne', b: 'house2', toit: 'green', taille: [5, 3], lieu: CASERNE, unique: true },
+  { cat: 'Bâtiments', id: 'usine', nom: 'Usine à pièges', b: 'house2', toit: 'green', taille: [5, 3], lieu: USINE, unique: true },
+  { cat: 'Bâtiments', id: 'caserne', nom: 'Caserne', b: 'bighouse', toit: 'gray', taille: [6, 4], lieu: CASERNE, unique: true },
   { cat: 'Loisirs', id: 'borne', nom: 'Borne d\'arcade', p: 'borne' },
   { cat: 'Sols', id: 'chemin', nom: 'Chemin de terre', t: T.PATH, sol: true },
   { cat: 'Sols', id: 'paves', nom: 'Pavés', t: T.PAVE, sol: true },
@@ -106,6 +106,8 @@ export function etatIle(ile) {
   }
   ile.musee.travaux = ile.musee.travaux.filter((t) => ARTICLE[t?.a]);
   ile.biome ||= 'plaine'; ile.v = 2;
+  ile.coffre = ile.coffre && typeof ile.coffre === 'object' ? { points: Math.max(0, +ile.coffre.points || 0), objets: ile.coffre.objets || {} } : { points: 0, objets: {} };
+  ile.dispositions = Array.isArray(ile.dispositions) ? ile.dispositions.filter((d) => d && d.fixes && Array.isArray(d.travaux)) : [];
   return completerUsine(ile);
 }
 /** trophées débloqués : badges de la partie et donjons finis */
@@ -386,7 +388,11 @@ export function construire(maps, ile, o = {}) {
     if (o.seul) continue;
     const id = `${ILE}:${k}`;
     const dedans = k === 'musee' ? construireMusee(ile, o.salles || 1) : k === 'maison' ? houseInterior(id, f.nom, { bed: true }) : room(id, 15, 11, { floor: 'wood', music: 'house', name: f.nom, wall: 'wall_in' });
-    if (k === 'mairie') { for (const [kk, xx, yy] of [['books', 1, 2], ['books', 2, 2], ['plant', 13, 2], ['plant', 1, 9], ['clock', 7, 2]]) dedans.prop(kk, xx, yy); dedans.npc({ id: 'ile:adjoint', x: 7, y: 4, dir: 'down', sprite: 'dame', move: 'static' }); }
+    if (k === 'mairie') {
+      for (const [kk, xx, yy] of [['books', 1, 2], ['books', 2, 2], ['plant', 11, 2], ['plant', 1, 9], ['clock', 7, 2]]) dedans.prop(kk, xx, yy);
+      dedans.npc({ id: 'ile:adjoint', x: 7, y: 4, dir: 'down', sprite: 'dame', move: 'static' });
+      etagesMairie(maps, dedans);
+    }
     dedans.outside = { map: ILE, x: B.doorX, y: B.doorY + 1, dir: 'down' };
     dedans.warp(dedans.exitX, dedans.exitY, dedans.outside);
     m.warp(B.doorX, B.doorY, { map: id, x: dedans.exitX, y: dedans.exitY - 1, dir: 'up' });
@@ -432,4 +438,57 @@ export function construireSalle(ile, pi, k, o = {}) {
   m.salle = { pi, k, n };
   poserTravaux(m, plan.salles[k], null, { voir: o.voir, vus: o.vus });
   return m;
+}
+
+/**
+ * les étages de la mairie : l'escalier du rez-de-chaussée (en haut à droite) monte aux archives ; celui des archives
+ * (en haut à gauche) monte au dernier étage, la base secrète : le coffre-fort et le drapeau de l'île.
+ */
+export function etagesMairie(maps, rez) {
+  const escalier = (m, x, y, vers, ax, ay) => { m.set(x, y, T.STAIRS); m.warp(x, y, { map: vers, x: ax, y: ay, dir: 'down', step: true }); };
+  const e1 = room(ETAGE1, 15, 11, { floor: 'wood', music: 'house', name: 'Mairie · archives', wall: 'wall_in' });
+  for (let x = 0; x < e1.w; x++) e1.set(x, e1.h - 1, T.WALL);
+  for (const [k, x, y] of [['books', 3, 2], ['books', 4, 2], ['books', 5, 2], ['books', 9, 2], ['books', 10, 2], ['books', 11, 2], ['plant', 13, 9], ['clock', 7, 2]]) e1.prop(k, x, y);
+  const base = room(BASE, 13, 9, { floor: 'gymRock', music: 'house', name: 'Mairie · dernier étage', wall: 'wall_mart' });
+  for (let x = 0; x < base.w; x++) base.set(x, base.h - 1, T.WALL);
+  base.prop('coffre_fort', 8, 2); base.object(8, 2, { coffre: true, use: (api) => api.game.ile?.coffreFort() });
+  base.prop('drapeau', 10, 2); base.object(10, 2, { drapeau: true, use: (api) => api.game.ile?.drapeau() });
+  for (const [k, x, y] of [['lanterne', 4, 2], ['lanterne', 11, 7]]) base.prop(k, x, y);
+  escalier(rez, 13, 2, ETAGE1, 13, 3);
+  escalier(e1, 13, 2, rez.id, 13, 3);
+  escalier(e1, 1, 2, BASE, 1, 3);
+  escalier(base, 1, 2, ETAGE1, 1, 3);
+  maps[ETAGE1] = e1; maps[BASE] = base;
+}
+
+/* ---------------- les dispositions : des arrangements de l'île qu'on garde pour plus tard ---------------- */
+export const MAX_DISPOSITIONS = 6;
+const copie = (o) => JSON.parse(JSON.stringify(o));
+/** garder l'arrangement actuel (bâtiments, objets posés, musée) sous un nom */
+export function enregistrerDisposition(ile, nom, i = -1) {
+  const d = { nom, fixes: copie(ile.fixes), travaux: copie(ile.travaux), musee: copie(ile.musee.travaux) };
+  ile.dispositions ||= [];
+  if (i >= 0 && ile.dispositions[i]) ile.dispositions[i] = d; else ile.dispositions.push(d);
+  return d;
+}
+/**
+ * remettre une disposition : ce qui est posé retourne au stock, puis la disposition se pose. Un piège, une statue ou
+ * un garde manquant au stock, ou un trophée pas encore débloqué, reste de côté : renvoie { manque: { article: n } }.
+ */
+export function chargerDisposition(ile, d, ok = new Set()) {
+  for (const t of ile.travaux) if (ARTICLE[t.a]?.stock) ajouterStock(ile, t.a, 1);
+  ile.travaux = []; ile.musee.travaux = []; delete ile.cache;
+  ile.fixes = { ...ile.fixes, ...copie(d.fixes) };
+  const manque = {}, vus = new Set();
+  const garder = (t, zone) => {
+    const a = ARTICLE[t.a]; if (!a) return false;
+    if (a.tr && (!ok.has(a.tr) || vus.has(a.tr))) { manque[t.a] = (manque[t.a] || 0) + 1; return false; }
+    if (a.stock && zone === 'ile' && enStock(ile, t.a) < 1) { manque[t.a] = (manque[t.a] || 0) + 1; return false; }
+    if (a.tr) vus.add(a.tr);
+    if (a.stock && zone === 'ile') ajouterStock(ile, t.a, -1);
+    return true;
+  };
+  ile.travaux = copie(d.travaux).filter((t) => garder(t, 'ile'));
+  ile.musee.travaux = copie(d.musee || []).filter((t) => garder(t, 'musee'));
+  return { manque };
 }

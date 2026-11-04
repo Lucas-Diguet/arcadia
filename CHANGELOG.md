@@ -1,5 +1,12 @@
 # Journal des versions — Arcadia
 
+## 3.99 — 4 novembre 2026
+- **TestOdyssée** — Île privée :
+  - L'adjointe garde des dispositions de ton île (jusqu'à six). Tu peux tout recommencer sans rien perdre, puis remettre une ancienne disposition quand tu veux.
+  - L'usine à pièges et la caserne ont échangé leurs bâtiments.
+  - La mairie a des étages : les archives, puis le dernier étage, ta base secrète, avec son coffre-fort et le drapeau de l'île. Le coffre-fort garde des points d'usine et des objets.
+- **TestOdyssée** — Temple des Éléments : Carapuce, Salamèche et Bulbizarre du Temple sont redessinés (carapace de basalte et queue de feu, feuille et pousse, coquillage en spirale). Les autres formes et l'Évoli du solo sont retirés pour l'instant.
+
 ## 3.98 — 4 novembre 2026
 - **TestOdyssée** — Nouveau donjon : le Temple des Éléments, à faire à trois puis seul, avec les mêmes salles.
   - Dans la première salle, trois joueurs sur les trois dalles ouvrent la petite porte. Un joueur qui a un Pokémon au niveau 40 sur la dalle d'or ouvre la grande porte, pour lui seul.

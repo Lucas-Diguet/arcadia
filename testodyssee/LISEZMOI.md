@@ -309,17 +309,18 @@ ne montre que celles de la branche où l'on est.
   qui veulent la même par un duel entre joueurs, Pokémon soignés (`resoudreStarters`, `starterDuelFin` : le perdant
   repose sa Poké Ball et ne peut plus la reprendre). À trois sur la même, le gagnant affronte le troisième.
 - En solo : mêmes salles, portes sans limite (`porteSolo`), un téléporteur dans la Salle des Clés ramène aux trois
-  portes ; derrière le Gardien, Évoli du Temple et trois pierres, dont on ne prend qu'une.
+  portes ; derrière le Gardien, une table encore vide (sa récompense viendra plus tard).
 - Les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes : objets `tuile`).
 
 ### Les formes du Temple
 
-`js/formes.js` (sans DOM) : des versions alternatives de Pokémon connus (numéros 2010 à 2023), même silhouette et mêmes
-statistiques, autre type. Les attaques du type d'origine deviennent des attaques du nouveau type, de même catégorie
-et de puissance voisine (`forme`). Starters de Kanto : l'eau devient feu, le feu plante, la plante eau ; Évoli du Temple
-évolue avec trois pierres qui ne servent qu'à lui. Leurs images (face, dos, icône) sont des sprites HeartGold / SoulSilver
-recolorés, dans `img/temple/` (`temple-<nom>-f.png`, `-b`, `-i`). Les évolutions finales ne se montrent pas en dehors du
-jeu : l'auteur veut les découvrir en jouant.
+`js/formes.js` (sans DOM) : des versions alternatives de Pokémon connus, d'un autre type. Pour l'instant, les trois
+petits starters de Kanto (numéros 2010, 2013, 2016 : l'eau devient feu, le feu plante, la plante eau ; pas encore
+d'évolutions) et l'Arceus du Gardien (2023). Les attaques du type d'origine deviennent des attaques du nouveau type, de
+même catégorie et de puissance voisine (`forme`). Leurs images (face, dos, icône, dans `img/temple/`) partent des
+sprites HeartGold / SoulSilver, retouchés pour changer la matière et la forme (carapace de basalte et queue de feu,
+feuille et pousse, coquillage à la place du bulbe). Les évolutions finales ne se montrent pas en dehors du jeu :
+l'auteur veut les découvrir en jouant.
 
 ### Le mode test
 
@@ -356,6 +357,14 @@ session à l'autre. On y va par « Mon île » dans la liste des lieux ; le capi
   même : le portique torii, deux poteaux et un passage).
 - Mairie : l'adjointe ouvre le mode construction, liste les trophées, renomme l'île, la remet à zéro (les trophées,
   les points, le stock et les salles d'entraînement restent ; ce qui était posé retourne au stock).
+
+- Dispositions (l'adjointe) : jusqu'à six arrangements gardés (`enregistrerDisposition` : bâtiments, objets posés,
+  musée). En remettre un (`chargerDisposition`) range d'abord ce qui est posé (les pièges, statues et gardes reviennent
+  au stock), puis pose la disposition ; ce qui manque au stock, ou un trophée verrouillé, reste de côté. Avant une
+  remise à zéro, l'adjointe propose de garder l'île actuelle.
+- Mairie à étages (`etagesMairie`) : l'escalier du rez-de-chaussée monte aux archives, puis au dernier étage, la base
+  secrète, avec le coffre-fort (points d'usine et objets du Sac mis à l'abri, `ile.coffre`) et le drapeau de l'île. Ce
+  qu'on pourra y voler viendra avec les visites.
 
 ### Borne d'arcade, usine à pièges, caserne
 
