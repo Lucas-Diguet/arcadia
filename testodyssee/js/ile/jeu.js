@@ -5,8 +5,8 @@ import * as THREE from 'three';
 import { T } from '../../../odyssee/js/world/tiles.js';
 import { el, esc } from '../../../odyssee/js/ui/ui.js';
 import {
-  ILE, ARRIVEE, PONTON, CLE_STOCKAGE, FIXES, TROPHEES, TROPHEE, CATALOGUE, ARTICLE, nouvelleIle, etatIle, debloques,
-  trophePlace, posable, poser, articleEn, fixeEn, construire, SOCLES,
+  ILE, MUSEE, ARRIVEE, PONTON, CLE_STOCKAGE, FIXES, TROPHEES, TROPHEE, CATALOGUE, ARTICLE, nouvelleIle, etatIle, debloques,
+  trophePlace, posable, poser, articleEn, fixeEn, construire, sallesMusee, liste, dansZone, emprise,
 } from './modele.js';
 
 export { ILE, ARRIVEE };
@@ -30,17 +30,16 @@ export class Ile {
   /** reconstruit l'île et ses intérieurs (au premier passage, et après chaque changement) */
   preparer() {
     const g = this.game, ile = this.donnee(), maps = g.world.maps;
-    const m = construire(maps, ile);
+    const m = construire(maps, ile, { salles: this.salles() });
     m.sign(ARRIVEE[0] - 2, ARRIVEE[1], `${ile.nom.toUpperCase()}\nTon île privée. Personne d'autre ne peut y venir... pour l'instant.\nL'adjointe de la mairie t'explique comment la construire.`);
     m.npc({ id: 'ile:capitaine', x: PONTON[0], y: PONTON[1], dir: 'up', sprite: 'capitaine', move: 'static', talk: () => this.capitaine() });
-    const mairie = maps[`${ILE}:mairie`];
-    const adj = mairie.npcs.find((n) => n.id === 'ile:adjoint'); if (adj) { delete adj.script; adj.talk = () => this.adjointe(); }
-    const musee = maps[`${ILE}:musee`];
-    for (const [i] of SOCLES.entries()) { const [x, y] = SOCLES[i]; musee.object(x, y, { use: () => this.socle(i) }); }
-    musee.sign(7, 9, 'MUSÉE DE L\'ÎLE\nLes trophées de tes aventures. Approche-toi d\'un socle pour y exposer une statue.');
-    this.statues = m.statues;
+    const adj = maps[`${ILE}:mairie`].npcs.find((n) => n.id === 'ile:adjoint'); if (adj) adj.talk = () => this.adjointe();
     return m;
   }
+  /** salles du musée ouvertes (selon les trophées débloqués) */
+  salles() { return sallesMusee(debloques(this.donnee(), this.game.state).length); }
+  /** zone de construction de la carte où l'on est : dehors, ou au musée */
+  zoneIci() { const id = this.game.mapObj?.id; return id === ILE ? 'ile' : id === MUSEE ? 'musee' : null; }
   /** redessine la carte où l'on est, sans bouger le joueur */
   refaire() {
     const g = this.game, p = g.player, q = { x: p.x, y: p.y, dir: p.dir }, busy = g.busy, id = g.mapObj.id;
@@ -68,7 +67,7 @@ export class Ile {
     const g = this.game, ui = g.ui, ile = this.donnee(), sp = { speaker: 'Adjointe' };
     if (!ile.vuAdjointe) {
       ile.vuAdjointe = true; this.sauver();
-      await ui.say(['Bienvenue sur ton île ! Je suis l\'adjointe de la mairie.', 'Ici, tout est à toi : tu poses ce que tu veux, case par case, depuis le mode construction (le menu, ou moi).', 'Tes aventures te rapporteront des trophées : une statue par arène et par donjon. Tu peux les poser dehors ou les exposer au musée.', 'Pour l\'instant, tout est gratuit. Profites-en !'], sp);
+      await ui.say(['Bienvenue sur ton île ! Je suis l\'adjointe de la mairie.', 'Ici, tout est à toi : tu poses ce que tu veux, case par case, depuis le mode construction (CONSTRUIRE dans le menu, ou moi).', 'Tes aventures te rapporteront des trophées : une statue par arène et par donjon. Pose-les dehors, ou au musée : là aussi, le mode construction marche. Le musée s\'agrandit d\'une salle tous les quatre trophées.', 'Approche-toi d\'une statue pour savoir ce qui te l\'a rapportée. Pour l\'instant, tout est gratuit. Profites-en !'], sp);
     }
     for (;;) {
       const n = debloques(ile, g.state).length;
@@ -91,35 +90,27 @@ export class Ile {
   async listeTrophees() {
     const g = this.game, ile = this.donnee(), ok = new Set(debloques(ile, g.state));
     const items = TROPHEES.map((t) => ({ label: `${ok.has(t.id) ? '✔' : '·'} ${t.nom}`, right: !ok.has(t.id) ? (t.badge != null ? `badge ${t.badge + 1}` : 'donjon à finir') : { ile: 'sur l\'île', musee: 'au musée' }[trophePlace(ile, t.id)] || 'à poser' }));
-    await g.ui.list({ title: `Trophées · ${ok.size}/${TROPHEES.length}`, items: items.concat([{ label: 'Fermer' }]), cls: 'shop', cancel: items.length });
-  }
-  async socle(i) {
-    const g = this.game, ui = g.ui, ile = this.donnee(), ici = TROPHEE[ile.musee[i]];
-    if (ici) {
-      await ui.say(`${ici.nom}.`);
-      if (await ui.yesNo('La ranger ? Elle restera dans tes trophées.')) { delete ile.musee[i]; this.sauver(); this.refaire(); }
-      return;
+    for (;;) {
+      const k = await g.ui.list({ title: `Trophées · ${ok.size}/${TROPHEES.length} · musée : ${this.salles()} salle${this.salles() > 1 ? 's' : ''}`, items: items.concat([{ label: 'Fermer' }]), cls: 'shop', cancel: items.length });
+      if (k < 0 || k >= TROPHEES.length) return;
+      const t = TROPHEES[k];
+      await g.ui.say(ok.has(t.id) ? [`${t.nom}.`, t.origine] : [`${t.nom} : pas encore débloquée.`, t.badge != null ? `Elle viendra avec le badge de l'arène n°${t.badge + 1}.` : t.origine.replace('En récompense pour avoir terminé', 'Elle viendra quand tu auras terminé')]);
     }
-    const libres = debloques(ile, g.state).filter((id) => !trophePlace(ile, id));
-    if (!libres.length) { await ui.say('Un socle vide. Tu n\'as pas de trophée à y exposer : finis une arène ou un donjon, ou range une statue de l\'île.'); return; }
-    const k = await ui.list({ title: 'Exposer quel trophée ?', items: libres.map((id) => ({ label: TROPHEE[id].nom })).concat([{ label: 'Retour' }]), cls: 'shop', cancel: libres.length });
-    if (k < 0 || k >= libres.length) return;
-    ile.musee[i] = libres[k]; this.sauver(); g.sound.sfx('levelup'); this.refaire();
   }
-
   /* ---------------- à chaque image : les statues ---------------- */
   tick() {
-    const g = this.game, D = g.donjons; if (!D || !this.statues || !this.dedans()) return;
+    const g = this.game, D = g.donjons; if (!D || !this.dedans()) return;
     D.imgStatues ||= {};
-    for (const s of this.statues) if (s.carte === g.mapObj.id) D.statue(g, `ile:${s.x},${s.y}`, s.sp, s.x, s.y, s.grand ? 0.6 : 0.45);
+    for (const s of g.mapObj.statues || []) D.statue(g, `ile:${s.x},${s.y}`, s.sp, s.x, s.y, s.grand ? 0.6 : 0.45);
   }
 
   /* ---------------- le mode construction ---------------- */
   async construction() {
-    const g = this.game, ui = g.ui; if (!this.sur()) { await ui.say('Le mode construction ne marche que dehors, sur ton île.'); return; }
-    const ile = this.donnee(), p = g.player, depart = { x: p.x, y: p.y };
+    const g = this.game, ui = g.ui, zone = this.zoneIci(); if (!zone) { await ui.say('Le mode construction marche dehors, sur ton île, et au musée.'); return; }
+    const ile = this.donnee(), p = g.player, depart = { x: p.x, y: p.y }, salles = this.salles(), L = () => liste(ile, zone);
+    const pose = (t) => posable(ile, t, zone, { salles });
     g.busy = true;
-    let art = ARTICLE.arbre, mode = 'poser', enMain = null, occupe = false, done;
+    let art = zone === 'musee' ? ARTICLE[CATALOGUE.find((a) => a.tr && debloques(ile, g.state).includes(a.tr) && !trophePlace(ile, a.tr))?.id || 'plante'] : ARTICLE.arbre, mode = 'poser', enMain = null, occupe = false, done;
     const fini = new Promise((r) => { done = r; });
     if (g.hud?.root) g.hud.root.style.visibility = 'hidden';
     const bar = el('div', 'chantier');
@@ -146,47 +137,48 @@ export class Ile {
       const cam = g.view.camera, r = cv.getBoundingClientRect();
       const pt = (x, z) => { const v = new THREE.Vector3(x, 0, z).project(cam); return `${r.left + (v.x + 1) / 2 * r.width},${r.top + (1 - v.y) / 2 * r.height}`; };
       const a = enMain ? (enMain.fixe ? FIXES[enMain.fixe] : ARTICLE[enMain.a]) : mode === 'poser' ? art : null;
-      const [w, h] = a && (a.b || a.kind) ? [a.taille[0], a.taille[1] + 1] : [1, 1];
-      poly.setAttribute('points', [pt(p.x, p.y), pt(p.x + w, p.y), pt(p.x + w, p.y + h), pt(p.x, p.y + h)].join(' '));
-      poly.setAttribute('class', !a ? 'ret' : posable(ile, essai()).ok && (!a.tr || debloques(ile, g.state).includes(a.tr)) ? '' : 'non');
+      const c = a ? emprise(a, p.x, p.y) : [[p.x, p.y]], xs = c.map((q) => q[0]), ys = c.map((q) => q[1]);
+      const [x0, y0, x1, y1] = [Math.min(...xs), Math.min(...ys), Math.max(...xs) + 1, Math.max(...ys) + 1];
+      poly.setAttribute('points', [pt(x0, y0), pt(x1, y0), pt(x1, y1), pt(x0, y1)].join(' '));
+      poly.setAttribute('class', !a ? 'ret' : pose(essai()).ok && (!a.tr || debloques(ile, g.state).includes(a.tr)) ? '' : 'non');
     };
     let raf = requestAnimationFrame(function f() { cadre(); raf = requestAnimationFrame(f); });
     const changer = () => { this.sauver(); this.refaire(); g.busy = true; };
 
     const agir = async () => {
       if (mode === 'ranger') {
-        const i = articleEn(ile, p.x, p.y);
-        if (i < 0) { g.sound.sfx('bump'); majBar(fixeEn(ile, p.x, p.y) ? 'La maison, la mairie et le musée se déplacent mais ne se rangent pas.' : 'Rien à ranger ici.'); return; }
-        const [t] = ile.travaux.splice(i, 1); g.sound.sfx('cancel'); changer(); majBar(`${ARTICLE[t.a].nom} : rangé.`); return;
+        const i = articleEn(ile, p.x, p.y, zone);
+        if (i < 0) { g.sound.sfx('bump'); majBar(zone === 'ile' && fixeEn(ile, p.x, p.y) ? 'La maison, la mairie et le musée se déplacent mais ne se rangent pas.' : 'Rien à ranger ici.'); return; }
+        const [t] = L().splice(i, 1); g.sound.sfx('cancel'); changer(); majBar(`${ARTICLE[t.a].nom} : rangé.`); return;
       }
       if (mode === 'deplacer' && !enMain) {
-        const fixe = fixeEn(ile, p.x, p.y), i = fixe ? -1 : articleEn(ile, p.x, p.y);
+        const fixe = zone === 'ile' ? fixeEn(ile, p.x, p.y) : null, i = fixe ? -1 : articleEn(ile, p.x, p.y, zone);
         if (fixe) { enMain = { fixe, depuis: [...ile.fixes[fixe]] }; ile.cache = fixe; }
-        else if (i >= 0) { const [t] = ile.travaux.splice(i, 1); enMain = { ...t, depuis: t }; }
+        else if (i >= 0) { const [t] = L().splice(i, 1); enMain = { ...t, depuis: t }; }
         else { g.sound.sfx('bump'); majBar('Rien à déplacer ici.'); return; }
         g.sound.sfx('select'); changer(); majBar(); return;
       }
       const trav = essai(), a = trav.fixe ? FIXES[trav.fixe] : ARTICLE[trav.a];
       if (a.tr && !debloques(ile, g.state).includes(a.tr)) { g.sound.sfx('bump'); majBar('Ce trophée n\'est pas encore débloqué.'); return; }
-      const r = posable(ile, trav);
+      const r = pose(trav);
       if (!r.ok) { g.sound.sfx('bump'); majBar(r.why); return; }
       if (trav.fixe) { ile.fixes[trav.fixe] = [p.x, p.y]; delete ile.cache; enMain = null; }
       else {
         if (a.s && !trav.texte) { occupe = true; trav.texte = (await ui.nameEntry('Texte du panneau', ile.nom.toUpperCase())) || 'PANNEAU'; occupe = false; }
-        const { depuis, ...t } = trav; poser(ile, t); enMain = null;
+        const { depuis, ...t } = trav; poser(ile, t, zone); enMain = null;
       }
       g.sound.sfx(a.b || a.kind ? 'levelup' : 'select'); changer(); majBar();
     };
     const catalogue = async () => {
       if (enMain) { majBar('Pose d\'abord ce que tu as en main.'); return; }
       const ok = new Set(debloques(ile, g.state));
-      const cats = [...new Set(CATALOGUE.map((c) => c.cat))];
+      const cats = [...new Set(CATALOGUE.filter((a) => dansZone(a, zone)).map((c) => c.cat))];
       const c = await ui.list({ title: 'Catalogue', items: cats.map((k) => ({ label: k })).concat([{ label: '✋ Déplacer un objet' }, { label: '🧹 Ranger un objet' }, { label: '✔ Terminer' }]), cls: 'shop', cancel: -1 });
       if (c < 0) return;
       if (c === cats.length) { mode = 'deplacer'; majBar(); return; }
       if (c === cats.length + 1) { mode = 'ranger'; majBar(); return; }
       if (c === cats.length + 2) { fermer(); return; }
-      const L = CATALOGUE.filter((a) => a.cat === cats[c]);
+      const L = CATALOGUE.filter((a) => a.cat === cats[c] && dansZone(a, zone));
       const etat = (a) => (!a.tr ? '' : !ok.has(a.tr) ? '🔒' : trophePlace(ile, a.tr) ? { ile: 'sur l\'île', musee: 'au musée' }[trophePlace(ile, a.tr)] : 'à poser');
       const i = await ui.list({ title: cats[c], items: L.map((a) => ({ label: (a.tr && !ok.has(a.tr) ? '🔒 ' : '') + a.nom, right: etat(a) })), cls: 'shop', cancel: -1 });
       if (i < 0) return;
@@ -213,7 +205,7 @@ export class Ile {
     cv.addEventListener('pointerdown', clic);
     const fermer = () => {
       // ce qui est encore en main retourne à sa place
-      if (enMain) { if (enMain.fixe) { ile.fixes[enMain.fixe] = enMain.depuis; delete ile.cache; } else { const { depuis, ...t } = enMain; ile.travaux.push({ ...depuis }); } enMain = null; this.sauver(); this.refaire(); }
+      if (enMain) { if (enMain.fixe) { ile.fixes[enMain.fixe] = enMain.depuis; delete ile.cache; } else { L().push({ ...enMain.depuis }); } enMain = null; this.sauver(); this.refaire(); }
       pop(); cancelAnimationFrame(raf); cv.removeEventListener('pointerdown', clic); bar.remove(); svg.remove();
       if (g.hud?.root) g.hud.root.style.visibility = '';
       // on se pose sur une case praticable, au plus près

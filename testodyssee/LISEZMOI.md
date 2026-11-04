@@ -320,7 +320,13 @@ session à l'autre. On y va par « Mon île » dans la liste des lieux ; le capi
   pas sur un autre objet, le débarcadère libre, et toujours un chemin du ponton aux portes de la maison, de la mairie
   et du musée.
 - Trophées : une statue par badge de la partie et par donjon du labo fini (`trophee` du donjon, à la remise des
-  récompenses). Un seul exemplaire : posée sur l'île, exposée sur un des huit socles du musée, ou en attente.
+  récompenses), chacune avec son `origine` (« En récompense pour avoir… »), lue en s'approchant de la statue ou dans la
+  liste de la mairie. Un seul exemplaire : posée sur l'île, au musée, ou en attente.
+- Musée : une deuxième zone de construction (`zone: 'musee'`, `ile.musee.travaux`), des salles en enfilade qui
+  s'ouvrent au fil des trophées (`sallesMusee` : une de plus tous les quatre, quatre au plus). Chaque article dit où il
+  se pose (`zones`) ; les passages entre salles et l'entrée restent libres.
+- Décors de plusieurs cases : `couvre` (cases prises autour de la case posée) et `passe` (celles où l'on marche quand
+  même : le portique torii, deux poteaux et un passage).
 - Mairie : l'adjointe ouvre le mode construction, liste les trophées, renomme l'île, la remet à zéro (les trophées
   restent).
 

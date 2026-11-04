@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 3.96 — 4 novembre 2026
+- **TestOdyssée** — Île privée :
+  - On passe désormais sous le portique torii, et ses poteaux ne se traversent plus. La fontaine prend deux cases.
+  - Le musée se construit librement : on y pose statues, plantes, vases, colonnes et bancs où l'on veut, avec le mode construction. Il gagne une salle tous les quatre trophées.
+  - Approche-toi d'une statue pour savoir ce qui te l'a rapportée (« En récompense pour avoir triomphé de l'arène de… »). La liste des trophées de la mairie le dit aussi.
+
 ## 3.95 — 3 novembre 2026
 - **TestOdyssée** — Nouveau : ton île privée. Choisis « Mon île » dans la liste des lieux : elle t'attend avec sa maison, sa mairie et son musée, et elle est gardée d'une session à l'autre.
   - Le mode construction (menu CONSTRUIRE, ou l'adjointe de la mairie) : on pose arbres, fleurs, bancs, lampadaires, maisons, chemins et pavés case par case, on déplace et on range. Tout est gratuit pendant les tests.

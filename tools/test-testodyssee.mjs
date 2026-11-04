@@ -678,7 +678,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   const s2 = M.nouvelleIle('Sols'); M.poser(s2, { a: 'chemin', x: 20, y: 20 }); M.poser(s2, { a: 'paves', x: 20, y: 20 });
   ok(s2.travaux.length === 1 && s2.travaux[0].a === 'paves', 'île : un sol remplace le sol de la case');
   M.poser(s2, { a: 'house', x: 10, y: 18 });
-  ok(!M.posable(s2, { a: 'banc', x: 12, y: 20 }).ok && M.articleEn(s2, 13, 21) === 1, 'île : un bâtiment occupe son emprise et la case devant sa porte');
+  ok(!M.posable(s2, { a: 'banc', x: 12, y: 21 }).ok && M.articleEn(s2, 13, 20) === 1 && M.articleEn(s2, 13, 21) === -1, 'île : un bâtiment occupe son emprise et la case devant sa porte');
   // trophées : badges et donjons finis, un exemplaire chacun
   const st = { badges: [true, true, false, false, false, false, false, false] };
   const t0 = M.debloques(ile, st);
@@ -692,6 +692,28 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   const d2 = M.nouvelleIle('Déplacer'); d2.cache = 'mairie';
   const [ax, ay] = d2.fixes.mairie;
   ok(M.posable(d2, { a: 'arbre', x: ax + 1, y: ay + 1 }).ok && M.posable(d2, { fixe: 'mairie', x: ax - 4, y: ay + 6 }).ok, 'île : on déplace la mairie ailleurs sur l\'herbe');
+  // portique torii : on passe entre ses poteaux, pas à travers
+  {
+    const t = M.nouvelleIle('Torii'); M.poser(t, { a: 'torii', x: 20, y: 20 });
+    const m = M.construire({}, t, { seul: true });
+    ok(!walkable(m.get(19, 20)) && !walkable(m.get(21, 20)) && walkable(m.get(20, 20)) && !M.posable(t, { a: 'banc', x: 21, y: 20 }).ok, 'île : le portique torii bloque ses poteaux et laisse passer au milieu');
+  }
+  // le musée : on y pose librement, il s'agrandit, ses passages restent libres
+  {
+    const mu = M.nouvelleIle('Musée'); mu.donjons.push('crypte');
+    ok(M.sallesMusee(0) === 1 && M.sallesMusee(4) === 2 && M.sallesMusee(40) === 4, 'île : le musée gagne une salle tous les quatre trophées');
+    ok(M.posable(mu, { a: 'tr:crypte', x: 4, y: 4 }, 'musee').ok && !M.posable(mu, { a: 'arbre', x: 4, y: 4 }, 'musee').ok && !M.posable(mu, { a: 'plante', x: 20, y: 20 }).ok, 'île : chaque article a ses zones (le musée, dehors)');
+    ok(!M.posable(mu, { a: 'tr:crypte', x: 14, y: 6 }, 'musee', { salles: 2 }).ok && M.posable(mu, { a: 'tr:crypte', x: 16, y: 3 }, 'musee', { salles: 2 }).ok && !M.posable(mu, { a: 'tr:crypte', x: 16, y: 3 }, 'musee', { salles: 1 }).ok, 'île : une salle de plus ouvre de la place, pas les passages');
+    M.poser(mu, { a: 'tr:crypte', x: 4, y: 4 }, 'musee');
+    const mm = M.construireMusee(mu, 1);
+    ok(M.trophePlace(mu, 'crypte') === 'musee' && mm.statues.length === 1 && mm.objectAt(4, 4)?.trophee === 'crypte', 'île : une statue posée au musée');
+    // une ligne de vases qui fermerait la salle est refusée
+    const bloc = M.nouvelleIle('Bloc'); let refuse = false;
+    for (let x = 1; x <= 13 && !refuse; x++) { const r = M.posable(bloc, { a: 'vase', x, y: 8 }, 'musee'); if (r.ok) M.poser(bloc, { a: 'vase', x, y: 8 }, 'musee'); else refuse = /passage|entrée/.test(r.why); }
+    ok(refuse && M.musseeRelie(bloc, 1), 'île : on ne ferme pas le musée sur lui-même');
+  }
+  ok(M.TROPHEES.every((t) => /^En récompense pour avoir (triomphé de l'arène|terminé) /.test(t.origine)) && M.TROPHEE.badge0.origine.includes('Sylvebourg'), 'île : chaque trophée dit ce qui l\'a rapporté');
+  ok(M.etatIle({ nom: 'v1', fixes: {}, travaux: [], donjons: ['crypte'], musee: { 0: 'crypte' } }).musee.travaux[0]?.a === 'tr:crypte', 'île : les statues de l\'ancien musée sont gardées');
   ok(M.etatIle(JSON.parse(JSON.stringify(ile))).travaux.length === ile.travaux.length && M.etatIle(null).fixes.maison, 'île : la donnée se relit telle quelle');
 }
 

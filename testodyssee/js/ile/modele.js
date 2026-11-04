@@ -1,17 +1,18 @@
 // testodyssee/js/ile/modele.js — l'île privée du joueur (sans DOM) : la même île pour tout le monde, ce que le joueur y
-// pose (case par case), les trophées débloqués et ceux exposés au musée. Tout tient dans une donnée (« l'île ») qui
-// suivra un jour la sauvegarde d'Odyssée ; la carte est reconstruite à partir d'elle à chaque visite.
+// pose (case par case), les trophées débloqués, et le musée où on les expose librement (ses salles s'ouvrent au fil
+// des trophées). Tout tient dans une donnée (« l'île ») qui suivra un jour la sauvegarde d'Odyssée ; les cartes sont
+// reconstruites à partir d'elle à chaque visite.
 //
-// L'île : { v, nom, biome, fixes: { maison: [x, y], mairie, musee }, travaux: [{ a, x, y, texte? toit? }],
-//           donjons: [id des donjons finis], musee: { [socle]: id du trophée } }
-// La pose reprend le format des retouches d'Odyssée (et l'idée du chantier du Domaine) : un article = une tuile,
-// un décor ou un bâtiment ; un chemin reste toujours libre entre le ponton et les portes des bâtiments fixes.
+// L'île : { v, nom, biome, fixes: { maison: [x, y], mairie, musee }, travaux: [{ a, x, y, texte? }], donjons: [...],
+//           musee: { travaux: [...] } }
+// Deux zones de construction : 'ile' (dehors) et 'musee' (dedans). Un article = une tuile, un décor ou un bâtiment ;
+// un chemin reste toujours libre jusqu'aux portes (dehors) et jusqu'à chaque salle (au musée).
 import { T } from '../../../odyssee/js/world/tiles.js';
 import { GameMap, rng, BUILDINGS } from '../../../odyssee/js/world/mapgen.js';
 import { applyOps } from '../../../odyssee/js/world/retouches.js';
 import { houseInterior, room } from '../../../odyssee/js/world/interiors.js';
 
-export const ILE = 'labo:ile';
+export const ILE = 'labo:ile', MUSEE = 'labo:ile:musee';
 export const W = 60, H = 44;
 export const PONTON = [30, 40];                // bout du ponton (le capitaine)
 export const ARRIVEE = [30, 37];               // là où l'on débarque
@@ -24,20 +25,23 @@ export const FIXES = {
   musee: { kind: 'bighouse', nom: 'Musée', toit: 'purple', taille: [6, 4], defaut: [17, 7] },
 };
 
-/** les trophées : une statue par arène d'Odyssée (badge) et par donjon du labo */
+/* ---------------- les trophées ---------------- */
+const VILLES = ['Sylvebourg', 'Port-Azur', 'Voltacité', 'Floralia', 'Mirage', 'Port-Granit', 'Cendrelune', 'Fort-Écaille'];
+const de = (n) => (/^[AEIOUYÉH]/i.test(n) ? 'd\'' : 'de ') + n;
+const NOMS_STATUES = { crypte: 'Statue de la Crypte', didier: 'Statue du Donjon de Didier', miroirs: 'Statue du Donjon des Miroirs', voies: 'Statue du trio des lacs', pyramide: 'Statue de la Pyramide de l\'Ascension', mine: 'Statue de la Mine Effondrée', train: 'Statue du Train Fantôme' };
+const DONJONS_NOMS = { crypte: 'la Crypte', didier: 'le Donjon de Didier', miroirs: 'le Donjon des Miroirs', voies: 'le Sanctuaire des Trois Voies', pyramide: 'la Pyramide de l\'Ascension', mine: 'la Mine Effondrée', train: 'le Train Fantôme' };
+/** une statue par arène d'Odyssée (badge) et par donjon du labo, avec ce qui l'a rapportée */
 export const TROPHEES = [
-  ...['Hector', 'Marine', 'Volta', 'Flora', 'Sibylle', 'Basalte', 'Pyros', 'Drakos'].map((n, i) => ({ id: `badge${i}`, nom: `Statue de l'arène ${/^[AEIOUYH]/.test(n) ? 'd\'' : 'de '}${n}`, sp: [212, 130, 135, 3, 65, 76, 6, 149][i], badge: i })),
-  { id: 'crypte', nom: 'Statue de la Crypte', sp: 92, donjon: 'crypte' },
-  { id: 'didier', nom: 'Statue du Donjon de Didier', sp: 2001, donjon: 'didier' },
-  { id: 'miroirs', nom: 'Statue des Miroirs', sp: 122, donjon: 'miroirs' },
-  { id: 'voies', nom: 'Statue du trio des lacs', sp: 482, donjon: 'voies' },
-  { id: 'pyramide', nom: 'Statue de la Pyramide', sp: 563, donjon: 'pyramide' },
-  { id: 'mine', nom: 'Statue de la Mine', sp: 306, donjon: 'mine' },
-  { id: 'train', nom: 'Statue du Train Fantôme', sp: 94, donjon: 'train' },
+  ...VILLES.map((v, i) => ({ id: `badge${i}`, nom: `Statue de l'arène ${de(v)}`, sp: [212, 130, 135, 3, 65, 76, 6, 149][i], badge: i, origine: `En récompense pour avoir triomphé de l'arène ${de(v)}.` })),
+  ...Object.entries({ crypte: 92, didier: 2001, miroirs: 122, voies: 482, pyramide: 563, mine: 306, train: 94 }).map(([id, sp]) => ({ id, sp, donjon: id, nom: NOMS_STATUES[id], origine: `En récompense pour avoir terminé ${DONJONS_NOMS[id]}.` })),
 ];
 export const TROPHEE = Object.fromEntries(TROPHEES.map((t) => [t.id, t]));
 
-/** le catalogue (gratuit pendant les tests) : t = tuile, p = décor, s = panneau, b = bâtiment, tr = trophée */
+/**
+ * le catalogue (gratuit pendant les tests) : t = tuile, p = décor, s = panneau, b = bâtiment, tr = trophée.
+ * couvre : cases prises autour de la case posée (par défaut, la case seule) ; passe : celles où l'on marche quand même
+ * (le portique torii : deux poteaux et un passage). zones : où il se pose (dehors par défaut).
+ */
 export const CATALOGUE = [
   { cat: 'Nature', id: 'arbre', nom: 'Arbre', t: T.TREE },
   { cat: 'Nature', id: 'sapin', nom: 'Sapin', t: T.PINE },
@@ -49,17 +53,20 @@ export const CATALOGUE = [
   { cat: 'Nature', id: 'cerisier', nom: 'Cerisier', p: 'cerisier' },
   { cat: 'Nature', id: 'erable', nom: 'Érable', p: 'erable' },
   { cat: 'Nature', id: 'grandrocher', nom: 'Grand rocher', p: 'rocher_grand' },
-  { cat: 'Mobilier', id: 'banc', nom: 'Banc', p: 'banc' },
+  { cat: 'Mobilier', id: 'banc', nom: 'Banc', p: 'banc', zones: ['ile', 'musee'] },
   { cat: 'Mobilier', id: 'lamp', nom: 'Lampadaire', p: 'lamp' },
-  { cat: 'Mobilier', id: 'lanterne', nom: 'Lanterne', p: 'lanterne' },
-  { cat: 'Mobilier', id: 'fontaine', nom: 'Fontaine', p: 'fontaine' },
+  { cat: 'Mobilier', id: 'lanterne', nom: 'Lanterne', p: 'lanterne', zones: ['ile', 'musee'] },
+  { cat: 'Mobilier', id: 'fontaine', nom: 'Fontaine', p: 'fontaine', couvre: [[0, 0], [1, 0]], w: 2 },
   { cat: 'Mobilier', id: 'tonneau', nom: 'Tonneau', p: 'tonneau' },
   { cat: 'Mobilier', id: 'caisse', nom: 'Caisse', p: 'caisse' },
-  { cat: 'Mobilier', id: 'pot', nom: 'Pot de fleurs', p: 'pot' },
+  { cat: 'Mobilier', id: 'pot', nom: 'Pot de fleurs', p: 'pot', zones: ['ile', 'musee'] },
+  { cat: 'Mobilier', id: 'plante', nom: 'Plante verte', p: 'plant', zones: ['musee'] },
+  { cat: 'Mobilier', id: 'vase', nom: 'Vase', p: 'vase', zones: ['musee'] },
+  { cat: 'Mobilier', id: 'colonne', nom: 'Colonne', p: 'colonne', zones: ['ile', 'musee'] },
   { cat: 'Mobilier', id: 'parasol', nom: 'Parasol', p: 'parasol' },
   { cat: 'Mobilier', id: 'boite', nom: 'Boîte aux lettres', p: 'mailbox' },
-  { cat: 'Mobilier', id: 'torii', nom: 'Portique torii', p: 'torii' },
-  { cat: 'Mobilier', id: 'panneau', nom: 'Panneau', s: true },
+  { cat: 'Mobilier', id: 'torii', nom: 'Portique torii', p: 'torii', couvre: [[-1, 0], [0, 0], [1, 0]], passe: [[0, 0]], dz: 0.95 },
+  { cat: 'Mobilier', id: 'panneau', nom: 'Panneau', s: true, zones: ['ile', 'musee'] },
   { cat: 'Bâtiments', id: 'house', nom: 'Maison', b: 'house', taille: [4, 3] },
   { cat: 'Bâtiments', id: 'house2', nom: 'Grande maison', b: 'house2', taille: [5, 3] },
   { cat: 'Bâtiments', id: 'bighouse', nom: 'Résidence', b: 'bighouse', taille: [6, 4] },
@@ -67,13 +74,14 @@ export const CATALOGUE = [
   { cat: 'Sols', id: 'paves', nom: 'Pavés', t: T.PAVE, sol: true },
   { cat: 'Sols', id: 'sable', nom: 'Sable', t: T.SAND, sol: true },
   { cat: 'Sols', id: 'herbe', nom: 'Herbe', t: T.GRASS, sol: true },
-  ...TROPHEES.map((t) => ({ cat: 'Trophées', id: 'tr:' + t.id, nom: t.nom, tr: t.id })),
+  ...TROPHEES.map((t) => ({ cat: 'Trophées', id: 'tr:' + t.id, nom: t.nom, tr: t.id, zones: ['ile', 'musee'] })),
 ];
 export const ARTICLE = Object.fromEntries(CATALOGUE.map((c) => [c.id, c]));
+export const dansZone = (a, zone) => (a.zones || ['ile']).includes(zone);
 
 /* ---------------- la donnée ---------------- */
 export function nouvelleIle(nom = 'Mon île') {
-  return { v: 1, nom, biome: 'plaine', fixes: Object.fromEntries(Object.entries(FIXES).map(([k, f]) => [k, [...f.defaut]])), travaux: [], donjons: [], musee: {} };
+  return { v: 2, nom, biome: 'plaine', fixes: Object.fromEntries(Object.entries(FIXES).map(([k, f]) => [k, [...f.defaut]])), travaux: [], donjons: [], musee: { travaux: [] } };
 }
 /** complète une île lue (version plus ancienne, champ manquant) */
 export function etatIle(ile) {
@@ -82,24 +90,32 @@ export function etatIle(ile) {
   ile.fixes = { ...n.fixes, ...(ile.fixes || {}) };
   ile.travaux = Array.isArray(ile.travaux) ? ile.travaux.filter((t) => ARTICLE[t?.a]) : [];
   ile.donjons = Array.isArray(ile.donjons) ? ile.donjons : [];
-  ile.musee = ile.musee && typeof ile.musee === 'object' ? ile.musee : {};
-  ile.biome ||= 'plaine'; ile.v = 1;
+  // version 1 : huit socles fixes ; on garde les statues à la place de leur socle
+  if (!ile.musee || !Array.isArray(ile.musee.travaux)) {
+    const anciens = ile.musee && typeof ile.musee === 'object' ? ile.musee : {};
+    ile.musee = { travaux: Object.entries(anciens).filter(([, id]) => TROPHEE[id]).map(([i, id]) => ({ a: 'tr:' + id, x: [3, 6, 9, 12][i % 4], y: i < 4 ? 4 : 7 })) };
+  }
+  ile.musee.travaux = ile.musee.travaux.filter((t) => ARTICLE[t?.a]);
+  ile.biome ||= 'plaine'; ile.v = 2;
   return ile;
 }
 /** trophées débloqués : badges de la partie et donjons finis */
 export function debloques(ile, st) {
   return TROPHEES.filter((t) => (t.badge != null ? !!st?.badges?.[t.badge] : ile.donjons.includes(t.donjon))).map((t) => t.id);
 }
-/** un trophée n'existe qu'en un exemplaire : sur l'île, au musée, ou dans le stock */
+/** un trophée n'existe qu'en un exemplaire : sur l'île, au musée, ou en attente */
 export function trophePlace(ile, id) {
   if (ile.travaux.some((t) => ARTICLE[t.a]?.tr === id)) return 'ile';
-  if (Object.values(ile.musee).includes(id)) return 'musee';
+  if (ile.musee.travaux.some((t) => ARTICLE[t.a]?.tr === id)) return 'musee';
   return null;
 }
+/** le musée s'agrandit avec les trophées : une salle, puis une de plus tous les quatre trophées (quatre au plus) */
+export const sallesMusee = (n) => Math.min(4, 1 + Math.floor(n / 4));
+export const liste = (ile, zone) => (zone === 'musee' ? ile.musee.travaux : ile.travaux);
 
-/* ---------------- le terrain (le même pour tout le monde) ---------------- */
+/* ---------------- le terrain de l'île (le même pour tout le monde) ---------------- */
 let FORME = null;
-/** 'eau', 'plage' ou 'herbe' pour chaque case, plus le ponton */
+/** 'eau', 'plage', 'herbe' ou 'ponton' pour chaque case */
 export function forme() {
   if (FORME) return FORME;
   const r = rng(6060), f = Array.from({ length: H }, () => Array(W).fill('eau'));
@@ -115,14 +131,32 @@ export function forme() {
 }
 const fo = (x, y) => (x >= 0 && y >= 0 && x < W && y < H ? forme()[y][x] : 'eau');
 
+/* ---------------- le musée : des salles en enfilade ---------------- */
+const SW = 13, SH = 9;
+export const tailleMusee = (n) => [1 + n * (SW + 1), SH + 3];
+/** sortie du musée (le tapis) et case d'arrivée */
+export const SORTIE_MUSEE = [Math.floor(SW / 2) + 1, SH + 2];
+/** cases libres du musée : le sol des salles, sauf les passages entre salles et l'entrée */
+function solMusee(n, x, y) {
+  const [w] = tailleMusee(n);
+  if (x < 1 || x >= w - 1 || y < 2 || y > SH + 1) return false;
+  if (x % (SW + 1) === 0) return false;                                       // mur entre deux salles (passage compris)
+  if ((x % (SW + 1) === 1 || x % (SW + 1) === SW) && y >= 5 && y <= 7) return false;   // devant un passage
+  if (Math.abs(x - SORTIE_MUSEE[0]) <= 1 && y >= SH) return false;            // devant l'entrée
+  return true;
+}
+/** les points à garder reliés : l'entrée et chaque salle */
+const pointsMusee = (n) => Array.from({ length: n }, (_, k) => [1 + k * (SW + 1) + 1, 6]);
+
+/* ---------------- les règles de pose ---------------- */
 /** les cases que couvre un article posé (un bâtiment : son emprise et la case devant sa porte) */
 export function emprise(a, x, y) {
   const art = typeof a === 'string' ? ARTICLE[a] : a;
   if (art?.b || art?.kind) { const [w, h] = art.taille; const out = []; for (let j = 0; j <= h; j++) for (let i = 0; i < w; i++) out.push([x + i, y + j]); return out; }
-  return [[x, y]];
+  return (art?.couvre || [[0, 0]]).map(([dx, dy]) => [x + dx, y + dy]);
 }
-/** les cases d'un bâtiment, sans celle devant sa porte */
-export function corps(a, x, y) { return (a?.b || a?.kind) ? emprise(a, x, y).slice(0, a.taille[0] * a.taille[1]) : [[x, y]]; }
+/** les cases d'un bâtiment, sans celle devant sa porte (pour un décor : toutes ses cases) */
+export function corps(a, x, y) { return (a?.b || a?.kind) ? emprise(a, x, y).slice(0, a.taille[0] * a.taille[1]) : emprise(a, x, y); }
 /** les portes des bâtiments fixes (case devant), à garder reliées au ponton */
 export function portes(ile) {
   return Object.entries(FIXES).filter(([k]) => k !== ile.cache).map(([k, f]) => { const [x, y] = ile.fixes[k]; return [x + BUILDINGS[f.kind].door, y + f.taille[1]]; });
@@ -130,33 +164,40 @@ export function portes(ile) {
 
 /**
  * peut-on poser cet article ici ? { ok, why }. trav = { a, x, y } ; pour déplacer un bâtiment fixe : { fixe, x, y }.
- * Les sols se peignent sur l'herbe et les chemins ; tout le reste demande une case libre ; aucun bâtiment ne recouvre
- * un autre objet ; et le chemin du ponton aux portes des bâtiments fixes doit rester libre.
+ * Dehors : sur l'herbe, sans rien recouvrir, le débarcadère libre et le chemin vers chaque porte. Au musée : sur le
+ * sol des salles, sans boucher les passages ni l'entrée.
  */
-export function posable(ile, trav) {
+export function posable(ile, trav, zone = 'ile', o = {}) {
   const art = trav.fixe ? FIXES[trav.fixe] : ARTICLE[trav.a];
   if (!art) return { ok: false, why: 'inconnu' };
+  if (!trav.fixe && !dansZone(art, zone)) return { ok: false, why: zone === 'musee' ? 'Ça ne se pose pas au musée.' : 'Ça se pose au musée.' };
   const cases = emprise(art, trav.x, trav.y);
-  if (!cases.every(([x, y]) => fo(x, y) === 'herbe')) return { ok: false, why: 'Seulement sur l\'herbe de l\'île.' };
-  const pres = (x, y) => Math.abs(x - ARRIVEE[0]) <= 1 && y >= ARRIVEE[1] - 1;
-  if (!art.sol && cases.some(([x, y]) => pres(x, y))) return { ok: false, why: 'Il faut laisser le débarcadère libre.' };
-  // ce qui occupe déjà les cases (sols exceptés)
-  const occ = new Set();
-  if (!art.sol) for (const [k, f] of Object.entries(FIXES)) if (k !== trav.fixe && k !== ile.cache) for (const [x, y] of emprise(f, ...ile.fixes[k])) occ.add(x + ',' + y);
-  for (const t of ile.travaux) if (!ARTICLE[t.a].sol) for (const [x, y] of emprise(t.a, t.x, t.y)) occ.add(x + ',' + y);
-  if (!art.sol && cases.some(([x, y]) => occ.has(x + ',' + y))) return { ok: false, why: 'La place est déjà prise.' };
-  // un sol se peint partout, sauf sous un bâtiment ou un objet (devant une porte, oui)
-  if (art.sol) {
-    const dessous = new Set();
-    for (const [k, f] of Object.entries(FIXES)) if (k !== ile.cache) for (const [x, y] of corps(f, ...ile.fixes[k])) dessous.add(x + ',' + y);
-    for (const t of ile.travaux) if (!ARTICLE[t.a].sol) for (const [x, y] of corps(ARTICLE[t.a], t.x, t.y)) dessous.add(x + ',' + y);
-    if (cases.some(([x, y]) => dessous.has(x + ',' + y))) return { ok: false, why: 'Il y a déjà quelque chose ici.' };
+  const n = o.salles || 1;
+  if (zone === 'musee') { if (!cases.every(([x, y]) => solMusee(n, x, y))) return { ok: false, why: 'Pas ici : il faut laisser les passages et l\'entrée libres.' }; }
+  else {
+    if (!cases.every(([x, y]) => fo(x, y) === 'herbe')) return { ok: false, why: 'Seulement sur l\'herbe de l\'île.' };
+    if (!art.sol && cases.some(([x, y]) => Math.abs(x - ARRIVEE[0]) <= 1 && y >= ARRIVEE[1] - 1)) return { ok: false, why: 'Il faut laisser le débarcadère libre.' };
   }
+  // ce qui occupe déjà les cases
+  const occ = new Set(), dessous = new Set();
+  if (zone === 'ile') for (const [k, f] of Object.entries(FIXES)) {
+    if (k === trav.fixe || k === ile.cache) continue;
+    for (const [x, y] of emprise(f, ...ile.fixes[k])) occ.add(x + ',' + y);
+    for (const [x, y] of corps(f, ...ile.fixes[k])) dessous.add(x + ',' + y);
+  }
+  for (const t of liste(ile, zone)) {
+    const a = ARTICLE[t.a]; if (a.sol) continue;
+    for (const [x, y] of emprise(a, t.x, t.y)) occ.add(x + ',' + y);
+    for (const [x, y] of corps(a, t.x, t.y)) dessous.add(x + ',' + y);
+  }
+  // un sol se peint partout, sauf sous un bâtiment ou un objet (devant une porte, oui)
+  if (art.sol) { if (cases.some(([x, y]) => dessous.has(x + ',' + y))) return { ok: false, why: 'Il y a déjà quelque chose ici.' }; }
+  else if (cases.some(([x, y]) => occ.has(x + ',' + y))) return { ok: false, why: 'La place est déjà prise.' };
   if (art.tr && trophePlace(ile, art.tr)) return { ok: false, why: 'Ce trophée est déjà exposé.' };
   // le chemin
-  const essai = { ...ile, fixes: { ...ile.fixes }, travaux: [...ile.travaux] };
-  if (trav.fixe) { essai.fixes[trav.fixe] = [trav.x, trav.y]; delete essai.cache; } else essai.travaux.push({ a: trav.a, x: trav.x, y: trav.y });
-  if (!cheminLibre(essai)) return { ok: false, why: 'Ça couperait le chemin vers un bâtiment.' };
+  const essai = { ...ile, fixes: { ...ile.fixes }, travaux: [...ile.travaux], musee: { travaux: [...ile.musee.travaux] } };
+  if (trav.fixe) { essai.fixes[trav.fixe] = [trav.x, trav.y]; delete essai.cache; } else liste(essai, zone).push({ a: trav.a, x: trav.x, y: trav.y });
+  if (zone === 'musee' ? !musseeRelie(essai, n) : !cheminLibre(essai)) return { ok: false, why: zone === 'musee' ? 'Ça couperait le passage vers une salle.' : 'Ça couperait le chemin vers un bâtiment.' };
   return { ok: true };
 }
 /** depuis le débarcadère, on atteint la porte de chaque bâtiment fixe */
@@ -164,29 +205,70 @@ export function cheminLibre(ile) {
   const m = construire({}, ile, { seul: true }), vu = m.reach(...ARRIVEE);
   return portes(ile).every(([x, y]) => vu[y * m.w + x]);
 }
+/** depuis l'entrée du musée, on atteint chaque salle */
+export function musseeRelie(ile, n) {
+  const m = construireMusee(ile, n), vu = m.reach(SORTIE_MUSEE[0], SORTIE_MUSEE[1] - 1);
+  return pointsMusee(n).every(([x, y]) => vu[y * m.w + x]);
+}
 /** le dernier article posé qui couvre cette case (pour le ranger ou le déplacer) */
-export function articleEn(ile, x, y) {
-  for (let i = ile.travaux.length - 1; i >= 0; i--) if (emprise(ile.travaux[i].a, ile.travaux[i].x, ile.travaux[i].y).some(([a, b]) => a === x && b === y)) return i;
+export function articleEn(ile, x, y, zone = 'ile') {
+  const l = liste(ile, zone);
+  for (let i = l.length - 1; i >= 0; i--) if (corps(ARTICLE[l[i].a], l[i].x, l[i].y).some(([a, b]) => a === x && b === y)) return i;
   return -1;
 }
 export function fixeEn(ile, x, y) {
-  return Object.keys(FIXES).find((k) => k !== ile.cache && emprise(FIXES[k], ...ile.fixes[k]).slice(0, FIXES[k].taille[0] * FIXES[k].taille[1]).some(([a, b]) => a === x && b === y)) || null;
+  return Object.keys(FIXES).find((k) => k !== ile.cache && corps(FIXES[k], ...ile.fixes[k]).some(([a, b]) => a === x && b === y)) || null;
 }
 /** pose (après posable) : un sol remplace le sol déjà peint sur la case */
-export function poser(ile, trav) {
+export function poser(ile, trav, zone = 'ile') {
   const art = ARTICLE[trav.a];
-  if (art.sol) ile.travaux = ile.travaux.filter((t) => !(ARTICLE[t.a].sol && t.x === trav.x && t.y === trav.y));
-  ile.travaux.push({ ...trav });
+  if (art.sol && zone === 'ile') ile.travaux = ile.travaux.filter((t) => !(ARTICLE[t.a].sol && t.x === trav.x && t.y === trav.y));
+  liste(ile, zone).push({ ...trav });
 }
 
-/* ---------------- la carte ---------------- */
+/* ---------------- les cartes ---------------- */
 const DECOR_PLAGE = [['palm', 9, 13], ['palm', 6, 22], ['palm', 10, 31], ['palm', 50, 12], ['palm', 55, 22], ['palm', 49, 33], ['palm', 22, 37], ['palm', 39, 37],
   ['rock', 5, 18], ['rock', 53, 28], ['rock', 24, 5], ['rock', 41, 6]];
-/** l'intérieur des bâtiments fixes : la mairie (l'adjoint), le musée (ses socles) */
-export const SOCLES = [[3, 4], [6, 4], [9, 4], [12, 4], [3, 7], [6, 7], [9, 7], [12, 7]];
+/** ce qui a été posé, sur une carte : tuiles, décors, panneaux, bâtiments, trophées (qui disent d'où ils viennent) */
+function poserTravaux(m, travaux, maps, o = {}) {
+  const ops = [], apres = [];
+  for (const t of travaux) {
+    const a = ARTICLE[t.a];
+    if (a.t != null) ops.push(['t', t.x, t.y, a.t]);
+    else if (a.p && !a.couvre) ops.push(['p', a.p, t.x, t.y]);
+    else if (a.p) apres.push(() => {
+      // décor de plusieurs cases : dessiné au milieu, ses cases bloquées sauf celles où l'on passe
+      const passe = new Set((a.passe || []).map(([dx, dy]) => (t.x + dx) + ',' + (t.y + dy)));
+      for (const [x, y] of emprise(a, t.x, t.y)) if (!passe.has(x + ',' + y)) { m.under.set(x + ',' + y, m.get(x, y)); m.set(x, y, T.BLOCK); }
+      m.deco.push({ k: a.p, x: t.x, y: t.y, w: a.w, dz: a.dz });
+    });
+    else if (a.s) ops.push(['s', t.x, t.y, t.texte || 'PANNEAU']);
+    else if (a.b) ops.push(['b', a.b, t.x, t.y, t.toit || 'red', a.nom]);
+    else if (a.tr) {
+      const tr = TROPHEE[a.tr];
+      ops.push(['p', 'socle_statue', t.x, t.y]);
+      m.statues.push({ sp: tr.sp, x: t.x, y: t.y, carte: m.id, grand: o.grand });
+      apres.push(() => m.object(t.x, t.y, { trophee: tr.id, use: (api) => api.game.ui.say([`${tr.nom}.`, tr.origine]) }));
+    }
+  }
+  applyOps(m, ops, maps);
+  if (!maps) for (const t of travaux) { const a = ARTICLE[t.a]; if (a.b) m.building(a.b, t.x, t.y); }
+  for (const f of apres) f();
+}
+/** le musée, avec n salles en enfilade reliées par des passages de trois cases */
+export function construireMusee(ile, n = 1) {
+  const [w, h] = tailleMusee(n);
+  const m = room(MUSEE, w, h, { floor: 'marble', music: 'house', name: 'Musée', wall: 'wall_mart', exitX: SORTIE_MUSEE[0] });
+  for (let x = 0; x < w; x++) if (x !== m.exitX) m.set(x, h - 1, T.WALL);
+  for (let k = 1; k < n; k++) for (let y = 2; y < h - 1; y++) if (y < 5 || y > 7) m.set(k * (SW + 1), y, T.WALL);
+  m.statues = [];
+  poserTravaux(m, ile.musee.travaux, null, { grand: true });
+  m.salles = n;
+  return m;
+}
 /**
- * construit l'île (et ses intérieurs dans maps) à partir de sa donnée. o.seul : la carte de l'île seulement (tests).
- * Renvoie la carte ; m.statues liste les statues à dessiner ({ sp, x, y, carte }).
+ * construit l'île et ses intérieurs (dans maps) à partir de sa donnée. o.seul : la carte de l'île seulement (tests,
+ * chemin libre) ; o.salles : nombre de salles du musée. Renvoie la carte de l'île ; m.statues liste ses statues.
  */
 export function construire(maps, ile, o = {}) {
   const m = new GameMap(ILE, W, H, { outdoor: true, fill: T.WATER, name: ile.nom || 'Mon île', music: 'town' });
@@ -200,32 +282,15 @@ export function construire(maps, ile, o = {}) {
     if (k === ile.cache) continue;   // bâtiment en cours de déplacement
     const [x, y] = ile.fixes[k], B = m.building(f.kind, x, y, { roof: f.toit, name: f.nom });
     if (o.seul) continue;
-    const id = `${ILE}:${k}`, dedans = k === 'maison' ? houseInterior(id, f.nom, { bed: true }) : room(id, 15, 11, { floor: k === 'musee' ? 'marble' : 'wood', music: 'house', name: f.nom, wall: k === 'musee' ? 'wall_mart' : 'wall_in' });
-    if (k === 'mairie') { for (const [kk, xx, yy] of [['books', 1, 2], ['books', 2, 2], ['plant', 13, 2], ['plant', 1, 9], ['clock', 7, 2]]) dedans.prop(kk, xx, yy); dedans.npc({ id: 'ile:adjoint', x: 7, y: 4, dir: 'down', sprite: 'dame', move: 'static', script: 'adjointIle' }); }
-    if (k === 'musee') for (const [kk, xx, yy] of [['plant', 1, 2], ['plant', 13, 2], ['plant', 1, 9], ['plant', 13, 9]]) dedans.prop(kk, xx, yy);
+    const id = `${ILE}:${k}`;
+    const dedans = k === 'musee' ? construireMusee(ile, o.salles || 1) : k === 'maison' ? houseInterior(id, f.nom, { bed: true }) : room(id, 15, 11, { floor: 'wood', music: 'house', name: f.nom, wall: 'wall_in' });
+    if (k === 'mairie') { for (const [kk, xx, yy] of [['books', 1, 2], ['books', 2, 2], ['plant', 13, 2], ['plant', 1, 9], ['clock', 7, 2]]) dedans.prop(kk, xx, yy); dedans.npc({ id: 'ile:adjoint', x: 7, y: 4, dir: 'down', sprite: 'dame', move: 'static' }); }
     dedans.outside = { map: ILE, x: B.doorX, y: B.doorY + 1, dir: 'down' };
     dedans.warp(dedans.exitX, dedans.exitY, dedans.outside);
     m.warp(B.doorX, B.doorY, { map: id, x: dedans.exitX, y: dedans.exitY - 1, dir: 'up' });
-    if (k === 'musee') {
-      for (const [i, [sx, sy]] of SOCLES.entries()) {
-        dedans.prop('socle_statue', sx, sy); dedans.object(sx, sy, { socle: i });
-        const t = TROPHEE[ile.musee[i]]; if (t) m.statues.push({ sp: t.sp, x: sx, y: sy, carte: id, grand: true });
-      }
-    }
     maps[id] = dedans;
   }
-  // ce que le joueur a posé, dans l'ordre
-  const ops = [];
-  for (const t of ile.travaux) {
-    const a = ARTICLE[t.a];
-    if (a.t != null) ops.push(['t', t.x, t.y, a.t]);
-    else if (a.p) ops.push(['p', a.p, t.x, t.y]);
-    else if (a.s) ops.push(['s', t.x, t.y, t.texte || 'PANNEAU']);
-    else if (a.b) ops.push(['b', a.b, t.x, t.y, t.toit || 'red', a.nom]);
-    else if (a.tr) { ops.push(['p', 'socle_statue', t.x, t.y]); m.statues.push({ sp: TROPHEE[a.tr].sp, x: t.x, y: t.y, carte: ILE }); }
-  }
-  applyOps(m, ops, o.seul ? null : maps);
-  if (o.seul) for (const t of ile.travaux) { const a = ARTICLE[t.a]; if (a.b) m.building(a.b, t.x, t.y); }
+  poserTravaux(m, ile.travaux, o.seul ? null : maps);
   m.zone(0, 0, W - 1, H - 1, { name: ile.nom || 'Mon île', music: 'town' });
   if (!o.seul) maps[ILE] = m;
   return m;

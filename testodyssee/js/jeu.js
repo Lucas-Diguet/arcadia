@@ -31,7 +31,7 @@ export class TestGame extends Game {
   }
   /** l'île privée se reconstruit à partir de la donnée du joueur quand on y arrive */
   setMap(id) {
-    if (this.ile && this.state && (id === ILE || id?.startsWith(ILE + ':')) && (!this.world.maps[id] || this.ile.pour !== this.ile.cle)) this.ile.preparer();
+    if (this.ile && this.state && (id === ILE || id?.startsWith(ILE + ':')) && (!this.world.maps[id] || this.ile.pour !== this.ile.cle || !this.ile.dedans())) this.ile.preparer();
     return super.setMap(id);
   }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
@@ -44,7 +44,7 @@ export class TestGame extends Game {
     const opts = [['ÉQUIPE', 'party'], ['SAC', 'bag'], ['POKéDEX', 'dex']];
     if (this.canField('vol')) opts.push(['VOL', 'fly']);
     if (this.donjons?.dansUnDonjon()) opts.push(['JOURNAL', 'journal'], ['QUITTER LE DONJON', 'quitter']);
-    if (this.ile?.sur()) opts.push(['CONSTRUIRE', 'construire']);
+    if (this.ile?.zoneIci()) opts.push(['CONSTRUIRE', 'construire']);
     if (this.modeTest && this.donjons?.sallesDuDonjon().length > 1) opts.push(['ALLER À UNE SALLE', 'salle']);
     if (this.donjons?.dansLeReflet()) opts.push(['REVENIR AU DÉBUT DE LA SALLE', 'debut']);
     opts.push(['CARTE', 'map'], ['CHANGER DE LIEU', 'lieu'], [this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON', 'test'], ['OPTIONS', 'opt'], ['FERMER', 'close']);
