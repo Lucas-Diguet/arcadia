@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 3.101 — 4 novembre 2026
+- **TestOdyssée** — Temple des Éléments : Bulbizarre du Temple porte un coquillage pointu couleur sable, couché sur son dos.
+
 ## 3.100 — 4 novembre 2026
 - **TestOdyssée** — Temple des Éléments : les trois starters du Temple retouchés. Bulbizarre porte maintenant un coquillage rond d'escargot, Salamèche perd ses rayures et Carapuce le petit nuage de fumée.
 
