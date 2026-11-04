@@ -2,8 +2,9 @@
 // node tools/test-testodyssee.mjs
 import { DONJONS } from '../testodyssee/js/donjons/index.js';
 import { construireCarte, construireSalles, passageSuivant, lirePlan, regionDe, ouvrir, aCote, relierExterieur, texteJoueurs } from '../testodyssee/js/donjon/plan.js';
-import { installerContenu } from '../testodyssee/js/contenu.js';
+import { installerContenu, STARTERS } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
+import { Battle as BattleT } from '../odyssee/js/core/battle.js';
 import { Groupe } from '../testodyssee/js/combat/groupe.js';
 import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures, actifs, attendusArene, attendusSommet, areneEnCours, resoudreStarters } from '../testodyssee/js/donjon/etat.js';
 import { TEMPLE, STARTERS_TEMPLE } from '../testodyssee/js/formes.js';
@@ -733,7 +734,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   }
   ok(par.e1.donjon.plan.dalles.length === 3 && par.e1.donjon.plan.objets.X?.length === 1 && par.e1.donjon.plan.objets.G?.length === 3 && d.salles[0].requis === 3, 'temple : trois dalles pour la petite porte, une dalle d\'or et une grande porte');
   ok(par.g2.donjon.versSuivante == null && par.gf.donjon.versSuivante?.map === par.g4.id && par.sf.donjon.versSuivante?.map === par.s4.id && par.g4.donjon.versSuivante?.map === par.g5.id && par.s4.donjon.versSuivante?.map === par.s5.id, 'temple : les chemins se rejoignent à la Salle des Clés, puis le Gardien');
-  ok(par.s4.donjon.plan.objets.T && !par.g4.donjon.plan.objets.T && par.g5.donjon.plan.objets.a && par.s5.donjon.plan.objets.v && !par.s5.donjon.plan.objets.a, 'temple : téléporteur en solo seulement ; trois Poké Balls à trois, une table vide en solo');
+  ok(par.s4.donjon.plan.objets.T && !par.g4.donjon.plan.objets.T && par.g5.donjon.plan.objets.a && par.s5.donjon.plan.objets.j && par.s5.donjon.plan.objets.l && !par.s5.donjon.plan.objets.a, 'temple : téléporteur en solo seulement ; trois Poké Balls à trois, trois CT en solo');
   // la table à trois
   let e = nouvelEtat(d, { joueurs: 3 });
   ok(appliquer(d, e, '1', { a: 'choixStarter', salle: 'g5', n: 0 }).ok && appliquer(d, e, '2', { a: 'choixStarter', salle: 'g5', n: 0 }).ok, 'temple : deux joueurs peuvent vouloir la même Poké Ball');
@@ -761,6 +762,16 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   ok(tp('carapuce') === 'fire' && tp('salameche') === 'grass' && tp('bulbizarre') === 'water' && STARTERS_TEMPLE.every((q) => SPECIES[SPECIES[SPECIES[q].ev[0].to].ev[0].to]?.base), 'temple : Carapuce passe au feu, Salamèche à la plante, Bulbizarre à l\'eau, et leurs lignées entières');
   ok(Object.values(TEMPLE).every((id) => { const S = SPECIES[id]; return S.ls.length && S.ls.every(([, m]) => MOVES[m]) && ['f', 'b', 'i'].every((c) => existsSync(new URL(`../testodyssee/img/${S.img}-${c}.png`, import.meta.url))); }), 'temple : chaque forme a ses attaques et ses images');
   ok(Object.values(TEMPLE).filter((id) => SPECIES[id].base && SPECIES[SPECIES[id].base].t[0] !== SPECIES[id].t[0]).every((id) => SPECIES[id].ls.every(([, m]) => MOVES[m].t !== SPECIES[SPECIES[id].base].t[0])), 'temple : une forme n\'apprend plus d\'attaques de son type d\'origine');
+  // les CT du solo
+  const idm = (k) => Object.values(MOVES).find((m) => m.key === k)?.id;
+  ok(['fin', 'tot'].every((q) => d.cts[q].length === 3 && d.cts[q].every((k) => ITEMS[k]?.unique && ITEMS[k].starters && idm(ITEMS[k].ct))) && d.cts.fin.map((k) => MOVES[idm(ITEMS[k].ct)].t).sort().join() === 'fire,grass,water' && d.cts.tot.map((k) => MOVES[idm(ITEMS[k].ct)].t).sort().join() === 'fire,grass,water', 'temple : trois CT par jeu (feu, eau, plante), à usage unique et pour les starters');
+  ok(STARTERS.has(9) && STARTERS.has(TEMPLE.tortank) && STARTERS.has(1003) && STARTERS.has(906) && !STARTERS.has(25) && !STARTERS.has(133), 'temple : les starters, ceux des jeux, du Temple et d\'Odyssée, et toute leur lignée');
+  {
+    const b = new BattleT({ player: { name: 'A', party: [createMon(6, 50)] }, foe: { name: 'B', party: [createMon(9, 50)] } });
+    const lanceur = b.act(0), mv = MOVES[idm('eruption')], plein = b.movePower(0, 1, mv);
+    lanceur.hp = Math.floor(lanceur.stats[0] / 3);
+    ok(plein === 150 && b.movePower(0, 1, mv) <= 51 && b.movePower(0, 1, MOVES[idm('jaillisseve')]) <= 51, 'temple : Éruption, Giclédo et Jaillissève frappent moins fort quand les PV baissent');
+  }
   ok(SPECIES[TEMPLE.arceus].t.length === 3, 'temple : le Gardien a un Pokémon à trois types');
 }
 

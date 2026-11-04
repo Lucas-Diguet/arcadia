@@ -1,5 +1,9 @@
 # Journal des versions — Arcadia
 
+## 3.103 — 4 novembre 2026
+- **TestOdyssée** — Temple des Éléments, en solo : derrière le Gardien, trois CT à usage unique (Éruption, Giclédo et Jaillissève, une nouvelle attaque Plante). Tu n'en prends qu'une, et elle ne s'apprend qu'à un starter.
+- **TestOdyssée** — Éruption, Giclédo et Jaillissève frappent moins fort quand les PV de leur lanceur baissent.
+
 ## 3.102 — 4 novembre 2026
 - **TestOdyssée** — Temple des Éléments : Carapuce, Salamèche et Bulbizarre du Temple ont de nouveaux dessins, et ils évoluent maintenant jusqu'au bout de leur lignée.
 

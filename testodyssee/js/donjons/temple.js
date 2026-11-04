@@ -7,7 +7,7 @@
 //   joueur, une clé au bout de chacun ; les chemins se rejoignent dans la Salle des Clés, dont la porte s'ouvre avec
 //   les trois clés. Le Gardien des Éléments se bat à trois contre trois, et derrière lui, une table et trois Poké Balls.
 // En solo : les mêmes salles, mais on fait les trois chemins l'un après l'autre (un téléporteur ramène à la salle des
-//   portes) ; derrière le Gardien, une table encore vide (sa récompense viendra plus tard).
+//   portes) ; derrière le Gardien, trois CT à usage unique pour un starter, dont on ne prend qu'une.
 //
 // Les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes).
 import { GameMap, rng } from '../../../odyssee/js/world/mapgen.js';
@@ -139,7 +139,10 @@ export default {
     a: { type: 'starter', decor: 'counter', n: 0 },
     b: { type: 'starter', decor: 'counter', n: 1 },
     c: { type: 'starter', decor: 'counter', n: 2 },
-    v: { type: 'tableSolo', decor: 'counter' },
+    // en solo : trois CT, une seule à prendre (jeu avancé : Éruption, Giclédo, Jaillissève ; plus tôt : ctsTot)
+    j: { type: 'ct', decor: 'counter', n: 0 },
+    k: { type: 'ct', decor: 'counter', n: 1 },
+    l: { type: 'ct', decor: 'counter', n: 2 },
   },
   pnj: {
     M: {
@@ -184,8 +187,11 @@ export default {
     { id: 'se', nom: 'Chemin de l\'Eau', type: 'libre', branche: 'solo', chemin: 'e', cle: 'e', suivante: 's4', plan: couloir('~') },
     { id: 'sp', nom: 'Chemin de la Plante', type: 'libre', branche: 'solo', chemin: 'p', cle: 'p', suivante: 's4', plan: couloir('"') },
     { id: 's4', nom: 'Salle des Clés', type: 'libre', branche: 'solo', ouvertPar: 'porte', plan: CLES(true) },
-    { id: 's5', nom: 'Salle du Gardien', type: 'combat', branche: 'solo', pnj: ['Z'], apres: ['s4'], suivante: null, table: 'solo', plan: GARDIEN('#....[[v[]....#', 'Z') },
+    { id: 's5', nom: 'Salle du Gardien', type: 'combat', branche: 'solo', pnj: ['Z'], apres: ['s4'], suivante: null, table: 'solo', plan: GARDIEN('#....[jkl]....#', 'Z') },
   ],
+  // les CT du solo : `fin` si le donjon arrive tard dans le jeu, `tot` s'il arrive plus tôt
+  cts: { fin: ['ct-eruption-temple', 'ct-gicledo-temple', 'ct-jaillisseve-temple'], tot: ['ct-surchauffe-temple', 'ct-lame-de-fond-temple', 'ct-tempete-verte-temple'] },
+  ctsChoix: 'fin',
   inscriptions: {
     f: ['Porte du Feu.', 'Au bout du chemin, la Clé du Feu.'],
     e: ['Porte de l\'Eau.', 'Au bout du chemin, la Clé de l\'Eau.'],

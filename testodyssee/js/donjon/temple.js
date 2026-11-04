@@ -1,7 +1,7 @@
 // testodyssee/js/donjon/temple.js — mécaniques du Temple des Éléments, ajoutées à la classe Donjons (jeu.js) :
 // la dalle d'or et la grande porte (pour un seul joueur), les décors des chemins, les clés et la porte aux trois
 // gemmes, le téléporteur du solo, et la table derrière le Gardien : trois Poké Balls à se partager (deux joueurs qui
-// veulent la même se départagent en duel) ; en solo, la table attend encore sa récompense.
+// veulent la même se départagent en duel) ; en solo, trois CT pour un starter, dont on ne prend qu'une.
 // L'avancée passe par les actions d'etat.js (« maj », « choixStarter », « starterDuelFin ») : l'hôte fait autorité.
 import { T } from '../../../odyssee/js/world/tiles.js';
 import { ASSETS } from '../../../odyssee/js/assets.js';
@@ -10,10 +10,12 @@ import { SPECIES } from '../../../odyssee/js/data/species.js';
 import { healFull } from '../../../odyssee/js/core/mon.js';
 import { battu, resoudreStarters } from './etat.js';
 import { STARTERS_TEMPLE } from '../formes.js';
+import { itemName, ITEMS } from '../../../odyssee/js/core/items.js';
+const ITEMS_DESC = (k) => ITEMS[k]?.desc || '';
 
 const cle = (x, y) => x + ',' + y;
 const estTemple = (d) => d.id === 'temple';
-const TYPES = new Set(['grandePorte', 'porteSolo', 'porteCles', 'starter', 'tableSolo']);
+const TYPES = new Set(['grandePorte', 'porteSolo', 'porteCles', 'starter', 'ct']);
 const TYPE_FR = { fire: 'Feu', water: 'Eau', grass: 'Plante', normal: 'Normal', steel: 'Acier', flying: 'Vol', poison: 'Poison' };
 const NOM_CLE = { f: 'Clé du Feu', e: 'Clé de l\'Eau', p: 'Clé de la Plante' };
 const IMG_CLE = { f: 'cle_feu', e: 'cle_eau', p: 'cle_plante' };
@@ -33,7 +35,7 @@ export const Temple = {
       }
     }
     // la table : un comptoir, avec une Poké Ball dessus là où il y a quelque chose à prendre
-    const balles = new Set(Object.entries(P.objets).filter(([c]) => d.objets[c].type === 'starter').flatMap(([, l]) => l.map(([x, y]) => cle(x, y))));
+    const balles = new Set(Object.entries(P.objets).filter(([c]) => ['starter', 'ct'].includes(d.objets[c].type)).flatMap(([, l]) => l.map(([x, y]) => cle(x, y))));
     for (const dd of m.deco) if (dd.k === 'counter') { dd.front = 'counterfront'; dd.top = 'lab'; dd.ball = balles.has(cle(dd.x, dd.y)); }
     // la grande porte : un seul dessin, au milieu de ses trois cases
     if (P.objets.G) { const [x, y] = P.objets.G[1]; const dd = m.deco.find((q) => q.x === x && q.y === y); if (dd) dd.k = 'porte_grande'; }
@@ -61,8 +63,8 @@ export const Temple = {
     for (const s of d.salles.filter((q) => q.table)) {
       const m = g.world.maps[s.carte], P = m.donjon.plan, D = this.dt(d, s.id), A = D.attrib || {};
       for (const [c, l] of Object.entries(P.objets)) {
-        const o = d.objets[c]; if (o.type !== 'starter') continue;
-        const vide = Object.values(A).includes(o.n);
+        const o = d.objets[c]; if (o.type !== 'starter' && o.type !== 'ct') continue;
+        const vide = o.type === 'starter' ? Object.values(A).includes(o.n) : D[`ct:${this.moi}`] === this.ctDe(d, o.n);
         for (const [x, y] of l) { const dd = m.deco.find((q) => q.x === x && q.y === y && q.k === 'counter'); if (dd && dd.ball === vide) { dd.ball = !vide; if (g.mapObj === m) g.view.rebuildAt(x, y); } }
       }
     }
@@ -152,7 +154,7 @@ export const Temple = {
       case 'porteSolo': return this.porteSolo(d, o);
       case 'porteCles': return this.porteCles(d, s);
       case 'starter': return this.balleStarter(d, s, o.n);
-      case 'tableSolo': return g.ui.say(battu(this.etats[d.id], d, 'Z') ? 'La table est vide. Sa récompense viendra plus tard.' : 'Le Gardien veille sur une table vide.');
+      case 'ct': return this.prendreCt(d, s, o.n);
     }
   },
 
@@ -216,6 +218,22 @@ export const Temple = {
     g.sound.play('victory');
     await ui.say(`Tout le monde est d'accord : ${SPECIES[sp].n} est ton compagnon !`);
     await g.api().giveMon(sp, NIVEAU_STARTER, { met: d.nom });
+    await this.trophee(d);
+  },
+
+  /* ---------------- la table, en solo : trois CT ---------------- */
+  ctDe(d, n) { return d.cts[d.ctsChoix || 'fin'][n]; },
+  async prendreCt(d, s, n) {
+    const g = this.game, ui = g.ui, e = this.etats[d.id], D = this.dt(d, s.id), objet = this.ctDe(d, n);
+    if (!battu(e, d, 'Z')) { await ui.say('Le Gardien veille encore sur la table.'); return; }
+    const deja = D[`ct:${this.moi}`];
+    if (deja) { await ui.say(deja === objet ? 'Son socle est vide : tu l\'as prise.' : `Elle ne bouge plus de son socle : tu as déjà pris la ${itemName(deja)}.`); return; }
+    await ui.say([`${itemName(objet)}.`, ITEMS_DESC(objet)]);
+    if (!(await ui.yesNo(`La prendre ? Les deux autres resteront sur la table.`))) return;
+    const r = await this.demande(d.id, { a: 'maj', salle: s.id, donnees: { [`ct:${this.moi}`]: objet } });
+    if (!r.ok) { await ui.say('L\'hôte du salon ne répond pas...'); return; }
+    g.give(objet, 1); g.sound.sfx('item');
+    await ui.say(`${g.state.name} reçoit la ${itemName(objet)} !\nElle est rangée dans le Sac.`);
     await this.trophee(d);
   },
 

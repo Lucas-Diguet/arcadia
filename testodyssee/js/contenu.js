@@ -4,12 +4,23 @@ import { SPECIES } from '../../odyssee/js/data/species.js';
 import { ITEMS } from '../../odyssee/js/core/items.js';
 import { MOVES } from '../../odyssee/js/data/moves.js';
 import { especesTemple } from './formes.js';
+import { Battle } from '../../odyssee/js/core/battle.js';
 
 const IMG = new URL('../img/', import.meta.url).href;
 // (les images ne servent qu'au navigateur)
 const mv = (key) => Object.values(MOVES).find((m) => m.key === key).id;
 
 export const SPECTRE_PIERRE = 2001;
+
+// attaques créées pour le labo ; Éruption et Giclédo (et leur pendant Plante) perdent de la force avec les PV du lanceur
+export const ATTAQUES = {
+  2101: { id: 2101, key: 'jaillisseve', n: 'Jaillissève', t: 'grass', c: 'special', p: 150, a: 100, pp: 5, pr: 0, tg: 11, m: { cat: 0, u: 'pv' } },
+  2102: { id: 2102, key: 'lame-de-fond', n: 'Lame de Fond', t: 'water', c: 'special', p: 130, a: 90, pp: 5, pr: 0, tg: 10, m: { cat: 7, st: [[4, -2]], stc: 100 } },
+};
+const PLUS_FORTES_A_PV_PLEINS = ['eruption', 'water-spout'];
+/** les starters : ceux des jeux officiels, les formes du Temple, ceux d'Odyssée, et toute leur lignée */
+const LIGNEES = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393, 495, 498, 501, 650, 653, 656, 722, 725, 728, 810, 813, 816, 906, 909, 912, 1001, 1004, 1007, 2010, 2013, 2016];
+export const STARTERS = new Set(LIGNEES.flatMap((a) => [a, a + 1, a + 2]));
 
 export const ESPECES = {
   [SPECTRE_PIERRE]: {
@@ -33,6 +44,13 @@ export const OBJETS = {
   'symbole-or-pyramide': { pocket: 'cles', price: 0, key: true, name: 'Symbole d\'Or de la Pyramide', img: 'pyramide/objet_symbole.png', desc: 'Remis à qui atteint le sommet de la Pyramide de l\'Ascension encore debout, et y bat le dernier adversaire.' },
   'bouchon-or': { pocket: 'objets', price: 0, name: 'Bouchon d\'Or', img: 'miroirs/objet_bouchon.png', iv: true, desc: 'Un bouchon doré et brillant. Il porte au maximum toutes les valeurs cachées (IV) d\'un Pokémon.' },
   'eclat-miroir': { pocket: 'cles', price: 0, key: true, name: 'Éclat de Miroir', img: 'miroirs/objet_eclat.png', desc: 'Un éclat qui reflète un lieu que tu n\'as jamais vu. Il ouvrira peut-être un autre donjon.' },
+  // le Temple des Éléments, en solo : une CT au choix, à usage unique, pour un starter
+  'ct-eruption-temple': { pocket: 'objets', price: 0, name: 'CT Éruption', img: 'miroirs/objet_ct.png', ct: 'eruption', unique: true, starters: true, desc: 'Apprend Éruption à un starter : plus ses PV sont hauts, plus elle frappe fort. Elle ne sert qu\'une fois.' },
+  'ct-gicledo-temple': { pocket: 'objets', price: 0, name: 'CT Giclédo', img: 'miroirs/objet_ct.png', ct: 'water-spout', unique: true, starters: true, desc: 'Apprend Giclédo à un starter : plus ses PV sont hauts, plus elle frappe fort. Elle ne sert qu\'une fois.' },
+  'ct-jaillisseve-temple': { pocket: 'objets', price: 0, name: 'CT Jaillissève', img: 'miroirs/objet_ct.png', ct: 'jaillisseve', unique: true, starters: true, desc: 'Apprend Jaillissève à un starter : la sève jaillit, plus fort tant que ses PV sont hauts. Elle ne sert qu\'une fois.' },
+  'ct-surchauffe-temple': { pocket: 'objets', price: 0, name: 'CT Surchauffe', img: 'miroirs/objet_ct.png', ct: 'overheat', unique: true, starters: true, desc: 'Apprend Surchauffe à un starter. Elle ne sert qu\'une fois.' },
+  'ct-tempete-verte-temple': { pocket: 'objets', price: 0, name: 'CT Tempête Verte', img: 'miroirs/objet_ct.png', ct: 'leaf-storm', unique: true, starters: true, desc: 'Apprend Tempête Verte à un starter. Elle ne sert qu\'une fois.' },
+  'ct-lame-de-fond-temple': { pocket: 'objets', price: 0, name: 'CT Lame de Fond', img: 'miroirs/objet_ct.png', ct: 'lame-de-fond', unique: true, starters: true, desc: 'Apprend Lame de Fond à un starter : une vague énorme, qui épuise son lanceur. Elle ne sert qu\'une fois.' },
   'panini-chateauroux': { pocket: 'objets', price: 0, name: 'Panini de Châteauroux', img: 'panini.png', desc: 'Un panini encore tiède, jambon et fromage. Un souvenir du donjon de Didier.' },
 };
 
@@ -57,6 +75,14 @@ export function installerContenu(ASSETS) {
   Object.assign(ESPECES, especesTemple());
   for (const [id, s] of Object.entries(ESPECES)) SPECIES[id] = s;
   for (const [k, o] of Object.entries(OBJETS)) ITEMS[k] = o;
+  for (const [id, m] of Object.entries(ATTAQUES)) MOVES[id] = m;
+  for (const m of Object.values(MOVES)) if (PLUS_FORTES_A_PV_PLEINS.includes(m.key)) m.m = { ...m.m, u: 'pv' };
+  // puissance selon les PV du lanceur : 150 × PV / PV max (au moins 1)
+  const puissance = Battle.prototype.movePower;
+  Battle.prototype.movePower = function (i, d, mv) {
+    if (mv.m?.u === 'pv') { const m = this.act(i); return Math.max(1, Math.floor((mv.p * m.hp) / m.stats[0])); }
+    return puissance.call(this, i, d, mv);
+  };
   if (!ASSETS) return;
   const front = ASSETS.front, item = ASSETS.item, cry = ASSETS.cry;
   // une image pour tout (img en .png), ou trois : face, dos, icône (img-f, img-b, img-i)

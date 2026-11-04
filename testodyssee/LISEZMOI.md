@@ -309,7 +309,10 @@ ne montre que celles de la branche où l'on est.
   qui veulent la même par un duel entre joueurs, Pokémon soignés (`resoudreStarters`, `starterDuelFin` : le perdant
   repose sa Poké Ball et ne peut plus la reprendre). À trois sur la même, le gagnant affronte le troisième.
 - En solo : mêmes salles, portes sans limite (`porteSolo`), un téléporteur dans la Salle des Clés ramène aux trois
-  portes ; derrière le Gardien, une table encore vide (sa récompense viendra plus tard).
+  portes ; derrière le Gardien, trois CT à usage unique, dont on ne prend qu'une (`cts`, `ctsChoix` : `fin` pour
+  Éruption, Giclédo et Jaillissève ; `tot`, si le donjon arrive plus tôt dans le jeu, pour Surchauffe, Lame de Fond et
+  Tempête Verte). Elles ne s'apprennent qu'à un starter (`STARTERS` de `contenu.js` : ceux des jeux officiels, des
+  formes du Temple et d'Odyssée, et toute leur lignée).
 - Les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes : objets `tuile`).
 
 ### Les formes du Temple
@@ -321,6 +324,12 @@ et de puissance voisine (`forme`). Leurs images (`img/temple/temple-<nom>-f.png`
 l'auteur, réduits en sprites de 80 × 80 (fond retiré, palette limitée, trait sombre ; un dessin déjà en pixel art est
 repris case par case). Pas encore de dos dessiné : le dos est la face retournée. Les évolutions finales ne se montrent
 pas en dehors du jeu : l'auteur veut les découvrir en jouant.
+
+### Attaques du labo
+
+Dans `contenu.js` (`ATTAQUES`) : Jaillissève (Plante, le pendant d'Éruption et de Giclédo) et Lame de Fond (Eau, le
+pendant de Surchauffe et de Tempête Verte). Dans le labo, Éruption, Giclédo et Jaillissève perdent de la force avec les
+PV du lanceur (150 × PV / PV max), comme dans les jeux.
 
 ### Le mode test
 
