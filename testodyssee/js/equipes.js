@@ -29,7 +29,7 @@ export const EQUIPES = [
   },
 ];
 
-const CS = ['cs-coupe', 'cs-surf', 'cs-eclate', 'cs-vol', 'cs-flash', 'cs-force'];
+const CS = ['cs-coupe', 'cs-surf', 'cs-eclate', 'cs-vol', 'cs-flash', 'cs-force', 'cs-cascade'];
 // drapeaux d'histoire levés d'office : pas de rival ni de scène d'introduction qui coupe un test
 const DEJA_VU = ['intro', 'metProf', 'dex', 'rival1', 'rival2', 'rival3', 'rival4', 'rival5', 'rivalB1', 'rivalB2', 'rivalB3', 'rivalB4', 'passe', 'granitDock'];
 

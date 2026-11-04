@@ -1,5 +1,17 @@
 # Journal des versions — Arcadia
 
+## 4.04 — 4 novembre 2026
+- **TestOdyssée** — Les dalles du Sanctuaire des Trois Voies, du Temple des Éléments et des autres donjons sont de nouveau visibles avec les nouveaux décors d'Odyssée.
+- **TestOdyssée** — Sanctuaire des Trois Voies : la Salle des Trois Voies est plus haute, les statues sont plus loin des portes.
+- **TestOdyssée** — Temple des Éléments, en solo : chaque chemin compte maintenant trois salles avant la Salle des Clés.
+  - Chemin du Feu (Pentes du Volcan, Gradins de Lave, Cratère) : une montagne de roche rouge sombre et des mares de lave. On monte de plateau en plateau par des escaliers, on redescend par les rebords, et il faut Éclate-Roc et Force.
+  - Chemin de l'Eau (Bassin Profond, Grotte des Cascades, Source) : des bassins dans une roche bleutée, à traverser avec Surf, et des cascades à remonter avec Cascade.
+  - Chemin de la Plante (Jardin Abandonné, Jungle Profonde, Cœur de la Jungle) : une jungle laissée à l'abandon, envahie d'arbres, de broussailles, d'herbes sombres et de lianes, où il faut Coupe pour passer.
+  - Des Pokémon sauvages de leur élément y vivent (niveaux 50 à 56).
+- **TestOdyssée** — Nouvelle capacité : Cascade. En surfant, on remonte les cascades (on peut toujours les descendre). Toutes les équipes du labo l'ont, et elle marche aussi sur les Routes Victoire.
+- **TestOdyssée** — Dans les donjons du labo, les capacités de terrain servent sans attendre les badges.
+- **TestOdyssée** — Dans les grottes, les rebords sont des marches de roche, plus des rebords d'herbe.
+
 ## 4.03 — 4 novembre 2026
 - **TestOdyssée** — Sanctuaire des Trois Voies : une fontaine au centre des trois grandes statues, et le panneau juste en dessous.
 - **TestOdyssée** — Épreuve de la Sagesse : on désigne chaque statue (elle dit la vérité, elle ment, ou on ne sait pas encore) sans être puni en cas d'erreur. On peut changer d'avis à tout moment ; quand toutes les statues sont bien désignées, la porte s'ouvre.

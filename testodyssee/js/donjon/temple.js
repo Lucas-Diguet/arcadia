@@ -10,6 +10,7 @@ import { SPECIES } from '../../../odyssee/js/data/species.js';
 import { healFull } from '../../../odyssee/js/core/mon.js';
 import { battu, resoudreStarters } from './etat.js';
 import { STARTERS_TEMPLE } from '../formes.js';
+import { SAUVAGES_TEMPLE } from '../donjons/temple.js';
 import { itemName, ITEMS } from '../../../odyssee/js/core/items.js';
 const ITEMS_DESC = (k) => ITEMS[k]?.desc || '';
 
@@ -26,10 +27,14 @@ const NIVEAU_STARTER = 15;
 export const Temple = {
   poserObjetsTemple(d, m) {
     if (!estTemple(d)) return;
-    const P = m.donjon.plan;
+    const P = m.donjon.plan, S = d.salles.find((q) => q.carte === m.id);
+    // les chemins du solo : roche de leur élément, eau à surfer, Pokémon sauvages
+    if (S?.biome) m.biome = S.biome;
+    if (S?.sauvages) { const enc = SAUVAGES_TEMPLE[S.sauvages]; if (S.sauvages === 'e') { m.surf = true; m.surfEnc = enc; m.encounter = enc; } else m.encounter = enc; }
     for (const [c, l] of Object.entries(P.objets)) {
       const o = d.objets[c];
       for (const [x, y] of l) {
+        if (o.cascade) { (m.cascades ||= new Set()).add(cle(x, y)); m.deco.push({ k: 'cascade', x, y }); }
         if (o.type === 'tuile') m.set(x, y, T[o.t]);
         if (TYPES.has(o.type)) m.object(x, y, { use: () => this.objetTemple(d, m, c, x, y) });
       }

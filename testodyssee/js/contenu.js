@@ -68,6 +68,7 @@ export const OBJETS = {
   zinc: { pocket: 'objets', price: 9800, vitamine: 4, name: 'Zinc', desc: 'Augmente un peu la Défense Spéciale d\'un Pokémon (points d\'effort).' },
   nugget: { pocket: 'objets', price: 10000, name: 'Pépite', desc: 'Une pépite d\'or pur. Elle se vend cher.' },
   'razor-claw': { pocket: 'objets', price: 2100, name: 'Griffe Rasoir', desc: 'Une griffe acérée. Elle fait évoluer certains Pokémon ; Odyssée ne s\'en sert pas encore en combat.' },
+  'cs-cascade': { pocket: 'ct', price: 0, key: true, name: 'CS07 Cascade', icon: 'notebook', desc: 'En surfant, remonte les cascades. Place-toi face à la cascade, sur l\'eau, et avance vers elle.' },
   'max-elixir': { pocket: 'soin', price: 4500, ppAll: 99, name: 'Max Élixir', desc: 'Restaure tous les PP de toutes les attaques.' },
   'max-revive': { pocket: 'soin', price: 4000, revive: 1, name: 'Rappel Max', desc: 'Ranime un Pokémon K.O. avec tous ses PV.' },
   'pp-up': { pocket: 'objets', price: 9800, name: 'PP Plus', desc: 'Augmente les PP maximum d\'une attaque. Odyssée ne s\'en sert pas encore : il se garde dans le sac.' },
@@ -100,7 +101,7 @@ export const DECOR = [
   ...['train_quai', 'marchepied', 'traverse', 'comptoir'].map((k) => [k, IMG + 'train/' + k + '.png']),
   ...['barriere', 'cage', 'fissure', 'wagonnet', 'poste', 'entree_mine'].map((k) => [k, IMG + 'mine/' + k + '.png']),
   ...['pyramide', 'obelisque', 'porte_1', 'porte_2', 'porte_3', 'porte_4', 'porte_1_f', 'porte_2_f', 'porte_3_f', 'porte_4_f'].map((k) => [k, IMG + 'pyramide/' + k + '.png']),
-  ...['porte_feu', 'porte_feu_f', 'porte_eau', 'porte_eau_f', 'porte_plante', 'porte_plante_f', 'porte_grande', 'porte_grande_o', 'dalle_or', 'teleporteur', 'cle_feu', 'cle_eau', 'cle_plante'].map((k) => [k, IMG + 'temple/' + k + '.png']),
+  ...['porte_feu', 'porte_feu_f', 'porte_eau', 'porte_eau_f', 'porte_plante', 'porte_plante_f', 'porte_grande', 'porte_grande_o', 'dalle_or', 'teleporteur', 'cle_feu', 'cle_eau', 'cle_plante', 'liane', 'cascade'].map((k) => [k, IMG + 'temple/' + k + '.png']),
   ...['borne', 'coffre_fort', 'drapeau', 'piege_trou', 'piege_roche', 'piege_brume', 'piege_colle', 'piege_alarme', 'piege_renvoi', 'piege_degats1', 'piege_degats2', 'piege_degats3', 'piege_combat'].map((k) => [k, IMG + 'ile/' + k + '.png']),
   ...['porte_sagesse', 'porte_force', 'porte_courage', 'porte_sagesse_f', 'porte_force_f', 'porte_courage_f', 'porte_code', 'porte_grille', 'coffre', 'coffre_ouvert', 'interrupteur', 'interrupteur_on', 'socle_statue'].map((k) => [k, IMG + 'voies/' + k + '.png']),
 ];

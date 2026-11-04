@@ -19,11 +19,8 @@ export class RoutesVictoire {
     const m = this.ici(); if (!m) return false;
     const g = this.g, p = g.player; if (p.move) return false;
     const [dx, dy] = DIRS[d], tx = p.x + dx, ty = p.y + dy, t = m.get(tx, ty);
-    // la cascade : on la descend en surfant ; pour la remonter, il faudra Cascade (pas encore dans Odyssée)
-    if (p.surf) {
-      if (d !== 'down' && (m.rv.cascades.has(k(tx, ty)) || m.rv.cascades.has(k(p.x, p.y)))) { p.dir = d; if (p.bumpT <= 0) { g.sound.sfx('bump'); p.bumpT = 0.3; } return true; }
-      return false;
-    }
+    // en surfant : les cascades sont gérées par la capacité Cascade (cascade.js)
+    if (p.surf) return false;
     if (t === T.BOULDER && (g.strengthOn === m.id || m.pushFree)) {
       const trou = m.rv.trous.find((q) => q.x === tx + dx && q.y === ty + dy);
       if (trou && !g.occupied(trou.x, trou.y)) { p.dir = d; this.tombe(m, tx, ty, trou); return true; }

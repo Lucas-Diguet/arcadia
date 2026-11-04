@@ -317,6 +317,11 @@ ne montre que celles de la branche où l'on est.
   (`refusCt` : toute autre CT les lui refuse).
 - Les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes : objets `tuile`).
 
+En solo, chaque chemin a trois salles (`F1`… `P3` dans `js/donjons/temple.js`) : lettres `m` rocher fissuré, `B` rocher à
+pousser, `E` escalier, `v` rebord, `|` cascade, `Y` arbre, `u` broussaille, `C` petit arbre à couper, `h` herbe sombre,
+`f` fleurs, `w` liane qui pend (on passe dessous). Chaque salle a sa roche (`biome` : `magma`, `mer`, `terre`) et ses
+Pokémon sauvages (`SAUVAGES_TEMPLE`). La capacité Cascade du labo (`js/cascade.js`) remonte les cascades en surfant.
+
 ### Les formes du Temple
 
 `js/formes.js` (sans DOM) : des versions alternatives de Pokémon connus, d'un autre type : les lignées des starters de

@@ -6,6 +6,7 @@ import { partyScreen, dexScreen, mapScreen, optionsScreen } from '../../odyssee/
 import { ILE } from './ile/modele.js';
 import { RoutesVictoire } from './rv/jeu.js';
 import { equipeOrigine } from './rv/routes.js';
+import { pasCascade } from './cascade.js';
 
 const CLE_TEST = 'testodyssee-mode-test';
 
@@ -21,6 +22,7 @@ export class TestGame extends Game {
     const D = this.donjons, p = this.player;
     if (D?.pasSpecial(d) || D?.pousser(d)) return;
     // Routes Victoire : hauteurs, cases fermées d'un côté, rochers qui tombent dans les trous
+    if (pasCascade(this, d)) return;
     if ((this.rv ||= new RoutesVictoire(this)).avantPas(d)) return;
     const depart = [p.x, p.y], avant = p.move;
     super.tryStep(d);
@@ -55,6 +57,8 @@ export class TestGame extends Game {
   }
   setTile(x, y, v) { super.setTile(x, y, v); if (v === T.BOULDER) this.rv?.rocherPose(x, y); }
   warp(to, sfx) { (this.rv ||= new RoutesVictoire(this)).arrivee(to); return super.warp(to, sfx); }
+  /** dans les donjons du labo, les capacités de terrain servent sans attendre les badges */
+  canField(k) { return this.donjons?.dansUnDonjon?.() && k !== 'vol' ? this.hasField(k) : super.canField(k); }
   rvApprendre(cle) { return (this.rv ||= new RoutesVictoire(this)).apprendre(cle); }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
   async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }

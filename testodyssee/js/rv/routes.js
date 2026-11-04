@@ -59,13 +59,13 @@ function construireRoute(maps, r, pre, suite, rang) {
     const nom = fusion ? `Route Victoire — ${R.nom} ${nomEtage(E.id)}` : `Route Victoire (${R.nom}) ${nomEtage(E.id)}`;
     const m = new GameMap(id, E.w, E.h, { outdoor: false, fill: T.CAVEWALL, floor: 'cave', music: 'cave', name: nom, battleBg: 'cave' });
     m.rv = { route: r, pre, etage: E.id, suite, fusion, rang, gen: E.gen || 3, sol: E.sol, boutons: E.boutons, trous: E.trous, cascades: new Set() };
-    m.elev = new Uint8Array(E.w * E.h); m.nord = new Set();
+    m.elev = new Uint8Array(E.w * E.h); m.nord = new Set(); m.cascades = m.rv.cascades;
     for (let y = 0; y < E.h; y++) for (let x = 0; x < E.w; x++) {
       const c = E.sol[y][x];
       m.set(x, y, SOL[c] ?? T.CAVEWALL);
       m.elev[y * E.w + x] = parseInt(E.haut[y][x], 16);
       if (c === 'n') m.nord.add(k(x, y));
-      if (c === '|') m.rv.cascades.add(k(x, y));
+      if (c === '|') { m.rv.cascades.add(k(x, y)); m.deco.push({ k: 'cascade', x, y }); }
     }
     // barrières tant que le bouton n'est pas enfoncé, rochers, rochers fissurés
     for (const b of E.boutons) for (const [x, y] of b.ouvre) m.set(x, y, T.CAVEWALL);

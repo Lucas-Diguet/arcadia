@@ -16,10 +16,21 @@ export function brancherRendu() {
   // donjons à style (clair, bois, sable) : leurs propres sols, pas le sol de grotte généré d'Odyssée
   const couvre = Sol.prototype.couvre;
   Sol.prototype.couvre = function (map = this.map) { return !STYLES[map?.style] && couvre.call(this, map); };
+  // les dalles des donjons (et les cases à motif posées par le labo) restent visibles : le sol généré les laisse à nu
+  const SOUS = new Set(['carpet', 'glace', 'sable', 'asph']);
+  const pompe = Sol.prototype.pump;
+  Sol.prototype.pump = function () {
+    const m = this.map, nus = m?.deco ? new Set(m.deco.filter((d) => SOUS.has(d.k)).map((d) => d.x + ',' + d.y)) : null;
+    if (!nus?.size) return pompe.call(this);
+    m.get = function (x, y) { return nus.has(x + ',' + y) ? T.FLOOR : Object.getPrototypeOf(this).get.call(this, x, y); };
+    try { return pompe.call(this); } finally { delete m.get; }
+  };
   const sol = P.groundCell;
   P.groundCell = function (x, y) {
     const m = this.map, A = this.A.cells;
     if (m.glace?.has(x + ',' + y)) return { c: A[CLAIR.glace] };
+    // rebords dans une grotte : une marche de roche (pas de l'herbe)
+    if (!m.outdoor && !m.rv) { const t = m.get(x, y); if (t === T.LEDGE || t === T.LEDGE_E || t === T.LEDGE_W) return { c: A.cavestairs }; }
     // Routes Victoire : ponts de bois et rebords taillés dans la roche (pas d'eau ni d'herbe sous la grotte)
     if (m.rv) {
       const t = m.get(x, y);
