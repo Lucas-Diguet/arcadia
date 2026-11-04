@@ -1,5 +1,9 @@
 # Journal des versions — Arcadia
 
+## 4.03 — 4 novembre 2026
+- **TestOdyssée** — Sanctuaire des Trois Voies : une fontaine au centre des trois grandes statues, et le panneau juste en dessous.
+- **TestOdyssée** — Épreuve de la Sagesse : on désigne chaque statue (elle dit la vérité, elle ment, ou on ne sait pas encore) sans être puni en cas d'erreur. On peut changer d'avis à tout moment ; quand toutes les statues sont bien désignées, la porte s'ouvre.
+
 ## 4.02 — 4 novembre 2026
 - **TestOdyssée** — Le labo d'Odyssée reprend toutes les nouveautés d'Odyssée jusqu'à la 4.01 : mêmes décors, mêmes grottes, mêmes combats et mêmes écrans que dans le vrai jeu.
 - **TestOdyssée** — La Route Victoire de HeartGold rejoint le labo (1F, 2F, 3F), recopiée d'après les plans des étages. Les objets, les objets cachés, les rochers, les échelles et Silver sont à leur place d'origine ; Silver joue l'une de ses trois équipes, tirée au hasard.

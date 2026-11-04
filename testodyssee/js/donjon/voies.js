@@ -125,19 +125,14 @@ export const Voies = {
     const g = this.game, ui = g.ui, M = d.menteurs, nom = M.noms[o.n], D = this.dv(d, s.id), S = this.etats[d.id].salles[s.id];
     await ui.say(`« ${M.paroles[o.n]} »`, { speaker: `Statue de ${nom}` });
     if (S.faite) return;
-    const sinceres = D.sinceres || [];
-    if (sinceres.includes(o.n)) { await ui.say(`La statue de ${nom} brille doucement : elle dit la vérité.`); return; }
-    if (!(await ui.yesNo(`Désigner ${nom} comme quelqu'un qui dit la vérité ?`))) return;
-    if (!M.sinceres.includes(o.n)) {
-      g.sound.sfx('hitstrong'); g.view.shake = 0.3; await ui.flash(1, '#d06060', 90);
-      await ui.say(`La statue de ${nom} se fend d'un rire de pierre... C'était un menteur !`);
-      await this.penalite(d);
-      return;
-    }
-    const n = [...sinceres, o.n];
-    g.sound.sfx('learn');
-    await this.maj(d, s.id, { sinceres: n }, M.sinceres.every((k) => n.includes(k)) ? { faite: true } : {});
-    await ui.say(this.etats[d.id].salles[s.id].faite ? `La statue de ${nom} brille... Toutes les statues sincères sont trouvées : la porte s'ouvre !` : `La statue de ${nom} se met à briller : elle dit la vérité.`);
+    // on désigne chaque statue (vrai ou menteur) sans savoir si c'est juste ; rien ne se passe tant que tout n'est pas bon
+    const avis = { ...(D.avis || {}) }, ici = avis[o.n];
+    const etat = ici === true ? ' (désignée : dit la vérité)' : ici === false ? ' (désignée : ment)' : '';
+    const r = await ui.ask(`Que penses-tu de ${nom} ?${etat}`, ['Elle dit la vérité', 'Elle ment', 'Je ne sais pas encore']);
+    if (r === 0) avis[o.n] = true; else if (r === 1) avis[o.n] = false; else delete avis[o.n];
+    const juste = M.noms.every((_, k) => avis[k] === M.sinceres.includes(k));
+    await this.maj(d, s.id, { avis }, juste ? { faite: true } : {});
+    if (juste) { g.sound.sfx('learn'); await ui.say('Les statues sincères se mettent à briller, les menteuses se taisent... Tu as vu juste : la porte s\'ouvre !'); }
   },
 
   /* ---------------- parchemins, coffre et grande porte ---------------- */

@@ -211,8 +211,8 @@ retour possible.
 1. **Salle des Dalles** : trois dalles, la porte s'ouvre quand chacune est tenue (donjon « à 3 joueurs »).
 2. **Salle des Trois Voies** : le trio des lacs en statues, le panneau, trois portes avec leur inscription.
 3. **Épreuves** (un joueur chacune), avec un parchemin à deux chiffres au bout :
-   - Sagesse : cinq statues, certaines mentent toujours ; on touche celles qui disent vrai (une seule solution,
-     vérifiée par les tests ; toucher un menteur coûte des PV comme chez Didier).
+   - Sagesse : cinq statues, certaines mentent toujours ; on désigne chacune (vraie, menteuse, ou pas encore), sans
+     punition ; la porte s'ouvre quand toutes sont bien désignées (une seule solution, vérifiée par les tests).
    - Force : deux Karatékas face à face sur les flancs, qui viennent ensemble au joueur (combat à deux contre un, ses
      deux premiers Pokémon en jeu), puis le Gardien de la Force (combat à blocs en solo) : les attaques spéciales ne
      l'affectent pas tant que son premier bloc tient (`immunite: 'speciale'` ; `'physique'` pour l'inverse), Attaque
