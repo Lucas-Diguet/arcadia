@@ -327,8 +327,34 @@ session à l'autre. On y va par « Mon île » dans la liste des lieux ; le capi
   se pose (`zones`) ; les passages entre salles et l'entrée restent libres.
 - Décors de plusieurs cases : `couvre` (cases prises autour de la case posée) et `passe` (celles où l'on marche quand
   même : le portique torii, deux poteaux et un passage).
-- Mairie : l'adjointe ouvre le mode construction, liste les trophées, renomme l'île, la remet à zéro (les trophées
-  restent).
+- Mairie : l'adjointe ouvre le mode construction, liste les trophées, renomme l'île, la remet à zéro (les trophées,
+  les points, le stock et les salles d'entraînement restent ; ce qui était posé retourne au stock).
+
+### Borne d'arcade, usine à pièges, caserne
+
+`js/ile/usine.js` (sans DOM : pièges, statues piégées, gardes, prix, stock), `js/ile/casse-briques.js` (la borne).
+Dans la donnée de l'île : `points`, `stock { article: nombre }`, `statues { 'st:dialga': niveau }`, `plans`, `voirPieges`.
+
+- La borne d'arcade (Loisirs) : un casse-briques. Une brique = 1 point d'usine, un mur fini = 15 de plus
+  (`pointsPartie`). En mode test, elle donne aussi 500 points d'un coup. Plus tard, elle ira au casino.
+- L'usine à pièges et la caserne (Bâtiments, un exemplaire chacune, `lieu`) : leur porte compte dans la règle du chemin.
+  À l'usine, la contremaîtresse vend les pièges et les statues piégées (et les fait monter de 5 niveaux, de 20 à 70) ;
+  à la caserne, le recruteur engage les gardes (une spécialité de plus par badge, niveau d'après les badges :
+  `typesOuverts`, `niveauGarde`, `equipeGarde`).
+- Pièges (`PIEGES`) : trou, éboulement, brume, colle, alarme, renvoi, dégâts I à III (10, 30, 50 % des PV du premier
+  Pokémon, jamais K.O.), piège de combat. On marche dessus ; ils ne se dessinent que pendant la construction ou si le
+  propriétaire les montre (bouton « 👁 Pièges » en bas à droite, cachés par défaut).
+- Défenses : statues de Dialga et de Palkia (boss à trois blocs, joué sur place) et gardes. Les deux regardent dans une
+  direction (`dir`, bouton « ↻ Regard » ou touche R pendant la construction) et voient `VUE` cases droit devant. Le garde
+  de combat ne guette pas : il vient quand un piège de combat (ou une alarme) de sa salle se déclenche.
+- Sur l'île, un piège, une statue ou un garde sort du stock quand on le pose et y revient quand on le range. Rien ne
+  se déclenche jamais sur le propriétaire.
+- Salles d'entraînement (le technicien de l'usine) : des parcours de une à cinq salles de 15 × 10 cases
+  (`construireSalle`, carte `labo:ile:salle`), entrée en bas, escalier en haut (`salleRelie` garde le chemin). On y pose
+  tout ce qui est débloqué sans rien dépenser (zone `salle:<parcours>:<salle>`). « Essayer en intrus » : là seulement,
+  pièges, statues et gardes se déclenchent sur le propriétaire (`essai`, Pokémon soignés avant et après, un combat
+  perdu arrête l'essai). Une salle se colle d'un bloc sur l'île depuis le catalogue du mode construction (`collable`,
+  `coller`) : il faut son stock, et les chemins restent libres.
 
 ## Ajouter un nouveau type de salle
 

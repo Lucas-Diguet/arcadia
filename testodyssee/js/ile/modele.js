@@ -11,8 +11,9 @@ import { T } from '../../../odyssee/js/world/tiles.js';
 import { GameMap, rng, BUILDINGS } from '../../../odyssee/js/world/mapgen.js';
 import { applyOps } from '../../../odyssee/js/world/retouches.js';
 import { houseInterior, room } from '../../../odyssee/js/world/interiors.js';
+import { PIEGES, STATUES, GARDES, completerUsine, enStock, ajouterStock, nomGarde, GARDE } from './usine.js';
 
-export const ILE = 'labo:ile', MUSEE = 'labo:ile:musee';
+export const ILE = 'labo:ile', MUSEE = 'labo:ile:musee', USINE = 'labo:ile:usine', CASERNE = 'labo:ile:caserne', SALLE = 'labo:ile:salle';
 export const W = 60, H = 44;
 export const PONTON = [30, 40];                // bout du ponton (le capitaine)
 export const ARRIVEE = [30, 37];               // là où l'on débarque
@@ -57,12 +58,12 @@ export const CATALOGUE = [
   { cat: 'Mobilier', id: 'lamp', nom: 'Lampadaire', p: 'lamp' },
   { cat: 'Mobilier', id: 'lanterne', nom: 'Lanterne', p: 'lanterne', zones: ['ile', 'musee'] },
   { cat: 'Mobilier', id: 'fontaine', nom: 'Fontaine', p: 'fontaine', couvre: [[0, 0], [1, 0]], w: 2 },
-  { cat: 'Mobilier', id: 'tonneau', nom: 'Tonneau', p: 'tonneau' },
-  { cat: 'Mobilier', id: 'caisse', nom: 'Caisse', p: 'caisse' },
-  { cat: 'Mobilier', id: 'pot', nom: 'Pot de fleurs', p: 'pot', zones: ['ile', 'musee'] },
+  { cat: 'Mobilier', id: 'tonneau', nom: 'Tonneau', p: 'tonneau', zones: ['ile', 'salle'] },
+  { cat: 'Mobilier', id: 'caisse', nom: 'Caisse', p: 'caisse', zones: ['ile', 'salle'] },
+  { cat: 'Mobilier', id: 'pot', nom: 'Pot de fleurs', p: 'pot', zones: ['ile', 'musee', 'salle'] },
   { cat: 'Mobilier', id: 'plante', nom: 'Plante verte', p: 'plant', zones: ['musee'] },
   { cat: 'Mobilier', id: 'vase', nom: 'Vase', p: 'vase', zones: ['musee'] },
-  { cat: 'Mobilier', id: 'colonne', nom: 'Colonne', p: 'colonne', zones: ['ile', 'musee'] },
+  { cat: 'Mobilier', id: 'colonne', nom: 'Colonne', p: 'colonne', zones: ['ile', 'musee', 'salle'] },
   { cat: 'Mobilier', id: 'parasol', nom: 'Parasol', p: 'parasol' },
   { cat: 'Mobilier', id: 'boite', nom: 'Boîte aux lettres', p: 'mailbox' },
   { cat: 'Mobilier', id: 'torii', nom: 'Portique torii', p: 'torii', couvre: [[-1, 0], [0, 0], [1, 0]], passe: [[0, 0]], dz: 0.95 },
@@ -70,18 +71,26 @@ export const CATALOGUE = [
   { cat: 'Bâtiments', id: 'house', nom: 'Maison', b: 'house', taille: [4, 3] },
   { cat: 'Bâtiments', id: 'house2', nom: 'Grande maison', b: 'house2', taille: [5, 3] },
   { cat: 'Bâtiments', id: 'bighouse', nom: 'Résidence', b: 'bighouse', taille: [6, 4] },
+  { cat: 'Bâtiments', id: 'usine', nom: 'Usine à pièges', b: 'bighouse', toit: 'gray', taille: [6, 4], lieu: USINE, unique: true },
+  { cat: 'Bâtiments', id: 'caserne', nom: 'Caserne', b: 'house2', toit: 'green', taille: [5, 3], lieu: CASERNE, unique: true },
+  { cat: 'Loisirs', id: 'borne', nom: 'Borne d\'arcade', p: 'borne' },
   { cat: 'Sols', id: 'chemin', nom: 'Chemin de terre', t: T.PATH, sol: true },
   { cat: 'Sols', id: 'paves', nom: 'Pavés', t: T.PAVE, sol: true },
   { cat: 'Sols', id: 'sable', nom: 'Sable', t: T.SAND, sol: true },
   { cat: 'Sols', id: 'herbe', nom: 'Herbe', t: T.GRASS, sol: true },
+  ...PIEGES.map((p) => ({ cat: 'Pièges', id: p.id, nom: p.nom, piege: p, stock: true, zones: ['ile', 'salle'] })),
+  ...STATUES.map((q) => ({ cat: 'Statues piégées', id: q.id, nom: q.nom, statue: q, stock: true, dir: true, zones: ['ile', 'salle'] })),
+  ...GARDES.map((q) => ({ cat: 'Gardes', id: q.id, nom: q.nom, garde: q, stock: true, dir: true, zones: ['ile', 'salle'] })),
   ...TROPHEES.map((t) => ({ cat: 'Trophées', id: 'tr:' + t.id, nom: t.nom, tr: t.id, zones: ['ile', 'musee'] })),
 ];
 export const ARTICLE = Object.fromEntries(CATALOGUE.map((c) => [c.id, c]));
-export const dansZone = (a, zone) => (a.zones || ['ile']).includes(zone);
+/** la sorte d'une zone : 'ile', 'musee', ou 'salle' (une salle d'entraînement : 'salle:plan:numéro') */
+export const sorteZone = (zone) => String(zone).split(':')[0];
+export const dansZone = (a, zone) => (a.zones || ['ile']).includes(sorteZone(zone));
 
 /* ---------------- la donnée ---------------- */
 export function nouvelleIle(nom = 'Mon île') {
-  return { v: 2, nom, biome: 'plaine', fixes: Object.fromEntries(Object.entries(FIXES).map(([k, f]) => [k, [...f.defaut]])), travaux: [], donjons: [], musee: { travaux: [] } };
+  return completerUsine({ v: 2, nom, biome: 'plaine', fixes: Object.fromEntries(Object.entries(FIXES).map(([k, f]) => [k, [...f.defaut]])), travaux: [], donjons: [], musee: { travaux: [] } });
 }
 /** complète une île lue (version plus ancienne, champ manquant) */
 export function etatIle(ile) {
@@ -97,7 +106,7 @@ export function etatIle(ile) {
   }
   ile.musee.travaux = ile.musee.travaux.filter((t) => ARTICLE[t?.a]);
   ile.biome ||= 'plaine'; ile.v = 2;
-  return ile;
+  return completerUsine(ile);
 }
 /** trophées débloqués : badges de la partie et donjons finis */
 export function debloques(ile, st) {
@@ -111,7 +120,11 @@ export function trophePlace(ile, id) {
 }
 /** le musée s'agrandit avec les trophées : une salle, puis une de plus tous les quatre trophées (quatre au plus) */
 export const sallesMusee = (n) => Math.min(4, 1 + Math.floor(n / 4));
-export const liste = (ile, zone) => (zone === 'musee' ? ile.musee.travaux : ile.travaux);
+export function liste(ile, zone) {
+  if (zone === 'musee') return ile.musee.travaux;
+  if (sorteZone(zone) === 'salle') { const [, pi, k] = zone.split(':'); return ile.plans[+pi].salles[+k]; }
+  return ile.travaux;
+}
 
 /* ---------------- le terrain de l'île (le même pour tout le monde) ---------------- */
 let FORME = null;
@@ -159,7 +172,10 @@ export function emprise(a, x, y) {
 export function corps(a, x, y) { return (a?.b || a?.kind) ? emprise(a, x, y).slice(0, a.taille[0] * a.taille[1]) : emprise(a, x, y); }
 /** les portes des bâtiments fixes (case devant), à garder reliées au ponton */
 export function portes(ile) {
-  return Object.entries(FIXES).filter(([k]) => k !== ile.cache).map(([k, f]) => { const [x, y] = ile.fixes[k]; return [x + BUILDINGS[f.kind].door, y + f.taille[1]]; });
+  const out = Object.entries(FIXES).filter(([k]) => k !== ile.cache).map(([k, f]) => { const [x, y] = ile.fixes[k]; return [x + BUILDINGS[f.kind].door, y + f.taille[1]]; });
+  // l'usine et la caserne aussi
+  for (const t of ile.travaux) { const a = ARTICLE[t.a]; if (a.lieu) out.push([t.x + BUILDINGS[a.b].door, t.y + a.taille[1]]); }
+  return out;
 }
 
 /**
@@ -171,8 +187,12 @@ export function posable(ile, trav, zone = 'ile', o = {}) {
   const art = trav.fixe ? FIXES[trav.fixe] : ARTICLE[trav.a];
   if (!art) return { ok: false, why: 'inconnu' };
   if (!trav.fixe && !dansZone(art, zone)) return { ok: false, why: zone === 'musee' ? 'Ça ne se pose pas au musée.' : 'Ça se pose au musée.' };
+  if (sorteZone(zone) === 'salle') return posableSalle(liste(ile, zone), trav);
   const cases = emprise(art, trav.x, trav.y);
   const n = o.salles || 1;
+  // pièges, statues et gardes : il faut les avoir en stock (achetés à l'usine, engagés à la caserne)
+  if (!trav.fixe && art.stock && zone === 'ile' && enStock(ile, art.id) < 1 && !o.sansStock) return { ok: false, why: art.garde ? 'Engage d\'abord ce garde à la caserne.' : 'Il t\'en faut un : il s\'achète à l\'usine à pièges.' };
+  if (!trav.fixe && art.unique && ile.travaux.some((t) => t.a === art.id)) return { ok: false, why: `Il n'y a qu'un bâtiment comme celui-là : ${art.nom}.` };
   if (zone === 'musee') { if (!cases.every(([x, y]) => solMusee(n, x, y))) return { ok: false, why: 'Pas ici : il faut laisser les passages et l\'entrée libres.' }; }
   else {
     if (!cases.every(([x, y]) => fo(x, y) === 'herbe')) return { ok: false, why: 'Seulement sur l\'herbe de l\'île.' };
@@ -197,6 +217,7 @@ export function posable(ile, trav, zone = 'ile', o = {}) {
   // le chemin
   const essai = { ...ile, fixes: { ...ile.fixes }, travaux: [...ile.travaux], musee: { travaux: [...ile.musee.travaux] } };
   if (trav.fixe) { essai.fixes[trav.fixe] = [trav.x, trav.y]; delete essai.cache; } else liste(essai, zone).push({ a: trav.a, x: trav.x, y: trav.y });
+  if (o.sansChemin) return { ok: true };
   if (zone === 'musee' ? !musseeRelie(essai, n) : !cheminLibre(essai)) return { ok: false, why: zone === 'musee' ? 'Ça couperait le passage vers une salle.' : 'Ça couperait le chemin vers un bâtiment.' };
   return { ok: true };
 }
@@ -224,7 +245,69 @@ export function poser(ile, trav, zone = 'ile') {
   const art = ARTICLE[trav.a];
   if (art.sol && zone === 'ile') ile.travaux = ile.travaux.filter((t) => !(ARTICLE[t.a].sol && t.x === trav.x && t.y === trav.y));
   liste(ile, zone).push({ ...trav });
+  if (art.stock && zone === 'ile') ajouterStock(ile, art.id, -1);
 }
+/** reprendre l'article n° i (le ranger ou le prendre en main) : un piège, une statue ou un garde retourne au stock */
+export function reprendre(ile, i, zone = 'ile') {
+  const [t] = liste(ile, zone).splice(i, 1);
+  if (t && ARTICLE[t.a].stock && zone === 'ile') ajouterStock(ile, t.a, 1);
+  return t;
+}
+
+/* ---------------- les salles d'entraînement ---------------- */
+// Une salle : 15 × 10 cases posables (coordonnées de la carte : x de 1 à 15, y de 3 à 12). On entre en bas (8, 12),
+// l'escalier de la salle suivante est en haut (8, 2) : un chemin doit toujours relier les deux.
+export const SALLE_X = 1, SALLE_Y = 3, SALLE_W = 15, SALLE_H = 10;
+export const ENTREE_SALLE = [8, 12], ESCALIER_SALLE = [8, 2];
+export const MAX_SALLES = 5, MAX_PLANS = 6;
+const dansSalle = (x, y) => x >= SALLE_X && x < SALLE_X + SALLE_W && y >= SALLE_Y && y < SALLE_Y + SALLE_H;
+/** un article bloque-t-il le passage ? (les pièges et les sols, non) */
+export const bloque = (a) => !(a.piege || a.sol || a.t === T.TALL || a.t === T.FLOWER);
+/** de l'entrée de la salle, on atteint l'escalier sans traverser d'obstacle */
+export function salleRelie(items) {
+  const dur = new Set();
+  for (const t of items) { const a = ARTICLE[t.a]; if (a && bloque(a)) for (const [x, y] of corps(a, t.x, t.y)) dur.add(x + ',' + y); }
+  const vu = new Set([ENTREE_SALLE.join(',')]), file = [ENTREE_SALLE];
+  while (file.length) {
+    const [x, y] = file.shift();
+    if (x === ESCALIER_SALLE[0] && y === ESCALIER_SALLE[1] + 1) return true;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy, k = nx + ',' + ny;
+      if (!dansSalle(nx, ny) || vu.has(k) || dur.has(k)) continue;
+      vu.add(k); file.push([nx, ny]);
+    }
+  }
+  return false;
+}
+export function posableSalle(items, trav) {
+  const art = ARTICLE[trav.a];
+  if (!art || !dansZone(art, 'salle')) return { ok: false, why: 'Ça ne se pose pas dans une salle d\'entraînement.' };
+  const cases = emprise(art, trav.x, trav.y);
+  if (!cases.every(([x, y]) => dansSalle(x, y))) return { ok: false, why: 'Seulement dans la salle.' };
+  if (cases.some(([x, y]) => x === ENTREE_SALLE[0] && y === ENTREE_SALLE[1])) return { ok: false, why: 'Il faut laisser l\'entrée libre.' };
+  const occ = new Set(); for (const t of items) for (const [x, y] of emprise(ARTICLE[t.a], t.x, t.y)) occ.add(x + ',' + y);
+  if (cases.some(([x, y]) => occ.has(x + ',' + y))) return { ok: false, why: 'La place est déjà prise.' };
+  if (bloque(art) && !salleRelie([...items, trav])) return { ok: false, why: 'Ça couperait le chemin jusqu\'à l\'escalier.' };
+  return { ok: true };
+}
+/** une salle collée sur l'île (ox, oy : la case de son coin en haut à gauche) : ses articles, à leur place sur l'île */
+export const collage = (items, ox, oy) => items.map((t) => ({ ...t, x: t.x - SALLE_X + ox, y: t.y - SALLE_Y + oy }));
+/** combien de chaque article la salle demande */
+export function besoins(items) { const n = {}; for (const t of items) if (ARTICLE[t.a]?.stock) n[t.a] = (n[t.a] || 0) + 1; return n; }
+/** peut-on coller cette salle ici ? { ok, why, manque } (le stock doit suffire, comme pour une pose à la main) */
+export function collable(ile, items, ox, oy) {
+  const manque = Object.entries(besoins(items)).filter(([id, n]) => enStock(ile, id) < n).map(([id, n]) => [id, n - enStock(ile, id)]);
+  const essai = { ...ile, fixes: { ...ile.fixes }, travaux: [...ile.travaux], musee: ile.musee, stock: { ...ile.stock } };
+  for (const t of collage(items, ox, oy)) {
+    const r = posable(essai, t, 'ile', { sansChemin: true, sansStock: true });
+    if (!r.ok) return { ok: false, why: r.why, manque };
+    essai.travaux.push(t);
+  }
+  if (!cheminLibre(essai)) return { ok: false, why: 'Ça couperait le chemin vers un bâtiment.', manque };
+  if (manque.length) return { ok: false, why: 'Il te manque : ' + manque.map(([id, n]) => `${n} × ${ARTICLE[id].nom}`).join(', ') + '.', manque };
+  return { ok: true, manque };
+}
+export function coller(ile, items, ox, oy) { for (const t of collage(items, ox, oy)) poser(ile, t, 'ile'); }
 
 /* ---------------- les cartes ---------------- */
 const DECOR_PLAGE = [['palm', 9, 13], ['palm', 6, 22], ['palm', 10, 31], ['palm', 50, 12], ['palm', 55, 22], ['palm', 49, 33], ['palm', 22, 37], ['palm', 39, 37],
@@ -232,10 +315,11 @@ const DECOR_PLAGE = [['palm', 9, 13], ['palm', 6, 22], ['palm', 10, 31], ['palm'
 /** ce qui a été posé, sur une carte : tuiles, décors, panneaux, bâtiments, trophées (qui disent d'où ils viennent) */
 function poserTravaux(m, travaux, maps, o = {}) {
   const ops = [], apres = [];
+  m.statues ||= []; m.pieges ||= []; m.defenses ||= []; m.lieux ||= [];
   for (const t of travaux) {
     const a = ARTICLE[t.a];
     if (a.t != null) ops.push(['t', t.x, t.y, a.t]);
-    else if (a.p && !a.couvre) ops.push(['p', a.p, t.x, t.y]);
+    else if (a.p && !a.couvre && a.p !== 'borne') ops.push(['p', a.p, t.x, t.y]);
     else if (a.p) apres.push(() => {
       // décor de plusieurs cases : dessiné au milieu, ses cases bloquées sauf celles où l'on passe
       const passe = new Set((a.passe || []).map(([dx, dy]) => (t.x + dx) + ',' + (t.y + dy)));
@@ -243,7 +327,25 @@ function poserTravaux(m, travaux, maps, o = {}) {
       m.deco.push({ k: a.p, x: t.x, y: t.y, w: a.w, dz: a.dz });
     });
     else if (a.s) ops.push(['s', t.x, t.y, t.texte || 'PANNEAU']);
+    else if (a.lieu) m.lieux.push({ a, t });
     else if (a.b) ops.push(['b', a.b, t.x, t.y, t.toit || 'red', a.nom]);
+    else if (a.piege) {
+      // un piège ne se voit que si on le demande (o.voir), ou une fois déclenché
+      m.pieges.push({ id: a.id, x: t.x, y: t.y });
+      if (o.voir || o.vus?.has(t.x + ',' + t.y)) m.deco.push({ k: a.piege.img, x: t.x, y: t.y, dz: 0.9 });
+    } else if (a.statue) {
+      ops.push(['p', 'socle_statue', t.x, t.y]);
+      m.statues.push({ sp: a.statue.sp, x: t.x, y: t.y, carte: m.id, grand: o.grand });
+      m.defenses.push({ id: a.id, x: t.x, y: t.y, dir: t.dir || 'down', statue: a.statue });
+      apres.push(() => m.object(t.x, t.y, { defense: a.id, use: (api) => api.game.ile?.parlerDefense(t) }));
+    } else if (a.garde) {
+      m.defenses.push({ id: a.id, x: t.x, y: t.y, dir: t.dir || 'down', garde: a.garde });
+      if (o.seul) apres.push(() => m.set(t.x, t.y, T.BLOCK));
+      else m.npc({ id: `ile:garde:${t.x},${t.y}`, x: t.x, y: t.y, dir: t.dir || 'down', sprite: a.garde.sprite, move: 'static', nom: nomGarde(t.x, t.y), talk: (api) => api?.game?.ile?.parlerDefense(t) });
+    } else if (a.p === 'borne') {
+      ops.push(['p', 'borne', t.x, t.y]);
+      apres.push(() => m.object(t.x, t.y, { borne: true, use: (api) => api.game.ile?.borne() }));
+    }
     else if (a.tr) {
       const tr = TROPHEE[a.tr];
       ops.push(['p', 'socle_statue', t.x, t.y]);
@@ -252,7 +354,7 @@ function poserTravaux(m, travaux, maps, o = {}) {
     }
   }
   applyOps(m, ops, maps);
-  if (!maps) for (const t of travaux) { const a = ARTICLE[t.a]; if (a.b) m.building(a.b, t.x, t.y); }
+  if (!maps) for (const t of travaux) { const a = ARTICLE[t.a]; if (a.b && !a.lieu) m.building(a.b, t.x, t.y); }
   for (const f of apres) f();
 }
 /** le musée, avec n salles en enfilade reliées par des passages de trois cases */
@@ -290,8 +392,44 @@ export function construire(maps, ile, o = {}) {
     m.warp(B.doorX, B.doorY, { map: id, x: dedans.exitX, y: dedans.exitY - 1, dir: 'up' });
     maps[id] = dedans;
   }
-  poserTravaux(m, ile.travaux, o.seul ? null : maps);
+  poserTravaux(m, ile.travaux, o.seul ? null : maps, { voir: o.voir });
+  // l'usine à pièges et la caserne : leur bâtiment, et leur intérieur
+  for (const { a, t } of m.lieux) {
+    const B = m.building(a.b, t.x, t.y, { roof: a.toit, name: a.nom });
+    if (o.seul) continue;
+    const dedans = a.lieu === USINE ? interieurUsine() : interieurCaserne();
+    dedans.outside = { map: ILE, x: B.doorX, y: B.doorY + 1, dir: 'down' };
+    dedans.warp(dedans.exitX, dedans.exitY, dedans.outside);
+    m.warp(B.doorX, B.doorY, { map: a.lieu, x: dedans.exitX, y: dedans.exitY - 1, dir: 'up' });
+    maps[a.lieu] = dedans;
+  }
   m.zone(0, 0, W - 1, H - 1, { name: ile.nom || 'Mon île', music: 'town' });
   if (!o.seul) maps[ILE] = m;
+  return m;
+}
+
+/** l'usine : la contremaîtresse (achats, statues) et le technicien (salles d'entraînement) */
+export function interieurUsine() {
+  const m = room(USINE, 15, 11, { floor: 'gymRock', music: 'house', name: 'Usine à pièges', wall: 'wall_mart' });
+  for (const [k, x, y] of [['labmachine', 1, 2], ['labmachine', 2, 2], ['caisse', 12, 2], ['caisse', 13, 2], ['tonneau', 13, 3], ['pc', 10, 2], ['plant', 1, 9], ['plant', 13, 9]]) m.prop(k, x, y, true);
+  m.npc({ id: 'ile:contremaitresse', x: 4, y: 4, dir: 'down', sprite: 'scientifique', move: 'static', nom: 'Contremaîtresse' });
+  m.npc({ id: 'ile:technicien', x: 10, y: 4, dir: 'down', sprite: 'savant', move: 'static', nom: 'Technicien' });
+  m.sign(7, 2, 'SALLE D\'ENTRAÎNEMENT\nParle au technicien pour concevoir et tester tes salles de pièges.');
+  return m;
+}
+/** la caserne : le recruteur */
+export function interieurCaserne() {
+  const m = room(CASERNE, 13, 9, { floor: 'wood', music: 'house', name: 'Caserne', wall: 'wall_in' });
+  for (const [k, x, y] of [['books', 1, 2], ['books', 2, 2], ['clock', 6, 2], ['plant', 11, 2], ['plant', 1, 7]]) m.prop(k, x, y, true);
+  m.npc({ id: 'ile:recruteur', x: 6, y: 4, dir: 'down', sprite: 'garde', move: 'static', nom: 'Recruteur' });
+  return m;
+}
+/** une salle d'entraînement : l'entrée en bas, l'escalier vers la salle suivante en haut, ce que le plan y pose */
+export function construireSalle(ile, pi, k, o = {}) {
+  const plan = ile.plans[pi], n = plan.salles.length;
+  const m = room(SALLE, SALLE_W + 2, SALLE_H + 4, { floor: 'gymRock', music: 'house', name: `${plan.nom} · salle ${k + 1}/${n}`, wall: 'wall_gym', exitX: ENTREE_SALLE[0] });
+  m.set(ESCALIER_SALLE[0], ESCALIER_SALLE[1], T.STAIRS);
+  m.salle = { pi, k, n };
+  poserTravaux(m, plan.salles[k], null, { voir: o.voir, vus: o.vus });
   return m;
 }

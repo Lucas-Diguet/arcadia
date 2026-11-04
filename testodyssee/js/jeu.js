@@ -20,6 +20,8 @@ export class TestGame extends Game {
     const depart = [p.x, p.y], avant = p.move;
     super.tryStep(d);
     if (!avant && p.move) D?.apresDepart(d, depart);
+    // la colle d'une salle d'entraînement : deux fois moins vite
+    if (!avant && p.move && this.ile?.colle()) p.move.dur *= 2;
   }
   // donjon clair : fond de combat clair (Odyssée prend le fond de grotte pour toute carte de grotte)
   async runBattle(o) {
@@ -31,12 +33,13 @@ export class TestGame extends Game {
   }
   /** l'île privée se reconstruit à partir de la donnée du joueur quand on y arrive */
   setMap(id) {
+    this.ile?.surCarte(id);
     if (this.ile && this.state && (id === ILE || id?.startsWith(ILE + ':')) && (!this.world.maps[id] || this.ile.pour !== this.ile.cle || !this.ile.dedans())) this.ile.preparer();
     return super.setMap(id);
   }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
   async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }
-  async onStep(mv) { await super.onStep(mv); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); } }
+  async onStep(mv) { await super.onStep(mv); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.ile?.apresPas(); } }
   load() { return null; }
 
   async startMenu() {
@@ -45,6 +48,7 @@ export class TestGame extends Game {
     if (this.canField('vol')) opts.push(['VOL', 'fly']);
     if (this.donjons?.dansUnDonjon()) opts.push(['JOURNAL', 'journal'], ['QUITTER LE DONJON', 'quitter']);
     if (this.ile?.zoneIci()) opts.push(['CONSTRUIRE', 'construire']);
+    if (this.ile?.essai) opts.push(['ABANDONNER L\'ESSAI', 'abandon']);
     if (this.modeTest && this.donjons?.sallesDuDonjon().length > 1) opts.push(['ALLER À UNE SALLE', 'salle']);
     if (this.donjons?.dansLeReflet()) opts.push(['REVENIR AU DÉBUT DE LA SALLE', 'debut']);
     opts.push(['CARTE', 'map'], ['CHANGER DE LIEU', 'lieu'], [this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON', 'test'], ['OPTIONS', 'opt'], ['FERMER', 'close']);
@@ -62,6 +66,7 @@ export class TestGame extends Game {
         else if (k === 'map') await mapScreen(this);
         else if (k === 'journal') await this.donjons.journal();
         else if (k === 'construire') { this.busy = false; await this.ile.construction(); break; }
+        else if (k === 'abandon') { if (await this.ui.yesNo('Abandonner l\'essai et revenir à l\'usine ?')) { await this.ile.finEssai('abandon'); await this.ile.retourUsine(); break; } }
         else if (k === 'test') {
           this.modeTest = !this.modeTest; opts[r][0] = this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON';
           await this.ui.say(this.modeTest ? 'Mode test activé : tu peux entrer seul partout, aller dans n\'importe quelle salle d\'un donjon et passer les combats.' : 'Mode test désactivé.');

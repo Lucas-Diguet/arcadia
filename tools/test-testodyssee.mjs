@@ -13,6 +13,7 @@ import { ITEMS } from '../odyssee/js/core/items.js';
 import { buildWorld } from '../odyssee/js/world/region.js';
 import { listerLieux } from '../testodyssee/js/lieux.js';
 import * as ILE_M from '../testodyssee/js/ile/modele.js';
+import * as USINE_M from '../testodyssee/js/ile/usine.js';
 const { construire: construireIle, nouvelleIle } = ILE_M;
 import { EQUIPES } from '../testodyssee/js/equipes.js';
 import { walkable, T } from '../odyssee/js/world/tiles.js';
@@ -687,7 +688,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   M.poser(ile, { a: 'tr:pyramide', x: 22, y: 20 });
   ok(M.trophePlace(ile, 'pyramide') === 'ile' && !M.posable(ile, { a: 'tr:pyramide', x: 24, y: 20 }).ok, 'île : un trophée posé ne se pose pas deux fois');
   ok(DONJONS.every((d) => M.TROPHEES.some((t) => t.donjon === d.id)) && M.TROPHEES.every((t) => SPECIES[t.sp]), 'île : une statue pour chaque donjon du labo');
-  ok(M.CATALOGUE.every((a) => a.t != null || a.p || a.s || a.b || a.tr), 'île : chaque article du catalogue sait se poser');
+  ok(M.CATALOGUE.every((a) => a.t != null || a.p || a.s || a.b || a.tr || a.piege || a.statue || a.garde), 'île : chaque article du catalogue sait se poser');
   // déplacer un bâtiment fixe : il ne bloque plus sa place pendant qu'on le porte
   const d2 = M.nouvelleIle('Déplacer'); d2.cache = 'mairie';
   const [ax, ay] = d2.fixes.mairie;
@@ -715,6 +716,51 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   ok(M.TROPHEES.every((t) => /^En récompense pour avoir (triomphé de l'arène|terminé) /.test(t.origine)) && M.TROPHEE.badge0.origine.includes('Sylvebourg'), 'île : chaque trophée dit ce qui l\'a rapporté');
   ok(M.etatIle({ nom: 'v1', fixes: {}, travaux: [], donjons: ['crypte'], musee: { 0: 'crypte' } }).musee.travaux[0]?.a === 'tr:crypte', 'île : les statues de l\'ancien musée sont gardées');
   ok(M.etatIle(JSON.parse(JSON.stringify(ile))).travaux.length === ile.travaux.length && M.etatIle(null).fixes.maison, 'île : la donnée se relit telle quelle');
+}
+
+/* ---------------- île : borne, usine à pièges, caserne, salles d'entraînement ---------------- */
+{
+  const M = ILE_M, U = USINE_M, ile = M.nouvelleIle('Usine');
+  ok(ile.points === 0 && ile.statues['st:dialga'] === 20 && Array.isArray(ile.plans) && !ile.voirPieges, 'usine : une île neuve a ses points, ses statues au niveau 20, et les pièges cachés');
+  ok(U.pointsPartie(37, 2) === 67 && U.pointsPartie(-3, 0) === 0, 'borne : une brique = 1 point, un mur fini = 15 de plus');
+  ok(!U.acheter(ile, 'pg:trou').ok && ile.points === 0, 'usine : sans points, on n\'achète rien');
+  ile.points = 100;
+  ok(U.acheter(ile, 'pg:degats3').ok && ile.points === 50 && U.enStock(ile, 'pg:degats3') === 1, 'usine : un achat coûte des points et remplit le stock');
+  ok(U.PIEGES.filter((p) => p.effet === 'degats').map((p) => p.part).join() === '0.1,0.3,0.5', 'usine : pièges à dégâts de 10, 30 et 50 %');
+  ok(!M.posable(ile, { a: 'pg:trou', x: 20, y: 20 }, 'ile').ok && M.posable(ile, { a: 'pg:degats3', x: 20, y: 20 }, 'ile').ok, 'usine : un piège ne se pose sur l\'île que s\'il est en stock');
+  M.poser(ile, { a: 'pg:degats3', x: 20, y: 20 });
+  ok(U.enStock(ile, 'pg:degats3') === 0 && M.reprendre(ile, M.articleEn(ile, 20, 20), 'ile') && U.enStock(ile, 'pg:degats3') === 1, 'usine : poser vide le stock, ranger le remplit');
+  ile.points = 10000;
+  let n = 0; while (U.ameliorer(ile, 'st:palkia').ok) n++;
+  ok(n === 10 && ile.statues['st:palkia'] === U.MAX_STATUE && ile.statues['st:dialga'] === 20, 'usine : une statue piégée monte de 5 en 5 niveaux, jusqu\'à 70');
+  ok(U.typesOuverts(0).length === 2 && U.typesOuverts(8).length === 10 && U.niveauGarde('combat', 2) > U.niveauGarde('guet', 2), 'caserne : les badges ouvrent des spécialités, les gardes de combat sont plus forts');
+  ok(!U.acheter(ile, 'gd:dragon:guet', 0).ok && U.acheter(ile, 'gd:plante:combat', 0).ok, 'caserne : on n\'engage que dans les spécialités ouvertes');
+  ok(U.GARDES.every((g) => [0, 4, 8].every((b) => { const e = U.equipeGarde(g.id, b); return e.length === U.MODES[g.mode].n && e.every(([sp, l]) => SPECIES[sp] && l > 0); })), 'caserne : chaque garde a une équipe faite d\'après son niveau');
+  M.poser(ile, { a: 'usine', x: 38, y: 18 });
+  ok(!M.posable(ile, { a: 'usine', x: 10, y: 20 }, 'ile').ok && M.portes(ile).length === 4, 'usine : un seul bâtiment, et le chemin jusqu\'à sa porte reste libre');
+  const maps = {}; M.construire(maps, ile, {});
+  ok(maps[M.USINE]?.npcs.some((q) => q.id === 'ile:technicien') && [...maps[M.ILE].warps.values()].some((w) => w.map === M.USINE), 'usine : on y entre, le technicien y attend');
+  // une salle d'entraînement
+  ile.plans.push({ nom: 'Test', salles: [[]] });
+  const S = ile.plans[0].salles[0], z = 'salle:0:0';
+  ok(M.posable(ile, { a: 'gd:feu:guet', x: 3, y: 5, dir: 'right' }, z).ok && !M.posable(ile, { a: 'arbre', x: 3, y: 5 }, z).ok, 'salle : tout ce qui est débloqué s\'y pose, sans stock ; les arbres restent dehors');
+  ok(!M.posable(ile, { a: 'caisse', x: M.ENTREE_SALLE[0], y: M.ENTREE_SALLE[1] }, z).ok, 'salle : l\'entrée reste libre');
+  for (let x = 1; x <= 15; x++) if (x !== 4) M.poser(ile, { a: 'caisse', x, y: 7 }, z);
+  ok(!M.posable(ile, { a: 'tonneau', x: 4, y: 7 }, z).ok && M.posable(ile, { a: 'pg:trou', x: 4, y: 7 }, z).ok, 'salle : un mur complet est refusé, un piège non (on marche dessus)');
+  M.poser(ile, { a: 'pg:trou', x: 4, y: 7 }, z); M.poser(ile, { a: 'st:dialga', x: 12, y: 4, dir: 'left' }, z);
+  const cs = M.construireSalle(ile, 0, 0, {}), cv = M.construireSalle(ile, 0, 0, { voir: true });
+  ok(cs.pieges.length === 1 && !cs.deco.some((d) => d.k === 'piege_trou') && cv.deco.some((d) => d.k === 'piege_trou') && cs.defenses.length === 1 && cs.get(...M.ESCALIER_SALLE) === T.STAIRS, 'salle : les pièges sont cachés sauf si on les montre ; la statue surveille ; l\'escalier est en haut');
+  // la coller sur l'île
+  const b = M.besoins(S);
+  ok(b.caisse === undefined && b['pg:trou'] === 1 && b['st:dialga'] === 1, 'salle : collée sur l\'île, elle demande ses pièges et ses défenses en stock');
+  const avant = M.collable(ile, S, 6, 18);
+  ok(!avant.ok && avant.manque.length === 2, 'salle : sans le stock, on ne la colle pas');
+  ile.stock['pg:trou'] = 1; ile.stock['st:dialga'] = 1;
+  const libre = [[6, 18], [8, 16], [10, 18], [36, 23]].find(([x, y]) => M.collable(ile, S, x, y).ok);
+  ok(libre && !M.collable(ile, S, 1, 1).ok, 'salle : collée sur l\'herbe libre, pas dans l\'eau');
+  if (libre) { const t0 = ile.travaux.length; M.coller(ile, S, ...libre); ok(ile.travaux.length === t0 + S.length && !U.enStock(ile, 'pg:trou') && M.cheminLibre(ile), 'salle : collée d\'un bloc, le stock baisse et les chemins restent libres'); }
+  const vieille = M.etatIle({ nom: 'ancienne', fixes: {}, travaux: [], donjons: [], musee: { travaux: [] } });
+  ok(vieille.points === 0 && vieille.stock && vieille.plans.length === 0, 'usine : une île d\'avant l\'usine se relit');
 }
 
 /* ---------------- lieux et équipes ---------------- */

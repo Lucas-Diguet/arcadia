@@ -60,3 +60,16 @@
 .train-horloge { position: absolute; left: 50%; top: calc(var(--px) * 3); font-weight: 700; transform: translateX(-50%); z-index: 11; display: flex; gap: calc(var(--px) * 4); padding: calc(var(--px) * 1.5) calc(var(--px) * 4); background: rgba(14, 18, 28, .85); color: #dfe8ff; border: calc(var(--px) * .6) solid #6ad0a0; border-radius: calc(var(--px) * 2); font-size: calc(var(--px) * 5); pointer-events: none; }
 .train-horloge b { color: #9cffc8; font-variant-numeric: tabular-nums; }
 .train-horloge .urgent b { color: #ff7a6a; }
+/* île : le bouton qui montre ou cache les pièges */
+.ile-voir { position: absolute; right: calc(var(--px) * 4); bottom: calc(var(--px) * 4); z-index: 11; padding: calc(var(--px) * 1.5) calc(var(--px) * 3); font: inherit; font-size: calc(var(--px) * 4.2); color: #dfe8ff; background: rgba(14, 18, 28, .82); border: calc(var(--px) * .6) solid #6a7aa0; border-radius: calc(var(--px) * 2); cursor: pointer; }
+.ile-voir.on { border-color: #f0c040; color: #ffe08a; }
+/* salle d'entraînement : la brume */
+.ile-brume { position: absolute; inset: 0; z-index: 9; pointer-events: none; background: radial-gradient(circle at 50% 52%, rgba(200, 190, 225, .25) 0, rgba(200, 190, 225, .9) 12%, rgba(185, 175, 210, .98) 30%); transition: opacity .9s; animation: ile-brume 3s ease-in-out infinite alternate; }
+.ile-brume.part { opacity: 0; }
+@keyframes ile-brume { from { filter: blur(0); } to { filter: blur(calc(var(--px) * 1.5)); } }
+/* la borne d'arcade : le casse-briques */
+.arcade { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: rgba(4, 4, 10, .78); }
+.arcade-cadre { display: flex; flex-direction: column; align-items: center; gap: calc(var(--px) * 2); padding: calc(var(--px) * 3) calc(var(--px) * 4) calc(var(--px) * 3); background: linear-gradient(#5a3290, #3a1e64); border: calc(var(--px) * 1) solid #1c1030; border-radius: calc(var(--px) * 3); box-shadow: 0 0 calc(var(--px) * 8) rgba(120, 80, 255, .35); }
+.arcade-titre { padding: calc(var(--px) * 1) calc(var(--px) * 6); color: #ffe050; background: #e84a3c; border: calc(var(--px) * .6) solid #1c1030; border-radius: calc(var(--px) * 1.5); font-weight: 700; letter-spacing: .12em; font-size: calc(var(--px) * 5); }
+.arcade canvas { width: min(80vw, calc(var(--px) * 200)); aspect-ratio: 4 / 3; image-rendering: pixelated; border: calc(var(--px) * 1) solid #10142a; border-radius: calc(var(--px) * 1); cursor: none; }
+.arcade-aide { color: #d8c8ff; font-size: calc(var(--px) * 3.6); }

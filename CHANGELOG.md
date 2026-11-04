@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 3.97 — 4 novembre 2026
+- **TestOdyssée** — Île privée : la borne d'arcade, l'usine à pièges et la caserne.
+  - La borne d'arcade se pose sur l'île (catalogue, Loisirs). On y joue au casse-briques : chaque brique cassée rapporte un point d'usine, chaque mur fini quinze de plus.
+  - L'usine à pièges (catalogue, Bâtiments) vend des pièges contre ces points : trou, éboulement, brume, colle, alarme, renvoi, pièges à dégâts I, II et III (10, 30 ou 50 % des PV d'un Pokémon), et piège de combat.
+  - Elle vend aussi les statues de Dialga et de Palkia. Si un intrus passe dans leur regard, la statue s'anime : combat de boss. Elles commencent au niveau 20 et montent de 5 en 5 jusqu'au niveau 70.
+  - La caserne engage des gardes. Celui qui guette défie l'intrus qui passe devant lui. Le garde de combat attend qu'un piège de combat l'appelle. Chaque badge ouvre une nouvelle spécialité et fait monter le niveau des gardes.
+  - Dans la salle d'entraînement de l'usine, on conçoit des parcours de une à cinq salles, sans rien dépenser. On les essaie ensuite en intrus : là, les pièges se déclenchent sur toi. Une salle réussie se colle d'un bloc sur l'île, si tu as les pièges en stock.
+  - Sur ton île, les pièges ne se déclenchent jamais sur toi. Le bouton « Pièges » en bas à droite les montre ou les cache (ils sont cachés par défaut).
+
 ## 3.96 — 4 novembre 2026
 - **TestOdyssée** — Île privée :
   - On passe désormais sous le portique torii, et ses poteaux ne se traversent plus. La fontaine prend deux cases.
