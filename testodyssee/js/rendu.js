@@ -2,6 +2,7 @@
 // sol glacé, et faisceaux de lumière. Branché une fois au démarrage (navigateur seulement).
 import * as THREE from 'three';
 import { WorldView } from '../../odyssee/js/render/world3d.js';
+import { Sol } from '../../odyssee/js/render/sol.js';
 import { T } from '../../odyssee/js/world/tiles.js';
 
 // textures d'Odyssée reprises pour les styles de donjon : clair (miroirs), sable (pyramide)
@@ -12,6 +13,9 @@ const SOLS = new Set([T.CAVE, T.BLOCK, T.CAVEWALL, T.CAVEDOOR, T.FLOOR]);
 
 export function brancherRendu() {
   const P = WorldView.prototype;
+  // donjons à style (clair, bois, sable) : leurs propres sols, pas le sol de grotte généré d'Odyssée
+  const couvre = Sol.prototype.couvre;
+  Sol.prototype.couvre = function (map = this.map) { return !STYLES[map?.style] && couvre.call(this, map); };
   const sol = P.groundCell;
   P.groundCell = function (x, y) {
     const m = this.map, A = this.A.cells;

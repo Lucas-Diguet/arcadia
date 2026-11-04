@@ -8,6 +8,7 @@ import { ITEMS, canUseOn, itemName } from '../core/items.js';
 import { ASSETS, loadImg } from '../assets.js';
 import { TYPE_COL, TYPE_FR, STATUS_FR, hpCol, partyScreen, bagScreen } from './screens.js';
 import { typeEff } from '../core/battle.js';
+import { moveDesc } from '../data/moveDescriptions.js';
 
 const BH = 192;
 const TYPE_FX = {
@@ -34,6 +35,8 @@ function tinted(img, color) {
 }
 const ease = (t) => t * t * (3 - 2 * t);
 
+const BOOST_NAMES = ['Atq', 'Déf', 'Atq Spé', 'Déf Spé', 'Vit', 'Préc', 'Esq'];
+
 export class BattleView {
   constructor(game) { this.game = game; this.ui = game.ui; this.sound = game.sound; }
 
@@ -46,7 +49,7 @@ export class BattleView {
       grad(0, BH, '#3a2e26', '#6a5440');
       x.fillStyle = '#2a201a'; for (let i = 0; i < 9; i++) { const bx = (i * 53) % W, bw = 40 + (i * 17) % 30; x.beginPath(); x.moveTo(bx, 0); x.lineTo(bx + bw / 2, 30 + (i * 13) % 25); x.lineTo(bx + bw, 0); x.fill(); }
       stripes(110, BH, 'rgba(0,0,0,0.12)', 5);
-    } else if (kind === 'indoor' || kind === 'gym' || kind === 'league') {
+    } else if (kind === 'indoor' || kind === 'gym' || kind === 'gym_rock' || kind === 'league' || kind === 'city' || kind === 'village') {
       const [a, b, f1, f2] = kind === 'league' ? ['#3a2c60', '#6a54a0', '#8a78c0', '#b0a0e0'] : kind === 'gym' ? ['#505868', '#8890a8', '#b8c0d0', '#e0e4ee'] : ['#c8b090', '#e0d0b0', '#e8dcc4', '#f6eee0'];
       grad(0, 80, a, b); grad(80, BH, f1, f2);
       x.fillStyle = 'rgba(255,255,255,0.18)'; for (let i = 0; i < W; i += 24) x.fillRect(i, 80, 1, BH - 80);
@@ -74,7 +77,7 @@ export class BattleView {
     return c;
   }
   drawPlatform(x, cx, cy, rx, ry, kind) {
-    const cols = kind === 'cave' ? ['#4a3a2c', '#8a7258', '#a08a6c'] : kind === 'indoor' || kind === 'gym' || kind === 'league' ? ['#9098a8', '#d8dce8', '#f2f4f8'] : kind === 'water' ? ['#c0a060', '#f0dca0', '#fbecc0'] : kind === 'volcanic' ? ['#5a5250', '#8a8280', '#a8a09c'] : kind === 'snow' ? ['#a0b4cc', '#dce8f4', '#ffffff'] : ['#3c8a3c', '#6cc458', '#90dc78'];
+    const cols = kind === 'cave' || kind === 'gym_rock' ? ['#4a3a2c', '#8a7258', '#a08a6c'] : kind === 'indoor' || kind === 'gym' || kind === 'league' || kind === 'city' ? ['#9098a8', '#d8dce8', '#f2f4f8'] : kind === 'water' ? ['#c0a060', '#f0dca0', '#fbecc0'] : kind === 'volcanic' ? ['#5a5250', '#8a8280', '#a8a09c'] : kind === 'snow' ? ['#a0b4cc', '#dce8f4', '#ffffff'] : ['#3c8a3c', '#6cc458', '#90dc78'];
     x.fillStyle = cols[0]; x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, 7); x.fill();
     x.fillStyle = cols[1]; x.beginPath(); x.ellipse(cx, cy - 2, rx - 3, ry - 3, 0, 0, 7); x.fill();
     x.fillStyle = cols[2]; x.beginPath(); x.ellipse(cx - rx * 0.15, cy - 4, rx * 0.55, ry * 0.4, 0, 0, 7); x.fill();
@@ -83,8 +86,11 @@ export class BattleView {
     const bgMap = {
       cave: 'bg_cave',
       gym: 'bg_gym',
+      gym_rock: 'bg_gym_rock',
       league: 'bg_league',
       indoor: 'bg_indoor',
+      city: 'bg_city',
+      village: 'bg_village',
       water: night ? 'bg_water_night' : 'bg_water',
       snow: night ? 'bg_snow_night' : 'bg_snow',
       volcanic: 'bg_volcanic',
@@ -93,8 +99,11 @@ export class BattleView {
     const platMap = {
       cave: 'cave',
       gym: 'stone',
+      gym_rock: 'cave',
       league: 'stone',
       indoor: 'stone',
+      city: 'stone',
+      village: 'grass',
       water: 'water',
       snow: 'snow',
       volcanic: 'volcanic',
@@ -163,7 +172,39 @@ export class BattleView {
       x.fillStyle = p.c;
       if (p.shape === 'ring') { x.strokeStyle = p.c; x.lineWidth = 2; x.beginPath(); x.ellipse(p.x, p.y, p.r, p.r * 0.6, 0, 0, 7); x.stroke(); }
       else if (p.shape === 'bolt') { x.strokeStyle = p.c; x.lineWidth = 2; x.beginPath(); x.moveTo(p.x, p.y); for (let k = 1; k < 5; k++) x.lineTo(p.x + (Math.random() - 0.5) * 10, p.y + k * 7); x.stroke(); }
+      else if (p.shape === 'tornado') {
+        x.save();
+        x.strokeStyle = p.c;
+        x.lineWidth = p.lw || 2;
+        x.beginPath();
+        x.ellipse(p.x, p.y, Math.max(1, p.r), Math.max(1, p.r * 0.32), p.tilt || 0, 0, Math.PI * 2);
+        x.stroke();
+        x.restore();
+      }
       else if (p.shape === 'leaf') { x.save(); x.translate(p.x, p.y); x.rotate(p.a || 0); x.fillRect(-3, -1, 6, 3); x.restore(); }
+      else if (p.shape === 'slash') {
+        x.save(); x.strokeStyle = p.c; x.lineWidth = p.lw || 2.5;
+        x.beginPath();
+        const len = p.len || 16, ang = p.ang != null ? p.ang : (Math.PI / 4);
+        x.moveTo(p.x - Math.cos(ang) * len, p.y - Math.sin(ang) * len);
+        x.lineTo(p.x + Math.cos(ang) * len, p.y + Math.sin(ang) * len);
+        x.stroke();
+        x.restore();
+      }
+      else if (p.shape === 'crystal') {
+        x.save(); x.translate(p.x, p.y); x.rotate(p.a || 0);
+        x.fillStyle = p.c;
+        const cs = p.r || 3;
+        x.beginPath(); x.moveTo(0, -cs); x.lineTo(cs * 0.7, 0); x.lineTo(0, cs); x.lineTo(-cs * 0.7, 0); x.closePath();
+        x.fill();
+        x.restore();
+      }
+      else if (p.shape === 'flame') {
+        x.save(); x.translate(p.x, p.y);
+        x.fillStyle = p.c;
+        x.beginPath(); x.arc(0, 0, Math.max(1, p.r), 0, Math.PI * 2); x.fill();
+        x.restore();
+      }
       else x.fillRect(Math.round(p.x - p.r), Math.round(p.y - p.r), Math.max(1, Math.round(p.r * 2)), Math.max(1, Math.round(p.r * 2)));
       x.globalAlpha = 1;
     }
@@ -172,7 +213,20 @@ export class BattleView {
     if (s.wipe > 0) { x.fillStyle = '#000'; const h = BH / 2 * s.wipe; x.fillRect(0, 0, W, h); x.fillRect(0, BH - h, W, h); }
     // mise à jour des particules
     const dt = 1 / 60;
-    for (const p of s.parts) { p.x += p.vx * dt * 60; p.y += p.vy * dt * 60; p.vy += (p.g || 0); p.life -= dt; if (p.grow) p.r += p.grow; if (p.a != null) p.a += 0.2; }
+    for (const p of s.parts) {
+      if (p.spiral) {
+        p.spiralAngle = (p.spiralAngle || 0) + (p.spiralSpd || 0.2);
+        p.spiralR = (p.spiralR || 0) + (p.spiralRGrow || 0);
+        p.x = p.cx + Math.cos(p.spiralAngle) * p.spiralR;
+      } else {
+        p.x += p.vx * dt * 60;
+      }
+      p.y += p.vy * dt * 60;
+      p.vy += (p.g || 0);
+      p.life -= dt;
+      if (p.grow) p.r += p.grow;
+      if (p.a != null) p.a += (p.va != null ? p.va : 0.2);
+    }
     s.parts = s.parts.filter((p) => p.life > 0);
     requestAnimationFrame(this.frame);
   };
@@ -238,6 +292,7 @@ export class BattleView {
         <div class="bh-top"><span class="bh-name"></span><span class="bh-lv"></span></div>
         <div class="bh-mid"><span class="bh-st"></span><div class="bh-hp"><b>PV</b><i><u></u></i></div></div>
         <div class="bh-caught" title="Déjà capturé"></div>
+        <div class="bh-boosts"></div>
       </div>
       <div class="bhud me">
         <div class="bh-head">
@@ -250,6 +305,7 @@ export class BattleView {
           <div class="bh-exp-wrap"><b>EXP</b><div class="bh-exp"><i><u></u></i></div></div>
           <div class="bh-hpn"></div>
         </div>
+        <div class="bh-boosts"></div>
       </div>
       <div class="battle-weather-badge" style="display:none"></div>
       <div class="dlg box btext"><div class="dlg-name" style="display:none"></div><div class="dlg-txt"></div><div class="dlg-arrow">▼</div></div>
@@ -289,6 +345,12 @@ export class BattleView {
       return `<img class="bh-ball" src="img/battle/ball_${st}.png" alt="">`;
     }).join('');
   }
+  /** crans de stats sous la jauge : « Atq +2 », « Vit −1 »… (verts en hausse, rouges en baisse) */
+  showBoosts(side) {
+    const h = side === 1 ? this.hud?.foe : this.hud?.me, box = h?.querySelector('.bh-boosts'); if (!box) return;
+    const st = this.boosts?.[side] || [];
+    box.innerHTML = BOOST_NAMES.map((n, k) => { const c = st[k + 1] || 0; return c ? `<span class="bh-boost ${c > 0 ? 'up' : 'down'}">${n} ${c > 0 ? '+' : '−'}${Math.abs(c)}</span>` : ''; }).join('');
+  }
   setHud(side, m, hp) {
     if (m && hp == null) hp = m.hp;
     const h = side === 1 ? this.hud.foe : this.hud.me; if (!m) { h.style.visibility = 'hidden'; return; }
@@ -298,7 +360,10 @@ export class BattleView {
     }
     h.style.visibility = '';
     const g = m.gender === 'm' ? '<span class="g m">♂</span>' : m.gender === 'f' ? '<span class="g f">♀</span>' : '';
-    h.querySelector('.bh-name').innerHTML = esc(monName(m)) + g;
+    const trainerTag = this.spectator && this.battle?.sides?.[side]?.name
+      ? `<span class="bh-trainer-tag">${esc(this.battle.sides[side].name)} :</span> `
+      : '';
+    h.querySelector('.bh-name').innerHTML = trainerTag + esc(monName(m)) + g;
     h.querySelector('.bh-lv').textContent = 'N.' + m.lvl;
     const typesEl = h.querySelector('.bh-types');
     if (typesEl) {
@@ -334,6 +399,7 @@ export class BattleView {
     this.seenInBattle = new Set();
     this.W = Math.max(256, Math.min(420, Math.round(BH * innerWidth / innerHeight)));
     this.bg = this.makeBg(this.kind, o.night);
+    this.boosts = null; this.showBoosts(0); this.showBoosts(1);
     this.st = { shakeX: 0, shakeY: 0, eSlide: -this.W, pSlide: this.W, screenFlash: 0, wipe: 0, parts: [], balls: [],
       foe: { visible: false, img: null, scale: 1, alpha: 1, dx: 0, dy: 0, white: 0 }, me: { visible: false, img: null, scale: 1, alpha: 1, dx: 0, dy: 0, white: 0 },
       trainer: { visible: false, img: null, scale: 1, alpha: 1, dx: 0, dy: 0, white: 0 } };
@@ -371,6 +437,159 @@ export class BattleView {
     await wait(300);
     return battle.result;
   }
+
+  /* ---------------- mode spectateur en direct ---------------- */
+  async runSpectate(specSession, o = {}) {
+    const p0 = specSession.p0, p1 = specSession.p1;
+    const b = {
+      pvp: true,
+      spectator: true,
+      state: 'choose',
+      weather: specSession.weather || 'none',
+      weatherTurns: specSession.weatherTurns || 0,
+      turn: specSession.turn || 0,
+      sides: [
+        {
+          name: p0.name,
+          trainer: { cls: 'Dresseur', name: p0.name, bs: p0.bs || 'calem', prize: 0 },
+          party: p0.party || [],
+          active: p0.active ?? 0,
+          v: { st: p0.st ? [...p0.st] : [0, 0, 0, 0, 0, 0, 0, 0] },
+        },
+        {
+          name: p1.name,
+          trainer: { cls: 'Dresseur', name: p1.name, bs: p1.bs || 'serena', prize: 0 },
+          party: p1.party || [],
+          active: p1.active ?? 0,
+          v: { st: p1.st ? [...p1.st] : [0, 0, 0, 0, 0, 0, 0, 0] },
+        },
+      ],
+      act(side) {
+        const s = this.sides[side];
+        return s?.party?.[s.active] || null;
+      },
+      get me() { return this.act(0); },
+      get foe() { return this.act(1); },
+      stages() {
+        return [this.sides[0].v.st, this.sides[1].v.st];
+      },
+    };
+
+    this.battle = b;
+    this.spectator = true;
+    this.kind = o.bg || specSession.bg || 'grass';
+    this.alive = true;
+    this.W = Math.max(256, Math.min(420, Math.round(BH * innerWidth / innerHeight)));
+    this.bg = this.makeBg(this.kind, o.night ?? specSession.night);
+    this.boosts = [b.sides[0].v.st, b.sides[1].v.st];
+    this.st = {
+      shakeX: 0, shakeY: 0, eSlide: 0, pSlide: 0, screenFlash: 0, wipe: 0, parts: [], balls: [],
+      foe: { visible: false, img: null, scale: 1, alpha: 1, dx: 0, dy: 0, white: 0 },
+      me: { visible: false, img: null, scale: 1, alpha: 1, dx: 0, dy: 0, white: 0 },
+      trainer: { visible: false, img: null, scale: 1, alpha: 1, dx: 0, dy: 0, white: 0 },
+    };
+    this.buildDom();
+    this.root.style.setProperty('--bp', (innerHeight / BH) + 'px');
+    this.updateWeather(b.weather);
+    this.setHud(1, null); this.setHud(0, null);
+
+    this.game.sound.playMusic('trainer', 0.25);
+
+    await Promise.all([
+      this.loadBattleDecor(this.kind, o.night ?? specSession.night),
+      this.loadSide(1),
+      this.loadSide(0),
+    ]);
+    requestAnimationFrame(this.frame);
+
+    const m0 = b.act(0), m1 = b.act(1);
+    if (m0 && m0.hp > 0) {
+      this.st.me.visible = true;
+      this.setHud(0, m0);
+    }
+    if (m1 && m1.hp > 0) {
+      this.st.foe.visible = true;
+      this.setHud(1, m1);
+    }
+    this.showBoosts(0);
+    this.showBoosts(1);
+
+    const banner = el('div', 'spectator-banner');
+    banner.innerHTML = `
+      <div class="spec-live-pill"><span class="spec-dot">●</span> EN DIRECT</div>
+      <div class="spec-matchup">${esc(p0.name)} <small>vs</small> ${esc(p1.name)}</div>
+      <button type="button" class="spec-leave-btn" title="Quitter (Échap)">Quitter ✕</button>
+    `;
+    this.root.appendChild(banner);
+
+    let spectatorQuit = false;
+    const leave = () => {
+      if (spectatorQuit) return;
+      spectatorQuit = true;
+      specSession.leave?.();
+    };
+    banner.querySelector('.spec-leave-btn').onclick = leave;
+
+    const popInput = this.game.input.push((k) => {
+      if (k === 'b' || k === 'cancel') leave();
+    });
+
+    this.cmd.innerHTML = `
+      <div class="spec-cmd-box">
+        <div class="spec-cmd-title">👁️ MODE SPECTATEUR</div>
+        <div class="spec-cmd-status">Combat entre ${esc(p0.name)} et ${esc(p1.name)}</div>
+        <button type="button" class="spec-cmd-quit-btn">Quitter le combat</button>
+      </div>
+    `;
+    this.cmd.querySelector('.spec-cmd-quit-btn').onclick = leave;
+
+    await this.msg(`Tu observes le combat en direct entre ${p0.name} et ${p1.name} !`);
+
+    while (!spectatorQuit && b.state !== 'over') {
+      this.ui.typePage(this.textBox, `En attente du tour ${b.turn + 1} de ${p0.name} et ${p1.name}…`, { last: true });
+      const msg = await specSession.waitNext();
+      if (spectatorQuit) break;
+      if (!msg || msg.t === 'left' || msg.t === 'timeout') {
+        await this.msg("Le combat s'est arrêté ou la connexion avec l'hôte a été interrompue.");
+        await wait(1200);
+        break;
+      }
+      if (msg.t === 'spec_ev') {
+        b.turn = msg.turn ?? (b.turn + 1);
+        await this.playSpecEvs(msg.events);
+      }
+      if (msg.t === 'spec_end') {
+        if (msg.events?.length) await this.playSpecEvs(msg.events);
+        b.state = 'over';
+        const winTxt = msg.winner ? `${msg.winner} remporte le combat !` : "Le combat est terminé !";
+        await this.msg(winTxt, { wait: true });
+        await wait(1800);
+        break;
+      }
+    }
+
+    popInput();
+    this.spectator = false;
+  }
+
+  async playSpecEvs(evs) {
+    if (!evs || !evs.length) return;
+    for (const e of evs) {
+      if (e.t === 'send' && Number.isInteger(e.side) && Number.isInteger(e.idx)) {
+        if (this.battle.sides[e.side]) this.battle.sides[e.side].active = e.idx;
+      } else if (e.t === 'hp' && Number.isInteger(e.side)) {
+        const m = this.battle.act(e.side);
+        if (m) m.hp = e.hp;
+      } else if (e.t === 'faint' && Number.isInteger(e.side)) {
+        const m = this.battle.act(e.side);
+        if (m) m.hp = 0;
+      } else if (e.t === 'status' && Number.isInteger(e.side)) {
+        const m = this.battle.act(e.side);
+        if (m) m.status = e.status;
+      }
+    }
+    await this.play(evs);
+  }
   /**
    * combat contre un autre joueur. `duel` fournit l'échange de choix :
    *   duel.sendAct(n, action, sum), duel.waitAct(n) → { action, sum } | { quit } | { left } | { timeout }
@@ -381,6 +600,7 @@ export class BattleView {
     this.battle = battle; this.kind = o.bg || 'grass'; this.alive = true;
     this.W = Math.max(256, Math.min(420, Math.round(BH * innerWidth / innerHeight)));
     this.bg = this.makeBg(this.kind, o.night);
+    this.boosts = null; this.showBoosts(0); this.showBoosts(1);
     this.st = { shakeX: 0, shakeY: 0, eSlide: -this.W, pSlide: this.W, screenFlash: 0, wipe: 0, parts: [], balls: [],
       foe: { visible: false, img: null, scale: 1, alpha: 1, dx: 0, dy: 0, white: 0 }, me: { visible: false, img: null, scale: 1, alpha: 1, dx: 0, dy: 0, white: 0 },
       trainer: { visible: false, img: null, scale: 1, alpha: 1, dx: 0, dy: 0, white: 0 } };
@@ -397,12 +617,21 @@ export class BattleView {
     requestAnimationFrame(this.frame);
     this.st.trainer.visible = true;
     await this.tween(700, (u) => { const e = ease(u); this.st.eSlide = -this.W * (1 - e); this.st.pSlide = this.W * (1 - e); });
-    await this.play(battle.start());
+    const startEvs = battle.start();
+    await this.play(startEvs);
+    duel.broadcastEvents?.(startEvs);
     const waiting = () => this.ui.typePage(this.textBox, `En attente de ${duel.foeName}…`, { last: true });
     const lost = async (r) => {
-      if (r.mine) { await this.play(battle.stop('lose', 'Vous abandonnez le combat...')); return; }
+      if (r.mine) {
+        const stopEvs = battle.stop('lose', 'Vous abandonnez le combat...');
+        await this.play(stopEvs);
+        duel.broadcastEvents?.(stopEvs, true, duel.foeName);
+        return;
+      }
       const why = r.quit ? `${duel.foeName} abandonne le combat !` : r.left ? `${duel.foeName} a quitté la partie.` : r.desync ? 'La connexion a mélangé le combat : il s\'arrête ici, sans vainqueur.' : `${duel.foeName} ne répond plus.`;
-      await this.play(battle.stop(r.desync ? 'draw' : 'win', why));
+      const stopEvs = battle.stop(r.desync ? 'draw' : 'win', why);
+      await this.play(stopEvs);
+      duel.broadcastEvents?.(stopEvs, true, r.quit ? battle.sides[0].name : duel.foeName);
     };
     while (battle.state !== 'over') {
       if (battle.state === 'switch') {
@@ -410,21 +639,25 @@ export class BattleView {
         let mine = null;
         if (battle.need[0]) {
           const party = battle.sides[0].party;
-          mine = await partyScreen(this.game, { mode: 'pick', prompt: 'Envoyer quel Pokémon ?', filter: (m, i) => (m.hp <= 0 ? 'K.O.' : i === battle.sides[0].active ? 'Au combat' : null) });
+          mine = await partyScreen(this.game, { mode: 'pick', pickLabel: 'Envoyer', prompt: 'Envoyer quel Pokémon ?', filter: (m, i) => (m.hp <= 0 ? 'K.O.' : i === battle.sides[0].active ? 'Au combat' : null) });
           if (mine < 0 || !party[mine] || party[mine].hp <= 0) mine = party.findIndex((m) => m.hp > 0);
         }
         duel.sendSwitch(n, mine);
         if (battle.need[1]) waiting();
         const r = await duel.waitSwitch(n);
         if (r.idx === undefined) { await lost(r); break; }
-        await this.play(battle.switchBoth(mine, r.idx));
+        const swEvs = battle.switchBoth(mine, r.idx);
+        await this.play(swEvs);
+        duel.broadcastEvents?.(swEvs);
         continue;
       }
       const action = await this.chooseAction();
       if (!action) continue;
       if (action.type === 'forfeit') {
         duel.sendQuit();
-        await this.play(battle.stop('lose', 'Vous abandonnez le combat...'));
+        const stopEvs = battle.stop('lose', 'Vous abandonnez le combat...');
+        await this.play(stopEvs);
+        duel.broadcastEvents?.(stopEvs, true, duel.foeName);
         break;
       }
       const n = battle.turn + 1, sum = battle.checksum();
@@ -434,7 +667,10 @@ export class BattleView {
       if (!r.action) { await lost(r); break; }
       if (r.sum !== sum) { await lost({ desync: true }); break; }
       battle.remote = r.action;
-      await this.play(battle.playerAction(action));
+      const actEvs = battle.playerAction(action);
+      await this.play(actEvs);
+      const isOver = battle.state === 'over';
+      duel.broadcastEvents?.(actEvs, isOver, isOver ? (battle.result === 'win' ? battle.sides[0].name : duel.foeName) : null);
     }
     await wait(300);
     return battle.result;
@@ -442,8 +678,7 @@ export class BattleView {
 
   async loadSide(side) {
     const m = this.battle.act(side), o = side === 1 ? this.st.foe : this.st.me;
-    o.img = await loadImg(side === 1 ? ASSETS.front(m.sp, m.shiny) : ASSETS.back(m.sp, m.shiny));
-    if (o.img && m.shadow) o.img = shadowCanvas(o.img);   // Pokémon Obscur (Lugia du Sanctuaire)
+    o.img = await loadImg(side === 1 ? ASSETS.front(m.sp, m.shiny, m.shadow) : ASSETS.back(m.sp, m.shiny, m.shadow));   // Pokémon Obscur (Lugia du Sanctuaire)
     o.whiteImg = null; o.darkImg = null;
     if (!o.img) { const c = document.createElement('canvas'); c.width = c.height = 80; const x = c.getContext('2d'); x.fillStyle = TYPE_COL[SPECIES[m.sp].t[0]]; x.beginPath(); x.arc(40, 50, 24, 0, 7); x.fill(); x.fillStyle = '#fff'; x.font = '20px sans-serif'; x.fillText('?', 34, 58); o.img = c; }
   }
@@ -474,7 +709,14 @@ export class BattleView {
         if (k < 0) continue;
         return { type: 'switch', idx: k };
       }
-      if (c === 3) return { type: 'run' };
+      if (c === 3) {
+        if (!b.wild) {
+          this.sound.sfx('bump');
+          await this.msg('Impossible de fuir un combat de Dresseur !', { wait: true });
+          continue;
+        }
+        return { type: 'run' };
+      }
     }
   }
   commandMenu() {
@@ -527,56 +769,123 @@ export class BattleView {
       const foeMon = this.battle.foe;
       const foeKnown = foeMon ? this.game.isSpeciesKnown(foeMon.sp) : false;
       const foeTypes = (foeMon && foeKnown) ? (SPECIES[foeMon.sp]?.t || ['normal']) : null;
-      this.cmd.innerHTML = `<div class="mv-layout">
-        <div class="mv-grid">${[0, 1, 2, 3].map((k) => {
-          const x = m.moves[k];
-          if (!x) return '<div class="mbtn empty"><span class="mn">—</span></div>';
-          const M = MOVES[x.id];
-          const catIcon = `img/battle/cat_${M.c || 'physical'}.png`;
-          const pwTxt = M.p ? `Puis. ${M.p}` : 'Statut';
-          let effBadge = '';
-          if (foeMon && (M.p || M.c !== 'status')) {
-            if (foeKnown && foeTypes) {
-              const eff = typeEff(M.t, foeTypes);
-              if (eff === 0) effBadge = '<span class="bm-eff eff-nul">SANS EFFET</span>';
-              else if (eff >= 2) effBadge = `<span class="bm-eff eff-super">SUPER EFF.${eff > 2 ? ' ×4' : ''}</span>`;
-              else if (eff < 1) effBadge = `<span class="bm-eff eff-weak">PEU EFF.${eff < 0.5 ? ' ×¼' : ''}</span>`;
-              else effBadge = '<span class="bm-eff eff-norm">EFFICACE</span>';
-            } else {
-              const count = this.game.seenCount(foeMon.sp);
-              effBadge = `<span class="bm-eff eff-unk" title="Efficacité inconnue (vu ${count}/3)">???</span>`;
+      this.cmd.innerHTML = `
+        <div class="mv-desc-banner">
+          <div class="mv-desc-head">
+            <span class="mv-desc-name"></span>
+            <span class="mv-desc-type"></span>
+            <span class="mv-desc-cat"></span>
+            <span class="mv-desc-pow"></span>
+            <span class="mv-desc-acc"></span>
+            <span class="mv-desc-pp"></span>
+          </div>
+          <div class="mv-desc-text"></div>
+        </div>
+        <div class="mv-layout">
+          <div class="mv-grid">${[0, 1, 2, 3].map((k) => {
+            const x = m.moves[k];
+            if (!x) return '<div class="mbtn empty"><span class="mn">—</span></div>';
+            const M = MOVES[x.id];
+            const catIcon = `img/battle/cat_${M.c || 'physical'}.png`;
+            const pwTxt = M.p ? `Puis. ${M.p}` : 'Statut';
+            let effBadge = '';
+            if (foeMon && (M.p || M.c !== 'status')) {
+              if (foeKnown && foeTypes) {
+                const eff = typeEff(M.t, foeTypes);
+                if (eff === 0) effBadge = '<span class="bm-eff eff-nul">SANS EFFET</span>';
+                else if (eff >= 2) effBadge = `<span class="bm-eff eff-super">SUPER EFF.${eff > 2 ? ' ×4' : ''}</span>`;
+                else if (eff < 1) effBadge = `<span class="bm-eff eff-weak">PEU EFF.${eff < 0.5 ? ' ×¼' : ''}</span>`;
+                else effBadge = '<span class="bm-eff eff-norm">EFFICACE</span>';
+              } else {
+                const count = this.game.seenCount(foeMon.sp);
+                effBadge = `<span class="bm-eff eff-unk" title="Efficacité inconnue (vu ${count}/3)">???</span>`;
+              }
             }
-          }
-          return `<div class="mbtn" data-i="${k}" style="--tc:${TYPE_COL[M.t]}">
-            <div class="mbtn-top">
-              <span class="mn">${esc(M.n)}</span>
-              <div class="mbtn-top-right">
-                ${effBadge}
-                <img class="mcat" src="${catIcon}" alt="${M.c}">
+            return `<div class="mbtn" data-i="${k}" style="--tc:${TYPE_COL[M.t]}">
+              <div class="mbtn-top">
+                <span class="mn">${esc(M.n)}</span>
+                <div class="mbtn-top-right">
+                  ${effBadge}
+                  <img class="mcat" src="${catIcon}" alt="${M.c}">
+                </div>
               </div>
-            </div>
-            <div class="mbtn-bot">
-              <div class="mbtn-bot-left">
-                <span class="mt">${TYPE_FR[M.t]}</span>
-                <span class="mpw">${pwTxt}</span>
+              <div class="mbtn-bot">
+                <div class="mbtn-bot-left">
+                  <span class="mt">${TYPE_FR[M.t]}</span>
+                  <span class="mpw">${pwTxt}</span>
+                </div>
+                <span class="mpp${x.pp === 0 ? ' zero' : ''}">PP ${x.pp}/${M.pp}</span>
               </div>
-              <span class="mpp${x.pp === 0 ? ' zero' : ''}">PP ${x.pp}/${M.pp}</span>
-            </div>
-          </div>`;
-        }).join('')}</div>
-        <button type="button" class="mv-back-btn" title="Retour (Échap / B)">
-          <span class="mv-back-ico">✕</span>
-          <span class="mv-back-lbl">RETOUR</span>
-        </button>
-      </div>`;
+            </div>`;
+          }).join('')}</div>
+          <button type="button" class="mv-back-btn" title="Retour (Échap / B)">
+            <span class="mv-back-ico">✕</span>
+            <span class="mv-back-lbl">RETOUR</span>
+          </button>
+        </div>`;
       this.cmd.classList.add('on', 'moves');
       this.root.classList.add('cmdon', 'moves-open');
       let i = this.lastMove || 0; if (!m.moves[i]) i = 0;
       const btns = [...this.cmd.querySelectorAll('.mbtn')];
       const backBtn = this.cmd.querySelector('.mv-back-btn');
+      const descName = this.cmd.querySelector('.mv-desc-name');
+      const descType = this.cmd.querySelector('.mv-desc-type');
+      const descCat = this.cmd.querySelector('.mv-desc-cat');
+      const descPow = this.cmd.querySelector('.mv-desc-pow');
+      const descAcc = this.cmd.querySelector('.mv-desc-acc');
+      const descPp = this.cmd.querySelector('.mv-desc-pp');
+      const descText = this.cmd.querySelector('.mv-desc-text');
       const show = () => {
         btns.forEach((b, k) => b.classList.toggle('sel', k === i));
         backBtn?.classList.toggle('sel', i === 4);
+        if (i === 4) {
+          if (descName) descName.textContent = 'RETOUR ✕';
+          if (descType) descType.style.display = 'none';
+          if (descCat) descCat.style.display = 'none';
+          if (descPow) descPow.style.display = 'none';
+          if (descAcc) descAcc.style.display = 'none';
+          if (descPp) descPp.style.display = 'none';
+          if (descText) descText.textContent = 'Annuler et revenir au menu principal des actions (Attaque, Sac, Pokémon, Fuite).';
+        } else {
+          const x = m.moves[i];
+          if (x) {
+            const M = MOVES[x.id];
+            if (descName) {
+              descName.style.display = 'inline-block';
+              descName.textContent = M.n;
+            }
+            if (descType) {
+              descType.style.display = 'inline-block';
+              descType.textContent = TYPE_FR[M.t];
+              descType.style.background = TYPE_COL[M.t];
+            }
+            if (descCat) {
+              descCat.style.display = 'inline-flex';
+              descCat.innerHTML = `<img src="img/battle/cat_${M.c || 'physical'}.png" alt=""><span>${M.c === 'special' ? 'Spécial' : M.c === 'status' ? 'Statut' : 'Physique'}</span>`;
+            }
+            if (descPow) {
+              descPow.style.display = 'inline-block';
+              descPow.textContent = M.p ? `Puis. ${M.p}` : 'Statut';
+            }
+            if (descAcc) {
+              descAcc.style.display = 'inline-block';
+              descAcc.textContent = M.a ? `Préc. ${M.a}%` : 'Préc. —';
+            }
+            if (descPp) {
+              descPp.style.display = 'inline-block';
+              descPp.textContent = `PP ${x.pp}/${M.pp}`;
+            }
+            if (descText) descText.textContent = moveDesc(M);
+          } else {
+            if (descName) descName.textContent = 'Emplacement vide';
+            if (descType) descType.style.display = 'none';
+            if (descCat) descCat.style.display = 'none';
+            if (descPow) descPow.style.display = 'none';
+            if (descAcc) descAcc.style.display = 'none';
+            if (descPp) descPp.style.display = 'none';
+            if (descText) descText.textContent = 'Aucune capacité apprise sur cet emplacement.';
+          }
+        }
       };
       show();
       let done = false;
@@ -637,7 +946,7 @@ export class BattleView {
   }
   async forcedSwitch() {
     const b = this.battle;
-    const k = await partyScreen(this.game, { mode: 'pick', prompt: 'Envoyer quelle créature ?', filter: (m, i) => (m.hp <= 0 ? 'K.O.' : i === b.sides[0].active ? 'Au combat' : null) });
+    const k = await partyScreen(this.game, { mode: 'pick', pickLabel: 'Envoyer', prompt: 'Envoyer quelle créature ?', filter: (m, i) => (m.hp <= 0 ? 'K.O.' : i === b.sides[0].active ? 'Au combat' : null) });
     if (k < 0) return;
     await this.play(b.playerSwitch(k));
   }
@@ -647,13 +956,13 @@ export class BattleView {
     for (const e of evs) {
       switch (e.t) {
         case 'msg': await this.msg(e.text, { wait: this.battle.state === 'over' && /remportez|battu|K\.O\.|perdez|attrapé|panique/.test(e.text) }); break;
-        case 'send': await this.animSend(e.side); break;
+        case 'send': if (this.boosts) this.boosts[e.side] = [0, 0, 0, 0, 0, 0, 0, 0]; this.showBoosts(e.side); await this.animSend(e.side); break;
         case 'recall': await this.animRecall(e.side); break;
         case 'move': await this.animMove(e.side, e.move, e.type); break;
         case 'hit': await this.animHit(e.side, e.eff, e.crit); break;
         case 'hp': await this.animHp(e.side, e.from, e.hp, e.status); break;
         case 'status': { const m = this.battle.act(e.side); this.setHud(e.side, m); if (e.status) { this.sound.sfx('status'); const c = this.sprCenter(e.side); this.burst(c.x, c.y, [STATUS_FR[e.status]?.[1] || '#fff', '#ffffff'], 12, { r: 2 }); await wait(250); } break; }
-        case 'stat': await this.animStat(e.side, e.up); break;
+        case 'stat': if (e.all) this.boosts = e.all; this.showBoosts(0); this.showBoosts(1); if (e.side >= 0) await this.animStat(e.side, e.up); break;
         case 'weather': this.updateWeather(e.weather); break;
         case 'gym-tension': {
           this.sound.play('gymTension');
@@ -707,6 +1016,45 @@ export class BattleView {
     const M = MOVES[moveId], fx = TYPE_FX[type] || TYPE_FX.normal, from = this.sprCenter(side), to = this.sprCenter(1 - side);
     const o = side === 1 ? this.st.foe : this.st.me, dir = side === 1 ? -1 : 1;
     const selfMove = M.tg === 7 || M.c === 'status' && (M.m?.st?.every(([, c]) => c > 0) || M.m?.heal);
+    if (moveId === 10001 || M?.key === 'shadow-blast' || M?.n === 'Rafale Obscure') {
+      await this.animShadowBlast(side, from, to);
+      return;
+    }
+
+    // --- ANIMATIONS VISUELLES AVANCÉES DES ATTAQUES MAJEURES ---
+    const mKey = M?.key || '', mName = M?.n || '';
+    if (['flamethrower', 'fire-blast', 'heat-wave', 'overheat', 'blast-burn', 'flare-blitz'].includes(mKey) || ['Lance-Flammes', 'Déflagration', 'Canicule', 'Surchauffe', 'Rafale Feu', 'Boutefeu'].includes(mName)) {
+      await this.animFlamethrower(side, from, to, mKey === 'fire-blast' || mName === 'Déflagration');
+      return;
+    }
+    if (['hydro-pump', 'surf', 'waterfall', 'scald', 'muddy-water', 'hydro-cannon'].includes(mKey) || ['Hydrocanon', 'Surf', 'Cascade', 'Ébullition', 'Hydroblast'].includes(mName)) {
+      await this.animHydroPump(side, from, to);
+      return;
+    }
+    if (['thunderbolt', 'thunder', 'discharge', 'zap-cannon', 'volt-switch'].includes(mKey) || ['Tonnerre', 'Fatal-Foudre', 'Coup d’Jus', 'Élecanon', 'Change-Éclair'].includes(mName)) {
+      await this.animThunderbolt(side, from, to, mKey === 'thunder' || mName === 'Fatal-Foudre');
+      return;
+    }
+    if (['earthquake', 'earth-power', 'fissure', 'bulldoze', 'magnitude'].includes(mKey) || ['Séisme', 'Telluriforce', 'Abîme', 'Piétinement', 'Ampleur'].includes(mName)) {
+      await this.animEarthquake(side, from, to);
+      return;
+    }
+    if (['ice-beam', 'blizzard', 'sheer-cold', 'freeze-dry', 'glaciate'].includes(mKey) || ['Laser Glace', 'Blizzard', 'Glaciation', 'Lyophilisation'].includes(mName)) {
+      await this.animIceBeam(side, from, to, mKey === 'blizzard' || mName === 'Blizzard');
+      return;
+    }
+    if (['psychic', 'psyshock', 'shadow-ball', 'dark-pulse', 'future-sight'].includes(mKey) || ['Psyko', 'Choc Psy', 'Ball’Ombre', 'Vibrobscur'].includes(mName)) {
+      await this.animPsychicShadow(side, from, to, M?.t === 'ghost' || M?.t === 'dark');
+      return;
+    }
+    if (['razor-leaf', 'leaf-blade', 'leaf-storm', 'petal-dance', 'frenzy-plant'].includes(mKey) || ['Tranch’Herbe', 'Lame Feuille', 'Tempête Verte', 'Danse Fleurs', 'Végé-Attak'].includes(mName)) {
+      await this.animLeafBlade(side, from, to);
+      return;
+    }
+    if (['hyper-beam', 'solar-beam', 'giga-impact', 'focus-blast'].includes(mKey) || ['Ultralaser', 'Lance-Soleil', 'Giga Impact', 'Exploforce'].includes(mName)) {
+      await this.animHyperBeam(side, from, to);
+      return;
+    }
     if (M.c === 'physical') {
       await this.tween(130, (u) => { o.dx = dir * 14 * Math.sin(u * Math.PI / 2); o.dy = -dir * 6 * Math.sin(u * Math.PI / 2); });
       this.burst(to.x, to.y, fx, 16, { speed: 2.4, r: 2 });
@@ -733,6 +1081,451 @@ export class BattleView {
       this.burst(c.x, c.y, fx, 10, { speed: 1, r: 1.5, up: 0.6 });
       await wait(180);
     }
+  }
+  /* ---------------- ANIMATIONS VISUELLES AVANCÉES DES ATTAQUES MAJEURES ---------------- */
+
+  async animFlamethrower(side, from, to, isBlast = false) {
+    const o = side === 1 ? this.st.foe : this.st.me;
+    const dir = side === 1 ? -1 : 1;
+    const flameCols = ['#ffffff', '#fff340', '#ff9800', '#f44336', '#b71c1c'];
+
+    this.sound.sfx('throw');
+    await this.tween(120, (u) => { o.dx = dir * 12 * Math.sin(u * Math.PI); });
+
+    const dur = isBlast ? 560 : 480;
+    const flameCount = isBlast ? 42 : 32;
+    this.sound.sfx('hitstrong');
+
+    await this.tween(dur, (u) => {
+      const emitted = Math.floor(u * flameCount);
+      while ((this._fEmitted || 0) < emitted) {
+        this._fEmitted = (this._fEmitted || 0) + 1;
+        const progress = this._fEmitted / flameCount;
+        const bx = from.x + (to.x - from.x) * progress;
+        const by = (from.y - 6) + (to.y - (from.y - 6)) * progress + Math.sin(progress * Math.PI * 3) * 12;
+        const spread = (Math.random() - 0.5) * (6 + progress * 16);
+        const col = flameCols[Math.floor(Math.random() * flameCols.length)];
+        this.st.parts.push({
+          x: bx + spread,
+          y: by + (Math.random() - 0.5) * 8,
+          vx: (to.x - from.x) * 0.04 + (Math.random() - 0.5) * 0.8,
+          vy: -0.6 - Math.random() * 0.8,
+          r: 2.5 + progress * 4.5,
+          grow: 0.25,
+          c: col,
+          shape: 'flame',
+          life: 0.38,
+          max: 0.38,
+        });
+      }
+    });
+    this._fEmitted = 0;
+
+    this.st.screenFlash = 0.35;
+    this.shakeScreen(isBlast ? 6 : 4, 320);
+    this.burst(to.x, to.y, flameCols, isBlast ? 28 : 20, { speed: 3.2, r: 3.5 });
+    for (let i = 0; i < (isBlast ? 4 : 2); i++) {
+      this.st.parts.push({
+        x: to.x, y: to.y,
+        vx: 0, vy: 0,
+        r: 6 + i * 8, grow: 2.2,
+        shape: 'ring',
+        c: flameCols[i % flameCols.length],
+        life: 0.35, max: 0.35
+      });
+    }
+    await wait(200);
+  }
+
+  async animHydroPump(side, from, to) {
+    const waterCols = ['#e0f7ff', '#80d8ff', '#00b0ff', '#0091ea', '#ffffff'];
+    this.sound.sfx('splash');
+    const dur = 540;
+    const waterCount = 38;
+
+    await this.tween(dur, (u) => {
+      const emitted = Math.floor(u * waterCount);
+      while ((this._wEmitted || 0) < emitted) {
+        this._wEmitted = (this._wEmitted || 0) + 1;
+        const p = this._wEmitted / waterCount;
+        const px = from.x + (to.x - from.x) * p;
+        const py = (from.y - 4) + (to.y - (from.y - 4)) * p - Math.sin(p * Math.PI) * 26;
+        const col = waterCols[Math.floor(Math.random() * waterCols.length)];
+        this.st.parts.push({
+          x: px + (Math.random() - 0.5) * 10,
+          y: py + (Math.random() - 0.5) * 8,
+          vx: (to.x - from.x) * 0.035,
+          vy: 0.8 + Math.random() * 0.8,
+          r: 2 + p * 3.8,
+          grow: 0.15,
+          c: col,
+          life: 0.36,
+          max: 0.36
+        });
+      }
+    });
+    this._wEmitted = 0;
+
+    this.sound.sfx('splash');
+    this.shakeScreen(5, 360);
+    this.burst(to.x, to.y, waterCols, 26, { speed: 3.5, r: 3, up: 1.2 });
+    this.st.parts.push({ x: to.x, y: to.y + 8, vx: 0, vy: 0, r: 10, grow: 2.8, shape: 'ring', c: '#80d8ff', life: 0.38, max: 0.38 });
+    this.st.parts.push({ x: to.x, y: to.y + 8, vx: 0, vy: 0, r: 18, grow: 3.2, shape: 'ring', c: '#ffffff', life: 0.42, max: 0.42 });
+    await wait(220);
+  }
+
+  async animThunderbolt(side, from, to, isThunder = false) {
+    const elecCols = ['#ffffff', '#ffff76', '#ffea00', '#00e5ff'];
+    this.st.screenFlash = -0.2;
+    await wait(70);
+
+    const strikes = isThunder ? 4 : 2;
+    for (let s = 0; s < strikes; s++) {
+      this.sound.sfx('bang');
+      this.st.screenFlash = 0.55;
+      this.shakeScreen(isThunder ? 7 : 5, 220);
+
+      for (let k = 0; k < 3; k++) {
+        this.st.parts.push({
+          x: to.x + (Math.random() - 0.5) * 18,
+          y: -10,
+          vx: 0,
+          vy: 1.8,
+          r: 3,
+          lw: 3,
+          shape: 'bolt',
+          c: elecCols[Math.floor(Math.random() * elecCols.length)],
+          life: 0.28,
+          max: 0.28
+        });
+      }
+
+      this.burst(to.x, to.y, elecCols, 16, { speed: 3.2, r: 2.5 });
+      this.st.parts.push({ x: to.x, y: to.y, vx: 0, vy: 0, r: 8, grow: 2.5, shape: 'ring', c: '#ffea00', life: 0.3, max: 0.3 });
+      await wait(110);
+    }
+    await wait(140);
+  }
+
+  async animEarthquake(side, from, to) {
+    const earthCols = ['#5d4037', '#8d6e63', '#a1887f', '#ffb74d', '#3e2723'];
+    this.sound.sfx('hitstrong');
+    this.shakeScreen(9, 580);
+
+    for (let i = 0; i < 4; i++) {
+      this.st.parts.push({
+        x: to.x,
+        y: to.y + 16,
+        vx: 0, vy: 0,
+        r: 8 + i * 12,
+        grow: 3.6,
+        shape: 'ring',
+        c: earthCols[i % earthCols.length],
+        life: 0.48,
+        max: 0.48
+      });
+      await wait(80);
+    }
+
+    this.sound.sfx('bump');
+    for (let k = 0; k < 22; k++) {
+      this.st.parts.push({
+        x: to.x + (Math.random() - 0.5) * 44,
+        y: to.y + 14,
+        vx: (Math.random() - 0.5) * 2.8,
+        vy: -2.8 - Math.random() * 2.5,
+        g: 0.22,
+        r: 2 + Math.random() * 3,
+        c: earthCols[Math.floor(Math.random() * earthCols.length)],
+        life: 0.48,
+        max: 0.48
+      });
+    }
+    await wait(240);
+  }
+
+  async animIceBeam(side, from, to, isBlizzard = false) {
+    const iceCols = ['#e1f5fe', '#b3e5fc', '#80deea', '#00e5ff', '#ffffff'];
+    this.sound.sfx('stat');
+    const dur = 460;
+    const crystalCount = isBlizzard ? 36 : 26;
+
+    await this.tween(dur, (u) => {
+      const emitted = Math.floor(u * crystalCount);
+      while ((this._iEmitted || 0) < emitted) {
+        this._iEmitted = (this._iEmitted || 0) + 1;
+        const p = this._iEmitted / crystalCount;
+        const px = from.x + (to.x - from.x) * p;
+        const py = from.y + (to.y - from.y) * p + (Math.random() - 0.5) * 8;
+        this.st.parts.push({
+          x: px,
+          y: py,
+          vx: (to.x - from.x) * 0.04,
+          vy: (Math.random() - 0.5) * 0.6,
+          r: 2.5 + Math.random() * 2.5,
+          a: Math.random() * Math.PI,
+          va: 0.15,
+          shape: 'crystal',
+          c: iceCols[Math.floor(Math.random() * iceCols.length)],
+          life: 0.32,
+          max: 0.32
+        });
+      }
+    });
+    this._iEmitted = 0;
+
+    this.sound.sfx('hitweak');
+    this.burst(to.x, to.y, iceCols, 24, { speed: 3.2, r: 2.8 });
+    this.st.parts.push({ x: to.x, y: to.y, vx: 0, vy: 0, r: 12, grow: 2.2, shape: 'ring', c: '#80deea', life: 0.35, max: 0.35 });
+    this.st.parts.push({ x: to.x, y: to.y, vx: 0, vy: 0, r: 20, grow: 2.6, shape: 'ring', c: '#ffffff', life: 0.4, max: 0.4 });
+    await wait(180);
+  }
+
+  async animPsychicShadow(side, from, to, isShadow = false) {
+    const cols = isShadow
+      ? ['#1a052e', '#4a148c', '#7b1fa2', '#d500f9', '#ffffff']
+      : ['#f3e5f5', '#e040fb', '#aa00ff', '#651fff', '#ffffff'];
+
+    this.sound.sfx('stat');
+    await this.tween(380, (u) => {
+      const px = from.x + (to.x - from.x) * ease(u);
+      const py = from.y + (to.y - from.y) * ease(u) - Math.sin(u * Math.PI) * 14;
+      this.st.parts.push({
+        x: px + (Math.random() - 0.5) * 6,
+        y: py + (Math.random() - 0.5) * 6,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        r: 3 + u * 4.5,
+        c: cols[Math.floor(Math.random() * cols.length)],
+        life: 0.28,
+        max: 0.28
+      });
+    });
+
+    this.sound.sfx('poof');
+    this.shakeScreen(4, 280);
+    this.burst(to.x, to.y, cols, 22, { speed: 2.8, r: 3 });
+    this.st.parts.push({ x: to.x, y: to.y, vx: 0, vy: 0, r: 10, grow: 2.6, shape: 'ring', c: cols[1], life: 0.38, max: 0.38 });
+    this.st.parts.push({ x: to.x, y: to.y, vx: 0, vy: 0, r: 18, grow: 3.2, shape: 'ring', c: cols[3], life: 0.42, max: 0.42 });
+    await wait(190);
+  }
+
+  async animLeafBlade(side, from, to) {
+    const leafCols = ['#76ff03', '#00e676', '#00c853', '#1b5e20', '#ffffff'];
+    this.sound.sfx('cut');
+
+    for (let k = 0; k < 20; k++) {
+      const p = k / 20;
+      this.st.parts.push({
+        x: from.x + (to.x - from.x) * p + (Math.random() - 0.5) * 14,
+        y: from.y + (to.y - from.y) * p + Math.sin(p * Math.PI * 2) * 14,
+        vx: (to.x - from.x) * 0.04,
+        vy: -0.4 + Math.random() * 0.8,
+        r: 3,
+        a: Math.random() * Math.PI,
+        va: 0.25,
+        shape: 'leaf',
+        c: leafCols[Math.floor(Math.random() * leafCols.length)],
+        life: 0.38,
+        max: 0.38
+      });
+    }
+    await wait(180);
+
+    this.sound.sfx('cut');
+    this.shakeScreen(3, 200);
+    this.st.parts.push({ x: to.x, y: to.y, vx: 0, vy: 0, shape: 'slash', ang: Math.PI / 4, len: 20, lw: 3, c: '#00e676', life: 0.28, max: 0.28 });
+    this.st.parts.push({ x: to.x, y: to.y, vx: 0, vy: 0, shape: 'slash', ang: -Math.PI / 4, len: 20, lw: 3, c: '#ffffff', life: 0.28, max: 0.28 });
+    this.burst(to.x, to.y, leafCols, 16, { speed: 2.5, r: 2 });
+    await wait(180);
+  }
+
+  async animHyperBeam(side, from, to) {
+    const o = side === 1 ? this.st.foe : this.st.me;
+    const beamCols = ['#ffffff', '#ffea00', '#ff6d00', '#d50000'];
+
+    this.sound.sfx('throw');
+    await this.tween(240, (u) => {
+      o.white = u * 0.6;
+      const ang = Math.random() * Math.PI * 2, dist = 20 * (1 - u);
+      this.st.parts.push({
+        x: from.x + Math.cos(ang) * dist,
+        y: from.y + Math.sin(ang) * dist,
+        vx: -Math.cos(ang) * 1.5,
+        vy: -Math.sin(ang) * 1.5,
+        r: 2,
+        c: '#ffea00',
+        life: 0.22,
+        max: 0.22
+      });
+    });
+
+    this.sound.sfx('hitstrong');
+    this.st.screenFlash = 0.65;
+    this.shakeScreen(8, 480);
+
+    for (let i = 0; i < 28; i++) {
+      const p = i / 28;
+      const px = from.x + (to.x - from.x) * p;
+      const py = from.y + (to.y - from.y) * p;
+      this.st.parts.push({
+        x: px,
+        y: py,
+        vx: 0, vy: 0,
+        r: 5 + (1 - Math.abs(p - 0.5) * 2) * 4,
+        c: beamCols[i % beamCols.length],
+        shape: 'flame',
+        life: 0.35,
+        max: 0.35
+      });
+    }
+
+    this.burst(to.x, to.y, beamCols, 32, { speed: 4.2, r: 4 });
+    for (let r = 0; r < 3; r++) {
+      this.st.parts.push({ x: to.x, y: to.y, vx: 0, vy: 0, r: 12 + r * 10, grow: 3.5, shape: 'ring', c: beamCols[r], life: 0.42, max: 0.42 });
+    }
+    o.white = 0;
+    await wait(260);
+  }
+
+
+  async animShadowBlast(side, from, to) {
+    const o = side === 1 ? this.st.foe : this.st.me;
+    const targetO = side === 1 ? this.st.me : this.st.foe;
+    const shadowCols = ['#1a052e', '#4a148c', '#7b1fa2', '#00e5ff', '#ffffff'];
+
+    // 1. Charge des ténèbres & élévation de Lugia Obscur
+    this.sound.sfx('throw');
+    await this.tween(320, (u) => {
+      o.dy = -16 * ease(u);
+      o.white = 0.45 * u;
+      if (Math.random() < 0.75) {
+        const ang = Math.random() * Math.PI * 2, dist = 24 + Math.random() * 18;
+        const c = shadowCols[Math.floor(Math.random() * shadowCols.length)];
+        this.st.parts.push({
+          x: from.x + Math.cos(ang) * dist,
+          y: (from.y - 14) + Math.sin(ang) * dist,
+          vx: -Math.cos(ang) * 1.9,
+          vy: -Math.sin(ang) * 1.9,
+          r: 1.5 + Math.random() * 1.5,
+          c,
+          life: 0.32,
+          max: 0.32,
+        });
+      }
+    });
+
+    await wait(60);
+
+    // 2. Traînée obscure / projectile fonçant vers la cible
+    this.sound.sfx('throw');
+    await this.tween(150, (u) => {
+      const bx = from.x + (to.x - from.x) * u;
+      const by = (from.y - 14) + (to.y - (from.y - 14)) * u;
+      for (let k = 0; k < 3; k++) {
+        this.st.parts.push({
+          x: bx + (Math.random() - 0.5) * 6,
+          y: by + (Math.random() - 0.5) * 6,
+          vx: (Math.random() - 0.5) * 1.2,
+          vy: (Math.random() - 0.5) * 1.2,
+          r: 2 + Math.random() * 2,
+          c: shadowCols[Math.floor(Math.random() * shadowCols.length)],
+          life: 0.24,
+          max: 0.24,
+          shape: Math.random() < 0.35 ? 'bolt' : null,
+        });
+      }
+    });
+
+    // 3. Déploiement de la Tornade Obscure (Cyclone tourbillonnant)
+    const tornadoDur = 700;
+    const startTornado = performance.now();
+    let lastRing = 0;
+
+    this.shakeScreen(3, 680);
+
+    await this.tween(tornadoDur, (u) => {
+      const elapsed = performance.now() - startTornado;
+      targetO.dx = Math.sin(u * 30) * 2.5;
+
+      // Anneaux de vortex ascendants et s'évasant
+      if (elapsed - lastRing > 60) {
+        lastRing = elapsed;
+        const ringCol = shadowCols[Math.floor(Math.random() * shadowCols.length)];
+        this.st.parts.push({
+          x: to.x + (Math.random() - 0.5) * 4,
+          y: to.y + 14,
+          vx: 0,
+          vy: -2.4 - Math.random() * 0.8,
+          r: 6,
+          grow: 0.72,
+          tilt: (Math.random() - 0.5) * 0.25,
+          lw: 2.2,
+          shape: 'tornado',
+          c: ringCol,
+          life: 0.55,
+          max: 0.55,
+        });
+      }
+
+      // Éclats tourbillonnants en spirale ascendante
+      for (let s = 0; s < 3; s++) {
+        const spd = (0.24 + Math.random() * 0.16) * (Math.random() < 0.5 ? 1 : -1);
+        this.st.parts.push({
+          cx: to.x,
+          x: to.x,
+          y: to.y + 12 + (Math.random() - 0.5) * 8,
+          spiral: true,
+          spiralAngle: Math.random() * Math.PI * 2,
+          spiralR: 4 + Math.random() * 6,
+          spiralRGrow: 0.38 + Math.random() * 0.22,
+          spiralSpd: spd,
+          vx: 0,
+          vy: -2.2 - Math.random() * 1.5,
+          r: 1.5 + Math.random() * 2,
+          c: shadowCols[Math.floor(Math.random() * shadowCols.length)],
+          life: 0.48,
+          max: 0.48,
+        });
+      }
+
+      // Éclairs cyan et violets
+      if (Math.random() < 0.35) {
+        this.st.parts.push({
+          x: to.x + (Math.random() - 0.5) * 18,
+          y: to.y - 18 + (Math.random() - 0.5) * 20,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: -1.2,
+          r: 3,
+          c: Math.random() < 0.5 ? '#00e5ff' : '#e040fb',
+          shape: 'bolt',
+          life: 0.22,
+          max: 0.22,
+        });
+      }
+    });
+
+    targetO.dx = 0;
+
+    // 4. Cataclysme : Flash, déflagration & ondes de choc
+    this.sound.sfx('hitstrong');
+    this.tween(240, (u) => { this.st.screenFlash = 0.85 * (1 - u); });
+
+    this.st.parts.push({ x: to.x, y: to.y - 4, vx: 0, vy: 0, r: 8, grow: 3.5, shape: 'ring', c: '#ffffff', life: 0.36, max: 0.36 });
+    this.st.parts.push({ x: to.x, y: to.y - 4, vx: 0, vy: 0, r: 14, grow: 2.8, shape: 'ring', c: '#00e5ff', life: 0.42, max: 0.42 });
+    this.st.parts.push({ x: to.x, y: to.y - 4, vx: 0, vy: 0, r: 20, grow: 2.2, shape: 'ring', c: '#7b1fa2', life: 0.48, max: 0.48 });
+
+    this.burst(to.x, to.y - 4, shadowCols, 38, { speed: 3.4, r: 2.6 });
+    await this.shakeScreen(7, 500);
+
+    // 5. Atterrissage de Lugia Obscur
+    await this.tween(220, (u) => {
+      o.dy = -16 * (1 - ease(u));
+      o.white = 0.45 * (1 - u);
+    });
+    o.dy = 0;
+    o.white = 0;
+    await wait(80);
   }
   async animHit(side, eff, crit) {
     const o = side === 1 ? this.st.foe : this.st.me;

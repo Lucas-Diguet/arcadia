@@ -54,6 +54,16 @@ export class Battle {
   get me() { return this.sides[0].party[this.sides[0].active]; }
   get foe() { return this.sides[1].party[this.sides[1].active]; }
   act(i) { return this.sides[i].party[this.sides[i].active]; }
+  /** crans de stats des deux Pokémon au combat, à cet instant (pour l'affichage : Atq +2, Vit −1…) */
+  stages() { return this.sides.map((x) => x.v.st.slice()); }
+  /** identifiant du talent du Pokémon actif d'un camp */
+  ab(i) { const m = this.act(i); return m && !isFainted(m) ? getAbility(m)?.id : null; }
+  /** efficacité d'un type contre le Pokémon actif d'un camp (Querelleur : Normal et Combat touchent les Spectres) */
+  effOn(a, d, type) {
+    let t = SPECIES[this.act(d).sp].t;
+    if (this.ab(a) === 'scrappy' && (type === 'normal' || type === 'fighting')) t = t.filter((x) => x !== 'ghost');
+    return typeEff(type, t);
+  }
   r(n) { return Math.floor(this.rng() * n); }
   /** égalité de vitesse : tirage au sort de qui agit en premier (redéfini pour les combats entre joueurs) */
   tie() { return this.rng() < 0.5 ? -1 : 1; }
@@ -86,8 +96,18 @@ export class Battle {
       const foe = this.act(opp);
       if (!isFainted(foe)) {
         this.say(`Le talent Intimidation de ${this.nm(side)} s'active !`);
-        this.boost(opp, 2, -1, true);
+        this.lastUser = side; this.boost(opp, 2, -1, true);
       }
+    } else if (ab.id === 'halo-sylvestre') {
+      const opp = 1 - side;
+      const foe = this.act(opp);
+      if (!isFainted(foe)) {
+        this.say(`Le Halo Sylvestre de ${this.nm(side)} rayonne doucement !`);
+        this.lastUser = side; this.boost(opp, 4, -1, true);
+      }
+    } else if (ab.id === 'coeur-vaillant') {
+      this.say(`Le Cœur Vaillant de ${this.nm(side)} s'enflamme de bravoure !`);
+      this.lastUser = side; this.boost(side, 2, 1, true);
     } else if (ab.id === 'drizzle') {
       this.say(`Le talent Crachin de ${this.nm(side)} fait tomber la pluie !`);
       this.setWeather('rain', 5);
@@ -102,6 +122,17 @@ export class Battle {
       this.setWeather('hail', 5);
     } else if (ab.id === 'pressure') {
       this.say(`${this.Nm(side)} met la pression !`);
+    } else if (ab.id === 'unnerve') {
+      this.say(`${this.Nm(side)} rend nerveuse l'équipe adverse !`);
+    } else if (ab.id === 'mold-breaker') {
+      this.say(`${this.Nm(side)} brise le moule !`);
+    } else if (ab.id === 'cloud-nine' || ab.id === 'air-lock') {
+      if (this.weather && this.weather !== 'none') { this.say(`Les effets de la météo disparaissent !`); this.setWeather('none', 0); }
+    } else if (ab.id === 'frisk') {
+      const f = this.act(1 - side); if (f?.item) this.say(`${this.Nm(side)} fouille ${this.nm(1 - side)} et trouve ${itemName(f.item)} !`);
+    } else if (ab.id === 'anticipation') {
+      const f = this.act(1 - side), me = this.act(side);
+      if (f.moves.some((q) => MOVES[q.id] && MOVES[q.id].c !== 'status' && typeEff(MOVES[q.id].t, SPECIES[me.sp].t) > 1)) this.say(`${this.Nm(side)} frissonne !`);
     }
   }
 
@@ -147,25 +178,34 @@ export class Battle {
   flush() { const e = this.ev; this.ev = []; return e; }
 
   /* ---------------- statistiques effectives ---------------- */
-  stat(i, k, crit = false, atkSide = true) {
-    const m = this.act(i), v = this.sides[i].v; let s = v.st[k];
+  stat(i, k, crit = false, atkSide = true, ignore = false) {
+    const m = this.act(i), v = this.sides[i].v; let s = ignore ? 0 : v.st[k];
     if (crit) s = atkSide ? Math.max(0, s) : Math.min(0, s);
     let x = Math.floor(m.stats[k] * stageMul(s));
     // Objets tenus & Talents influençant les stats
     const ab = getAbility(m);
+    const w = this.weather, id = ab?.id;
     if (k === 1) { // Attaque
       if (m.item === 'choice-band') x = Math.floor(x * 1.5);
-      if (ab?.id === 'guts' && m.status) x = Math.floor(x * 1.5);
+      if (id === 'guts' && m.status) x = Math.floor(x * 1.5);
+      if (id === 'huge-power' || id === 'pure-power') x *= 2;
+      if (id === 'hustle') x = Math.floor(x * 1.5);
+      if (id === 'toxic-boost' && (m.status === 'psn' || m.status === 'tox')) x = Math.floor(x * 1.5);
     } else if (k === 2) { // Défense
       if (m.item === 'eviolite' && SPECIES[m.sp]?.ev?.length) x = Math.floor(x * 1.5);
+      if (id === 'marvel-scale' && m.status) x = Math.floor(x * 1.5);
     } else if (k === 3) { // Atq Spé
       if (m.item === 'choice-specs') x = Math.floor(x * 1.5);
+      if (id === 'solar-power' && w === 'sun') x = Math.floor(x * 1.5);
+      if (id === 'flare-boost' && m.status === 'brn') x = Math.floor(x * 1.5);
     } else if (k === 4) { // Déf Spé
       if (m.item === 'eviolite' && SPECIES[m.sp]?.ev?.length) x = Math.floor(x * 1.5);
       if (this.weather === 'sandstorm' && SPECIES[m.sp]?.t?.includes('rock')) x = Math.floor(x * 1.5);
     } else if (k === 5) { // Vitesse
       if (m.item === 'choice-scarf') x = Math.floor(x * 1.5);
-      if (m.status === 'par') x = Math.floor(x / 4);
+      if ((id === 'swift-swim' && w === 'rain') || (id === 'chlorophyll' && w === 'sun') || (id === 'sand-rush' && w === 'sandstorm')) x *= 2;
+      if (id === 'quick-feet' && m.status) x = Math.floor(x * 1.5);
+      else if (m.status === 'par') x = Math.floor(x / 4);
     }
     return Math.max(1, x);
   }
@@ -187,6 +227,10 @@ export class Battle {
     this.turn++;
     const forced = this.forcedAction(0);
     let a = forced || action;
+    if (a.type === 'run' && !this.wild) {
+      this.turn--;
+      return [{ t: 'msg', text: 'Impossible de fuir un combat de Dresseur !' }];
+    }
     if (a.type === 'move' && a.idx != null) {
       const mv = this.me.moves[a.idx];
       if (!this.usableMoves(0).length) a = { type: 'move', id: 165 };
@@ -216,37 +260,153 @@ export class Battle {
     const usable = this.usableMoves(1);
     if (!usable.length) return { type: 'move', id: 165 };
     if (this.wild) { const k = usable[this.r(usable.length)]; return { type: 'move', id: m.moves[k].id, slot: k }; }
-    // objets de soin du dresseur
+
+    const isSmart = t.ai === 'smart';
+    const isRival = t.cls === 'Rival' || t.rival || this.rival;
+    // 1. Utilisation stratégique des objets de soin par les Champions / Dresseurs
     if (t.items) {
       const ratio = m.hp / m.stats[0];
-      for (const it of ['hyper-potion', 'super-potion', 'potion', 'full-restore']) {
-        if (t.items[it] > 0 && ratio < 0.28 && this.rng() < 0.75) { t.items[it]--; return { type: 'item', item: it, foe: true }; }
+      const hasStatus = !!m.status;
+      const isAceOrLast = !side.party.some((p, idx) => idx !== side.active && p.hp > 0);
+      const healThreshold = (isSmart || isRival) ? (isAceOrLast ? 0.52 : 0.44) : 0.28;
+
+      // Si altéré par un statut grave (sommeil, gel, poison, brûlure, paralysie) et qu'on a un Guérison
+      if (hasStatus && t.items['full-restore'] > 0 && (ratio < 0.75 || this.rng() < 0.85)) {
+        t.items['full-restore']--;
+        return { type: 'item', item: 'full-restore', foe: true };
+      }
+
+      // Si les PV sont en zone critique, choisir le meilleur soin disponible
+      if (ratio <= healThreshold) {
+        const canUse = !isSmart ? this.rng() < 0.85 : true;
+        if (canUse) {
+          const needed = m.stats[0] - m.hp;
+          let chosen = null;
+          if (t.items['full-restore'] > 0 && (hasStatus || needed > 120)) chosen = 'full-restore';
+          else if (t.items['hyper-potion'] > 0 && needed > 90) chosen = 'hyper-potion';
+          else if (t.items['super-potion'] > 0 && needed > 35) chosen = 'super-potion';
+          else if (t.items['potion'] > 0) chosen = 'potion';
+          else if (t.items['hyper-potion'] > 0) chosen = 'hyper-potion';
+          else if (t.items['full-restore'] > 0) chosen = 'full-restore';
+
+          if (chosen) {
+            t.items[chosen]--;
+            return { type: 'item', item: chosen, foe: true };
+          }
+        }
       }
     }
+
+    // 2. Évaluation tactique avancée des capacités (IA de très haut niveau)
+    const playerMon = this.me;
+    const playerType = SPECIES[playerMon.sp]?.t || ['normal'];
+    const mySpeed = this.stat(1, 5);
+    const playerSpeed = this.stat(0, 5);
+    const amFaster = mySpeed >= playerSpeed;
+
     const scores = usable.map((k) => {
       const mv = MOVES[m.moves[k].id];
-      let s;
+      let s = 10;
       if (mv.c !== 'status' && (mv.p > 0 || mv.m?.u)) {
+        const mvType = this.moveType(1, mv);
+        const eff = typeEff(mvType, playerType);
+
+        // Si l'attaque n'a AUCUN effet (immunité de type), ne JAMAIS la choisir
+        if (eff === 0) return { k, s: 0.0001 };
+
         const d = this.estimate(1, 0, mv);
-        s = d * ((mv.a || 100) / 100);
-        if (d >= this.me.hp) s *= 1.6;
-        if (mv.m?.recharge || mv.m?.boom) s *= 0.6;
+        const acc = (mv.a || 100) / 100;
+        s = d * acc;
+
+        // KO stratégique : coup fatal prioritaire absolu
+        if (d >= playerMon.hp) {
+          s *= 3.8;
+          // Si c'est une attaque prioritaire (+1) et qu'on est plus lent, énorme priorité de finition
+          if (mv.pr && mv.pr > 0) s *= 5.0;
+        }
+
+        // Pénalités de contrecoup / recharge
+        if (eff >= 2) s *= (eff >= 4 ? 1.75 : 1.35);
+        if (mv.m?.recharge) s *= 0.5;
+        if (mv.m?.boom) {
+          s = (m.hp < m.stats[0] * 0.22 && d >= playerMon.hp) ? s * 1.5 : s * 0.04;
+        }
+
+        // Bonus STAB (même type que le lanceur)
+        const myTypes = SPECIES[m.sp]?.t || [];
+        if (myTypes.includes(mvType)) s *= 1.3;
+
+        // Bonus d'apeurement si plus rapide
+        if (mv.m?.flinch && amFaster) s *= 1.25;
+
+        // Bonus coup critique
+        if (mv.m?.crit) s *= 1.15;
       } else {
+        // Capacités de statut
         const x = mv.m || {};
-        if (x.ail && !['conf', 'seed', 'trap'].includes(x.ail)) s = this.me.status ? 0 : this.me.stats[0] * 0.28;
-        else if (x.ail === 'conf') s = this.sides[0].v.conf ? 0 : this.me.stats[0] * 0.18;
-        else if (x.ail === 'seed') s = this.sides[0].v.seed || this.me && SPECIES[this.me.sp].t.includes('grass') ? 0 : this.me.stats[0] * 0.2;
-        else if (x.heal || x.u === 'rest') s = m.hp < m.stats[0] * 0.45 ? m.stats[0] * 0.5 : 0;
-        else if (x.st) s = this.sides[1].v.turns < 2 ? this.me.stats[0] * 0.15 : this.me.stats[0] * 0.03;
-        else s = this.me.stats[0] * 0.05;
+
+        // Soin
+        if (x.heal || x.u === 'rest') {
+          if (m.hp < m.stats[0] * 0.45) s = playerMon.stats[0] * 1.4;
+          else if (m.hp < m.stats[0] * 0.65) s = playerMon.stats[0] * 0.55;
+          else s = 0.001;
+        }
+        // Statut pénalisant (sommeil, paralysie, poison, brûlure)
+        else if (x.ail && !['conf', 'seed', 'trap'].includes(x.ail)) {
+          if (playerMon.status) {
+            s = 0.001; // déjà altéré
+          } else {
+            const cannot = (x.ail === 'psn' && (playerType.includes('poison') || playerType.includes('steel'))) ||
+                           (x.ail === 'brn' && playerType.includes('fire')) ||
+                           (x.ail === 'par' && playerType.includes('electric'));
+            if (cannot) s = 0.001;
+            else s = playerMon.stats[0] * (x.ail === 'slp' ? 1.85 : 1.4);
+          }
+        }
+        // Confusion
+        else if (x.ail === 'conf') {
+          s = this.sides[0].v.conf ? 0.001 : playerMon.stats[0] * 0.7;
+        }
+        // Vampigraine
+        else if (x.ail === 'seed') {
+          s = (this.sides[0].v.seed || playerType.includes('grass')) ? 0.001 : playerMon.stats[0] * 0.95;
+        }
+        // Boost de statistiques
+        else if (x.st) {
+          const turn = this.sides[1].v.turns;
+          const isAtkBoost = x.st.some(([stat, amt]) => (stat === 1 || stat === 3) && amt > 0);
+          const curStage = Math.max(this.sides[1].v.st[1] || 0, this.sides[1].v.st[3] || 0);
+          if (curStage < 2 && m.hp >= m.stats[0] * 0.50) {
+            s = isAtkBoost ? playerMon.stats[0] * 1.3 : playerMon.stats[0] * 0.85;
+          } else {
+            s = playerMon.stats[0] * 0.1;
+          }
+        }
+        // Protection / Abri
+        else if (mv.key === 'protect' || mv.key === 'detect') {
+          if (this.sides[1].v.protChain > 0) s = 0.001;
+          else if (this.sides[0].v.seed || playerMon.status === 'tox') s = playerMon.stats[0] * 1.0;
+          else s = playerMon.stats[0] * 0.35;
+        }
+        else {
+          s = playerMon.stats[0] * 0.2;
+        }
       }
       return { k, s: Math.max(0.01, s) };
     });
+
     let pick;
-    if (t.ai === 'smart' && this.rng() < 0.8) pick = scores.reduce((a, b) => (b.s > a.s ? b : a));
-    else {
-      const tot = scores.reduce((a, x) => a + x.s * x.s, 0); let r = this.rng() * tot; pick = scores[0];
-      for (const x of scores) { r -= x.s * x.s; if (r <= 0) { pick = x; break; } }
+    if (isSmart || isRival) {
+      // Pour une IA très forte : prend TOUJOURS la décision la plus optimale
+      pick = scores.reduce((a, b) => (b.s > a.s ? b : a));
+    } else {
+      const tot = scores.reduce((a, x) => a + x.s * x.s, 0);
+      let r = this.rng() * tot;
+      pick = scores[0];
+      for (const x of scores) {
+        r -= x.s * x.s;
+        if (r <= 0) { pick = x; break; }
+      }
     }
     return { type: 'move', id: m.moves[pick.k].id, slot: pick.k };
   }
@@ -293,7 +453,11 @@ export class Battle {
       for (const x of switched) this.triggerEntry(x.i);
     }
     const movers = acts.filter((x) => !x.done);
-    const prio = (x) => (x.a.type === 'move' ? MOVES[x.a.id].pr : 0);
+    const prio = (x) => {
+      if (x.a.type !== 'move') return 0;
+      const mv = MOVES[x.a.id], id = this.ab(x.i);
+      return mv.pr + ((id === 'prankster' && mv.c === 'status') || (id === 'gale-wings' && mv.t === 'flying') ? 1 : 0);
+    };
     movers.sort((p, q) => prio(q) - prio(p) || this.stat(q.i, 5) - this.stat(p.i, 5) || this.tie(p, q));
     movers.forEach((x, n) => { x.first = n === 0 && movers.length === 2; });
     for (const x of movers) {
@@ -309,6 +473,10 @@ export class Battle {
   tryRun() {
     if (!this.wild) { this.say('Impossible de fuir un combat de Dresseur !'); return false; }
     this.runTries++;
+    if (this.ab(0) === 'run-away') { this.ev.push({ t: 'sfx', k: 'run' }); this.say('Vous prenez la fuite !'); this.end('run'); return true; }
+    if ((this.ab(1) === 'shadow-tag' && this.ab(0) !== 'shadow-tag') || (this.ab(1) === 'arena-trap' && !SPECIES[this.me.sp].t.includes('flying') && this.ab(0) !== 'levitate')) {
+      this.say(`${this.Nm(1)} empêche la fuite !`); return false;
+    }
     const a = this.stat(0, 5), b = this.stat(1, 5);
     const f = Math.floor(a * 128 / b) + 30 * this.runTries;
     if (a >= b || f > 255 || this.r(256) < f) { this.ev.push({ t: 'sfx', k: 'run' }); this.say('Vous prenez la fuite !'); this.end('run'); return true; }
@@ -319,6 +487,9 @@ export class Battle {
     const side = this.sides[i];
     if (!afterFaint) { this.say(i === 0 ? `${monName(this.me)}, reviens !` : `${side.trainer.cls} ${side.trainer.name} rappelle ${monName(this.foe)} !`); this.ev.push({ t: 'recall', side: i }); }
     if (side.v.seed) { /* la graine part avec le Pokémon */ }
+    { const out = this.act(i), id = this.ab(i);
+      if (out && !isFainted(out) && id === 'natural-cure' && out.status) { out.status = null; out.slp = 0; out.tox = 0; }
+      if (out && !isFainted(out) && id === 'regenerator') out.hp = Math.min(out.stats[0], out.hp + Math.floor(out.stats[0] / 3)); }
     side.active = idx; side.v = freshVol();
     this.ev.push({ t: 'send', side: i, idx });
     if (i === 0) { this.say(`En avant ! ${monName(this.me)} !`); this.participants.add(this.me.uid); }
@@ -389,9 +560,10 @@ export class Battle {
   damageCore(a, d, mv, power, type, crit, rand) {
     const A = this.act(a), D = this.act(d);
     const phys = mv.c === 'physical';
-    const atk = this.stat(a, phys ? 1 : 3, crit, true), def = this.stat(d, phys ? 2 : 4, crit, false);
+    const aId = this.ab(a), dId = this.ab(d), x = mv.m || {};
+    const atk = this.stat(a, phys ? 1 : 3, crit, true, dId === 'unaware'), def = this.stat(d, phys ? 2 : 4, crit, false, aId === 'unaware');
     let dmg = Math.floor(Math.floor(Math.floor(2 * A.lvl / 5 + 2) * power * atk / def) / 50);
-    if (phys && A.status === 'brn') dmg = Math.floor(dmg / 2);
+    if (phys && A.status === 'brn' && aId !== 'guts') dmg = Math.floor(dmg / 2);
     const scr = this.sides[d].screens;
     if (!crit && ((phys && scr.reflect) || (!phys && scr.light))) dmg = Math.floor(dmg / 2);
     dmg += 2;
@@ -414,6 +586,13 @@ export class Battle {
     if (aAb?.id === 'technician' && power <= 60) {
       dmg = Math.floor(dmg * 1.5);
     }
+    // autres talents de l'attaquant
+    if (aId === 'iron-fist' && /punch|poing/.test(mv.key || '')) dmg = Math.floor(dmg * 1.2);
+    if (aId === 'reckless' && x.drain < 0) dmg = Math.floor(dmg * 1.2);
+    if (aId === 'sheer-force' && (x.ailc || x.stc || x.flinch)) dmg = Math.floor(dmg * 1.3);
+    if (aId === 'sand-force' && this.weather === 'sandstorm' && ['rock', 'ground', 'steel'].includes(type)) dmg = Math.floor(dmg * 1.3);
+    if (aId === 'sniper' && crit) dmg = Math.floor(dmg * 1.5);
+    if (type === 'fire' && this.sides[a].v.flashFire) dmg = Math.floor(dmg * 1.5);
     // Objets tenus boostant un type (+20%)
     const typeBoosters = {
       fire: 'charcoal', water: 'mystic-water', grass: 'miracle-seed',
@@ -438,11 +617,17 @@ export class Battle {
       else if (type === 'water') dmg = Math.floor(dmg * 0.5);
     }
     // Efficacité des types
-    dmg = Math.floor(dmg * typeEff(type, SPECIES[D.sp].t));
-    // Talent Isograisse du défenseur
+    const eff = this.effOn(a, d, type);
+    dmg = Math.floor(dmg * eff);
+    if (aId === 'tinted-lens' && eff > 0 && eff < 1) dmg *= 2;
+    // Talents du défenseur
     if (dAb?.id === 'thick-fat' && (type === 'fire' || type === 'ice')) {
       dmg = Math.floor(dmg / 2);
     }
+    if (dId === 'heatproof' && type === 'fire') dmg = Math.floor(dmg / 2);
+    if (dId === 'dry-skin' && type === 'fire') dmg = Math.floor(dmg * 1.25);
+    if ((dId === 'filter' || dId === 'solid-rock') && eff > 1) dmg = Math.floor(dmg * 0.75);
+    if (dId === 'multiscale' && D.hp === D.stats[0]) dmg = Math.floor(dmg / 2);
     return Math.max(1, dmg);
   }
 
@@ -462,11 +647,11 @@ export class Battle {
       else { this.say(`${this.Nm(i)} est gelé !`); v.charge = null; v.rampage = null; return; }
     }
     if (m.status === 'slp') {
-      m.slp--;
+      m.slp -= this.ab(i) === 'early-bird' ? 2 : 1;
       if (m.slp <= 0) { m.status = null; this.ev.push({ t: 'status', side: i, status: null }); this.say(`${this.Nm(i)} se réveille !`); }
       else { this.ev.push({ t: 'anim', side: i, k: 'sleep' }); this.say(`${this.Nm(i)} dort profondément.`); v.charge = null; v.rampage = null; return; }
     }
-    if (v.flinch) { this.say(`${this.Nm(i)} a peur ! Il ne peut pas attaquer !`); v.charge = null; return; }
+    if (v.flinch && this.ab(i) !== 'inner-focus' && this.ab(i) !== 'coeur-vaillant') { this.say(`${this.Nm(i)} a peur ! Il ne peut pas attaquer !`); v.charge = null; return; }
     if (v.conf > 0) {
       v.conf--;
       if (v.conf === 0) this.say(`${this.Nm(i)} n'est plus confus !`);
@@ -497,8 +682,10 @@ export class Battle {
     const charged = v.charge === mv.id; v.charge = null;
     if (v.invuln) { v.invuln = null; this.ev.push({ t: 'hide', side: i, on: false }); }
 
-    // PP
-    if (!charged && !v.rampage && mv.id !== 165) { const slot = a.slot ?? m.moves.findIndex((q) => q.id === mv.id); if (slot >= 0 && m.moves[slot]) m.moves[slot].pp = Math.max(0, m.moves[slot].pp - 1); }
+    // Absentéisme : un tour sur deux à paresser
+    if (this.ab(i) === 'truant') { v.loaf = !v.loaf; if (!v.loaf) { this.say(`${this.Nm(i)} paresse !`); return; } }
+    // PP (Pression : deux PP)
+    if (!charged && !v.rampage && mv.id !== 165) { const slot = a.slot ?? m.moves.findIndex((q) => q.id === mv.id); if (slot >= 0 && m.moves[slot]) m.moves[slot].pp = Math.max(0, m.moves[slot].pp - (this.ab(d) === 'pressure' ? 2 : 1)); }
     this.say(`${this.Nm(i)} utilise ${mv.n} !`);
     if (mv.id === 165) { /* Lutte */ }
     if (x.rampage && !v.rampage) v.rampage = { id: mv.id, turns: 2 + this.r(2) };
@@ -524,6 +711,7 @@ export class Battle {
     }
     this.ev.push({ t: 'move', side: i, move: mv.id, type: this.moveType(i, mv) });
 
+    if (!selfTarget && this.ab(d) === 'soundproof' && ['growl', 'roar', 'sing', 'supersonic', 'screech', 'snore', 'uproar', 'hyper-voice', 'bug-buzz', 'perish-song', 'metal-sound', 'grass-whistle', 'echoed-voice', 'round', 'chatter', 'boomburst', 'disarming-voice', 'snarl', 'noble-roar', 'parting-shot'].includes(mv.key)) { this.say(`Anti-Bruit protège ${this.nm(d)} !`); v.rampage = null; return; }
     // attaques à effet unique / sans dégâts directs
     if (this.special(i, d, mv)) { this.afterRampage(i); return; }
 
@@ -549,21 +737,26 @@ export class Battle {
     }
     if (type === 'fire' && tAb?.id === 'flash-fire') {
       this.say(`Torche absorbe les flammes et renforce ${this.nm(d)} !`);
-      v.rampage = null; return;
+      tv.flashFire = true; v.rampage = null; return;
     }
-    const eff = typeEff(type, SPECIES[T.sp].t);
+    if (type === 'water' && tAb?.id === 'dry-skin') { this.say(`Peau Sèche absorbe l'eau et soigne ${this.nm(d)} !`); this.hp(d, Math.floor(T.stats[0] / 4)); v.rampage = null; return; }
+    const absorb = { 'storm-drain': ['water', 4], 'lightning-rod': ['electric', 4], 'motor-drive': ['electric', 6], 'sap-sipper': ['grass', 2] }[tAb?.id];
+    if (absorb && absorb[0] === type) { this.say(`${tAb.name} attire l'attaque vers ${this.nm(d)} !`); this.lastUser = d; this.boost(d, absorb[1], 1, true); v.rampage = null; return; }
+    const eff = this.effOn(i, d, type);
+    if (tAb?.id === 'wonder-guard' && eff <= 1 && this.fixedDamage(i, d, mv) == null) { this.say(`Garde Mystik protège ${this.nm(d)} !`); v.rampage = null; return; }
     if (eff === 0) { this.say(`Ça n'affecte pas ${this.nm(d)}...`); v.rampage = null; return; }
     if (x.cat === 9) {
-      if (T.lvl > m.lvl) { this.say('Mais cela échoue !'); return; }
+      if (T.lvl > m.lvl || tAb?.id === 'sturdy') { this.say('Mais cela échoue !'); return; }
       this.ev.push({ t: 'hit', side: d, eff: 2 });
       this.hp(d, -T.hp); this.say('K.O. en un coup !'); return;
     }
     let hits = 1;
-    if (x.h0) hits = x.h0 === x.h1 ? x.h0 : x.h0 === 2 && x.h1 === 5 ? [2, 2, 2, 3, 3, 3, 4, 5][this.r(8)] : x.h0 + this.r(x.h1 - x.h0 + 1);
+    if (x.h0) hits = x.h0 === x.h1 ? x.h0 : this.ab(i) === 'skill-link' ? x.h1 : x.h0 === 2 && x.h1 === 5 ? [2, 2, 2, 3, 3, 3, 4, 5][this.r(8)] : x.h0 + this.r(x.h1 - x.h0 + 1);
     let total = 0, n = 0, critAny = false;
     for (; n < hits; n++) {
       if (isFainted(T)) break;
-      const crit = this.r(16) < [1, 2, 4, 5, 8][Math.min(4, x.crit || 0)];
+      const noCrit = tAb?.id === 'battle-armor' || tAb?.id === 'shell-armor';
+      const crit = !noCrit && this.r(16) < [1, 2, 4, 5, 8][Math.min(4, (x.crit || 0) + (this.ab(i) === 'super-luck' ? 1 : 0))];
       let p = this.movePower(i, d, mv);
       if (tv.invuln === 'dig' && ['earthquake', 'magnitude'].includes(mv.key)) p *= 2;
       let dmg = this.fixedDamage(i, d, mv);
@@ -585,7 +778,7 @@ export class Battle {
       this.ev.push({ t: 'hit', side: d, eff: this.fixedDamage(i, d, mv) != null ? 1 : eff, crit });
       this.hp(d, -dmg);
       tv.dmgTaken = { amount: dmg, c: mv.c };
-      total += dmg; if (crit) { critAny = true; this.say('Coup critique !'); }
+      total += dmg; if (crit) { critAny = true; this.say('Coup critique !'); if (tAb?.id === 'anger-point' && !isFainted(T)) { this.say(`Colérique de ${this.nm(d)} monte son Attaque au maximum !`); this.sides[d].v.st[1] = 6; this.ev.push({ t: 'stat', side: d, up: true, all: this.stages() }); } }
     }
     if (this.fixedDamage(i, d, mv) == null) {
       if (eff > 1) this.say('C\'est super efficace !');
@@ -594,9 +787,9 @@ export class Battle {
     if (hits > 1) this.say(`Touché ${n} fois !`);
     // drain / recul
     if (x.drain > 0 && total > 0 && !isFainted(m)) { const h = Math.max(1, Math.floor(total * x.drain / 100)); if (this.hp(i, h)) this.say(`${this.Nm(d)} a perdu de l'énergie !`); }
-    if (x.drain < 0 && total > 0) { this.hp(i, -Math.max(1, Math.floor(total * -x.drain / 100))); this.say(`${this.Nm(i)} est blessé par le contrecoup !`); }
+    if (x.drain < 0 && total > 0 && this.ab(i) !== 'rock-head' && this.ab(i) !== 'magic-guard') { this.hp(i, -Math.max(1, Math.floor(total * -x.drain / 100))); this.say(`${this.Nm(i)} est blessé par le contrecoup !`); }
     // Recul de l'Orbe Vie
-    if (m.item === 'life-orb' && total > 0 && !isFainted(m)) {
+    if (m.item === 'life-orb' && total > 0 && !isFainted(m) && this.ab(i) !== 'magic-guard') {
       this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 10)));
       this.say(`L'Orbe Vie draine un peu d'énergie de ${this.nm(i)} !`);
     }
@@ -616,10 +809,22 @@ export class Battle {
       if (tAb?.id === 'flame-body' && this.r(100) < 30) {
         this.inflict(i, 'brn', mv, true);
       }
+      if (tAb?.id === 'cire-brulante') {
+        this.say(`La Cire Brûlante de ${this.nm(d)} jaillit !`);
+        if (this.r(100) < 30) this.inflict(i, 'brn', mv, true);
+        this.lastUser = d; this.boost(i, 6, -1, true);
+      }
       if (tAb?.id === 'poison-point' && this.r(100) < 30) {
         this.inflict(i, 'psn', mv, true);
       }
+      if (tAb?.id === 'iron-barbs') { this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 8))); this.say(`Épine de Fer de ${this.nm(d)} blesse ${this.nm(i)} !`); }
+      if (tAb?.id === 'effect-spore' && this.r(100) < 30 && !SPECIES[m.sp].t.includes('grass')) this.inflict(i, ['psn', 'par', 'slp'][this.r(3)], mv, true);
+      if (tAb?.id === 'gooey') { this.lastUser = d; this.boost(i, 6, -1, true); }
+      if (tAb?.id === 'cute-charm' && this.r(100) < 30 && m.gender && T.gender && m.gender !== T.gender && !this.sides[i].v.conf) { this.sides[i].v.conf = 2 + this.r(4); this.say(`Joli Sourire de ${this.nm(d)} rend ${this.nm(i)} confus !`); }
+      if (this.ab(i) === 'poison-touch' && this.r(100) < 30) this.inflict(d, 'psn', mv, true);
     }
+    if (mv.c === 'physical' && total > 0 && isFainted(T) && tAb?.id === 'aftermath' && !isFainted(m)) { this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 4))); this.say(`Boom Final de ${this.nm(d)} blesse ${this.nm(i)} !`); }
+    if (total > 0 && isFainted(T) && this.ab(i) === 'moxie') this.boost(i, 2, 1, true);
     this.checkBerries(d);
     this.checkBerries(i);
     if (mv.id === 165) { this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 4))); this.say(`${this.Nm(i)} est blessé par le contrecoup !`); }
@@ -627,11 +832,15 @@ export class Battle {
     if (x.recharge && !isFainted(T)) v.recharge = true;
     else if (x.recharge) v.recharge = true;
     // effets secondaires
-    if (!isFainted(T)) {
-      if (x.flinch && first && this.r(100) < x.flinch) tv.flinch = true;
-      if (x.ail && x.ailc && this.r(100) < x.ailc) this.inflict(d, x.ail, mv, true);
-      if (x.st && x.stc && this.r(100) < x.stc) for (const [s, c] of x.st) this.boost(x.cat === 7 ? i : d, s, c, true);
-    } else if (x.st && x.cat === 7 && x.stc && this.r(100) < x.stc) for (const [s, c] of x.st) this.boost(i, s, c, true);
+    const ch = (c) => (this.ab(i) === 'serene-grace' ? c * 2 : c), noSec = this.ab(i) === 'sheer-force' || (tAb?.id === 'shield-dust');
+    if (!isFainted(T) && !noSec) {
+      if (x.flinch && first && this.r(100) < ch(x.flinch)) {
+        if (tAb?.id === 'inner-focus' || tAb?.id === 'coeur-vaillant') { /* Attention ou Cœur Vaillant : n'a pas peur */ }
+        else { tv.flinch = true; if (tAb?.id === 'steadfast') { this.lastUser = d; this.boost(d, 6, 1, true); } }
+      }
+      if (x.ail && x.ailc && this.r(100) < ch(x.ailc)) this.inflict(d, x.ail, mv, true);
+      if (x.st && x.stc && this.r(100) < ch(x.stc)) for (const [s, c] of x.st) this.boost(x.cat === 7 ? i : d, s, c, true);
+    } else if (x.st && x.cat === 7 && x.stc && this.ab(i) !== 'sheer-force' && this.r(100) < ch(x.stc)) for (const [s, c] of x.st) this.boost(i, s, c, true);
     if (T.status === 'frz' && type === 'fire' && !isFainted(T)) { T.status = null; this.ev.push({ t: 'status', side: d, status: null }); this.say(`${this.Nm(d)} n'est plus gelé !`); }
     this.afterRampage(i);
   }
@@ -648,8 +857,16 @@ export class Battle {
     }
     if (x.cat === 9) return this.r(100) < 30 + (this.act(i).lvl - this.act(d).lvl);
     if (mv.a == null || x.sure) return true;
-    const s = Math.max(-6, Math.min(6, this.sides[i].v.st[6] - this.sides[d].v.st[7]));
-    return this.r(100) < mv.a * accMul(s);
+    const ai = this.ab(i), di = this.ab(d);
+    if (ai === 'no-guard' || di === 'no-guard') return true;
+    const s = Math.max(-6, Math.min(6, this.sides[i].v.st[6] - (ai === 'unaware' ? 0 : this.sides[d].v.st[7])));
+    let acc = mv.a * accMul(s);
+    if (ai === 'compound-eyes') acc *= 1.3;
+    if (ai === 'hustle' && mv.c === 'physical') acc *= 0.8;
+    if ((di === 'sand-veil' && this.weather === 'sandstorm') || (di === 'snow-cloak' && this.weather === 'hail')) acc *= 0.8;
+    if (di === 'tangled-feet' && this.sides[d].v.conf) acc *= 0.5;
+    if (di === 'wonder-skin' && mv.c === 'status') acc = Math.min(acc, 50);
+    return this.r(100) < acc;
   }
 
   fixedDamage(i, d, mv) {
@@ -676,9 +893,9 @@ export class Battle {
         this.hp(i, m.stats[0]); this.say(`${this.Nm(i)} s'endort et récupère ses PV !`); return true;
       case 'belly-drum':
         if (m.hp <= m.stats[0] / 2) { this.say('Mais cela échoue !'); return true; }
-        this.hp(i, -Math.floor(m.stats[0] / 2)); v.st[1] = 6; this.ev.push({ t: 'stat', side: i, up: true }); this.say(`${this.Nm(i)} sacrifie des PV et monte son Attaque au maximum !`); return true;
+        this.hp(i, -Math.floor(m.stats[0] / 2)); v.st[1] = 6; this.ev.push({ t: 'stat', side: i, up: true, all: this.stages() }); this.say(`${this.Nm(i)} sacrifie des PV et monte son Attaque au maximum !`); return true;
       case 'pain-split': { const avg = Math.floor((m.hp + T.hp) / 2); this.hp(i, avg - m.hp); this.hp(d, avg - T.hp); this.say('Les deux créatures partagent leur douleur !'); return true; }
-      case 'haze': for (const s of this.sides) s.v.st = [0, 0, 0, 0, 0, 0, 0, 0]; this.say('Les changements de stats sont annulés !'); return true;
+      case 'haze': for (const s of this.sides) s.v.st = [0, 0, 0, 0, 0, 0, 0, 0]; this.ev.push({ t: 'stat', side: -1, all: this.stages() }); this.say('Les changements de stats sont annulés !'); return true;
       case 'reflect': case 'light-screen': {
         const k = u === 'reflect' ? 'reflect' : 'light', scr = this.sides[i].screens;
         if (scr[k]) { this.say('Mais cela échoue !'); return true; }
@@ -718,6 +935,8 @@ export class Battle {
     const T = this.act(d), tv = this.sides[d].v, types = SPECIES[T.sp].t, scr = this.sides[d].screens;
     const fail = () => { if (!secondary) this.say('Mais cela échoue !'); return false; };
     if (isFainted(T)) return false;
+    const tid = this.ab(d);
+    if (ail === 'conf' && tid === 'own-tempo') return fail();
     if (ail === 'conf') {
       if (tv.conf) { if (!secondary) this.say(`${this.Nm(d)} est déjà confus !`); return false; }
       tv.conf = 2 + this.r(4); this.ev.push({ t: 'anim', side: d, k: 'confused' }); this.say(`${this.Nm(d)} devient confus !`); return true;
@@ -734,26 +953,38 @@ export class Battle {
     if ((st === 'psn' || st === 'tox') && (types.includes('poison') || types.includes('steel'))) return fail();
     if (st === 'brn' && types.includes('fire')) return fail();
     if (st === 'frz' && types.includes('ice')) return fail();
+    const immune = { limber: ['par'], insomnia: ['slp'], 'vital-spirit': ['slp'], immunity: ['psn', 'tox'], 'water-veil': ['brn'], 'magma-armor': ['frz'] }[tid];
+    if ((immune && immune.includes(st)) || (tid === 'leaf-guard' && this.weather === 'sun')) { if (!secondary) this.say(`${getAbility(T).name} protège ${this.nm(d)} !`); return false; }
     T.status = st;
     if (st === 'slp') T.slp = 2 + this.r(4);
     if (st === 'tox') T.tox = 0;
     this.ev.push({ t: 'status', side: d, status: st });
     this.say(`${this.Nm(d)} ${STATUS_TXT[st]}`);
     if (st === 'slp') { tv.rampage = null; }
+    // Synchro : le poison, la paralysie et la brûlure reviennent à l'envoyeur
+    if (tid === 'synchronize' && ['psn', 'tox', 'par', 'brn'].includes(st) && !this._sync) {
+      const src = 1 - d; if (!this.act(src).status) { this._sync = true; this.say(`Synchro de ${this.nm(d)} s'active !`); this.inflict(src, st === 'tox' ? 'psn' : st, mv, true); this._sync = false; }
+    }
     return true;
   }
 
   /** s = identifiant de stat PokeAPI (2 Attaque … 6 Vitesse, 7 Précision, 8 Esquive) */
   boost(i, sid, c, secondary) {
-    const v = this.sides[i].v, s = sid - 1;
+    const v = this.sides[i].v, s = sid - 1, id = this.ab(i), byFoe = c < 0 && i !== this.lastUser;
     if (c < 0 && this.sides[i].screens.mist && i !== this.lastUser) { if (!secondary) this.say(`${this.Nm(i)} est protégé par la brume !`); return false; }
+    if (byFoe && (id === 'clear-body' || id === 'white-smoke' || (id === 'hyper-cutter' && s === 1) || (id === 'coeur-vaillant' && s === 1) || (id === 'keen-eye' && s === 6) || (id === 'big-pecks' && s === 2))) {
+      if (!secondary || sid === 2) this.say(`${getAbility(this.act(i)).name} de ${this.nm(i)} empêche la baisse !`); return false;
+    }
+    if (id === 'simple') c *= 2;
+    if (id === 'contrary') c = -c;
     const before = v.st[s];
     v.st[s] = Math.max(-6, Math.min(6, v.st[s] + c));
     const name = STAGE_NAMES[s];
     if (v.st[s] === before) { if (!secondary) this.say(`${name[0].toUpperCase() + name.slice(1)} de ${this.nm(i)} ne peut plus ${c > 0 ? 'augmenter' : 'baisser'} !`); return false; }
-    this.ev.push({ t: 'stat', side: i, up: c > 0 });
+    this.ev.push({ t: 'stat', side: i, up: c > 0, all: this.stages() });
     const amt = Math.abs(c) >= 2 ? (c > 0 ? 'beaucoup ' : 'beaucoup ') : '';
     this.say(`${name[0].toUpperCase() + name.slice(1)} de ${this.nm(i)} ${c > 0 ? 'augmente' : 'baisse'}${amt ? ' ' + amt.trim() : ''} !`);
+    if (byFoe && c < 0 && (id === 'defiant' || id === 'competitive') && !this._defiant) { this._defiant = true; this.say(`${getAbility(this.act(i)).name} de ${this.nm(i)} s'active !`); this.boost(i, id === 'defiant' ? 2 : 4, 2, true); this._defiant = false; }
     return true;
   }
 
@@ -765,11 +996,14 @@ export class Battle {
       v.protect = false;
       if (isFainted(m)) continue;
       const ab = getAbility(m);
-      if (m.status === 'brn') { this.ev.push({ t: 'anim', side: i, k: 'burn' }); this.say(`${this.Nm(i)} souffre de sa brûlure !`); this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 8))); }
-      if (m.status === 'psn') { this.ev.push({ t: 'anim', side: i, k: 'poison' }); this.say(`${this.Nm(i)} souffre du poison !`); this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 8))); }
-      if (m.status === 'tox') { m.tox = Math.min(15, (m.tox || 0) + 1); this.ev.push({ t: 'anim', side: i, k: 'poison' }); this.say(`${this.Nm(i)} souffre du poison !`); this.hp(i, -Math.max(1, Math.floor(m.stats[0] * m.tox / 16))); }
+      const mg = ab?.id === 'magic-guard';
+      if (ab?.id === 'poison-heal' && (m.status === 'psn' || m.status === 'tox')) { if (m.hp < m.stats[0]) { this.hp(i, Math.max(1, Math.floor(m.stats[0] / 8))); this.say(`Soin Poison soigne ${this.nm(i)} !`); } }
+      else if (mg) { /* Garde Magik : pas de dégâts indirects */ }
+      else if (m.status === 'brn') { this.ev.push({ t: 'anim', side: i, k: 'burn' }); this.say(`${this.Nm(i)} souffre de sa brûlure !`); this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 8))); }
+      else if (m.status === 'psn') { this.ev.push({ t: 'anim', side: i, k: 'poison' }); this.say(`${this.Nm(i)} souffre du poison !`); this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 8))); }
+      else if (m.status === 'tox') { m.tox = Math.min(15, (m.tox || 0) + 1); this.ev.push({ t: 'anim', side: i, k: 'poison' }); this.say(`${this.Nm(i)} souffre du poison !`); this.hp(i, -Math.max(1, Math.floor(m.stats[0] * m.tox / 16))); }
       if (isFainted(m)) continue;
-      if (v.seed && !isFainted(this.act(1 - i))) { const dmg = this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 8))); this.ev.push({ t: 'anim', side: i, k: 'seed' }); this.say(`Vampigraine draine l'énergie de ${this.nm(i)} !`); this.hp(1 - i, dmg); }
+      if (v.seed && !mg && !isFainted(this.act(1 - i))) { const dmg = this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 8))); this.ev.push({ t: 'anim', side: i, k: 'seed' }); this.say(`Vampigraine draine l'énergie de ${this.nm(i)} !`); this.hp(1 - i, dmg); }
       if (isFainted(m)) continue;
       if (v.trap > 0) { v.trap--; this.say(`${this.Nm(i)} est blessé par le piège !`); this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 16))); if (!v.trap) this.say(`${this.Nm(i)} est libéré !`); }
       if (isFainted(m)) continue;
@@ -780,13 +1014,14 @@ export class Battle {
         this.say(`${this.Nm(i)} récupère un peu de PV grâce à ses Restes !`);
       }
       // Dégâts de météo (sauf types immunisés ou Garde Magik)
-      if (this.weather === 'sandstorm' && ab?.id !== 'magic-guard') {
+      const wImm = ['magic-guard', 'overcoat'].includes(ab?.id);
+      if (this.weather === 'sandstorm' && !wImm && !['sand-veil', 'sand-rush', 'sand-force'].includes(ab?.id)) {
         const types = SPECIES[m.sp]?.t || [];
         if (!types.includes('rock') && !types.includes('ground') && !types.includes('steel')) {
           this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 16)));
           this.say(`${this.Nm(i)} est blessé par la tempête de sable !`);
         }
-      } else if (this.weather === 'hail' && ab?.id !== 'magic-guard') {
+      } else if (this.weather === 'hail' && !wImm && !['ice-body', 'snow-cloak'].includes(ab?.id)) {
         const types = SPECIES[m.sp]?.t || [];
         if (!types.includes('ice')) {
           this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 16)));
@@ -794,8 +1029,18 @@ export class Battle {
         }
       }
       // Talent Turbo
-      if (ab?.id === 'speedboost' && !isFainted(m)) {
+      if (ab?.id === 'speed-boost' && !isFainted(m)) {
         this.boost(i, 6, 1, true);
+      }
+      if (!isFainted(m)) {
+        const heal = (f, txt) => { if (m.hp < m.stats[0]) { this.hp(i, Math.max(1, Math.floor(m.stats[0] * f))); this.say(txt); } };
+        const w = this.weather;
+        if (ab?.id === 'rain-dish' && w === 'rain') heal(1 / 16, `Cuvette soigne ${this.nm(i)} !`);
+        if (ab?.id === 'ice-body' && w === 'hail') heal(1 / 16, `Corps Gel soigne ${this.nm(i)} !`);
+        if (ab?.id === 'dry-skin' && w === 'rain') heal(1 / 8, `Peau Sèche soigne ${this.nm(i)} !`);
+        if ((ab?.id === 'dry-skin' || ab?.id === 'solar-power') && w === 'sun') { this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 8))); this.say(`${this.Nm(i)} souffre du soleil !`); }
+        const cure = (ab?.id === 'shed-skin' && this.r(100) < 30) || (ab?.id === 'hydration' && w === 'rain');
+        if (cure && m.status && !isFainted(m)) { m.status = null; m.slp = 0; m.tox = 0; this.ev.push({ t: 'status', side: i, status: null }); this.say(`${getAbility(m).name} guérit ${this.nm(i)} !`); }
       }
       this.checkBerries(i);
     }

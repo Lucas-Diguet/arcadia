@@ -1,8 +1,10 @@
 // odyssee/js/ui/screens.js — écrans plein cadre : équipe, résumé, sac, Pokédex, carte, carte de dresseur, boutique, PC, options
+export { trophiesScreen, showTrophyToast } from './trophiesView.js';
 import { el, esc } from './ui.js';
 import { SPECIES } from '../data/species.js';
 import { ORIGINALES } from '../data/remplacants.js';
 import { MOVES } from '../data/moves.js';
+import { moveDesc } from '../data/moveDescriptions.js';
 import { ITEMS, itemName, POCKETS, canUseOn, giveHeldItem, takeHeldItem } from '../core/items.js';
 import { getAbility, abilityName } from '../data/abilities.js';
 import { monName, expProgress, STAT_NAMES, levelCap, GYM_CAPS, NATURES, natureName, natureEffect, refreshStats } from '../core/mon.js';
@@ -20,7 +22,7 @@ export const hpCol = (r) => (r > 0.5 ? '#48d058' : r > 0.2 ? '#f0c020' : '#f0483
 export function hpBar(m) { const r = m.hp / m.stats[0]; return `<div class="hp"><b>PV</b><i><u style="width:${Math.max(0, r * 100)}%;background:${hpCol(r)}"></u></i></div>`; }
 export const statusTag = (m) => (m.hp <= 0 ? '<span class="st" style="background:#c03838">K.O.</span>' : m.status ? `<span class="st" style="background:${STATUS_FR[m.status][1]}">${STATUS_FR[m.status][0]}</span>` : '');
 const gender = (m) => (m.gender === 'm' ? '<span class="g m">♂</span>' : m.gender === 'f' ? '<span class="g f">♀</span>' : '');
-const iconImg = (m) => `<img class="ico" src="${ASSETS.icon(m.sp)}" alt="" onerror="this.src='${ASSETS.front(m.sp)}';this.classList.add('fallback')">`;
+const iconImg = (m) => `<img class="ico${m?.shadow ? ' shadowmon' : ''}" src="${ASSETS.icon(m.sp, m?.shadow)}" alt="" onerror="this.src='${ASSETS.front(m.sp, false, m?.shadow)}';this.classList.add('fallback')">`;
 
 function screen(ui, cls, title) {
   const s = el('div', 'screen ' + cls);
@@ -92,13 +94,32 @@ export function partyScreen(game, o = {}) {
       }
       const why = o.filter ? o.filter(party[i], i) : null;
       if (o.mode === 'pick') {
-        if (why) { ui.sound.sfx('bump'); return; }
-        close(i);
+        busy = true;
+        const chooseLabel = o.pickLabel || 'Choisir';
+        const opts = why ? ['Résumé', 'Annuler'] : [chooseLabel, 'Résumé', 'Annuler'];
+        const r = await ui.list({
+          title: why ? `${monName(party[i])} (${why})` : monName(party[i]),
+          items: opts.map((label) => ({ label })),
+          cls: 'psub',
+          cancel: opts.length - 1,
+          parent: s,
+        });
+        busy = false;
+        const pick = opts[r];
+        if (pick === 'Résumé') {
+          busy = true;
+          i = await summaryScreen(game, party, i);
+          busy = false;
+        } else if (pick === chooseLabel) {
+          close(i);
+          return;
+        }
+        draw();
         return;
       }
       busy = true;
       const opts = o.mode === 'battle' ? ['Envoyer', 'Résumé', 'Annuler'] : ['Résumé', 'Déplacer', 'Annuler'];
-      const r = await ui.list({ items: opts.map((label) => ({ label })), cls: 'psub', cancel: opts.length - 1, parent: s });
+      const r = await ui.list({ title: monName(party[i]), items: opts.map((label) => ({ label })), cls: 'psub', cancel: opts.length - 1, parent: s });
       busy = false;
       const pick = opts[r];
       if (pick === 'Résumé') { busy = true; i = await summaryScreen(game, party, i); busy = false; }
@@ -141,7 +162,7 @@ export function partyScreen(game, o = {}) {
             </div>
             <div class="pslot-lead-pedestal">
               <div class="pslot-ped-ring"></div>
-              <img class="pslot-lead-spr${m.shadow ? ' shadowmon' : ''}" src="${ASSETS.front(m.sp, m.shiny)}" alt="" onerror="this.src='${ASSETS.icon(m.sp)}'">
+              <img class="pslot-lead-spr${m.shadow ? ' shadowmon' : ''}" src="${ASSETS.front(m.sp, m.shiny, m.shadow)}" alt="" onerror="this.src='${ASSETS.icon(m.sp, m.shadow)}'">
             </div>
             <div class="pslot-lead-info">
               <div class="pslot-lead-name-row">
@@ -151,7 +172,7 @@ export function partyScreen(game, o = {}) {
               <div class="pslot-types">${typesHtml}</div>
               <div class="pslot-hp-box">
                 <div class="hp-b2w2">
-                  <span class="hp-tag">HP</span>
+                  <span class="hp-tag">PV</span>
                   <div class="hp-track"><u style="width:${(r * 100).toFixed(1)}%;background:${hpCol(r)}"></u></div>
                 </div>
                 <div class="phpn">${m.hp} / ${m.stats[0]}</div>
@@ -177,7 +198,7 @@ export function partyScreen(game, o = {}) {
               </div>
               <span class="pslot-sub-num">#${k + 1}</span>
               <div class="pslot-sub-ped">
-                <img class="pslot-sub-spr${m.shadow ? ' shadowmon' : ''}" src="${ASSETS.front(m.sp, m.shiny)}" alt="" onerror="this.src='${ASSETS.icon(m.sp)}'">
+                <img class="pslot-sub-spr${m.shadow ? ' shadowmon' : ''}" src="${ASSETS.front(m.sp, m.shiny, m.shadow)}" alt="" onerror="this.src='${ASSETS.icon(m.sp, m.shadow)}'">
               </div>
             </div>
             <div class="pslot-sub-mid">
@@ -196,7 +217,7 @@ export function partyScreen(game, o = {}) {
             </div>
             <div class="pslot-sub-right">
               <div class="hp-b2w2">
-                <span class="hp-tag">HP</span>
+                <span class="hp-tag">PV</span>
                 <div class="hp-track"><u style="width:${(r * 100).toFixed(1)}%;background:${hpCol(r)}"></u></div>
               </div>
               <div class="phpn">${m.hp} / ${m.stats[0]}</div>
@@ -440,6 +461,7 @@ export function summaryScreen(game, list, idx) {
             <tr><td>Dresseur Orig.</td><td>${esc(m.ot || game.state.name)}</td></tr>
             <tr><td>Rencontré à</td><td>${esc(m.met || '—')}</td></tr>
             <tr><td>Nature</td><td>${esc(natureName(m.nat ?? 0))}${(() => { const ne = natureEffect(m.nat ?? 0); return ne ? ` <small class="nat-fx">(+${STAT_NAMES[ne[0]]} / −${STAT_NAMES[ne[1]]})</small>` : ' <small class="nat-fx">(neutre)</small>'; })()}</td></tr>
+            <tr><td>Talent</td><td>${(() => { const ab = getAbility(m); return ab ? `<b>${esc(ab.name)}</b>${ab.desc ? ` <small class="nat-fx">${esc(ab.desc)}</small>` : ''}` : '—'; })()}</td></tr>
             <tr><td>Points Exp.</td><td>${m.exp.toLocaleString('fr-FR')} pts</td></tr>
             <tr><td>Limite Arène</td><td>N.${cap} ${isCapped ? '<span class="sum-cap-tag">ATTEINTE</span>' : ''}</td></tr>
           </table>
@@ -479,7 +501,7 @@ export function summaryScreen(game, list, idx) {
               <span class="sum-lvl">N.${m.lvl}</span>
             </div>
             <div class="sum-stage">
-              <img class="sum-spr${m.shadow ? ' shadowmon' : ''}" src="${ASSETS.front(m.sp, m.shiny)}" alt="">
+              <img class="sum-spr${m.shadow ? ' shadowmon' : ''}" src="${ASSETS.front(m.sp, m.shiny, m.shadow)}" alt="">
             </div>
             <div class="sum-types-row">${S.t.map(typeTag).join(' ')} ${statusTag(m)}</div>
             ${hpBar(m)}
@@ -540,12 +562,12 @@ export function bagScreen(game, o = {}) {
 
     // Poches officielles B2W2 Concept 1 avec arc sci-fi, arrière-plans réactifs et coordonnées exactes sur l'arc
     const POCKET_CFG = [
-      { id: 'objets', label: 'Objets', sub: 'Pierres, Bonbons et Objets tenus', color: '#00e0ff', glow: 'rgba(0, 224, 255, 0.45)', bg: 'img/bag/backpack_objets.jpg', icon: 'img/bag/icon_objets.png', arcX: 39.5, arcY: 9.8 },
-      { id: 'soin', label: 'Soins', sub: 'Médicaments, Potions et Guérisons', color: '#34d870', glow: 'rgba(52, 216, 112, 0.45)', bg: 'img/bag/backpack_soin.jpg', icon: 'img/bag/icon_soin.png', arcX: 61.9, arcY: 26.5 },
-      { id: 'balls', label: 'Poké Balls', sub: 'Capsules de capture de créatures', color: '#ff4c4c', glow: 'rgba(255, 76, 76, 0.45)', bg: 'img/bag/backpack_balls.jpg', icon: 'img/bag/icon_balls.png', arcX: 70.7, arcY: 42.2 },
-      { id: 'ct', label: 'CT & CS', sub: 'Capsules Techniques et Secrètes', color: '#b966ff', glow: 'rgba(185, 102, 255, 0.45)', bg: 'img/bag/backpack_ct.jpg', icon: 'img/bag/icon_ct.png', arcX: 71.2, arcY: 57.8 },
-      { id: 'baies', label: 'Baies', sub: 'Baies naturelles et remèdes doux', color: '#ff77a8', glow: 'rgba(255, 119, 168, 0.45)', bg: 'img/bag/backpack_baies.jpg', icon: 'img/bag/icon_baies.png', arcX: 57.7, arcY: 73.5 },
-      { id: 'cles', label: 'Objets Rares', sub: 'Objets précieux, Carte et Bicyclette', color: '#ffe058', glow: 'rgba(255, 224, 88, 0.45)', bg: 'img/bag/backpack_cles.jpg', icon: 'img/bag/icon_cles.png', arcX: 30.7, arcY: 89.2 },
+      { id: 'objets', label: 'Objets', sub: 'Pierres, Bonbons et Objets tenus', color: '#00e0ff', glow: 'rgba(0, 224, 255, 0.45)', bg: 'img/bag/backpack_objets.jpg', icon: 'img/bag/icon_objets.png', arcX: 40.2, arcY: 11.6 },
+      { id: 'soin', label: 'Soins', sub: 'Médicaments, Potions et Guérisons', color: '#34d870', glow: 'rgba(52, 216, 112, 0.45)', bg: 'img/bag/backpack_soin.jpg', icon: 'img/bag/icon_soin.png', arcX: 62.1, arcY: 25.2 },
+      { id: 'balls', label: 'Poké Balls', sub: 'Capsules de capture de créatures', color: '#ff4c4c', glow: 'rgba(255, 76, 76, 0.45)', bg: 'img/bag/backpack_balls.jpg', icon: 'img/bag/icon_balls.png', arcX: 70.9, arcY: 40.1 },
+      { id: 'ct', label: 'CT & CS', sub: 'Capsules Techniques et Secrètes', color: '#b966ff', glow: 'rgba(185, 102, 255, 0.45)', bg: 'img/bag/backpack_ct.jpg', icon: 'img/bag/icon_ct.png', arcX: 70.5, arcY: 54.8 },
+      { id: 'baies', label: 'Baies', sub: 'Baies naturelles et remèdes doux', color: '#ff77a8', glow: 'rgba(255, 119, 168, 0.45)', bg: 'img/bag/backpack_baies.jpg', icon: 'img/bag/icon_baies.png', arcX: 59.1, arcY: 74.4 },
+      { id: 'cles', label: 'Objets Rares', sub: 'Objets précieux, Carte et Bicyclette', color: '#ffe058', glow: 'rgba(255, 224, 88, 0.45)', bg: 'img/bag/backpack_cles.jpg', icon: 'img/bag/icon_cles.png', arcX: 34.2, arcY: 87.8 },
     ];
 
     let pocket = 0;
@@ -651,19 +673,15 @@ export function bagScreen(game, o = {}) {
         <!-- GRILLE 2X2 DE BOUTONS TACTILES DS (CONCEPT 1) -->
         <div class="b2w2-btn-grid">
           <button type="button" class="b2w2-touch-btn b2w2-btn-use" data-act="use" title="Utiliser (Entrée / A)">
-            <span class="touch-btn-ico">⚡</span>
             <span class="touch-btn-lbl">UTILISER</span>
           </button>
           <button type="button" class="b2w2-touch-btn b2w2-btn-give" data-act="give" title="Donner à un Pokémon (D)">
-            <span class="touch-btn-ico">🎁</span>
             <span class="touch-btn-lbl">DONNER</span>
           </button>
           <button type="button" class="b2w2-touch-btn b2w2-btn-toss" data-act="toss" title="Jeter une quantité (J)">
-            <span class="touch-btn-ico">🗑</span>
             <span class="touch-btn-lbl">JETER</span>
           </button>
           <button type="button" class="b2w2-touch-btn b2w2-btn-back" data-act="back" title="Fermer le sac (Échap / B)">
-            <span class="touch-btn-ico">✕</span>
             <span class="touch-btn-lbl">RETOUR</span>
           </button>
         </div>
@@ -957,8 +975,14 @@ export function bagScreen(game, o = {}) {
     // Clics sur les 4 boutons tactiles DS
     useBtn?.addEventListener('click', () => {
       const es = entries();
-      if (i === es.length) { ui.sound.sfx('cancel'); close(null); }
-      else triggerRow(i);
+      if (i >= es.length) { ui.sound.sfx('cancel'); close(null); return; }
+      const item = es[i], it = ITEMS[item];
+      // Si c'est un objet purement tenu (ex: baies de tenue, restes, orbe vie), rediriger naturellement vers Donner
+      if (it && it.hold && !it.heal && !it.candy && !it.stone && !it.field) {
+        handleGive();
+      } else {
+        triggerRow(i);
+      }
     });
     giveBtn?.addEventListener('click', handleGive);
     tossBtn?.addEventListener('click', handleToss);
@@ -1322,20 +1346,444 @@ export function mapScreen(game) {
   });
 }
 
-/* ================= CARTE DE DRESSEUR ================= */
-/** fiche d'un dresseur (la sienne, ou celle d'un autre joueur reçue par le réseau : voir trainerCard) */
-export function trainerCard(st) {
-  return { name: st.name, id: st.id, gender: st.gender, money: st.money, dex: st.dex.caught.length, seen: st.dex.seen.length, time: st.time, badges: st.badges.map(Boolean),
-    team: st.party.map((m) => ({ sp: m.sp, lvl: m.lvl, shiny: !!m.shiny, nick: m.nick || null })), champion: !!st.flags?.champion };
+/* ================= CARTE DE DRESSEUR FAÇON 5G (NOIR 2 / BLANC 2) ================= */
+export const BADGE_SPECS = [
+  { id: 1, name: 'Badge Élytre', type: 'bug', leader: 'Hector', town: 'Sylve', reward: 'Autorise Coupe hors combat', cap: 25 },
+  { id: 2, name: 'Badge Écume', type: 'water', leader: 'Marine', town: 'Port-Azur', reward: 'Accès aux Navires & Mers', cap: 35 },
+  { id: 3, name: 'Badge Volt', type: 'electric', leader: 'Volta', town: 'Électro-Ville', reward: 'Autorise Flash & Galeries', cap: 45 },
+  { id: 4, name: 'Badge Pétale', type: 'grass', leader: 'Flora', town: 'Floralia', reward: 'Débloque les Échanges multijoueurs', cap: 55 },
+  { id: 5, name: 'Badge Mirage', type: 'psychic', leader: 'Sibylle', town: 'Cité Mirage', reward: 'Dissipe les Brumes & Illusions', cap: 65 },
+  { id: 6, name: 'Badge Granit', type: 'rock', leader: 'Basalte', town: 'Île Basalte', reward: 'Autorise Éclate-Roc hors combat', cap: 70 },
+  { id: 7, name: 'Badge Braise', type: 'fire', leader: 'Pyros', town: 'Île Pyros', reward: 'Autorise Force hors combat', cap: 75 },
+  { id: 8, name: 'Badge Écaille', type: 'dragon', leader: 'Drakos', town: 'Île Drakos', reward: 'Autorise Vol & Accès Ligue du Nord', cap: 80 },
+  { id: 9, name: 'Badge Pavé', type: 'normal', leader: 'Margot', town: 'Métropole', reward: 'Accès VIP au Casino & Bourse', cap: 82 },
+  { id: 10, name: 'Badge Rafale', type: 'flying', leader: 'Aurèle', town: 'Port-Lisière', reward: 'Courants aériens des Terres du Sud', cap: 85 },
+  { id: 11, name: 'Badge Venin', type: 'poison', leader: 'Morgane', town: 'Marais-Noir', reward: 'Immunité aux bourbiers toxiques', cap: 88 },
+  { id: 12, name: 'Badge Dune', type: 'ground', leader: 'Gaspard', town: 'Dunes d\'Ocre', reward: 'Traversée des tempêtes de sable', cap: 90 },
+  { id: 13, name: 'Badge Rouage', type: 'steel', leader: 'Ferdinand', town: 'Forge-Acier', reward: 'Maîtrise métallurgique & blindages', cap: 92 },
+  { id: 14, name: 'Badge Féérie', type: 'fairy', leader: 'Lilas', town: 'Rosebrume', reward: 'Passage du Sanctuaire Féerique', cap: 95 },
+  { id: 15, name: 'Badge Ombre', type: 'dark', leader: 'Corbin', town: 'Ombreval', reward: 'Accès ultime à la Ligue du Sud', cap: 100 },
+];
+
+export function getCardRank(c) {
+  let stars = 0;
+  const badgesCount = (c.badges || []).filter(Boolean).length;
+  if (c.champion) stars++;
+  if (badgesCount >= 8) stars++;
+  if (badgesCount >= 15) stars++;
+  if ((c.dex || 0) >= 60) stars++;
+  if ((c.trophies || 0) >= 10 || (c.pvpWins || 0) >= 10) stars++;
+
+  let grade = 'NORMAL';
+  let themeCls = 'card-normal';
+  let title = 'Voyageur d\'Odyssée';
+
+  if (stars >= 5) {
+    grade = 'MAÎTRE';
+    themeCls = 'card-master';
+    title = 'Maître Suprême d\'Odyssée';
+  } else if (stars === 4) {
+    grade = 'PLATINE';
+    themeCls = 'card-platinum';
+    title = 'Légende Régionale';
+  } else if (stars === 3) {
+    grade = 'OR';
+    themeCls = 'card-gold';
+    title = 'Champion Émérite';
+  } else if (stars === 2) {
+    grade = 'ARGENT';
+    themeCls = 'card-silver';
+    title = 'Dresseur d\'Élite';
+  } else if (stars === 1) {
+    grade = 'BRONZE';
+    themeCls = 'card-bronze';
+    title = 'Étoile Montante';
+  }
+
+  return { stars, grade, themeCls, title, badgesCount };
 }
+
+/** Fiche d'un dresseur (la sienne, ou reçue par le réseau) */
+export function trainerCard(st) {
+  const pvp = st.pvp || {};
+  const unlockedTrophies = Object.values(pvp.trophies || {}).filter((t) => t.unlocked).length;
+  return {
+    name: st.name,
+    id: st.id,
+    gender: st.gender,
+    money: st.money,
+    dex: st.dex?.caught?.length || 0,
+    seen: st.dex?.seen?.length || 0,
+    time: st.time || 0,
+    badges: (st.badges || []).map(Boolean),
+    team: (st.party || []).map((m) => ({
+      sp: m.sp,
+      lvl: m.lvl,
+      shiny: !!m.shiny,
+      nick: m.nick || null,
+      hp: m.hp,
+      maxHp: m.stats?.[0] || m.hp,
+      ball: m.ball || 'poke-ball',
+    })),
+    champion: !!st.flags?.champion,
+    trophies: unlockedTrophies,
+    pvpWins: pvp.totalWins || 0,
+    pvpLosses: pvp.totalLosses || 0,
+    hof: (st.hof || []).slice(),
+  };
+}
+
 export function cardScreen(game, BADGES, other) {
   const ui = game.ui, c = other || trainerCard(game.state);
   return new Promise((resolve) => {
     const s = screen(ui, 'card-scr');
-    const h = Math.floor((c.time || 0) / 3600), m = Math.floor((c.time || 0) / 60) % 60;
-    const team = (c.team || []).slice(0, 6).map((q) => `<div class="tc-mon" title="${esc(q.nick || SPECIES[q.sp]?.n || '?')}"><img src="${ASSETS.icon(q.sp)}" alt=""><span>N.${q.lvl}</span></div>`).join('');
-    s.innerHTML = `<div class="tcard box"><div class="tc-top"><span>${other ? 'CARTE DE ' + esc(String(c.name).toUpperCase()) : 'CARTE DRESSEUR'}</span><span>ID ${String(c.id || 0).padStart(5, '0')}</span></div><div class="tc-body"><table class="kv"><tr><td>Nom</td><td>${esc(c.name)}${c.champion ? ' ★' : ''}</td></tr>${other ? '' : `<tr><td>Argent</td><td>${(c.money || 0).toLocaleString('fr-FR')} ₽</td></tr>`}<tr><td>Pokédex</td><td>${c.dex}${c.seen != null ? ` (vus : ${c.seen})` : ''}</td></tr><tr><td>Temps de jeu</td><td>${h}:${String(m).padStart(2, '0')}</td></tr></table><div class="tc-photo"><div class="tc-char ${c.gender === 'f' ? 'f' : 'm'}"></div></div></div><div class="badges">${BADGES.map((b, k) => `<div class="badge ${c.badges?.[k] ? 'got' : ''}" style="--bc:${b.color}" title="${esc(b.name)}"><i></i></div>`).join('')}</div>${team ? `<div class="tc-team">${team}</div>` : ''}</div>`;
-    const pop = ui.input.push((k) => { if (k === 'a' || k === 'b') { pop(); s.remove(); ui.sound.sfx('cancel'); resolve(); } });
+    s.classList.add('b2w2-screen');
+
+    let face = 'profile'; // 'profile' | 'badges'
+    let selBadge = Math.max(0, (c.badges || []).findIndex(Boolean));
+    if (selBadge < 0) selBadge = 0;
+
+    const rank = getCardRank(c);
+    const h = Math.floor((c.time || 0) / 3600);
+    const m = Math.floor((c.time || 0) / 60) % 60;
+    const timeStr = `${h}h ${String(m).padStart(2, '0')}`;
+    const idStr = String(c.id || 0).padStart(5, '0');
+    const dexTotal = 150;
+    const dexPct = Math.min(100, Math.round(((c.dex || 0) / dexTotal) * 100));
+
+    const render = () => {
+      const starsHtml = Array.from({ length: 5 })
+        .map((_, i) => `<span class="tc-star${i < rank.stars ? ' on' : ''}">★</span>`)
+        .join('');
+
+      // Face A : Profil
+      const team = (c.team || []).slice(0, 6);
+      const teamHtml = Array.from({ length: 6 }).map((_, slotIdx) => {
+        const q = team[slotIdx];
+        if (!q) {
+          return `
+            <div class="tc-team-slot empty">
+              <div class="tc-ts-socket"></div>
+              <div class="tc-ts-none">SLOT VIDE</div>
+            </div>
+          `;
+        }
+        const S = SPECIES[q.sp] || {};
+        const hpR = q.hp != null && q.maxHp ? Math.max(0, Math.min(1, q.hp / q.maxHp)) : 1;
+        const isShiny = !!q.shiny;
+        const ballItem = q.ball || 'poke-ball';
+        const ballSrc = ASSETS.item(ballItem);
+        return `
+          <button type="button" class="tc-team-slot${isShiny ? ' shiny' : ''}" data-slotidx="${slotIdx}" title="Clic : Écouter le cri de ${esc(q.nick || S.n || 'Pokémon')}">
+            <div class="tc-ts-top">
+              <img class="tc-ts-ball" src="${ballSrc}" alt="" title="${ballItem}">
+              <span class="tc-ts-name">${esc(q.nick || S.n || 'Pokémon')}</span>
+              ${isShiny ? '<span class="tc-ts-star">★</span>' : ''}
+              <span class="tc-ts-lvl">N.${q.lvl}</span>
+            </div>
+            <div class="tc-ts-mid">
+              <div class="tc-ts-icon-wrap">
+                <img class="tc-ts-icon" src="${ASSETS.icon(q.sp)}" alt="" onerror="this.src='${ASSETS.front(q.sp)}'">
+              </div>
+              <div class="tc-ts-meta">
+                <div class="tc-ts-types">
+                  ${(S.t || ['normal']).map((t) => `<span class="tc-ts-type" style="--tc:${TYPE_COL[t] || '#888'}">${TYPE_FR[t] || t}</span>`).join('')}
+                </div>
+                <div class="tc-ts-hp">
+                  <span class="tc-ts-hp-tag">PV</span>
+                  <div class="tc-ts-hp-track"><u style="width:${(hpR * 100).toFixed(0)}%;background:${hpCol(hpR)}"></u></div>
+                </div>
+              </div>
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      // Face B : Badges Showcase
+      const renderBadgeSlot = (spec, idx) => {
+        const isGot = !!c.badges?.[idx];
+        const isSel = selBadge === idx;
+        const iconSrc = isGot ? ASSETS.badge(spec.id) : ASSETS.badge(spec.id, true);
+        return `
+          <button type="button" class="tc-badge-slot${isGot ? ' got' : ' locked'}${isSel ? ' selected' : ''}" data-bidx="${idx}" title="${esc(spec.name)} (${isGot ? 'Obtenu' : 'Non débloqué'})">
+            <div class="tc-badge-socket">
+              <img class="tc-badge-img${isGot ? ' shine' : ' dim'}" src="${iconSrc}" alt="${esc(spec.name)}">
+            </div>
+            <span class="tc-badge-num">#${spec.id}</span>
+            <span class="tc-badge-label">${esc(spec.name.replace('Badge ', ''))}</span>
+          </button>
+        `;
+      };
+
+      const nordBadgesHtml = BADGE_SPECS.slice(0, 8).map(renderBadgeSlot).join('');
+      const sudBadgesHtml = BADGE_SPECS.slice(8, 15).map((spec, i) => renderBadgeSlot(spec, i + 8)).join('');
+
+      const selSpec = BADGE_SPECS[selBadge] || BADGE_SPECS[0];
+      const selGot = !!c.badges?.[selBadge];
+      const selImgSrc = selGot ? ASSETS.badge(selSpec.id).replace('.png', '_128.png') : ASSETS.badge(selSpec.id, true);
+
+      s.innerHTML = `
+        <div class="b2w2-card-casing ${rank.themeCls}">
+          <!-- Fond Pixel Art 16-bit B2W2 Nanobanana -->
+          <img class="tc-pixelart-bg" src="${face === 'profile' ? ASSETS.cardBg(rank.theme) : ASSETS.cardBack}" alt="Fond Carte B2W2">
+          <div class="tc-pixelart-scanlines"></div>
+
+          <!-- Barre Supérieure B2W2 DS -->
+          <div class="tc-header">
+            <div class="tc-hdr-left">
+              <span class="tc-hdr-title">${other ? 'CARTE DE ' + esc(String(c.name).toUpperCase()) : 'CARTE DE DRESSEUR'}</span>
+              <div class="tc-stars-wrap">${starsHtml}</div>
+              <span class="tc-hdr-grade">${rank.grade}</span>
+            </div>
+            <div class="tc-hdr-right">
+              <span class="tc-id-pill">IDNo. ${idStr}</span>
+              <button type="button" class="tc-btn-flip" data-act="flip" title="Basculer Recto / Verso (Espace ou ◄ / ►)">
+                ${face === 'profile' ? 'Voir les 15 Badges ▶' : '◀ Profil Dresseur'}
+              </button>
+              <button type="button" class="tc-btn-close" data-act="close" title="Fermer (Échap)">✕</button>
+            </div>
+          </div>
+
+          <!-- Corps de la Carte B2W2 (2 faces commutables) -->
+          <div class="tc-body-wrap">
+            <!-- FACE A : Profil Dresseur -->
+            <div class="tc-face tc-face-profile${face === 'profile' ? ' active' : ''}">
+              <div class="tc-profile-grid">
+                <!-- Colonne Gauche : Cadre Photo & Sceau -->
+                <div class="tc-photo-col">
+                  <div class="tc-photo-frame">
+                    <div class="tc-photo-hologram"></div>
+                    <div class="tc-photo-pedestal"></div>
+                    <img class="tc-photo-spr" src="${ASSETS.trainer(c.gender === 'f' ? 'player_f' : 'player_m')}" alt="" onerror="this.style.display='none'">
+                    <span class="tc-photo-tag">DRESSEUR</span>
+                  </div>
+                  <div class="tc-stamp ${rank.themeCls}">
+                    <div class="tc-stamp-ring">
+                      <span class="tc-stamp-stars">${"★".repeat(rank.stars || 1)}</span>
+                      <span class="tc-stamp-title">LIGUE D'ODYSSÉE</span>
+                      <span class="tc-stamp-sub">RANG ${rank.grade.toUpperCase()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Colonne Droite : Données du Dresseur -->
+                <div class="tc-data-col">
+                  <div class="tc-data-box">
+                    <div class="tc-data-row">
+                      <span class="tc-lbl">DRESSEUR</span>
+                      <span class="tc-val tc-name-val">${esc(c.name)}${c.champion ? ' <span class="tc-champ-badge">★ CHAMPION</span>' : ''}</span>
+                    </div>
+                    <div class="tc-data-row">
+                      <span class="tc-lbl">TITRE OFFICIEL</span>
+                      <span class="tc-val tc-rank-title">${esc(rank.title)}</span>
+                    </div>
+                    ${other ? '' : `
+                    <div class="tc-data-row">
+                      <span class="tc-lbl">ARGENT</span>
+                      <span class="tc-val tc-money-val"><b>${(c.money || 0).toLocaleString('fr-FR')}</b> ₽</span>
+                    </div>`}
+                    <div class="tc-data-row">
+                      <span class="tc-lbl">POKÉDEX</span>
+                      <div class="tc-val tc-pdx-row">
+                        <span><b>${c.dex || 0}</b> capturés <small>(vus : ${c.seen != null ? c.seen : (c.dex || 0)})</small></span>
+                        <div class="tc-pdx-bar"><u style="width:${dexPct}%"></u></div>
+                      </div>
+                    </div>
+                    <div class="tc-data-row">
+                      <span class="tc-lbl">TEMPS DE JEU</span>
+                      <span class="tc-val">${timeStr}</span>
+                    </div>
+                    <div class="tc-data-row">
+                      <span class="tc-lbl">BADGES D'ARÈNE</span>
+                      <span class="tc-val tc-badges-val"><b>${rank.badgesCount}</b> / 15 Badges</span>
+                    </div>
+                    <div class="tc-data-row">
+                      <span class="tc-lbl">MÉDAILLES B2W2</span>
+                      <span class="tc-val tc-trophies-val"><b>${c.trophies || 0}</b> / 32 🏅</span>
+                    </div>
+                    ${c.champion || (c.hof && c.hof.length) ? `
+                    <div class="tc-data-row">
+                      <span class="tc-lbl">PANTHÉON</span>
+                      <span class="tc-val tc-hof-val" style="cursor:pointer;" title="Clic : Consulter vos sacres de la Ligue">
+                        <b>${(c.hof || []).length || 1}</b> sacre${(c.hof || []).length > 1 ? 's' : ''} 🏆
+                      </span>
+                    </div>` : ''}
+                    ${(c.pvpWins || c.pvpLosses) ? `
+                    <div class="tc-data-row">
+                      <span class="tc-lbl">DUELS MULTI</span>
+                      <span class="tc-val tc-pvp-val"><b>${c.pvpWins || 0}</b>V — <b>${c.pvpLosses || 0}</b>D</span>
+                    </div>` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Plateau Équipe Pokémon (6 Slots) -->
+              <div class="tc-team-tray">
+                <div class="tc-tray-head">
+                  <span class="tc-tray-title">ÉQUIPE EN VOYAGE</span>
+                  <span class="tc-tray-sub">${team.length} / 6 POKÉMON ACTIFS</span>
+                </div>
+                <div class="tc-team-grid">${teamHtml}</div>
+              </div>
+            </div>
+
+            <!-- FACE B : Coffret des 15 Badges -->
+            <div class="tc-face tc-face-badges${face === 'badges' ? ' active' : ''}">
+              <div class="tc-velvet-casing">
+                <div class="tc-velvet-head">
+                  <div class="tc-vh-title">COFFRET D'HONNEUR DES 15 BADGES D'ODYSSÉE</div>
+                  <div class="tc-vh-progress">
+                    <span class="tc-vh-count"><b>${rank.badgesCount}</b> / 15 DÉBLOQUÉS</span>
+                    <div class="tc-vh-bar"><u style="width:${Math.round((rank.badgesCount / 15) * 100)}%"></u></div>
+                  </div>
+                </div>
+
+                <div class="tc-trays-container">
+                  <!-- Plateau 1 : Continent Nord & Archipel (8 Badges) -->
+                  <div class="tc-tray-block">
+                    <div class="tc-tb-title">CONTINENT NORD & ARCHIPEL (8 BADGES)</div>
+                    <div class="tc-badges-grid grid-8">${nordBadgesHtml}</div>
+                  </div>
+
+                  <!-- Plateau 2 : Terres du Sud (7 Badges) -->
+                  <div class="tc-tray-block">
+                    <div class="tc-tb-title">TERRES DU SUD (7 BADGES)</div>
+                    <div class="tc-badges-grid grid-7">${sudBadgesHtml}</div>
+                  </div>
+                </div>
+
+                <!-- Panneau Inspecteur de Badge interactif -->
+                <div class="tc-badge-inspector">
+                  <div class="tc-bi-art-col">
+                    <div class="tc-bi-socket">
+                      <img class="tc-bi-img${selGot ? ' shine' : ' dim'}" src="${selImgSrc}" alt="${esc(selSpec.name)}">
+                    </div>
+                  </div>
+                  <div class="tc-bi-info-col">
+                    <div class="tc-bi-title-row">
+                      <span class="tc-bi-num">#${selSpec.id}</span>
+                      <span class="tc-bi-name">${esc(selSpec.name.toUpperCase())}</span>
+                      <span class="tc-bi-type" style="--tc:${TYPE_COL[selSpec.type] || '#888'}">${TYPE_FR[selSpec.type] || selSpec.type}</span>
+                      <span class="tc-bi-status ${selGot ? 'got' : 'locked'}">${selGot ? '✔ OBTENU' : '🔒 NON DÉBLOQUÉ'}</span>
+                    </div>
+                    <div class="tc-bi-gym-row">
+                      Arène de <b>${esc(selSpec.town)}</b> · Champion${selSpec.leader === 'Marine' || selSpec.leader === 'Volta' || selSpec.leader === 'Flora' || selSpec.leader === 'Sibylle' || selSpec.leader === 'Margot' || selSpec.leader === 'Morgane' || selSpec.leader === 'Lilas' ? 'ne' : ''} <b>${esc(selSpec.leader)}</b>
+                    </div>
+                    <div class="tc-bi-reward-row">
+                      Privilège : <b>${esc(selSpec.reward)}</b> <span class="tc-bi-cap">(Niv. max : N.${selSpec.cap})</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pied de la Carte B2W2 -->
+          <div class="tc-footer">
+            <div class="tc-foot-hints">
+              <span><kbd>ESPACE</kbd> / <kbd>◄</kbd> <kbd>►</kbd> ${face === 'profile' ? 'Voir les Badges' : 'Profil'}</span>
+              <span><kbd>▲</kbd> <kbd>▼</kbd> Sélectionner un badge</span>
+              <span><kbd>ÉCHAP</kbd> Quitter</span>
+            </div>
+            <button type="button" class="tc-foot-btn" data-act="flip">
+              ${face === 'profile' ? 'COFFRET DES 15 BADGES ➔' : '➔ RETOUR AU PROFIL'}
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Attach Event Handlers
+      s.querySelectorAll('[data-act="close"]').forEach((b) => {
+        b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); close(); };
+      });
+
+      s.querySelectorAll('[data-act="flip"]').forEach((b) => {
+        b.onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          face = face === 'profile' ? 'badges' : 'profile';
+          try { ui.sound?.sfx('blip'); } catch (err) {}
+          render();
+        };
+      });
+
+      s.querySelectorAll('.tc-badge-slot').forEach((slot) => {
+        slot.onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          const bidx = parseInt(slot.dataset.bidx, 10);
+          if (!isNaN(bidx) && bidx >= 0 && bidx < BADGE_SPECS.length) {
+            selBadge = bidx;
+            try {
+              if (c.badges?.[bidx] && ui.sound?.badgeChime) {
+                ui.sound.badgeChime(bidx);
+              } else {
+                ui.sound?.sfx('select');
+              }
+            } catch (err) {}
+            render();
+          }
+        };
+      });
+
+      // Interactivité des slots d'équipe : Cri du Pokémon & animation de saut
+      s.querySelectorAll('.tc-team-slot[data-slotidx]').forEach((slot) => {
+        slot.onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          const sidx = parseInt(slot.dataset.slotidx, 10);
+          const mon = team[sidx];
+          if (mon) {
+            try { ui.sound?.cry(ASSETS.cry(mon.sp)); } catch (err) {}
+            slot.classList?.remove?.('tc-ts-bounce');
+            void slot.offsetWidth;
+            slot.classList?.add?.('tc-ts-bounce');
+          }
+        };
+      });
+
+      // Consultation du Panthéon depuis la Carte de Dresseur
+      s.querySelectorAll('.tc-hof-val').forEach((btn) => {
+        btn.onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          try { ui.sound?.sfx('select'); } catch (err) {}
+          pantheonScreen(game);
+        };
+      });
+
+      // Interactivité de la photo du dresseur
+      s.querySelectorAll('.tc-photo-frame').forEach((photo) => {
+        if (photo.style) photo.style.cursor = 'pointer';
+        photo.title = 'Clic : Saluer le dresseur';
+        photo.onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          try { ui.sound?.sfx('blip'); } catch (err) {}
+          photo.classList?.remove?.('tc-photo-pulse');
+          void photo.offsetWidth;
+          photo.classList?.add?.('tc-photo-pulse');
+        };
+      });
+    };
+
+    const close = () => {
+      pop();
+      s.remove();
+      try { ui.sound?.sfx('cancel'); } catch (e) {}
+      resolve();
+    };
+
+    const pop = ui.input.push((k) => {
+      if (k === 'a' || k === 'b' || k === 'cancel') {
+        close();
+      } else if (k === 'space' || k === 'left' || k === 'right') {
+        face = face === 'profile' ? 'badges' : 'profile';
+        try { ui.sound?.sfx('blip'); } catch (err) {}
+        render();
+      } else if (face === 'badges' && (k === 'up' || k === 'down')) {
+        selBadge = (selBadge + (k === 'down' ? 1 : -1) + BADGE_SPECS.length) % BADGE_SPECS.length;
+        try { ui.sound?.sfx('select'); } catch (err) {}
+        render();
+      }
+    });
+
+    render();
   });
 }
 
@@ -1430,7 +1878,7 @@ function renderPCPokemonPreview(m) {
         <span class="pc-prev-lvl">N.${m.lvl}</span>
       </div>
       <div class="pc-prev-art">
-        <img class="pc-prev-spr${m.shadow ? ' shadowmon' : ''}" src="${ASSETS.front(m.sp, m.shiny)}" alt="" onerror="this.src='${ASSETS.icon(m.sp)}'">
+        <img class="pc-prev-spr${m.shadow ? ' shadowmon' : ''}" src="${ASSETS.front(m.sp, m.shiny, m.shadow)}" alt="" onerror="this.src='${ASSETS.icon(m.sp, m.shadow)}'">
       </div>
       <div class="pc-prev-types">
         ${(S.t || ['normal']).map(typeTag).join(' ')}
@@ -1923,7 +2371,7 @@ function openMoveRelearnerUI(game, m, moveIds, scales) {
                     <span class="rr-acc">${M.a ? `Préc. ${M.a}%` : 'Préc. —'}</span>
                     <span class="rr-pp">PP ${M.pp}/${M.pp}</span>
                   </div>
-                  <div class="rr-desc">${esc(M.d || 'Une attaque puissante qui inflige des dégâts à l\'ennemi.')}</div>
+                  <div class="rr-desc">${esc(moveDesc(M))}</div>
                 </div>`;
               }).join('')}
             </div>
@@ -2279,6 +2727,478 @@ export function questsScreen(game) {
       ui.sound.sfx('blip'); render();
     });
     syncJournal(game);
+    render();
+  });
+}
+
+
+/* ================= ÉCRAN D'APPRENTISSAGE DE CAPACITÉ 5G ================= */
+/** Écran B2W2 pour remplacer une attaque quand le Pokémon en connaît déjà 4 */
+export function learnMoveScreen(game, m, moveId) {
+  return new Promise((resolve) => {
+    const ui = game.ui;
+    const newM = MOVES[moveId];
+    const s = screen(ui, 'learn-move-scr');
+    let sel = 0; // 0..3: anciennes capacités, 4: abandonner
+
+    const draw = () => {
+      const activeMove = sel < 4 ? MOVES[m.moves[sel].id] : null;
+      const activeDesc = sel < 4 ? moveDesc(activeMove) : "Conserver les 4 capacités actuelles et abandonner l'apprentissage de cette nouvelle capacité.";
+
+      s.innerHTML = `
+        <div class="scr-bar">
+          <div class="scr-bar-left">
+            <img class="scr-bar-ico" src="img/hud/team.png" alt="">
+            <span class="scr-bar-title">APPRENTISSAGE D'UNE CAPACITÉ</span>
+            <span class="scr-bar-sub">${esc(monName(m))} (N.${m.lvl})</span>
+          </div>
+          <div class="scr-bar-right">
+            <button type="button" class="scr-close-btn" data-act="cancel">ABANDONNER ✕</button>
+          </div>
+        </div>
+
+        <div class="lm-body">
+          <!-- Carte Haute : Nouvelle Capacité -->
+          <div class="lm-new-card">
+            <div class="lm-card-label">NOUVELLE CAPACITÉ À APPRENDRE</div>
+            <div class="lm-move-row new" style="--tc:${TYPE_COL[newM.t]}">
+              <div class="lm-move-main">
+                <span class="lm-move-name">${esc(newM.n)}</span>
+                <span class="lm-type" style="background:${TYPE_COL[newM.t]}">${TYPE_FR[newM.t]}</span>
+                <span class="lm-cat"><img src="img/battle/cat_${newM.c || 'physical'}.png" alt=""><span>${newM.c === 'special' ? 'Spécial' : newM.c === 'status' ? 'Statut' : 'Physique'}</span></span>
+              </div>
+              <div class="lm-move-stats">
+                <span class="lm-stat-pw">${newM.p ? 'Puissance : ' + newM.p : 'Statut'}</span>
+                <span class="lm-stat-acc">${newM.a ? 'Précision : ' + newM.a + '%' : 'Précision : —'}</span>
+                <span class="lm-stat-pp">PP : <b>${newM.pp}</b>/${newM.pp}</span>
+              </div>
+            </div>
+            <div class="lm-desc-box new">
+              <div class="lm-desc-tag">EFFET :</div>
+              <div class="lm-desc-content">${esc(moveDesc(newM))}</div>
+            </div>
+          </div>
+
+          <!-- Section Basse : Capacités Actuelles & Choix -->
+          <div class="lm-current-section">
+            <div class="lm-section-title">
+              <span>Sélectionne la capacité à oublier :</span>
+              <span class="lm-instruct">▲ ▼ ◀ ▶ Naviguer · Entrée / Clic : Valider</span>
+            </div>
+
+            <div class="lm-moves-grid">
+              ${m.moves.map((mv, idx) => {
+                const M = MOVES[mv.id];
+                const isSel = idx === sel;
+                return `
+                  <div class="lm-cur-move ${isSel ? 'sel' : ''}" data-idx="${idx}" style="--tc:${TYPE_COL[M.t]}">
+                    <div class="lm-cm-header">
+                      <span class="lm-cm-num">${idx + 1}</span>
+                      <span class="lm-cm-name">${esc(M.n)}</span>
+                      <span class="lm-type" style="background:${TYPE_COL[M.t]}">${TYPE_FR[M.t]}</span>
+                    </div>
+                    <div class="lm-cm-stats">
+                      <span class="lm-cat"><img src="img/battle/cat_${M.c || 'physical'}.png" alt=""></span>
+                      <span class="lm-stat-pw">${M.p ? 'Puis. ' + M.p : 'Statut'}</span>
+                      <span class="lm-stat-pp">PP ${mv.pp}/${M.pp}</span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+              <div class="lm-cur-move abandon ${sel === 4 ? 'sel' : ''}" data-idx="4">
+                <span class="lm-abandon-ico">✕</span>
+                <span class="lm-abandon-txt">Conserver les attaques actuelles</span>
+              </div>
+            </div>
+
+            <!-- Encadré comparatif dynamique pour l'attaque sélectionnée -->
+            <div class="lm-comparison-box">
+              <div class="lm-comp-head">
+                ${sel < 4 ? `
+                  <span class="lm-comp-tag">CAPACITÉ ACTUELLE SÉLECTIONNÉE (${sel + 1}/4) :</span>
+                  <span class="lm-comp-name">${esc(activeMove.n)}</span>
+                  <span class="lm-comp-acc">${activeMove.a ? 'Précision : ' + activeMove.a + '%' : 'Précision : —'}</span>
+                ` : `
+                  <span class="lm-comp-tag">OPTION :</span>
+                  <span class="lm-comp-name">Abandonner</span>
+                `}
+              </div>
+              <div class="lm-comp-desc">${esc(activeDesc)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      s.querySelector('[data-act="cancel"]')?.addEventListener('click', () => doCancel());
+      s.querySelectorAll('.lm-cur-move').forEach((elRow) => {
+        const idx = +elRow.dataset.idx;
+        elRow.addEventListener('pointerenter', () => {
+          if (sel !== idx) {
+            sel = idx;
+            game.sound.sfx('blip');
+            draw();
+          }
+        });
+        elRow.addEventListener('click', () => {
+          if (idx === 4) doCancel();
+          else doReplace(idx);
+        });
+      });
+    };
+
+    const doReplace = async (k) => {
+      const oldMove = MOVES[m.moves[k].id];
+      const confirm = await ui.yesNo(`Oublier ${oldMove.n} pour apprendre ${newM.n} ?`);
+      if (!confirm) return;
+      s.remove();
+      pop();
+      resolve(k);
+    };
+
+    const doCancel = async () => {
+      const confirm = await ui.yesNo(`Abandonner l'apprentissage de ${newM.n} ?`);
+      if (!confirm) return;
+      s.remove();
+      pop();
+      resolve(-1);
+    };
+
+    const pop = ui.input.push((k) => {
+      let j = sel;
+      if (k === 'up') {
+        if (sel >= 2 && sel < 4) j = sel - 2;
+        else if (sel === 4) j = 2;
+      } else if (k === 'down') {
+        if (sel <= 1) j = sel + 2;
+        else if (sel === 2 || sel === 3) j = 4;
+      } else if (k === 'left') {
+        if (sel === 1 || sel === 3) j = sel - 1;
+      } else if (k === 'right') {
+        if (sel === 0 || sel === 2) j = sel + 1;
+      } else if (k === 'a') {
+        if (sel === 4) doCancel();
+        else doReplace(sel);
+        return;
+      } else if (k === 'b') {
+        doCancel();
+        return;
+      } else return;
+
+      if (j !== sel) {
+        sel = j;
+        game.sound.sfx('blip');
+        draw();
+      }
+    });
+
+    draw();
+  });
+}
+
+
+/* ================= HALL DE LA RENOMMÉE / PANTHÉON B2W2 ================= */
+
+export function hofScreen(game, entry) {
+  const ui = game.ui, st = game.state;
+  return new Promise((resolve) => {
+    const s = screen(ui, 'hof-ceremony-scr');
+    s.classList.add('b2w2-screen');
+
+    const party = (entry?.team || st.party || []).slice(0, 6);
+    let curMonIdx = 0; // 0..party.length (party.length = récapitulatif final)
+    const totalMons = party.length;
+
+    const render = () => {
+      // 1. Écran récapitulatif final de sacre
+      if (curMonIdx >= totalMons) {
+        const recapListHtml = party.map((m) => {
+          const S = SPECIES[m.sp] || {};
+          const isShiny = !!m.shiny;
+          return `
+            <div class="hof-recap-mon">
+              <div class="hof-rm-socket">
+                <img class="hof-rm-icon" src="${ASSETS.icon(m.sp, m.shadow)}" alt="" onerror="this.src='${ASSETS.front(m.sp)}'">
+              </div>
+              <div class="hof-rm-info">
+                <div class="hof-rm-name">${esc(m.nick || S.n || 'Pokémon')}${isShiny ? ' <span class="tc-star">★</span>' : ''}</div>
+                <div class="hof-rm-lvl">N.${m.lvl}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        s.innerHTML = `
+          <div class="hof-casing final">
+            <div class="hof-header">
+              <span class="hof-hdr-title">LIGUE POKÉMON D'ODYSSÉE</span>
+              <span class="hof-hdr-badge">★ ENTRÉE AU PANTHÉON ★</span>
+            </div>
+            <div class="hof-recap-body">
+              <div class="hof-trainer-col">
+                <div class="hof-photo-frame">
+                  <div class="hof-photo-pedestal"></div>
+                  <img class="hof-trainer-spr" src="${ASSETS.trainer(st.gender === 'f' ? 'player_f' : 'player_m')}" alt="">
+                  <span class="hof-trainer-tag">MAÎTRE DE LA LIGUE</span>
+                </div>
+                <div class="hof-master-seal">
+                  <div class="hof-seal-stars">★★★★★</div>
+                  <div class="hof-seal-title">CERTIFICAT DU PANTHÉON</div>
+                  <div class="hof-seal-id">Dresseur : <b>${esc(st.name)}</b> (ID : ${String(st.id || 0).padStart(5, '0')})</div>
+                </div>
+              </div>
+              <div class="hof-team-col">
+                <div class="hof-team-title">LES COMPAGNONS DU SACRE (#${entry?.id || 1})</div>
+                <div class="hof-recap-grid">${recapListHtml}</div>
+                <div class="hof-recap-meta">
+                  <span>Date : <b>${entry?.date || new Date().toLocaleDateString('fr-FR')}</b></span>
+                  <span>Temps : <b>${Math.floor((entry?.time || st.time || 0) / 3600)}h ${String(Math.floor((entry?.time || st.time || 0) / 60) % 60).padStart(2, '0')}</b></span>
+                  <span>Pokédex : <b>${entry?.dexCount || st.dex?.caught?.length || 0}</b></span>
+                </div>
+              </div>
+            </div>
+            <div class="hof-footer">
+              <button type="button" class="hof-btn-next" data-act="finish">ENREGISTRER ET FERMER (Entrée / Échap) ▶</button>
+            </div>
+          </div>
+        `;
+        s.querySelector('[data-act="finish"]')?.addEventListener('click', close);
+        return;
+      }
+
+      // 2. Présentation d'un Pokémon individuel avec projecteur
+      const m = party[curMonIdx];
+      const S = SPECIES[m.sp] || {};
+      const ab = getAbility(m);
+      const isShiny = !!m.shiny;
+      const movesHtml = (m.moves || []).slice(0, 4).map((mv) => {
+        const moveObj = MOVES[mv.id || mv] || { n: 'Capacité', t: 'normal', c: 'physical' };
+        return `
+          <div class="hof-mon-move" style="--tc:${TYPE_COL[moveObj.t] || '#888'}">
+            <span class="hof-mm-type">${TYPE_FR[moveObj.t] || moveObj.t}</span>
+            <span class="hof-mm-name">${esc(moveObj.n)}</span>
+          </div>
+        `;
+      }).join('');
+
+      s.innerHTML = `
+        <div class="hof-casing solo">
+          <div class="hof-header">
+            <span class="hof-hdr-title">PANTHÉON D'ODYSSÉE · IMMORTALISATION (${curMonIdx + 1} / ${totalMons})</span>
+            <span class="hof-hdr-date">${entry?.title || 'Sacre de la Ligue'}</span>
+          </div>
+          <div class="hof-solo-body">
+            <div class="hof-solo-art-col">
+              <div class="hof-solo-pedestal">
+                <div class="hof-solo-light"></div>
+                <img class="hof-solo-spr${isShiny ? ' shiny' : ''}" src="${ASSETS.front(m.sp, isShiny, m.shadow)}" alt="" onerror="this.src='${ASSETS.icon(m.sp)}'">
+              </div>
+            </div>
+            <div class="hof-solo-info-col">
+              <div class="hof-si-top">
+                <span class="hof-si-slot">POKÉMON #${curMonIdx + 1}</span>
+                <span class="hof-si-name">${esc(m.nick || S.n || 'Pokémon')}</span>
+                ${isShiny ? '<span class="tc-star">★ SHINY</span>' : ''}
+                <span class="hof-si-lvl">N.${m.lvl}</span>
+              </div>
+              <div class="hof-si-types">
+                ${(S.t || ['normal']).map((t) => `<span class="hof-si-type" style="--tc:${TYPE_COL[t] || '#888'}">${TYPE_FR[t] || t}</span>`).join('')}
+              </div>
+              <div class="hof-si-meta">
+                <div>Espèce : <b>${esc(S.n || 'Inconnu')}</b> (N° Pokédex : #${String(S.no || m.sp).padStart(3, '0')})</div>
+                <div>Talent : <b>${esc(ab?.name || 'Aucun')}</b></div>
+                <div>Dresseur d'Origine : <b>${esc(m.ot || st.name)}</b></div>
+              </div>
+              <div class="hof-si-moves-title">CAPACITÉS DU TRIOMPHE</div>
+              <div class="hof-si-moves-grid">${movesHtml}</div>
+            </div>
+          </div>
+          <div class="hof-footer">
+            <span class="hof-foot-hint">Appuyez sur <kbd>ESPACE</kbd> ou cliquez pour continuer</span>
+            <button type="button" class="hof-btn-next" data-act="next">
+              ${curMonIdx + 1 < totalMons ? 'POKÉMON SUIVANT ▶' : 'TABLEAU DE LA LIGUE ➔'}
+            </button>
+          </div>
+        </div>
+      `;
+
+      try { ui.sound?.sfx('select'); ui.sound?.cry(ASSETS.cry(m.sp)); } catch (e) {}
+
+      s.querySelector('[data-act="next"]')?.addEventListener('click', () => {
+        curMonIdx++;
+        render();
+      });
+    };
+
+    const close = () => {
+      pop();
+      s.remove();
+      try { ui.sound?.sfx('cancel'); } catch (e) {}
+      resolve();
+    };
+
+    const pop = ui.input.push((k) => {
+      if (k === 'a' || k === 'space' || k === 'right' || k === 'down') {
+        if (curMonIdx < totalMons) {
+          curMonIdx++;
+          render();
+        } else {
+          close();
+        }
+      } else if (k === 'b' || k === 'cancel') {
+        if (curMonIdx < totalMons) {
+          curMonIdx = totalMons;
+          render();
+        } else {
+          close();
+        }
+      }
+    });
+
+    render();
+  });
+}
+
+export function pantheonScreen(game) {
+  const ui = game.ui, st = game.state;
+  return new Promise((resolve) => {
+    const s = screen(ui, 'pantheon-history-scr');
+    s.classList.add('b2w2-screen');
+
+    const history = (st.hof || []).slice().reverse();
+    let selEntryIdx = 0;
+
+    const render = () => {
+      if (!history.length) {
+        s.innerHTML = `
+          <div class="pantheon-casing empty">
+            <div class="pantheon-hdr">
+              <span class="pantheon-title">HALL DE LA RENOMMÉE D'ODYSSÉE</span>
+              <button type="button" class="tc-btn-close" data-act="close">✕</button>
+            </div>
+            <div class="pantheon-empty-body">
+              <div class="pantheon-empty-pedestal">🏆</div>
+              <div class="pantheon-empty-title">AUCUN SACRE ENREGISTRÉ</div>
+              <div class="pantheon-empty-desc">
+                Le Hall de la Renommée honore les dresseurs ayant triomphé des 4 membres du Conseil des 4 et de la Maîtresse de la Ligue Céleste.<br>
+                Relevez le défi pour inscrire votre équipe dans la légende d'Odyssée !
+              </div>
+            </div>
+            <div class="pantheon-foot">
+              <button type="button" class="pantheon-btn-close" data-act="close">Refermer (Échap)</button>
+            </div>
+          </div>
+        `;
+        s.querySelectorAll('[data-act="close"]').forEach((b) => b.onclick = close);
+        return;
+      }
+
+      const entry = history[selEntryIdx] || history[0];
+      const tabsHtml = history.map((e, idx) => `
+        <button type="button" class="pantheon-tab${idx === selEntryIdx ? ' on' : ''}" data-eidx="${idx}">
+          <b>Sacre #${e.id || (history.length - idx)}</b>
+          <small>${esc(e.date || 'Ligue')}</small>
+        </button>
+      `).join('');
+
+      const teamHtml = (entry.team || []).map((m) => {
+        const S = SPECIES[m.sp] || {};
+        const isShiny = !!m.shiny;
+        const movesHtml = (m.moves || []).slice(0, 4).map((mv) => {
+          const mObj = MOVES[mv.id || mv] || { n: 'Capacité', t: 'normal' };
+          return `<span class="ph-mv" style="--tc:${TYPE_COL[mObj.t] || '#888'}">${esc(mObj.n)}</span>`;
+        }).join('');
+
+        return `
+          <div class="ph-team-slot${isShiny ? ' shiny' : ''}">
+            <div class="ph-slot-art">
+              <img class="ph-slot-spr" src="${ASSETS.front(m.sp, isShiny, m.shadow)}" alt="" onerror="this.src='${ASSETS.icon(m.sp)}'">
+            </div>
+            <div class="ph-slot-info">
+              <div class="ph-slot-name">${esc(m.nick || S.n || 'Pokémon')}${isShiny ? ' <span class="tc-star">★</span>' : ''} <span class="ph-slot-lvl">N.${m.lvl}</span></div>
+              <div class="ph-slot-types">
+                ${(S.t || ['normal']).map((t) => `<span class="ph-type-pill" style="--tc:${TYPE_COL[t] || '#888'}">${TYPE_FR[t] || t}</span>`).join('')}
+              </div>
+              <div class="ph-slot-moves">${movesHtml}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      s.innerHTML = `
+        <div class="pantheon-casing">
+          <div class="pantheon-hdr">
+            <div class="pantheon-hdr-left">
+              <span class="pantheon-title">HALL DE LA RENOMMÉE D'ODYSSÉE</span>
+              <span class="pantheon-subtitle">REGISTRE HISTORIQUE DES MAÎTRES</span>
+            </div>
+            <button type="button" class="tc-btn-close" data-act="close" title="Fermer">✕</button>
+          </div>
+          <div class="pantheon-body">
+            <div class="pantheon-tabs-col">
+              <div class="pantheon-tabs-head">${history.length} SACRE${history.length > 1 ? 'S' : ''}</div>
+              <div class="pantheon-tabs-list">${tabsHtml}</div>
+            </div>
+            <div class="pantheon-content-col">
+              <div class="pantheon-entry-card">
+                <div class="ph-entry-head">
+                  <div class="ph-eh-left">
+                    <span class="ph-eh-title">SACRE OFFICIEL #${entry.id || 1}</span>
+                    <span class="ph-eh-date">Date : <b>${entry.date || '—'}</b> · Temps : <b>${Math.floor((entry.time || 0) / 3600)}h ${String(Math.floor((entry.time || 0) / 60) % 60).padStart(2, '0')}</b></span>
+                  </div>
+                  <div class="ph-eh-dex">Pokédex : <b>${entry.dexCount || 0}</b> capturés</div>
+                </div>
+                <div class="ph-team-grid">${teamHtml}</div>
+              </div>
+            </div>
+          </div>
+          <div class="pantheon-foot">
+            <div class="tc-foot-hints">
+              <span><kbd>▲</kbd> <kbd>▼</kbd> Sélectionner un sacre</span>
+              <span><kbd>ÉCHAP</kbd> Quitter</span>
+            </div>
+            <button type="button" class="pantheon-btn-close" data-act="close">Refermer</button>
+          </div>
+        </div>
+      `;
+
+      s.querySelectorAll('[data-act="close"]').forEach((b) => b.onclick = close);
+      s.querySelectorAll('.pantheon-tab').forEach((tab) => {
+        tab.onclick = () => {
+          const eidx = parseInt(tab.dataset.eidx, 10);
+          if (!isNaN(eidx) && eidx >= 0 && eidx < history.length) {
+            selEntryIdx = eidx;
+            try { ui.sound?.sfx('select'); } catch (err) {}
+            render();
+          }
+        };
+      });
+    };
+
+    const close = () => {
+      pop();
+      s.remove();
+      try { ui.sound?.sfx('cancel'); } catch (e) {}
+      resolve();
+    };
+
+    const pop = ui.input.push((k) => {
+      if (k === 'b' || k === 'cancel') {
+        close();
+      } else if (k === 'up') {
+        if (selEntryIdx > 0) {
+          selEntryIdx--;
+          try { ui.sound?.sfx('select'); } catch (err) {}
+          render();
+        }
+      } else if (k === 'down') {
+        if (selEntryIdx < history.length - 1) {
+          selEntryIdx++;
+          try { ui.sound?.sfx('select'); } catch (err) {}
+          render();
+        }
+      }
+    });
+
     render();
   });
 }

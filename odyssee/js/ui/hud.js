@@ -6,7 +6,8 @@ import { el, esc } from './ui.js';
 import { ASSETS } from '../assets.js';
 import { monName, expProgress } from '../core/mon.js';
 import { BADGES } from '../world/region.js';
-import { hpCol, statusTag, partyScreen, summaryScreen, mapScreen, cardScreen, questsScreen } from './screens.js';
+import { hpCol, statusTag, partyScreen, summaryScreen, mapScreen, cardScreen, questsScreen, trophiesScreen } from './screens.js';
+import { getPvpSummary } from '../core/trophies.js';
 import { getTrackedQuest } from '../core/questsData.js';
 
 const gender = (m) => (m.gender === 'm' ? '<span class="g m">♂</span>' : m.gender === 'f' ? '<span class="g f">♀</span>' : '');
@@ -128,6 +129,9 @@ export class Hud {
       } else if (act === 'quests') {
         g.busy = true; g.sound.sfx('select');
         try { await questsScreen(g); } finally { g.busy = false; this.update(true); }
+      } else if (act === 'trophies') {
+        g.busy = true; g.sound.sfx('select');
+        try { await trophiesScreen(g); } finally { g.busy = false; this.update(true); }
       }
     });
   }
@@ -142,11 +146,14 @@ export class Hud {
     const loc = g.locationName();
     const tracked = getTrackedQuest(g);
     const bCount = g.badgeCount();
+    const pvpSummary = getPvpSummary(st);
+    const trUnlocked = pvpSummary?.unlockedCount ?? 0;
+    const trTotal = pvpSummary?.trophiesTotal ?? 32;
     const badgesKey = st.badges.map((b) => (b ? '1' : '0')).join('');
     const partyKey = st.party
       .map((m) => `${m.uid}:${m.sp}:${m.nick || ''}:${m.lvl}:${m.hp}:${m.stats[0]}:${m.exp}:${m.status || ''}:${m.shadow ? 1 : 0}:${m.shiny ? 1 : 0}`)
       .join('|');
-    const sig = `${this.collapsed ? 1 : 0};${g.autoRun ? 1 : 0}:${g.runSpeed ?? 1};${this.swapFrom};${loc};${st.money};${badgesKey};${st.trackedQuest || ''}:${tracked?.notes?.length || 0};${partyKey}`;
+    const sig = `${this.collapsed ? 1 : 0};${g.autoRun ? 1 : 0}:${g.runSpeed ?? 1};${this.swapFrom};${loc};${st.money};${badgesKey};${trUnlocked};${st.trackedQuest || ''}:${tracked?.notes?.length || 0};${partyKey}`;
     if (!force && sig === this._sig) return;
     this._sig = sig;
 
@@ -171,7 +178,7 @@ export class Hud {
             (isSwap ? ' swap' : '');
           return `<div class="${cls}" data-idx="${k}" title="Clic : Résumé de ${esc(monName(m))} (${m.hp}/${m.stats[0]} PV) · Clic droit ou ⇅ : Réordonner">
             <div class="hud-spr-wrap">
-              <img class="hud-ico${m.shadow ? ' shadowmon' : ''}" src="${ASSETS.front(m.sp, m.shiny)}" alt="" onerror="this.src='${ASSETS.icon(m.sp)}'">
+              <img class="hud-ico${m.shadow ? ' shadowmon' : ''}" src="${ASSETS.front(m.sp, m.shiny, m.shadow)}" alt="" onerror="this.src='${ASSETS.icon(m.sp, m.shadow)}'">
             </div>
             <div class="hud-main">
               <div class="hud-top">
@@ -180,7 +187,7 @@ export class Hud {
                 <span class="hud-lvl">N.${m.lvl}</span>
               </div>
               <div class="hud-hp">
-                <b>HP</b>
+                <b>PV</b>
                 <i><u style="width:${(r * 100).toFixed(1)}%;background:${hpCol(r)}"></u></i>
               </div>
               <div class="hud-exp">
@@ -210,9 +217,9 @@ export class Hud {
             <img class="hud-stat-ico" src="img/hud/coin.png" alt="">
             <span class="hud-money">${st.money.toLocaleString('fr-FR')} ₽</span>
           </div>
-          <div class="hud-stat-item">
-            <img class="hud-stat-ico" src="img/hud/trophy.png" alt="">
-            <span class="hud-badge-cnt">${bCount}/${BADGES.length}</span>
+          <div class="hud-stat-item hud-trophy-pill" data-act="trophies" title="Journal des Trophées & Médailles (${trUnlocked}/${trTotal}) — Cliquer pour ouvrir (Touche T)" style="cursor: pointer;">
+            <img class="hud-stat-ico" src="img/hud/trophy.png" alt="" onerror="this.src='img/trophies/box_120.png'">
+            <span class="hud-trophy-cnt">${trUnlocked}/${trTotal} 🏅</span>
           </div>
           <div class="hud-stat-item hud-cap-pill" title="Niveau max autorisé avant la prochaine Arène">
             <span>MAX N.${g.levelCap()}</span>
@@ -245,6 +252,9 @@ export class Hud {
         </button>
         <button type="button" class="hud-btn" data-act="quests" tabindex="-1" title="Journal des Quêtes (Touche Q)">
           <img src="img/hud/quest.png" alt="" onerror="this.src='img/items/notebook.png'"><span>QUÊTES</span>
+        </button>
+        <button type="button" class="hud-btn" data-act="trophies" tabindex="-1" title="Journal des Trophées & Médailles (Touche T)">
+          <img src="img/hud/trophy.png" alt="" onerror="this.src='img/trophies/box_120.png'"><span>TROPHÉES</span>
         </button>
       </div>
     `;

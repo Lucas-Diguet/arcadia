@@ -17,11 +17,17 @@ const ITEMS = new Set(SPRITES.items || []), PORTRAITS = new Set(SPRITES.portrait
 // champions dont le portrait de combat n'est pas encore dessiné : un dresseur qui leur ressemble
 const SOSIES = { pierre: 'topdresseur', croupier: 'garde' };
 const orig = (id) => id >= 1000 && SPECIES[id];
+// espèces dont la version obscure a son dessin
+const OBSCURS = new Set([249]);
 
 export const ASSETS = {
-  front: (id, shiny) => (orig(id) ? `${IMG}crea/${SPECIES[id].k}-f${shiny ? 's' : ''}.png` : `${gen(id)}${shiny ? '/shiny' : ''}/${id}.png`),
-  back: (id, shiny) => (orig(id) ? `${IMG}crea/${SPECIES[id].k}-b${shiny ? 's' : ''}.png` : `${gen(id)}/back${shiny ? '/shiny' : ''}/${id}.png`),
-  icon: (id) => (orig(id) ? `${IMG}crea/${SPECIES[id].k}-i.png` : `${BASE}/pokemon/versions/generation-vii/icons/${id}.png`),
+  // version obscure (Lugia Obscur) : son propre dessin s'il existe (img/crea/<espèce>-shadow-f / -b / -i.png)
+  front: (id, shiny, shadow) => (shadow && OBSCURS.has(id) ? `${IMG}crea/${SPECIES[id].k}-shadow-f.png` : orig(id) ? `${IMG}crea/${SPECIES[id].k}-f${shiny ? 's' : ''}.png` : `${gen(id)}${shiny ? '/shiny' : ''}/${id}.png`),
+  back: (id, shiny, shadow) => (shadow && OBSCURS.has(id) ? `${IMG}crea/${SPECIES[id].k}-shadow-b.png` : orig(id) ? `${IMG}crea/${SPECIES[id].k}-b${shiny ? 's' : ''}.png` : `${gen(id)}/back${shiny ? '/shiny' : ''}/${id}.png`),
+  icon: (id, shadow) => (shadow && OBSCURS.has(id) ? `${IMG}crea/${SPECIES[id].k}-shadow-i.png` : orig(id) ? `${IMG}crea/${SPECIES[id].k}-i.png` : `${BASE}/pokemon/versions/generation-vii/icons/${id}.png`),
+  shadowFront: (id) => `${IMG}crea/${SPECIES[id].k}-shadow-f.png`,
+  shadowBack: (id) => `${IMG}crea/${SPECIES[id].k}-shadow-b.png`,
+  shadowIcon: (id) => `${IMG}crea/${SPECIES[id].k}-shadow-i.png`,
   item: (k) => { const ic = ITEM_DEFS[k]?.icon || k; return ITEMS.has(ic) ? `${IMG}items/${ic}.png` : `${BASE}/items/${ic}.png`; },
   // cri : enregistrement PokeAPI pour un Pokémon, cri synthétisé (« synth:id ») pour une créature originale
   cry: (id) => (orig(id) ? 'synth:' + id : params.has('sprites') ? null : `${CRIES}/${id}.ogg`),
@@ -47,6 +53,14 @@ export const ASSETS = {
   hgss: (k) => `${IMG}hgss/${k}.png`,
   deco: (k) => `${IMG}deco/${k}.png`,
   carte: (k) => `${IMG}carte/${k}.png`,
+  badge: (k, locked = false) => `${IMG}badges/badge_${k}${locked ? '_locked' : ''}.png`,
+  cardFrame: `${IMG}card/b2w2_card_frame.png`,
+  cardBg: (rankTheme = 'normal') => {
+    const valid = ['normal', 'bronze', 'silver', 'gold', 'master'];
+    const t = valid.includes(rankTheme) ? rankTheme : 'normal';
+    return `${IMG}card/card_front_${t}.jpg`;
+  },
+  cardBack: `${IMG}card/card_back_case.jpg`,
   title: `${IMG}title-odyssor.png`,
 };
 /** précharge une image (résout même en cas d'échec) */

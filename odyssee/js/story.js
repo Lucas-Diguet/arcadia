@@ -6,11 +6,12 @@ import { FIELD } from './world/region.js';
 import { createMon, monName, healFull } from './core/mon.js';
 import { SPECIES } from './data/species.js';
 import { MOVES } from './data/moves.js';
-import { ITEMS, itemName } from './core/items.js';
+import { ITEMS, itemName, formatObtainItem } from './core/items.js';
 import { partyScreen } from './ui/screens.js';
 import { ASSETS, loadImg } from './assets.js';
 import { el } from './ui/ui.js';
 import { shadowCanvas } from './render/shadow.js';
+import { playLugiaCinematic } from './ui/cinematic.js';
 
 const say = (g, lines, who) => g.ui.say(lines, who ? { speaker: who } : undefined);
 const val = (v, st) => (typeof v === 'function' ? v(st) : v);
@@ -20,9 +21,7 @@ const LUGIA = 249, SHADOW_MOVE = 10001, AEROBLAST = 177;
 async function receive(g, item, qty = 1) {
   const st = g.state;
   g.give(item, qty); g.sound.sfx('item');
-  const d = ITEMS[item], cs = d?.field && FIELD[d.field];
-  if (cs) await g.ui.say(`${st.name} reçoit la ${cs.cs} ${cs.name} !\nElle est rangée dans les Objets rares du Sac.`);
-  else await g.ui.say(`${st.name} reçoit ${qty > 1 ? qty + ' × ' : ''}${itemName(item)} !${d?.key ? '\nVous rangez l\'objet dans les Objets rares.' : ''}`);
+  await g.ui.say(formatObtainItem(st.name, item, qty));
 }
 
 /** reçoit un Pokémon (équipe, ou PC si elle est pleine) */
@@ -245,6 +244,7 @@ async function lugiaWakes(g) {
   await ui.flash(3, '#6020a0', 120);
   g.sound.cry(ASSETS.cry(LUGIA));
   await ui.say(['Un cri immense résonne dans tout le Sanctuaire !', 'Les eaux de l\'autel bouillonnent... Lugia Obscur ouvre les yeux !']);
+  await playLugiaCinematic(g);
   await lugiaBattle(g);
 }
 
@@ -252,6 +252,9 @@ async function lugiaWakes(g) {
 export async function lugiaBattle(g) {
   const st = g.state, ui = g.ui;
   if (!g.lead()) return;
+  if (!st.flags.seenLugiaCinematic) {
+    await playLugiaCinematic(g);
+  }
   if (!(await ui.yesNo('Lugia Obscur te fixe de ses yeux sombres.\nL\'affronter ?'))) return;
   const res = await g.runBattle({ wild: shadowLugia(), music: 'legend' });
   if (res === 'caught') {
@@ -287,9 +290,9 @@ export async function placeLugia(g) {
     if (g.mapObj.id === LUGIA_ALTAR.map && g.mapObj.get(LUGIA_ALTAR.x, LUGIA_ALTAR.y) === T.BLOCK) g.mapObj.set(LUGIA_ALTAR.x, LUGIA_ALTAR.y, T.CAVE);
     return;
   }
-  const img = await loadImg(ASSETS.front(LUGIA));
+  const img = await loadImg(ASSETS.front(LUGIA, false, true));
   if (g.mapObj.id !== LUGIA_ALTAR.map || !img) return;
-  const a = g.view.imageActor('lugia', shadowCanvas(img), 0.55);
+  const a = g.view.imageActor('lugia', img, 0.55);
   g.view.place(a, LUGIA_ALTAR.x, LUGIA_ALTAR.y - 0.1);
 }
 
