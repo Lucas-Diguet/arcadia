@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # tools/routes-victoire.py — recopie les Routes Victoire de Vert Feuille et d'Émeraude case par case, à partir des
-# décompilations pret (pokefirered, pokeemerald), dans testodyssee/js/rv/donnees.js.
-#   python3 tools/routes-victoire.py chemin/pokefirered chemin/pokeemerald
+# décompilations pret (pokefirered, pokeemerald, pokeplatinum), dans testodyssee/js/rv/donnees.js.
+#   python3 tools/routes-victoire.py chemin/pokefirered chemin/pokeemerald chemin/pokeplatinum
 # On garde le plan d'origine : murs, sol, hauteurs (plateaux et ponts), rebords, eau, cascades, échelles,
 # dresseurs (équipes, attaques, objets), objets au sol et cachés, rochers, rochers fissurés, boutons et barrières,
 # trous, rencontres sauvages, maître des capacités. Les textes des dresseurs sont traduits à la main dans rv/textes.js.
@@ -214,8 +214,113 @@ def convertir(R, fr, jeu, noms, etiquettes, extra):
         etages.append(E)
     return etages, textes
 
+# --- génération 4 : Platine (décompilation pokeplatinum : cases et permissions dans res/field/maps/data) ---
+PT_ETAGES = [('1f', '043'), ('2f', '044'), ('b1f', '045'), ('1f_room_1', '047'), ('1f_room_2', '046'), ('1f_room_3', '048')]
+PT_CLASSES = {
+    'ACE_TRAINER_MALE': 'Topdresseur', 'ACE_TRAINER_FEMALE': 'Topdresseuse', 'PSYCHIC_MALE': 'Médium', 'PSYCHIC_FEMALE': 'Médium',
+    'BLACK_BELT': 'Karatéka', 'BIRD_KEEPER': 'Ornithologue', 'VETERAN': 'Vétéran', 'DRAGON_TAMER': 'Dompteur de dragons', 'DOUBLE_TEAM': 'Duo Topdresseurs',
+}
+PT_DEGUISEMENTS = {'ACE_TRAINER_M': 'topdresseur', 'ACE_TRAINER_F': 'topdresseuse', 'PSYCHIC': 'medium', 'BLACK_BELT': 'karateka', 'EXPERT_M': 'vieil_homme'}
+PT_CT = {'TM41': ('torment', 41), 'TM59': ('dragon-pulse', 59), 'TM71': ('stone-edge', 71), 'TM79': ('dark-pulse', 79)}
+DIR4 = ['up', 'down', 'left', 'right']
+
+def objet_pt(nom):
+    nom = nom.replace('ITEM_', '')
+    if nom in PT_CT: CT[nom] = PT_CT[nom][0]; NUM_CT[nom] = PT_CT[nom][1]
+    return objet(nom)
+
+def convertir_pt(R):
+    beh, i = {}, 0
+    txt = open(R + '/include/constants/field/map_tile_behaviors.h').read()
+    for m in re.finditer(r'(TILE_BEHAVIOR_\w+)(?:\s*=\s*(0x[0-9A-Fa-f]+|\d+))?\s*,', txt[txt.index('enum TileBehavior'):]):
+        if m.group(2): i = int(m.group(2), 0)
+        beh[i] = m.group(1)[14:]; i += 1
+    caches = [re.search(r'ENTRY\(ITEM_(\w+)', l).group(1) for l in open(R + '/include/data/field/hidden_items.h') if 'HIDDEN_ITEM_ENTRY(ITEM' in l]
+    evs = {n: json.load(open(R + f'/res/field/events/events_victory_road_{n}.json')) for n, _ in PT_ETAGES}
+    etages, textes = [], {}
+    for n, mat in PT_ETAGES:
+        M = json.load(open(R + f'/res/field/matrices/map_matrix_{mat}.json'))['maps']
+        H, W = len(M) * 32, len(M[0]) * 32
+        g = [[(1, 'NONE')] * W for _ in range(H)]
+        for r, row in enumerate(M):
+            for c, nm in enumerate(row):
+                d = open(R + f'/res/field/maps/data/map_data_{int(nm[4:])}.bin', 'rb').read()
+                for k in range(1024):
+                    v = struct.unpack_from('<H', d, 16 + 2 * k)[0]
+                    g[r * 32 + k // 32][c * 32 + k % 32] = (v >> 15, beh.get(v & 0xFF, '?'))
+        sol = []
+        for y in range(H):
+            s = ''
+            for x in range(W):
+                col, b = g[y][x]
+                c = '#' if col else '.'
+                if b == 'JUMP_SOUTH': c = 'v'
+                elif b == 'JUMP_WEST': c = '<'
+                elif b == 'JUMP_EAST': c = '>'
+                elif b.startswith('ROCK_CLIMB'): c = 'e'
+                elif b.startswith('BIKE_RAMP'): c = '.'   # les débris en pente du 2F : on passe dessus
+                elif b == 'WATERFALL': c = '|'
+                elif b.startswith('WATER') and not col: c = '~'
+                elif b == 'BRIDGE_START' and not col: c = 'p'
+                elif b.startswith('BRIDGE') and not col: c = '='
+                s += c
+            sol.append(s)
+        # le vide autour de la grotte (sans collision dans les données) : on le remplit de murs
+        sol = [list(r) for r in sol]
+        pile = [(x, y) for y in range(H) for x in range(W) if (x in (0, W - 1) or y in (0, H - 1)) and sol[y][x] != '#']
+        while pile:
+            x, y = pile.pop()
+            if not (0 <= x < W and 0 <= y < H) or sol[y][x] == '#': continue
+            sol[y][x] = '#'; pile += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+        sol = [''.join(r) for r in sol]
+        ev = evs[n]
+        utiles = [(x, y) for y in range(H) for x in range(W) if sol[y][x] != '#']
+        w2, h2 = min(W, max(x for x, _ in utiles) + 3), min(H, max(y for _, y in utiles) + 3)
+        sol = [r[:w2] for r in sol[:h2]]
+        E = {'id': n, 'gen': 4, 'w': w2, 'h': h2, 'sol': sol, 'haut': ['0' * w2] * h2, 'dresseurs': [], 'objets': [], 'caches': [], 'rochers': [], 'roches': [],
+             'boutons': [], 'trous': [], 'liens': [], 'sorties': [], 'pnj': []}
+        for o in ev['warp_events']:
+            d = o['dest_header_id'].replace('MAP_HEADER_VICTORY_ROAD_', '').lower()
+            if d in evs:
+                to = evs[d]['warp_events'][o['dest_warp_id']]
+                E['liens'].append({'x': o['x'], 'y': o['z'], 'vers': d, 'vx': to['x'], 'vy': to['z']})
+            else: E['sorties'].append({'x': o['x'], 'y': o['z'], 'vers': o['dest_header_id']})
+        for o in ev['object_events']:
+            gid, x, y = o['graphics_id'][14:], o['x'], o['z']
+            if gid == 'STRENGTH_BOULDER': E['rochers'].append([x, y])
+            elif gid == 'ROCK_SMASH': E['roches'].append([x, y])
+            elif gid == 'POKEBALL': E['objets'].append([x, y, objet_pt(o['id'].replace('LOCALID_ITEM_', ''))])
+            elif o['trainer_type'] != 'TRAINER_TYPE_NONE':
+                cst = o['script']; nomf = cst[8:].lower()
+                T = json.load(open(R + f'/res/trainers/data/{nomf}.json'))
+                cls = T['class'].replace('TRAINER_CLASS_', '')
+                items = {}
+                for it in T['items']:
+                    if it and it != 'ITEM_NONE': items[objet_pt(it)] = items.get(objet_pt(it), 0) + 1
+                eq = []
+                for p in T['party']:
+                    e = [espece(p['species'][8:]), p['level'], [attaque(m[5:]) for m in p['moves'] if m != 'MOVE_NONE'] if p.get('moves') else None,
+                         objet_pt(p['item']) if p.get('item') and p['item'] != 'ITEM_NONE' else None, round(p['iv_scale'] * 31 / 255)]
+                    eq.append(e)
+                cle = o['id'].replace('LOCALID_', '').replace('DOUBLE_TEAM_TRAINER_', '').split('_')[-1].capitalize()
+                msg = {m['type']: ''.join(m['en_US']).replace('\n', ' ').replace('\r', ' ') for m in T['messages']}
+                nom = T['name'] if not T['double_battle'] else ' & '.join(w.capitalize() for w in nomf.replace('double_team_', '').split('_and_'))
+                if T['double_battle']:
+                    q = next(i for i in (1, 2) if msg.get(f'TRMSG_PRE_DOUBLE_BATTLE_{i}', '').startswith(cle + ':'))
+                    textes[cle] = {'intro': msg.get(f'TRMSG_PRE_DOUBLE_BATTLE_{q}', ''), 'perd': msg.get(f'TRMSG_DOUBLE_BATTLE_DEFEAT_{q}', ''), 'apres': msg.get(f'TRMSG_POST_DOUBLE_BATTLE_{q}', '')}
+                else: textes[cle] = {'intro': msg.get('TRMSG_PRE_BATTLE', ''), 'perd': msg.get('TRMSG_DEFEAT', ''), 'apres': msg.get('TRMSG_POST_BATTLE', '')}
+                E['dresseurs'].append({'id': cst[8:].lower(), 'cls': PT_CLASSES.get(cls, cls.title()), 'nom': nom, 'items': items, 'equipe': eq, 'duo': T['double_battle'],
+                                       'x': x, 'y': y, 'dir': DIR4[o['initial_dir']], 'vue': (o['data'] or [3])[0], 'ow': PT_DEGUISEMENTS.get(gid, 'topdresseur'), 'texte': cle})
+        for o in ev['bg_events']:
+            if o['type'] == 2: E['caches'].append([o['x'], o['z'], objet_pt(caches[o['script'] - 8000])])
+        enc = json.load(open(R + f'/res/field/encounters/encounters_victory_road_{n}.json'))
+        if enc.get('land_rate'): E['sauvages'] = [[espece(m['species'][8:]), m['level'], m['level'], p] for m, p in zip(enc['land_encounters'], [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1])]
+        if enc.get('surf_rate'): E['surf'] = [[espece(m['species'][8:]), m['level_min'], m['level_max'], p] for m, p in zip(enc['surf_encounters'], [60, 30, 5, 4, 1])]
+        etages.append(E)
+    return etages, textes
+
 def main():
-    frlg, em = sys.argv[1], sys.argv[2]
+    frlg, em, pt = sys.argv[1], sys.argv[2], sys.argv[3]
     # Émeraude : Timmy attend à l'entrée du 1F (deux cases de déclenchement)
     def wally():
         trainers = open(em + '/src/data/trainers.h').read(); parties = open(em + '/src/data/trainer_parties.h').read()
@@ -226,13 +331,14 @@ def main():
     emd, tem = convertir(em, False, 'em', ['VictoryRoad_1F', 'VictoryRoad_B1F', 'VictoryRoad_B2F'],
                          {'VictoryRoad_1F': 'gVictoryRoad_1F', 'VictoryRoad_B1F': 'gVictoryRoad_B1F', 'VictoryRoad_B2F': 'gVictoryRoad_B2F'},
                          {'VictoryRoad_1F': {'declencheurs': [{'cases': [[2, 23], [3, 23]], 'depart': [[12, 24], [12, 24]], 'arrivee': [[2, 24], [3, 24]], 'dresseur': wally()}]}})
-    out = {'vf': {'nom': 'Vert Feuille', 'etages': vf}, 'em': {'nom': 'Émeraude', 'etages': emd}}
+    ptd, tpt = convertir_pt(pt)
+    out = {'vf': {'nom': 'Vert Feuille', 'etages': vf}, 'em': {'nom': 'Émeraude', 'etages': emd}, 'pt': {'nom': 'Platine', 'etages': ptd}}
     os.makedirs(os.path.dirname(SORTIE), exist_ok=True)
     with open(SORTIE, 'w') as f:
-        f.write('// Généré par tools/routes-victoire.py à partir des décompilations pret (pokefirered, pokeemerald) — ne pas modifier à la main.\n')
+        f.write('// Généré par tools/routes-victoire.py à partir des décompilations pret (pokefirered, pokeemerald, pokeplatinum) — ne pas modifier à la main.\n')
         f.write('// sol : # mur, . sol, n sol fermé au nord, = pont, ~ eau, | cascade, v < > rebords ; haut : hauteur de chaque case (génération 3).\n')
         f.write('export const RV = ' + json.dumps(out, ensure_ascii=False, separators=(',', ':')).replace('"etages":[', '"etages":[\n').replace('},{"id"', '},\n{"id"') + ';\n')
-    json.dump({'vf': tvf, 'em': tem}, open('/tmp/rv-textes.json', 'w'), ensure_ascii=False, indent=1)
+    json.dump({'vf': tvf, 'em': tem, 'pt': tpt}, open('/tmp/rv-textes.json', 'w'), ensure_ascii=False, indent=1)
     print('attaques absentes d\'Odyssée :', ', '.join(sorted(ABSENTES)))
     print('écrit', SORTIE, os.path.getsize(SORTIE), 'octets ; textes anglais dans /tmp/rv-textes.json')
 

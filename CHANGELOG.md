@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 3.106 — 4 novembre 2026
+- **TestOdyssée** — La Route Victoire de Platine rejoint le labo, sur son plan d'origine : 1F, 2F, SS1 et les Profondeurs, avec leurs dresseurs, leurs objets, leurs rochers et leurs ponts. La fusion enchaîne maintenant Vert Feuille, Émeraude et Platine.
+  - Sur un pont, on ne descend que par ses bouts ; dessous, on passe librement.
+  - Les parois d'Escalade se gravissent tout droit, en attendant la capacité Escalade.
+  - Nouveaux objets : PV Plus, Calcium et Zinc (ils donnent des points d'effort), Pépite, Griffe Rasoir, et les CT de Platine (Draco-Choc, Lame de Roc, Vibrobscur, Tourmente).
+
 ## 3.105 — 4 novembre 2026
 - **TestOdyssée** — Nouveau : les Routes Victoire de Vert Feuille et d'Émeraude, sur leur plan d'origine, case par case, avec les graphismes d'Odyssée. Chacune se choisit seule dans les lieux du labo, ou toutes à la suite dans « Route Victoire (fusion) ».
   - Tout y est : les dresseurs avec leurs équipes et leurs attaques d'origine, les objets (même cachés), les rochers à pousser, les rochers à briser, les boutons qui font tomber les barrières, le trou où l'on fait tomber un rocher à l'étage du dessous, l'eau et les rencontres sauvages des deux jeux.

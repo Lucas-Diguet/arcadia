@@ -10,14 +10,15 @@ import { ITEMS } from '../../../odyssee/js/core/items.js';
 import { refreshStats } from '../../../odyssee/js/core/mon.js';
 
 // dans l'ordre de la fusion (HeartGold et Platine viendront s'y ajouter)
-export const ROUTES = ['vf', 'em'];
+export const ROUTES = ['vf', 'em', 'pt'];
 // la case par où l'on entre dans chaque route ; les autres sorties mènent à la Ligue
-export const ENTREES = { vf: ['VictoryRoad_1F', 11, 20], em: ['VictoryRoad_1F', 15, 40] };
+export const ENTREES = { vf: ['VictoryRoad_1F', 11, 20], em: ['VictoryRoad_1F', 15, 40], pt: ['1f', 15, 78] };
 export const FUSION = 'rv:fusion';
 
-const SOL = { '#': T.CAVEWALL, '.': T.CAVE, n: T.CAVE, '=': T.BRIDGE, '~': T.WATER, '|': T.WATER, v: T.LEDGE, '<': T.LEDGE_W, '>': T.LEDGE_E };
+const SOL = { '#': T.CAVEWALL, '.': T.CAVE, n: T.CAVE, p: T.CAVE, e: T.CAVE, '=': T.BRIDGE, '~': T.WATER, '|': T.WATER, v: T.LEDGE, '<': T.LEDGE_W, '>': T.LEDGE_E };
+const ETAGES = { '1f_room_1': 'Galerie', '1f_room_2': 'Profondeurs', '1f_room_3': 'Sortie des Profondeurs' };
 const k = (x, y) => `${x},${y}`;
-export const nomEtage = (id) => id.replace('VictoryRoad_', '').replace(/^B(\d)F$/, 'SS$1');
+export const nomEtage = (id) => ETAGES[id] || id.replace('VictoryRoad_', '').toUpperCase().replace(/^B(\d)F$/, 'SS$1');
 export const idCarte = (pre, etage) => `${pre}:${etage}`;
 /** hauteur de la case (0 : passage, 15 : pont, sinon le niveau du plateau) */
 export const hauteur = (m, x, y) => (m.in(x, y) ? m.elev[y * m.w + x] : 0);
@@ -25,6 +26,15 @@ export const hauteur = (m, x, y) => (m.in(x, y) ? m.elev[y * m.w + x] : 0);
 export function changeNiveau(z, h) { return !!z && !!h && h !== 15 && h !== z; }
 /** case fermée au nord : on n'en sort pas vers le haut, on n'y entre pas par le haut */
 export function fermee(m, x, y, d, tx, ty) { return (d === 'up' && m.nord.has(k(x, y))) || (d === 'down' && m.nord.has(k(tx, ty))); }
+/** la génération 4 : on monte sur un pont par ses bouts (p) et on ne le quitte que par eux ; dessous, on passe ;
+ *  la paroi d'Escalade (e) se gravit tout droit, vers le haut ou vers le bas. Renvoie null si le pas est interdit, sinon « sur le pont ». */
+export function pasGen4(m, x, y, d, tx, ty, pont) {
+  const a = m.rv.sol[y]?.[x], b = m.rv.sol[ty]?.[tx], vertical = d === 'up' || d === 'down';
+  if ((a === 'e' || b === 'e') && !vertical) return null;
+  if (pont) return b === '=' ? true : b === 'p' ? false : null;
+  if (a === '=' && b === 'p') return null;
+  return a === 'p' && b === '=';
+}
 
 /** les cartes de toutes les routes, seules et en fusion ; renvoie les lieux où apparaître */
 export function construireRoutes(maps) {
@@ -46,7 +56,7 @@ function construireRoute(maps, r, pre, suite, rang) {
     const id = idCarte(pre, E.id);
     const nom = fusion ? `Route Victoire — ${R.nom} ${nomEtage(E.id)}` : `Route Victoire (${R.nom}) ${nomEtage(E.id)}`;
     const m = new GameMap(id, E.w, E.h, { outdoor: false, fill: T.CAVEWALL, floor: 'cave', music: 'cave', name: nom, battleBg: 'cave' });
-    m.rv = { route: r, pre, etage: E.id, suite, fusion, rang, boutons: E.boutons, trous: E.trous, cascades: new Set() };
+    m.rv = { route: r, pre, etage: E.id, suite, fusion, rang, gen: E.gen || 3, sol: E.sol, boutons: E.boutons, trous: E.trous, cascades: new Set() };
     m.elev = new Uint8Array(E.w * E.h); m.nord = new Set();
     for (let y = 0; y < E.h; y++) for (let x = 0; x < E.w; x++) {
       const c = E.sol[y][x];

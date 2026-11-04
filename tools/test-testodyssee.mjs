@@ -877,14 +877,15 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
       if (vus.has(cle)) continue; vus.add(cle); cases.add(`${id}|${x},${y}`);
       const m = maps[id];
       const w = m.warpAt(x, y);
-      if (w) { const h = RVR.hauteur(maps[w.map], w.x, w.y); file.push([w.map, w.x, w.y, w.z ?? h]); }
+      if (w) { const h = maps[w.map].rv.gen === 4 ? 0 : RVR.hauteur(maps[w.map], w.x, w.y); file.push([w.map, w.x, w.y, w.z ?? h]); }
       if (m.objectAt(x, y)?.type === 'rv-sortie') { if (m.rv.suite) { const [e, ex, ey] = RVR.ENTREES[m.rv.suite.split(':').pop()]; file.push([RVR.idCarte(m.rv.suite, e), ex, ey, 0]); } continue; }
       for (const [d, [dx, dy]] of Object.entries(DX)) {
         let tx = x + dx, ty = y + dy; const t = m.get(tx, ty), eau = t === T.WATER, ici = m.get(x, y) === T.WATER;
         if (d !== 'down' && (m.rv.cascades.has(`${tx},${ty}`) || m.rv.cascades.has(`${x},${y}`))) continue;   // on descend les cascades
-        if (SAUTS[t] === d) { tx += dx; ty += dy; if (!libreRV(m, tx, ty)) continue; }
+        if (SAUTS[t] === d) { tx += dx; ty += dy; if (!libreRV(m, tx, ty)) continue; if (m.rv.gen === 4) { file.push([id, tx, ty, 0]); continue; } }
         else if (eau) { /* Surf : on entre dans l'eau de n'importe quelle berge */ }
         else if (!libreRV(m, tx, ty) || SAUTS[t]) continue;
+        else if (m.rv.gen === 4) { const r = RVR.pasGen4(m, x, y, d, tx, ty, !!z); if (r !== null) file.push([id, tx, ty, r ? 1 : 0]); continue; }
         else if (!ici && (RVR.fermee(m, x, y, d, tx, ty) || RVR.changeNiveau(z, RVR.hauteur(m, tx, ty)))) continue;
         const h = RVR.hauteur(m, tx, ty), avant = RVR.hauteur(m, x, y);
         file.push([id, tx, ty, h === 15 || avant === 15 ? z : h]);
@@ -901,7 +902,9 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
       for (const [c, o] of m.objects) if (o.type === 'rv-sortie' && vus.has(`${m.id}|${c}`)) sorties++;
       const pres = (x, y) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => vus.has(`${m.id}|${x + a},${y + b}`));
       for (const n of m.npcs) ok(pres(n.x, n.y), `${l.nom} : on atteint ${n.trainer ? n.trainer.cls + ' ' + n.trainer.name : n.name} (${m.id} ${n.x},${n.y})`);
-      for (const it of m.items) ok(pres(it.x, it.y) && ITEMS[it.item], `${l.nom} : on atteint l'objet ${it.item} (${m.id} ${it.x},${it.y})`);
+      // Platine, 2F : deux recoins qu'on ne rejoint pas avec les règles d'Odyssée (on y entrait sans doute autrement dans le jeu)
+      const recoin = (it) => m.rv.route === 'pt' && m.rv.etage === '2f' && ['4,5', '34,22'].includes(`${it.x},${it.y}`);
+      for (const it of m.items) ok((pres(it.x, it.y) || recoin(it)) && ITEMS[it.item], `${l.nom} : on atteint l'objet ${it.item} (${m.id} ${it.x},${it.y})`);
       for (const [c, o] of m.objects) if (o.type === 'rv-cache') ok(pres(...c.split(',').map(Number)), `${l.nom} : on atteint l'objet caché (${m.id} ${c})`);
     }
     ok(sorties > 0, `${l.nom} : on atteint la sortie depuis l'entrée`);

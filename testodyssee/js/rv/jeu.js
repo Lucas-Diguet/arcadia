@@ -6,7 +6,7 @@ import { monName } from '../../../odyssee/js/core/mon.js';
 import { partyScreen } from '../../../odyssee/js/ui/screens.js';
 import { RV } from './donnees.js';
 
-import { hauteur, changeNiveau, fermee, idCarte } from './routes.js';
+import { hauteur, changeNiveau, fermee, idCarte, pasGen4 } from './routes.js';
 
 const k = (x, y) => `${x},${y}`;
 
@@ -29,6 +29,12 @@ export class RoutesVictoire {
       if (trou && !g.occupied(trou.x, trou.y)) { p.dir = d; this.tombe(m, tx, ty, trou); return true; }
     }
     const saut = (t === T.LEDGE && d === 'down') || (t === T.LEDGE_E && d === 'right') || (t === T.LEDGE_W && d === 'left');
+    if (m.rv.gen === 4) {
+      const pont = pasGen4(m, p.x, p.y, d, tx, ty, !!p.pont);
+      if (pont === null) { p.dir = d; p.walking = false; if (p.bumpT <= 0) { g.sound.sfx('bump'); p.bumpT = 0.3; } return true; }
+      p.pontApres = pont;
+      return false;
+    }
     if (!saut && (fermee(m, p.x, p.y, d, tx, ty) || changeNiveau(p.z, hauteur(m, tx, ty)))) {
       p.dir = d; p.walking = false;
       if (p.bumpT <= 0) { g.sound.sfx('bump'); p.bumpT = 0.3; }
@@ -39,12 +45,13 @@ export class RoutesVictoire {
   /** après un pas : le joueur prend la hauteur de sa case, sauf sur un pont ou en le quittant (0 : il peut aller partout) */
   apresPas(mv) {
     const m = this.ici(); if (!m) return;
+    if (m.rv.gen === 4) { if (mv?.fx != null) this.g.player.pont = !!this.g.player.pontApres; return; }
     const p = this.g.player, h = hauteur(m, p.x, p.y), avant = mv?.fx != null ? hauteur(m, mv.fx, mv.fy) : 0;
     if (h !== 15 && avant !== 15) p.z = h;
   }
   /** arrivée sur une carte : la hauteur donnée par l'échelle, sinon celle de la case */
   arrivee(to) {
-    const p = this.g.player; p.z = to?.z ?? 0;
+    const p = this.g.player; p.z = to?.z ?? 0; p.pont = false;
     const m = this.g.world.maps[to?.map]; if (!m?.rv) return;
     const h = hauteur(m, to.x, to.y); if (h !== 15 && to.z == null) p.z = h;
   }
