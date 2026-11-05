@@ -35,6 +35,7 @@ export const Pyramide = {
       const o = d.objets[c];
       l.forEach(([x, y], i) => {
         if (o.type === 'soin') m.object(x, y, { use: () => this.ramasserSoin(d, s, c, i) });
+        else if (o.type === 'tuile') m.set(x, y, T[o.t]);
         else if (o.type === 'fontaine') m.object(x, y, { use: () => this.fontaine(d) });
         else if (o.type === 'porteP') m.object(x, y, { use: () => this.portePyr(d, s, c) });
       });

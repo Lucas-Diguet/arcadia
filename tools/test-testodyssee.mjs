@@ -329,6 +329,24 @@ for (const d of DONJONS) {
   ok(['a', 'b', 'c', 'd'].every((v) => vers('s5' + v) === M['s6' + v].id && vers('s6' + v) === M['s7' + v].id), 'pyramide : chaque chemin a ses trois grottes');
   ok(vers('s7a') === M.s8a.id && vers('s7b') === M.s8a.id && vers('s7c') === M.s8b.id && vers('s7d') === M.s8b.id, 'pyramide : portes I et II vers l\'Arène du Levant, III et IV vers celle du Couchant');
   ok(Object.values(S('s4').voies).every((id) => M[id]) && d.salles.filter((q) => q.rencontres).length === 12, 'pyramide : quatre portes, douze grottes avec des Pokémon sauvages');
+  // les grottes sont grandes, pas en ligne droite : tout s'y atteint (rebords v pris en descendant seulement), deux dresseurs, des objets
+  for (const n of [5, 6, 7]) {
+    const s = S(`s${n}a`), P = s.plan, at = (x, y) => P[y]?.[x] ?? '#', bloque = new Set(['#', '%', '&', '|', 'l', ...s.pnj]);
+    let dep; P.forEach((r, y) => { const x = r.indexOf('S'); if (x >= 0) dep = [x, y]; });
+    const vus = new Set([dep.join()]), file = [dep];
+    while (file.length) {
+      const [x, y] = file.pop();
+      for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+        let tx = x + dx, ty = y + dy; const ch = at(tx, ty);
+        if (bloque.has(ch)) continue;
+        if (ch === 'v') { if (dy !== 1) continue; ty++; if (bloque.has(at(tx, ty))) continue; }
+        if (!vus.has(`${tx},${ty}`)) { vus.add(`${tx},${ty}`); file.push([tx, ty]); }
+      }
+    }
+    const ou = (chs) => { const l = []; P.forEach((r, y) => [...r].forEach((ch, x) => { if (chs.includes(ch)) l.push([x, y]); })); return l; };
+    const proche = ([x, y]) => [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => vus.has(`${x + dx},${y + dy}`));
+    ok(P.length >= 36 && P[0].length >= 50 && vus.has(ou('N')[0].join()) && ou('hrfuem').length >= 6 && ou('hrfuem').every((q) => vus.has(q.join())) && s.pnj.every((k) => ou(k).length === 1 && proche(ou(k)[0])), `pyramide : ${s.nom} est grande, et sa sortie, ses objets et ses deux dresseurs s'atteignent`);
+  }
   // règles : dalles, nombre de joueurs, objets partagés, duos
   const A = '1', B = '2', C = '3', D = '4';
   const q = nouvelEtat(d);

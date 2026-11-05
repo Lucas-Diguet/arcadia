@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 4.06 — 5 novembre 2026
+- **TestOdyssée** — Pyramide de l'Ascension : les grottes de chaque porte (Sables, Murmures, Tombeaux) sont bien plus grandes et ne vont plus tout droit.
+  - Des cavités reliées par des galeries qui tournent, des boucles, des culs-de-sac et des tunnels avec un objet au fond : il faut chercher la sortie.
+  - Un rebord par grotte, qu'on ne passe qu'en descendant : un raccourci pour revenir en bas.
+  - Huit objets par grotte, et les deux dresseurs gardent le milieu du chemin et la dernière cavité.
+
 ## 4.05 — 5 novembre 2026
 - **TestOdyssée** — Temple des Éléments : les trois salles de chaque chemin passent dans le temple à trois, et le solo retrouve ses couloirs pour l'instant.
 - **TestOdyssée** — Les salles des chemins sont bien plus grandes et ne sont plus en ligne droite : des cavités reliées par des galeries qui tournent, des boucles, des culs-de-sac avec un objet au fond. Il faut chercher la sortie.

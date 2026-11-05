@@ -260,7 +260,10 @@ du Sac (poches Soins et Baies) sont mis de côté en entrant et rendus en sortan
 4. **Salle de la Fontaine** : la fontaine soigne l'équipe et efface les objets de soin du Sac ; quatre portes, une par
    joueur (`porteP`, actions `voie` comme les Trois Voies).
 5. à 7. **Grottes** : trois par porte, chacun les siennes : deux dresseurs par grotte, objets (chacun les siens),
-   Pokémon sauvages rares (`rencontres`, `taux`) qu'on ne peut pas fuir.
+   Pokémon sauvages rares (`rencontres`, `taux`) qu'on ne peut pas fuir. Les trois plans (56 × 40 cases,
+   `js/donjons/pyramide-grottes.js`) sont dessinés par `python3 tools/pyramide-grottes.py [graine]` (ne pas les
+   modifier à la main) : cavités reliées par des galeries qui tournent, boucles, culs-de-sac et tunnels avec un objet
+   au fond, un rebord `v` qu'on ne passe qu'en descendant (raccourci vers le bas), `1` et `2` les deux dresseurs.
 8. **Arènes** (`type: 'arene'`, `portes` : les lettres des portes qui y mènent) : les portes I et II mènent au Levant,
    III et IV au Couchant. Quand les joueurs attendus parlent au juge, l'hôte lance le duel : combat entre joueurs
    d'Odyssée, équipes telles quelles. Le perdant redescend, le gagnant est soigné et monte. Seul dans son arène (à 3,
