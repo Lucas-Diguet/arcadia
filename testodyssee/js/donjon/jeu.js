@@ -18,6 +18,7 @@ import { Pyramide } from './pyramide.js';
 import { Mine } from './mine.js';
 import { Train } from './train.js';
 import { Temple } from './temple.js';
+import { Tombeau } from './tombeau.js';
 import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 
@@ -40,7 +41,7 @@ export class Donjons {
       for (const c of cartes) game.world.maps[c.id] = c;
       const dehors = relierExterieur(d, m);
       if (dehors) game.world.maps[dehors.id] = dehors;
-      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); }
+      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); }
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -109,6 +110,7 @@ export class Donjons {
     this.appliquerMine(d);
     this.appliquerTrain(d);
     this.appliquerTemple(d);
+    this.appliquerTombeau(d);
     if (ici) g.refreshNpcs();
     const vu = this.vus[id];
     // premier état connu : ce qui est déjà fait ne rejoue pas de scène ; nouvelle descente : tout se rejoue
@@ -315,6 +317,8 @@ export class Donjons {
       if (s.voie && s.voie !== voie) continue;
       if (s.pourVoies && voie && !s.pourVoies.includes(voie)) continue;
       if (!this.salleVisibleTemple(d, s)) continue;
+      // le tombeau a dix salles : seulement celle où l'on est
+      if (d.tombeau && s.carte !== g.mapObj?.id) continue;
       const S = e.salles[s.id];
       let txt = '';
       if (s.type === 'accueil') txt = S.faite ? 'ouverte' : 'parle au gardien';
@@ -335,11 +339,12 @@ export class Donjons {
       if (this.texteMine(d, s)) txt = this.texteMine(d, s);
       if (this.texteTrain(d, s)) txt = this.texteTrain(d, s);
       if (this.texteTemple(d, s)) txt = this.texteTemple(d, s);
+      if (this.texteTombeau(d, s)) txt = this.texteTombeau(d, s);
       if (s.type === 'voies' && !voie) { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       if (s.type === 'libre') { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
     }
-    const html = `<div class="dj-t">${esc(d.nom)}</div>${lignes.join('')}<button type="button" class="dj-quitter" tabindex="-1">Quitter le donjon</button>`;
+    const html = `<div class="dj-t">${esc(d.nom)}</div>${this.panneauTombeau(d)}${lignes.join('')}<button type="button" class="dj-quitter" tabindex="-1">Quitter le donjon</button>`;
     if (html !== this.panelHtml) { this.panelHtml = html; this.panel.innerHTML = html; }
     this.panel.style.display = '';
   }
@@ -412,6 +417,7 @@ export class Donjons {
   async defaite(d) {
     // pyramide : on est ramené dehors
     if (d.pyramide) return this.elimine(d);
+    if (d.tombeau) return this.defaiteTombeau(d);
     // salles séparées : on revient à l'entrée de la salle où l'on est
     const g = this.game, carte = d.cartes?.includes(g.mapObj?.id) ? g.mapObj : g.world.maps[d.carte], [x, y] = carte.donjon.plan.depart;
     for (const m of g.state.party) healFull(m);
@@ -420,4 +426,4 @@ export class Donjons {
   }
 }
 
-Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple);
+Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau);

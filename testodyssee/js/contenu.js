@@ -82,6 +82,10 @@ export const OBJETS = {
   'relique-triforce': { pocket: 'cles', price: 0, key: true, name: 'Relique de Triforce', img: 'voies/objet_relique.png', desc: 'Trois pierres serties dans un disque ancien : bleue, rouge et verte. Elle ouvrira peut-être un autre donjon.' },
   'symbole-or-pyramide': { pocket: 'cles', price: 0, key: true, name: 'Symbole d\'Or de la Pyramide', img: 'pyramide/objet_symbole.png', desc: 'Remis à qui atteint le sommet de la Pyramide de l\'Ascension encore debout, et y bat le dernier adversaire.' },
   'bouchon-or': { pocket: 'objets', price: 0, name: 'Bouchon d\'Or', img: 'miroirs/objet_bouchon.png', iv: true, desc: 'Un bouchon doré et brillant. Il porte au maximum toutes les valeurs cachées (IV) d\'un Pokémon.' },
+  // le Tombeau du Roi Sans Nom : ses deux artefacts (ils ne quittent pas le tombeau) et sa récompense
+  'pendentif-maudit': { pocket: 'cles', price: 0, key: true, name: 'Pendentif Maudit', img: 'tombeau/objet_pendentif.png', desc: 'Le pendentif du Roi Sans Nom. Il ronge les Pokémon de qui le porte, un peu à chaque pas. À porter jusqu\'à l\'Autel du Soleil. Utilise-le pour le poser ou le donner à un voisin.' },
+  'lunettes-verite': { pocket: 'cles', price: 0, key: true, name: 'Lunettes de Vérité', img: 'tombeau/objet_lunettes.png', desc: 'Elles montrent le chemin invisible au-dessus des gouffres et les pièges cachés. Elles repoussent le pendentif. Utilise-les pour les poser ou les donner à un voisin.' },
+  'sceau-roi': { pocket: 'cles', price: 0, key: true, name: 'Sceau du Roi Sans Nom', img: 'tombeau/objet_sceau.png', desc: 'Remis à ceux qui ont porté le pendentif jusqu\'à l\'Autel du Soleil. La malédiction du roi est levée.' },
   'eclat-miroir': { pocket: 'cles', price: 0, key: true, name: 'Éclat de Miroir', img: 'miroirs/objet_eclat.png', desc: 'Un éclat qui reflète un lieu que tu n\'as jamais vu. Il ouvrira peut-être un autre donjon.' },
   // le Temple des Éléments, en solo : une CT au choix, à usage unique, pour un starter
   'ct-eruption-temple': { pocket: 'objets', price: 0, name: 'CT Éruption', img: 'miroirs/objet_ct.png', ct: 'eruption', unique: true, starters: true, desc: 'Apprend Éruption à un starter : plus ses PV sont hauts, plus elle frappe fort. Elle ne sert qu\'une fois.' },
@@ -103,6 +107,7 @@ export const DECOR = [
   ...['pyramide', 'obelisque', 'porte_1', 'porte_2', 'porte_3', 'porte_4', 'porte_1_f', 'porte_2_f', 'porte_3_f', 'porte_4_f'].map((k) => [k, IMG + 'pyramide/' + k + '.png']),
   ...['porte_feu', 'porte_feu_f', 'porte_eau', 'porte_eau_f', 'porte_plante', 'porte_plante_f', 'porte_grande', 'porte_grande_o', 'dalle_or', 'teleporteur', 'cle_feu', 'cle_eau', 'cle_plante', 'liane', 'cascade'].map((k) => [k, IMG + 'temple/' + k + '.png']),
   ...['borne', 'coffre_fort', 'drapeau', 'piege_trou', 'piege_roche', 'piege_brume', 'piege_colle', 'piege_alarme', 'piege_renvoi', 'piege_degats1', 'piege_degats2', 'piege_degats3', 'piege_combat'].map((k) => [k, IMG + 'ile/' + k + '.png']),
+  ...['sarcophage', 'sarcophage_vide', 'socle_lunettes', 'socle_vide', 'autel_soleil', 'autel_soleil_on', 'pendentif_sol', 'lunettes_sol'].map((k) => [k, IMG + 'tombeau/' + k + '.png']),
   ...['porte_sagesse', 'porte_force', 'porte_courage', 'porte_sagesse_f', 'porte_force_f', 'porte_courage_f', 'porte_code', 'porte_grille', 'coffre', 'coffre_ouvert', 'interrupteur', 'interrupteur_on', 'socle_statue'].map((k) => [k, IMG + 'voies/' + k + '.png']),
 ];
 export const IMAGES = { copycat: IMG + 'miroirs/copycat.png', horloge: IMG + 'miroirs/horloge.png' };

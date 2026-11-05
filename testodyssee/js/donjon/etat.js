@@ -38,6 +38,9 @@ export function nouvelEtat(def, o = {}) {
   return e;
 }
 
+/** les artefacts du tombeau : à leur place d'origine (p : porteur, sol : [carte, x, y] s'il est posé) */
+export const artVide = () => ({ pend: { p: null, sol: null, vole: false, fin: false }, lun: { p: null, sol: null } });
+
 const salleDe = (def, pnj) => def.salles.find((s) => s.pnj?.includes(pnj));
 /** salle de combat à plusieurs : celle demandée, sinon la première */
 export const salleRaid = (def, id) => def.salles.find((q) => (q.type === 'raid' || q.type === 'groupe') && (!id || q.id === id));
@@ -262,6 +265,32 @@ export function appliquer(def, e, qui, m, o = {}) {
       if (s.type === 'sommet') { e.fini = true; if (S.donnees.gagnant) e.vainqueurs = [S.donnees.gagnant]; }
       return res(true, true);
     }
+    case 'artefact': {
+      // le Pendentif Maudit (pend) et les Lunettes de Vérité (lun) du tombeau : un porteur à la fois, jamais les deux
+      const S0 = e.salles[def.salles[0].id], A = (S0.donnees.art ||= artVide()), o = A[m.k];
+      if (!o) return res(false, false, 'inconnu');
+      const autre = A[m.k === 'pend' ? 'lun' : 'pend'];
+      switch (m.op) {
+        case 'prendre':
+          if (o.p) return res(false, false, 'pris');
+          if (o.vole || o.fin) return res(false, false, 'vole');
+          if (autre.p === qui && !m.test) return res(false, false, 'deux');
+          o.p = qui; o.sol = null; return res(true, true);
+        case 'poser':
+          if (o.p !== qui) return res(false, false, 'pas');
+          o.p = null; o.sol = Array.isArray(m.ou) ? m.ou : null; return res(true, true);
+        case 'donner': {
+          const a = String(m.a2);
+          if (o.p !== qui) return res(false, false, 'pas');
+          if (autre.p === a && !m.test) return res(false, false, 'deux');
+          o.p = a; return res(true, true);
+        }
+        case 'voler': if (o.vole) return res(true, false); o.p = null; o.sol = null; o.vole = true; return res(true, true);
+        case 'rendre': if (!o.vole) return res(true, false); o.vole = false; o.sol = Array.isArray(m.ou) ? m.ou : null; return res(true, true);
+        case 'fin': if (o.p !== qui && !m.test) return res(false, false, 'pas'); o.p = null; o.sol = null; o.fin = true; return res(true, true);
+      }
+      return res(false, false, 'inconnu');
+    }
     case 'equipe': return res(true, false);
     case 'poste': {
       // poste de contrôle de la mine : un seul joueur à la fois
@@ -286,6 +315,8 @@ export function appliquer(def, e, qui, m, o = {}) {
         if (!S.combat && S.prets.includes(qui)) { S.prets = S.prets.filter((q) => q !== qui); change = true; }
         for (const [k, l] of Object.entries(S.donnees.attente || {})) if (l.includes(qui)) { S.donnees.attente[k] = l.filter((q) => q !== qui); change = true; }
         if (S.donnees.poste === qui) { delete S.donnees.poste; change = true; }
+        // un porteur d'artefact s'en va : l'artefact retourne à sa place d'origine
+        for (const o of Object.values(S.donnees.art || {})) if (o.p === qui) { o.p = null; o.sol = null; change = true; }
       }
       return res(true, change);
     }

@@ -24,6 +24,8 @@ export class TestGame extends Game {
     // Routes Victoire : hauteurs, cases fermées d'un côté, rochers qui tombent dans les trous
     if (pasCascade(this, d)) return;
     if ((this.rv ||= new RoutesVictoire(this)).avantPas(d)) return;
+    // tombeau : pas de sortie sans le pendentif, et ses porteurs ne s'approchent pas
+    { const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[d]; if (!p.move && D?.avantPasTombeau?.(p.x + dx, p.y + dy)) { p.dir = d; p.walking = false; return; } }
     const depart = [p.x, p.y], avant = p.move;
     super.tryStep(d);
     if (!avant && p.move) D?.apresDepart(d, depart);
@@ -62,7 +64,7 @@ export class TestGame extends Game {
   rvApprendre(cle) { return (this.rv ||= new RoutesVictoire(this)).apprendre(cle); }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
   async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }
-  async onStep(mv) { this.rv?.apresPas(mv); await super.onStep(mv); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.donjons?.apresPasTemple(); if (!this.busy) await this.ile?.apresPas(); } }
+  async onStep(mv) { this.rv?.apresPas(mv); await super.onStep(mv); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.donjons?.apresPasTemple(); if (!this.busy) await this.donjons?.apresPasTombeau?.(); if (!this.busy) await this.ile?.apresPas(); } }
   load() { return null; }
 
   async startMenu() {

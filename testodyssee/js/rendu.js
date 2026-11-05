@@ -10,6 +10,7 @@ const CLAIR = { sol: 'floor_musee', mur: 'wall_mart', haut: ['snow', 'floor_lab'
 const STYLES = { clair: CLAIR, bois: { sol: ['floor_wood'], mur: ['wall_in', 'wall_center'], haut: ['roof_flat', 'floor_wood'], fond: '#0c0a14' }, sable: { sol: ['floor_sand', 'gl_sable', 'floor_gymRock'], mur: ['wall_gym'], haut: ['floor_gymRock', 'cavetop'], fond: '#1a1008', relief: true } };
 const cellule = (A, k) => (Array.isArray(k) ? k.map((q) => A[q]).find(Boolean) : A[k]);
 const SOLS = new Set([T.CAVE, T.BLOCK, T.CAVEWALL, T.CAVEDOOR, T.FLOOR]);
+const REVELE = 'floor_gymWater';
 
 export function brancherRendu() {
   const P = WorldView.prototype;
@@ -23,10 +24,12 @@ export function brancherRendu() {
   // barrières des grottes : le sol de grotte dessous
   Sol.prototype.pump = function () {
     const m = this.map, nus = m?.deco ? new Set(m.deco.filter((d) => SOUS.has(d.k)).map((d) => d.x + ',' + d.y)) : null;
+    const vide = m?.tomb ? new Set(m.deco.filter((d) => d.k === 'gouffre' || d.k === 'revele').map((d) => d.x + ',' + d.y)) : null;
     const lave = m?.biome === 'magma' && !m.outdoor, grotte = m && !m.outdoor && m.floor === 'cave', neige = m?.mont && m.outdoor;
     if (!nus?.size && !lave && !grotte && !neige) return pompe.call(this);
     m.get = function (x, y) {
       if (nus?.has(x + ',' + y)) return T.FLOOR;
+      if (vide?.has(x + ',' + y)) return T.LAVA;   // gouffre et chemin révélé : dessinés par le jeu (le vide, la lumière)
       const t = Object.getPrototypeOf(this).get.call(this, x, y);
       if (lave && t === T.BRIDGE) return T.LAVA;
       if (grotte && (t === T.BARRIER_R || t === T.BARRIER_B)) return T.CAVE;
@@ -51,6 +54,8 @@ export function brancherRendu() {
       }
       if (t === T.LEDGE || t === T.LEDGE_E || t === T.LEDGE_W || m.rv.sol[y]?.[x] === 'e') return { c: A.cavestairs };
     }
+    // tombeau : le gouffre est noir ; à travers les lunettes, le chemin invisible est une dalle de lumière
+    if (m.tomb) { const k = this.decoAt.get(x + ',' + y)?.k; if (k === 'gouffre') return { c: A.void }; if (k === 'revele') return { c: A[REVELE] || A.matgreen }; }
     // Mont Givrécime : les rebords dehors sont des marches de roche dans la neige, pas des talus d'herbe
     if (m.mont && m.outdoor && m.get(x, y) === T.LEDGE) return { c: A.cavestairs };
     // pont sur la lave (chemins du Temple) : la lave dessous, les planches en décalque

@@ -8,5 +8,6 @@ import pyramide from './pyramide.js';
 import mine from './mine.js';
 import train from './train.js';
 import temple from './temple.js';
+import tombeau from './tombeau.js';
 
-export const DONJONS = [crypte, didier, miroirs, voies, pyramide, mine, train, temple];
+export const DONJONS = [crypte, didier, miroirs, voies, pyramide, mine, train, temple, tombeau];

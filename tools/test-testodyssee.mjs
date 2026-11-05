@@ -977,6 +977,43 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   ok(OBJETS['ct50-rv'] && refusCt('ct50-rv', 6) === 'Ne peut pas l\'apprendre', 'routes victoire : Surchauffe reste réservée (CT50 de Vert Feuille)');
 }
 
+/* ---------------- Tombeau du Roi Sans Nom ---------------- */
+{
+  const d = DONJONS.find((q) => q.id === 'tombeau'), cartes = construireSalles(d), M = Object.fromEntries(cartes.map((m) => [m.salle, m]));
+  ok(d.salles.length === 10 && d.joueurs.mode === 'exact' && d.joueurs.n === 3, 'tombeau : dix salles, à trois');
+  // à pied : murs, décor et pilleurs bloquent ; le gouffre aussi ; le chemin invisible porte (sans lui : bloqué)
+  const parcours = (m, chemin) => {
+    const P = m.donjon.plan, bloque = new Set([...P.decor.map(([, x, y]) => `${x},${y}`), ...Object.values(P.pnj).flat().map(([x, y]) => `${x},${y}`), ...(P.objets._ || []).map(([x, y]) => `${x},${y}`), ...(chemin ? [] : (P.objets[':'] || []).map(([x, y]) => `${x},${y}`)), ...['P', 'L', 'A'].flatMap((c) => (P.objets[c] || []).map(([x, y]) => `${x},${y}`))]);
+    const sol = new Set(P.sol.map(([x, y]) => `${x},${y}`)), vus = new Set([P.depart.join()]), f = [P.depart];
+    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = `${x + dx},${y + dy}`; if (vus.has(k) || !sol.has(k) || bloque.has(k)) continue; vus.add(k); f.push([x + dx, y + dy]); } }
+    return vus;
+  };
+  const pres = (v, [x, y]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => v.has(`${x + dx},${y + dy}`));
+  for (const m of cartes) {
+    const P = m.donjon.plan, v = parcours(m, true), s = d.salles.find((q) => q.carte === m.id);
+    if (P.suivante) ok(v.has(`${P.suivante[0]},${P.suivante[1] + 1}`), `tombeau : ${s.nom}, on va de l'entrée à la sortie`);
+    for (const [k, [p]] of Object.entries(P.pnj)) if (!d.pnj[k].scene) ok(pres(v, p), `tombeau : ${s.nom}, on atteint ${d.pnj[k].cls} ${d.pnj[k].nom}`);
+    for (const c of ['h', 'r', 'u', 'e', 'm', 'z', 'P', 'L', 'A', 'j', 'f']) for (const p of P.objets[c] || []) ok(v.has(p.join()) || pres(v, p), `tombeau : ${s.nom}, on atteint l'objet ${c}`);
+    // les salles à gouffre : sans le chemin invisible, on n'en sort pas
+    if (P.objets[':']) ok(P.suivante && !parcours(m, false).has(`${P.suivante[0]},${P.suivante[1] + 1}`) && m.w * m.h >= 2400, `tombeau : ${s.nom} est grande, et son gouffre ne se traverse que par le chemin invisible`);
+  }
+  // les lunettes s'atteignent avant le premier gouffre
+  ok(pres(parcours(M.s3, false), M.s3.donjon.plan.objets.L[0]), 'tombeau : les lunettes s\'atteignent sans passer le gouffre');
+  ok(M.s6.donjon.plan.objets['?']?.length >= 10 && M.s6.donjon.plan.objets.x?.length >= 10 && M.s7.donjon.plan.objets['?']?.length >= 10, 'tombeau : pièges visibles et cachés dans les salles de la poursuite');
+  ok(Object.values(d.pnj).every((p) => (p.equipe || []).every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 42)) && Object.values(d.pnj).filter((p) => p.pilleur).length >= 12, 'tombeau : des pilleurs partout, aux bons niveaux');
+  // les artefacts : un porteur à la fois, jamais les deux, on les pose, on les donne ; volé puis rendu ; posé sur l'autel
+  const e = nouvelEtat(d, { joueurs: 3 }), A = () => e.salles.s1.donnees.art;
+  ok(appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok && !appliquer(d, e, '2', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : un seul porteur du pendentif');
+  ok(!appliquer(d, e, '1', { a: 'artefact', k: 'lun', op: 'prendre' }).ok && appliquer(d, e, '2', { a: 'artefact', k: 'lun', op: 'prendre' }).ok, 'tombeau : on ne porte pas le pendentif et les lunettes à la fois');
+  ok(!appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'donner', a2: '2' }).ok && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'donner', a2: '3' }).ok && A().pend.p === '3', 'tombeau : on donne le pendentif, mais pas au porteur des lunettes');
+  ok(appliquer(d, e, '3', { a: 'artefact', k: 'pend', op: 'poser', ou: ['x', 4, 5] }).ok && A().pend.p === null && A().pend.sol.join() === 'x,4,5' && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : on pose le pendentif, un autre le reprend');
+  appliquer(d, e, '2', { a: 'parti' });
+  ok(A().lun.p === null && A().lun.sol === null, 'tombeau : un joueur qui part : ses lunettes retournent sur leur socle');
+  ok(appliquer(d, e, '0', { a: 'artefact', k: 'pend', op: 'voler' }).ok && A().pend.vole && !A().pend.p && !appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : volé, le pendentif ne se prend plus');
+  ok(appliquer(d, e, '0', { a: 'artefact', k: 'pend', op: 'rendre', ou: ['r', 1, 1] }).ok && !A().pend.vole && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : rendu au repaire, on le reprend');
+  ok(appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'fin' }).ok && A().pend.fin && !appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : posé sur l\'autel, il y reste');
+}
+
 /* ---------------- Mont Givrécime ---------------- */
 {
   const maps = {}, lieu = construireMont(maps), salles = MONT_SALLES.map((_, i) => maps[idSalle(i)]);

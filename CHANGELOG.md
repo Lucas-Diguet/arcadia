@@ -1,5 +1,13 @@
 # Journal des versions — Arcadia
 
+## 4.08 — 5 novembre 2026
+- **TestOdyssée** — Nouveau donjon à trois : le Tombeau du Roi Sans Nom, dix salles à remonter jusqu'à l'Autel du Soleil.
+  - Le Pendentif Maudit ronge les Pokémon de qui le porte, un peu à chaque pas : il faut se le passer (le poser, ou le donner à un voisin depuis le Sac), sinon l'équipe tombe. On ne quitte une salle qu'avec lui.
+  - Les Lunettes de Vérité montrent à leur seul porteur le chemin invisible au-dessus des gouffres et les pièges cachés : il guide les autres à la voix. Le pendentif et les lunettes se repoussent, leurs porteurs ne peuvent pas s'approcher l'un de l'autre.
+  - Des pilleurs attaquent qui passe devant eux, et repèrent le porteur du pendentif de bien plus loin : aux autres de se battre à sa place.
+  - Dans la Nef du Guet-apens, leur bande vole le pendentif. On la poursuit à travers des salles piégées jusqu'à leur repaire, où l'on bat leur chef tous ensemble.
+  - Grandes salles qui ne vont pas tout droit, avec des culs-de-sac et des objets au fond.
+
 ## 4.07 — 5 novembre 2026
 - **TestOdyssée** — Nouveau lieu pour l'aventure solo : le Mont Givrécime, une montagne enneigée de dix grandes salles qu'on gravit tantôt dedans, tantôt dehors.
   - Dehors : pentes et corniches enneigées, falaises, sapins, herbes enneigées et rebords à sauter ; dedans : grottes de glace, stalagmites, lacs à traverser en surfant, rochers à casser ou à pousser.

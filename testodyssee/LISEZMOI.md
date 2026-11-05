@@ -444,6 +444,29 @@ décompilation : ses étages sont recopiés à la main dans `tools/rv-heartgold.
 perspective, donc à une case ou deux près), et ses événements (échelles, objets, rochers, Silver) viennent de
 pokeheartgold. La fusion suit l'ordre des jeux : Vert Feuille, HeartGold, Émeraude, Platine.
 
+### Le Tombeau du Roi Sans Nom
+
+À trois exactement (`js/donjons/tombeau.js`, mécaniques `js/donjon/tombeau.js`). Deux artefacts tenus par l'hôte
+(action `artefact` d'`etat.js`, rangés dans `salles.s1.donnees.art`) : le Pendentif Maudit (`pend`) et les Lunettes de
+Vérité (`lun`). Un porteur à la fois, jamais les deux (sauf en mode test) ; on les pose et on les donne à un voisin
+depuis le Sac, on ramasse ce qui est posé en le regardant. Un joueur qui part : son artefact retourne à sa place.
+- Le pendentif retire `MORSURE` (0,7 %) des PV max de chaque Pokémon de son porteur à chaque pas. Toute l'équipe à
+  terre : il le lâche et se réveille à l'entrée de la salle (un tiers des PV). On ne passe la sortie d'une salle
+  qu'avec le pendentif en main (ou volé).
+- Les lunettes montrent à leur seul porteur le chemin invisible `:` au-dessus du gouffre `_` (on y tombe : retour à
+  la dernière case sûre) et les pièges cachés `?` (les pièges `x` se voient). Leurs porteurs ne s'approchent pas à
+  moins de `DISTANCE` (5) cases l'un de l'autre.
+- Les pilleurs (`pilleur: true`) attaquent qui passe devant eux : 3 cases, 7 pour le porteur du pendentif.
+- Nef du Guet-apens : la ligne `g` déclenche le vol (`voler`, puis `vol` dans la salle s5) ; la bande de la scène
+  (`scene: 'vol'`) n'apparaît que pendant la scène. Poursuite : des fuyards `f` devant la sortie, des pièges. Au
+  Repaire, quand Sable-Noir et sa bande sont battus (combat de groupe), l'hôte rend le pendentif sur la case `j`.
+- L'Autel du Soleil (`A`) termine le donjon quand son porteur l'y pose.
+Les grandes salles (Galerie des Lunettes, Salle des Abîmes, Couloir Piégé, Ossuaire, Escalier du Soleil) viennent de
+`python3 tools/tombeau.py [graine]` (`js/donjons/tombeau-salles.js`, ne pas le modifier à la main) : le générateur
+vérifie qu'on ne sort pas d'une salle à gouffre sans le chemin invisible, et que les lunettes s'atteignent avant le
+premier gouffre. Images : `python3 tools/tombeau-images.py` (`img/tombeau/`). Le rendu (gouffre noir, chemin révélé)
+est dans `js/rendu.js`.
+
 ### Le Mont Givrécime
 
 Une montagne enneigée pour l'aventure solo, pas un donjon : ni groupe, ni boss, ni état partagé. Dix grandes salles
