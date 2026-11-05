@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-# tools/tombeau.py — dessine les grandes salles du Tombeau du Roi Sans Nom (TestOdyssée, donjon à trois) :
-# des cavités reliées par des galeries qui tournent, des boucles, des culs-de-sac avec un objet au fond, et surtout
-# des salles à gouffre : un grand trou noir qu'on ne traverse que par un chemin invisible (seul celui qui porte les
-# Lunettes de Vérité le voit). Dans les salles de la poursuite, des pièges, visibles ou cachés (eux aussi, seules
-# les lunettes les montrent).
+# tools/tombeau.py — dessine les profondeurs du Tombeau du Roi Sans Nom (TestOdyssée), du -4 au -9 :
+# de longues salles, des cavités reliées par des galeries qui tournent, des boucles, des culs-de-sac avec un objet
+# au fond. Du -4 au -7, les pilleurs de Sable-Noir ; au -6 et au -7, leur lutte contre les morts-vivants ; au -8 et au
+# -9, l'hécatombe (morts-vivants, corps, mourants). (L'outil sait encore creuser des gouffres à chemin invisible.)
 #   python3 tools/tombeau.py [graine]  → testodyssee/js/donjons/tombeau-salles.js
 # Relancer l'outil écrase le fichier.
 #
@@ -14,20 +13,23 @@
 #   % gravats   | colonne   l stèle   b brasero
 #   t pilleur (les directions sont données à part, dans l'ordre de lecture du plan)   f pilleurs qui s'enfuient
 #   L les Lunettes de Vérité (sur leur socle)   h r u e m z : objets à ramasser
+#   q mort-vivant   j pilleur qui se bat contre le mort-vivant o (à sa droite)   g corps   a mourant   ¤ grille fermée à clé
 import random, sys, os, json, heapq
 from collections import deque
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 SORTIE = os.path.join(os.path.dirname(ICI), 'testodyssee/js/donjons/tombeau-salles.js')
 OBJETS = 'hruemz'
-MURS = set('#%|lbtL')
+MURS = set('#%|lbtLqjoga')
 
+B = dict(abimes=0, visibles=0, caches=0, pilleurs=0, rangs=4, cols=5)
 SALLES = {
-    'lunettes': dict(W=58, H=40, abimes=1, visibles=0, caches=0, pilleurs=2, lunettes=True),
-    'abimes':   dict(W=64, H=46, abimes=2, visibles=0, caches=0, pilleurs=3),
-    'piege1':   dict(W=64, H=44, abimes=1, visibles=16, caches=18, pilleurs=0, fuyards=True),
-    'piege2':   dict(W=60, H=44, abimes=1, visibles=10, caches=24, pilleurs=2, fuyards=True),
-    'escalier': dict(W=64, H=46, abimes=3, visibles=0, caches=6, pilleurs=3),
+    'p4': dict(B, W=72, H=52, pilleurs=5),
+    'p5': dict(B, W=74, H=54, pilleurs=6, visibles=10),
+    'p6': dict(B, W=72, H=52, pilleurs=5, luttes=3, morts=2, corps=4, mourants=2),
+    'p7': dict(B, W=72, H=54, pilleurs=4, luttes=3, morts=2, corps=4, mourants=2, verrou=True),
+    'm8': dict(B, W=72, H=52, morts=7, corps=12, mourants=4),
+    'm9': dict(B, W=74, H=54, morts=8, corps=14, mourants=4),
 }
 
 def voisins(x, y):
@@ -46,10 +48,11 @@ class Salle:
 
     def chambres(self):
         r, cs, W, H = self.r, [], self.W, self.H
-        for j in range(3):
-            for k in range(4):
+        nr, nc = self.c.get('rangs', 3), self.c.get('cols', 4)
+        for j in range(nr):
+            for k in range(nc):
                 if r.random() < 0.1 and len(cs) > 5: continue
-                cx = int((k + 0.5) * W / 4 + r.uniform(-2, 2)); cy = int((j + 0.5) * (H - 8) / 3 + 3 + r.uniform(-2, 2))
+                cx = int((k + 0.5) * W / nc + r.uniform(-2, 2)); cy = int((j + 0.5) * (H - 8) / nr + 3 + r.uniform(-2, 2))
                 cs.append([cx, cy, r.randint(4, 5), r.randint(3, 4)])
         self.cs = cs
         n = len(cs); d = lambda a, b: abs(cs[a][0] - cs[b][0]) + abs(cs[a][1] - cs[b][1])
@@ -279,6 +282,13 @@ def generer(nom, seed):
                     dx, dy = {'down': (0, 1), 'up': (0, -1), 'left': (-1, 0), 'right': (1, 0)}[d]
                     s.importants.append((x + dx, y + dy)); dirs.append(((y, x), d)); break
         if len(places) < C['pilleurs']: continue
+        # les morts-vivants, les luttes, les corps et les mourants
+        if not peupler(s, C): continue
+        # la grille fermée à clé, sous la sortie
+        if C.get('verrou'):
+            fx = s.N[0]
+            if s.at(fx, 2) != '.': continue
+            s.g[2][fx] = '¤'
         # pilleurs qui s'enfuient : devant la sortie
         if C.get('fuyards'):
             fx, fy = s.N[0], 3
@@ -297,10 +307,50 @@ def generer(nom, seed):
         return s
     raise SystemExit(f'pas de salle {nom}')
 
+def cases_libres(s):
+    return [(x, y) for y in range(4, s.H - 5) for x in range(2, s.W - 2) if s.g[y][x] == '.' and (x, y) not in s.fixe]
+
+def peupler(s, C):
+    r = s.r
+    # luttes : un pilleur et un mort-vivant face à face, dans une cavité
+    for _ in range(C.get('luttes', 0)):
+        for _k in range(60):
+            q = r.randrange(len(s.cs))
+            if q == s.dep: continue
+            cx, cy, rx, ry = s.cs[q]
+            x, y = cx + r.randint(-rx + 2, rx - 3), cy + r.randint(-ry + 1, ry - 1)
+            if s.at(x, y) != '.' or s.at(x + 1, y) != '.' or (x, y) in s.fixe or (x + 1, y) in s.fixe: continue
+            if s.essai([(x, y), (x + 1, y)], 'j'):
+                s.g[y][x + 1] = 'o'; s.fixe |= {(x, y), (x + 1, y)}; s.importants += [(x - 1, y), (x + 2, y)]
+                if not s.tout_atteint(): s.g[y][x] = s.g[y][x + 1] = '.'; continue
+                break
+        else: return False
+    # morts-vivants : dans les cavités, loin de l'arrivée
+    for _ in range(C.get('morts', 0)):
+        for _k in range(60):
+            q = r.randrange(len(s.cs))
+            if q == s.dep: continue
+            cx, cy, rx, ry = s.cs[q]
+            x, y = cx + r.randint(-rx + 1, rx - 1), cy + r.randint(-ry + 1, ry - 1)
+            if s.at(x, y) != '.' or (x, y) in s.fixe: continue
+            if s.essai([(x, y)], 'q'): s.fixe.add((x, y)); break
+        else: return False
+    # corps et mourants : un peu partout, souvent près des galeries
+    for lettre, n in (('a', C.get('mourants', 0)), ('g', C.get('corps', 0))):
+        for _ in range(n):
+            for _k in range(80):
+                x, y = r.choice(cases_libres(s))
+                if s.essai([(x, y)], lettre):
+                    s.fixe.add((x, y))
+                    if lettre == 'a': s.importants.append(next((v for v in voisins(x, y) if s.at(*v) == '.'), (x, y)))
+                    break
+            else: return False
+    return s.tout_atteint()
+
 def decorer(s):
     r = s.r
     sols = lambda: [(x, y) for y in range(3, s.H - 4) for x in range(1, s.W - 1) if s.g[y][x] == '.' and (x, y) not in s.fixe]
-    for x, y in r.sample(sols(), min(50, len(sols()))):
+    for x, y in r.sample(sols(), min(70, len(sols()))):
         if sum(s.at(a, b) == '#' for a, b in voisins(x, y)) >= 1: s.essai([(x, y)], r.choice('%%l'))
     # des colonnes par paires et des braseros dans les grandes cavités
     for q, (cx, cy, rx, ry) in enumerate(s.cs):
@@ -319,7 +369,7 @@ def main():
         s = generer(nom, seed * 10 + k)
         txt = ''.join(''.join(r) for r in s.g)
         print(nom, f'{s.W}×{s.H}', 'gouffres', txt.count(':') and SALLES[nom]['abimes'], 'chemin', txt.count(':'), 'objets', sum(txt.count(c) for c in OBJETS),
-              'pilleurs', txt.count('t'), 'pièges', txt.count('x'), '+', txt.count('?'))
+              'pilleurs', txt.count('t'), 'pièges', txt.count('x'), '+', txt.count('?'), 'morts', txt.count('q'), 'luttes', txt.count('j'), 'corps', txt.count('g'), 'mourants', txt.count('a'))
         out.append(f'  {nom}: {{ dirs: {json.dumps(s.dirs)}, plan: [')
         out += ['    ' + json.dumps(''.join(r)) + ',' for r in s.g]
         out.append('  ] },')

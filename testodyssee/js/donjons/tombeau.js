@@ -80,9 +80,14 @@ const BANDE = [
 const NOMS = ['Grégoire', 'Sacha', 'Bertille', 'Malo', 'Lisandre', 'Corbin', 'Zélie', 'Anselme', 'Rose', 'Thaddée', 'Mireille', 'Gaspard', 'Ninon', 'Octave', 'Célia', 'Basile', 'Héloïse', 'Fulbert'];
 // équipes par salle (niveaux qui montent d'une salle à l'autre)
 const EQUIPES = {
-  s3: [[[42, 34], [53, 34]], [[302, 34], [198, 35]]],
+  p4: [[[28, 36], [51, 37]], [[105, 37], [302, 36]], [[332, 37], [229, 36]]],
+  p5: [[[51, 38], [344, 38]], [[553, 38], [28, 37]], [[450, 38], [198, 37]]],
+  p6: [[[553, 39], [332, 39]], [[430, 40], [105, 39]], [[344, 39], [232, 40]]],
+  p7: [[[450, 40], [553, 40]], [[330, 41], [430, 40]], [[232, 41], [344, 40]]],
 };
-const DITS = ['Tu n\'as rien à faire ici !', 'Le tombeau est à nous !', 'Encore des curieux...', 'Le trésor du roi, c\'est pour nous !'];
+// ce que disent les pilleurs de Sable-Noir quand ils voient le sceptre (et ce qui les fait attaquer)
+const DITS = ['Hé ! C\'est... le sceptre du roi ?! Donne-moi ça !', 'Le sceptre ! Ce gamin a le sceptre du Roi Sans Nom !', 'Je rêve, ou tu tiens le sceptre du roi ? Il est à Sable-Noir !', 'Ce sceptre... Le chef paierait une fortune pour ça. Donne !'];
+const MOQUE = ['Alors, on a perdu son joli sceptre ? Hé hé.', 'Sans ton sceptre, tu ne vaux même pas un combat.', 'Le sous-chef est passé par là en courant. Avec un truc qui brillait...', 'Va-t\'en, avant que je change d\'avis.'];
 
 let nLettre = 0, nNom = 0;
 /** remplace les « t » d'un plan par des lettres de pilleurs, et crée ces pilleurs */
@@ -115,7 +120,7 @@ const BRIGANDS = Object.fromEntries(Object.entries({
   'ð': brig('Brigand', 'Comptable', 'corbin', 'up', 'Chut ! Je compte le butin. Quatre cent douze, quatre cent treize... Zut, je recommence.'),
   'þ': brig('Brigande', 'Mado', 'brume_f', 'left', ['Le sceptre du roi ? Il est tout en haut, gardé par des moines.', 'Ils ne dorment jamais. Enfin... jamais tout seuls.']),
   'ą': brig('Brigand', 'Boris', 'brutus', 'right', 'Cette porte de fer mène au -2. On ne l\'a jamais ouverte : personne n\'a la clé.'),
-  'ć': brig('Brigand', 'Gégé', 'spectrel', 'down', 'Le Roi Sans Nom ? Un voisin comme un autre. Il ne se plaint jamais du bruit.'),
+  'ć': brig('Brigand', 'Gégé', 'brume', 'down', 'Le Roi Sans Nom ? Un voisin comme un autre. Il ne se plaint jamais du bruit.'),
   'ę': brig('Brigande', 'Rosine', 'brume_f', 'right', 'Plus bas, au -4, c\'est une autre affaire. Là-bas, les pilleurs ne rigolent pas.'),
   'ł': brig('Brigand', 'Tonton', 'voleur', 'down', 'On parie sur un combat ? Si tu gagnes, tu gagnes. Si tu perds... tu perds.', [[198, 36], [215, 36]]),
   'ś': brig('Brigand', 'Nono', 'brume', 'up', 'Mes Pokémon rouillent. Un combat, vite fait ?', [[105, 36], [93, 37]]),
@@ -124,7 +129,7 @@ const BRIGANDS = Object.fromEntries(Object.entries({
   'ŷ': brig('Brigande', 'Margot', 'brume_f', 'left', 'J\'ai perdu ma chemise, ma pelle et mon chameau. Mais je me refais à la prochaine.'),
   'ẑ': brig('Croupier', 'Fortuné', 'croupier', 'up', ['Faites vos jeux ! Rien ne va plus !', 'Tu n\'as rien à miser ? Alors misons nos Pokémon !'], [[302, 38], [198, 38], [359, 38]]),
   'ŕ': brig('Brigand', 'Double-Six', 'voleur', 'up', 'Le double six ! Encore ! Ces dés sont formidables. Je les ai achetés chez Ali Baba.'),
-  'ŧ': brig('Brigand', 'Pipette', 'spectrel', 'right', 'Psst. Tu veux acheter un dé qui tombe toujours sur six ? Non ? Tant pis pour toi.'),
+  'ŧ': brig('Brigand', 'Pipette', 'corbin', 'right', 'Psst. Tu veux acheter un dé qui tombe toujours sur six ? Non ? Tant pis pour toi.'),
   // le dortoir
   'ǩ': brig('Brigand', 'Gros-Louis', 'brutus', 'down', 'Zzz... Touche pas... à mon butin... Zzz...'),
   'ǯ': brig('Brigande', 'Nini', 'brume_f', 'down', 'Zzz... Encore cinq minutes... Zzz...'),
@@ -134,7 +139,7 @@ const BRIGANDS = Object.fromEntries(Object.entries({
 // les deux brigands qui gardent le passage du -4 : sans le sceptre, on ne passe pas ; avec, il faut les battre
 const PORTIERS = {
   'Ǥ': { id: 'portier-1', cls: 'Brigand', nom: 'Gros-Bras', sprite: 'brutus', dir: 'down', toujours: true, portier: 0, prix: 1500, equipe: [[112, 38], [68, 38], [76, 39]] },
-  'ǥ': { id: 'portier-2', cls: 'Brigande', nom: 'Lame-Fine', sprite: 'spectrel', dir: 'down', toujours: true, portier: 1, prix: 1500, equipe: [[212, 39], [461, 39], [229, 40]] },
+  'ǥ': { id: 'portier-2', cls: 'Brigande', nom: 'Lame-Fine', sprite: 'brume_f', dir: 'down', toujours: true, portier: 1, prix: 1500, equipe: [[212, 39], [461, 39], [229, 40]] },
 };
 
 const pnj = {
@@ -143,9 +148,55 @@ const pnj = {
   ...PORTIERS,
 };
 
-const G3 = SALLES_TOMBEAU.lunettes;
-// -4 : la Galerie des Pilleurs ; le chemin au-dessus du gouffre se voit (plus de monocle), la sortie est fermée pour l'instant
-const P3 = pilleurs('s3', { ...G3, plan: G3.plan.map((r) => r.replace('L', 'z').replace(/:/g, '.').replace('N', '#')) }, pnj);
+// -4 à -9 : les profondeurs (tools/tombeau.py). Les pilleurs (t) gardent leur regard ; les morts-vivants (q), les luttes (j
+// contre o), les corps (g) et les mourants (a) prennent une lettre chacun (ou un objet du décor). « apres » : seulement une
+// fois le sceptre repris au sous-chef (la lutte contre les morts-vivants a commencé au -6 et au -7).
+const MORTS = 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩЁЂЃЄЅІЇЈ', LUTTEURS = 'ЉЊЋЌЎЏБГДЖ';
+let nMort = 0, nLutte = 0;
+const NIVEAUX_MORTS = { p6: [39, 41], p7: [40, 42], m8: [41, 43], m9: [43, 45] };
+const ESPECES_MORTS = [2101, 2102, 2103];
+const CRIS_LUTTE = [['Recule ! Ils... ils ne meurent pas !'], ['Frappe-le ! Frappe-le, bon sang !'], ['Je le tiens... Je le tiens pas !'], ['Ces choses... sortent des murs !']];
+const BRIGS = ['voleur', 'brume', 'brume_f', 'brutus'];
+function profondeur(sid, gen, pnj, apres) {
+  const P = pilleurs(sid, gen, pnj), plan = P.plan.map((r) => [...r]), lettres = [...P.lettres], [l0, l1] = NIVEAUX_MORTS[sid] || [40, 42];
+  let k = 0;
+  const mort = (x, y, extra) => {
+    const l = MORTS[nMort++], sp = ESPECES_MORTS[(k + y) % 3];
+    pnj[l] = { id: `${sid}-m${k}`, cls: '', nom: 'Abomination', sprite: 'spectrel', dir: 'down', mortvivant: { sp, lvl: l0 + (k % (l1 - l0 + 1)) }, apres, ...extra };
+    plan[y][x] = l; lettres.push(l); k++;
+  };
+  for (let y = 0; y < plan.length; y++) for (let x = 0; x < plan[y].length; x++) {
+    const c = plan[y][x];
+    if (c === 'q') mort(x, y, {});
+    else if (c === 'o') mort(x, y, { dir: 'left', lutte: true });
+    else if (c === 'j') {
+      const l = LUTTEURS[nLutte], b = BANDE[nLutte % BANDE.length];
+      pnj[l] = { id: `${sid}-l${nLutte}`, ...b, nom: NOMS[nNom++ % NOMS.length], dir: 'right', toujours: true, lutteur: true, cris: CRIS_LUTTE[nLutte % CRIS_LUTTE.length], apres };
+      nLutte++; plan[y][x] = l; lettres.push(l);
+    }
+    else if (c === 'g') plan[y][x] = 'ɠ';
+    else if (c === 'a') plan[y][x] = 'ɑ';
+  }
+  return { plan: plan.map((r) => r.join('')), lettres };
+}
+const PROF = Object.fromEntries(['p4', 'p5', 'p6', 'p7', 'm8', 'm9'].map((id) => [id, profondeur(id, SALLES_TOMBEAU[id], pnj, id === 'p6' || id === 'p7')]));
+
+// -10 : la grande salle, la porte scellée et le chef de Sable-Noir
+function grandeSalle() {
+  const W = 32, H = 27, g = Array.from({ length: H }, () => Array(W).fill('#')), cr = (x0, y0, x1, y1, c = '.') => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) g[y][x] = c; };
+  cr(2, 5, 29, 23); cr(12, 2, 19, 4);
+  g[1][15] = 'Ж'; g[2][13] = 'b'; g[2][18] = 'b'; g[4][15] = 'Ѡ';
+  for (const y of [8, 12, 16, 20]) for (const x of [6, 25]) g[y][x] = '|';
+  for (const [x, y] of [[3, 6], [28, 6], [3, 22], [28, 22]]) g[y][x] = 'b';
+  for (const [x, y] of [[9, 9], [21, 11], [12, 15], [19, 18], [8, 19], [23, 7], [16, 21]]) g[y][x] = 'ɠ';
+  for (const [x, y] of [[14, 10], [10, 13]]) g[y][x] = 'ɑ';
+  g[24][15] = '.'; g[25][15] = 'S'; g[26][15] = 'D';
+  cr(15, 24, 15, 24);
+  return g.map((r) => r.join(''));
+}
+// le sous-chef : il vole le sceptre au -7, puis remonte jusqu'à l'éboulement du -4 ; le chef attend au -10
+pnj['Ҩ'] = { id: 'sous-chef', cls: 'Sous-chef', nom: 'Vipère', sprite: 'corbin', dir: 'down', toujours: true, souschef: true, prix: 3000, equipe: [[553, 42], [330, 43], [430, 43]] };
+pnj['Ѡ'] = { id: 'chef', cls: 'Chef de Sable-Noir', nom: 'Khamsin', sprite: 'nox', dir: 'up', toujours: true, chef: true, prix: 8000, boss: true, equipe: [[450, 46], [332, 46], [344, 46], [553, 47], [330, 47], [248, 48]] };
 
 /** des torches le long des murs du haut : une case de sol sous un mur, entourée de sol libre, assez loin des autres lumières */
 export const LUMIERES = 'Ϯbv';
@@ -181,6 +232,11 @@ const TOMBEAU = {
     x: { type: 'piege', sol: true, decor: 'piege_degats2' },
     // le socle du sceptre, au -1
     L: { type: 'relique', decor: 'socle_sceptre' },
+    // les profondeurs : corps, mourants, la grille du -7, la porte scellée du -10
+    'ɠ': { type: 'corps', decor: 'gisant_voleur' },
+    'ɑ': { type: 'mourant', decor: 'gisant_brume' },
+    '¤': { type: 'verrou', decor: 'porte_grille' },
+    'Ж': { type: 'porte_scellee', decor: 'porte_grande' },
     // passages entre les étages (vers : la salle, cible : la marque du passage d'en face) ; porte : fermée à clé
     'α': { type: 'lien', vers: 's2', cible: 'β', porte: true }, 'β': { type: 'lien', vers: 'b3', cible: 'α', porte: true },
     'γ': { type: 'lien', vers: 's1', cible: 'δ', sol: true }, 'δ': { type: 'lien', vers: 's2', cible: 'γ', sol: true },
@@ -204,7 +260,7 @@ const TOMBEAU = {
   salles: [
     // -3 : le repaire des brigands, où l'on arrive par le trou des pilleurs ; la porte de fer vers le -2, ses trois salles,
     // et le passage du -4, gardé par deux brigands
-    { id: 'b3', nom: 'Repaire des Brigands (-3)', type: 'libre', suivante: 's3', plan: [
+    { id: 'b3', nom: 'Repaire des Brigands (-3)', type: 'libre', suivante: 'p4', ouvertPar: 'jamais', plan: [
       "##############################################",
       "#########α##########################N#########",
       "#########..#########################..########",
@@ -292,13 +348,21 @@ const TOMBEAU = {
       "##########################",
       "##########################",
     ] },
-    // -4 : bien plus sombre
-    { id: 's3', nom: 'Galerie des Pilleurs (-4)', type: 'libre', suivante: null, lumiere: 'noire', pnj: P3.lettres, plan: P3.plan },
+    // -4 à -10 : les profondeurs, bien plus sombres. Au -4, l'éboulement ferme le retour ; au -7, le piège et la grille
+    { id: 'p4', nom: 'Galerie des Pilleurs (-4)', type: 'libre', lumiere: 'noire', eboulement: true, pnj: PROF.p4.lettres, plan: PROF.p4.plan },
+    { id: 'p5', nom: 'Camp de Sable-Noir (-5)', type: 'libre', lumiere: 'noire', pnj: PROF.p5.lettres, plan: PROF.p5.plan },
+    { id: 'p6', nom: 'Galerie des Échos (-6)', type: 'libre', lumiere: 'noire', pnj: PROF.p6.lettres, plan: PROF.p6.plan },
+    { id: 'p7', nom: 'Salle des Sables (-7)', type: 'libre', lumiere: 'noire', piege: true, pnj: PROF.p7.lettres, plan: PROF.p7.plan },
+    { id: 'm8', nom: 'Fosse des Pillards (-8)', type: 'libre', lumiere: 'noire', pnj: PROF.m8.lettres, plan: PROF.m8.plan },
+    { id: 'm9', nom: 'Couloirs des Morts (-9)', type: 'libre', lumiere: 'noire', pnj: PROF.m9.lettres, plan: PROF.m9.plan },
+    { id: 'g10', nom: 'Salle de la Porte Scellée (-10)', type: 'libre', lumiere: 'noire', suivante: null, pnj: ['Ѡ'], plan: grandeSalle() },
   ],
   journal: [
     { id: 'entree', nom: 'L\'entrée des pilleurs', salle: 'b3', but: 'L\'entrée officielle est gardée. Le ruinemaniac de la place connaît un autre accès : une roche à pousser avec Force, au bord est de la place.' },
     { id: 'sceptre', nom: 'Le sceptre', salle: 's1', but: 'La sépulture du Roi Sans Nom ne s\'ouvre qu\'avec son sceptre, gardé au -1. La porte de fer du -3 mène au -2 (la Clé de Fer du ruinemaniac l\'ouvre). Ne te fais pas voir des moines : endors le gardien du sceptre avec une Seringue Somnifère, en t\'approchant par derrière.' },
     { id: 'passage', nom: 'Le passage du -4', salle: 'b3', but: 'Au fond du repaire, deux brigands gardent le passage du -4. Ils ne laissent passer personne... sauf peut-être quelqu\'un d\'assez fort.' },
+    { id: 'profondeurs', nom: 'Les profondeurs', salle: 'p4', but: 'Le passage s\'est effondré derrière toi. Les pilleurs de Sable-Noir rôdent dans les profondeurs, et ils veulent ton sceptre.' },
+    { id: 'porte', nom: 'La porte scellée', salle: 'g10', but: 'Tout au fond, une porte scellée. Le chef de Sable-Noir est déjà là.' },
   ],
   textes: {
     perdu: ['Tes Pokémon n\'en peuvent plus...', 'Tu reprends tes esprits à l\'entrée de la salle. Tes Pokémon ont retrouvé un peu de forces.'],

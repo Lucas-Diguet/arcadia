@@ -6,7 +6,7 @@
 // poche ; ils se réveillent tous quand on quitte la salle. Le sceptre est au -1 (état : s1.sceptre) ; les deux brigands
 // du passage du -4 ne laissent passer qu'un dresseur qui l'a et qui les bat (état : b3.duel, b3.passe).
 // Toutes les salles sont dans la pénombre : une toile multipliée par-dessus l'image, éclaircie autour des flammes.
-import { T } from '../../../odyssee/js/world/tiles.js';
+import { T, walkable } from '../../../odyssee/js/world/tiles.js';
 import { ITEMS, itemName } from '../../../odyssee/js/core/items.js';
 import { createMon, monName, healFull } from '../../../odyssee/js/core/mon.js';
 import { ASSETS } from '../../../odyssee/js/assets.js';
@@ -17,8 +17,10 @@ import { HPX } from '../../../odyssee/js/render/world3d.js';
 import { prisPar, battu } from './etat.js';
 
 /** les salles que montre la carte du ruinemaniac (du -1 au -4 ; plus tard, un peu plus bas) */
-const CARTE = ['s1', 's2', 'b3', 'b4a', 'b4b', 'b4c', 's3'];
-const SCEPTRE = 'sceptre-roi';
+const CARTE = ['s1', 's2', 'b3', 'b4a', 'b4b', 'b4c', 'p4'];
+const SCEPTRE = 'sceptre-roi', JUMEAU = 'sceptre-jumeau', CLE7 = 'cle-sable-noir';
+/** ce que murmurent les mourants (un fragment chacun, selon la case) */
+const MOURANTS = [['Argh... Ces monstres...', '... d\'où sortent-ils...'], ['Le chef... il a posé... le sceptre...', '... et le tombeau... a hurlé...'], ['J\'ai froid... si froid...'], ['Ne... descends pas...'], ['Ils sortaient... des murs...', '... des murs...'], ['Le trésor... ça valait pas... ça...'], ['Maman...'], ['Cours... cours...']];
 const cle = (x, y) => x + ',' + y;
 const estTombeau = (d) => !!d?.tombeau;
 const PIEGE = 0.12, CHUTE = 0.1;
@@ -57,7 +59,32 @@ export const Tombeau = {
       if (Q.brigand) { n.talk = () => this.brigand(d, k); n.when = () => true; }
       else if (Q.portier != null) { n.talk = () => this.portiers(d); n.when = () => !this.dTombeau(d, 'b3').passe; }
       else if (Q.boutique) { n.talk = () => this.boutique(d); n.when = () => true; }
+      else if (Q.pilleur) n.talk = () => this.parlerPilleur(d, k);
+      else if (Q.mortvivant) n.talk = () => this.attaqueMort(d, k);
+      else if (Q.lutteur) n.talk = () => this.parlerLutteur(d, k);
+      else if (Q.chef) n.talk = () => this.chef(d);
+      // ce qui n'arrive qu'après le vol du sceptre (la lutte du -6 et du -7)
+      if (Q.apres) { const w = n.when; n.when = () => this.etape(d) >= 2 && (!w || w()); }
     }
+    // les corps, les mourants, la grille du -7, la porte scellée du -10
+    m.tomb.apres = [];
+    for (const [c, l] of Object.entries(P.objets)) {
+      const o = d.objets[c];
+      if (o.type === 'corps' || o.type === 'mourant') l.forEach(([x, y], i) => {
+        const dd = m.deco.find((q) => q.x === x && q.y === y), brig = ['voleur', 'brume', 'brume_f', 'brutus'][(x * 7 + y * 3) % 4];
+        if (dd) dd.k = `gisant_${brig}${(x + y) % 2 ? '_2' : ''}`;
+        if (s.id === 'p6' || s.id === 'p7') m.tomb.apres.push([x, y, dd?.k]);
+        m.object(x, y, { use: () => this.gisant(d, m, x, y, o.type) });
+      });
+      if (o.type === 'verrou') for (const [x, y] of l) m.object(x, y, { use: () => this.grille(d) });
+      if (o.type === 'porte_scellee') for (const [x, y] of l) m.object(x, y, { use: () => this.porteScellee(d) });
+    }
+    // le sous-chef : au -7 pour la scène du vol, puis au -4, devant l'éboulement
+    if (s.id === 'p4') {
+      const [sx, sy] = P.sortie || P.depart;
+      m.npc({ id: `${d.id}:souschef-4`, x: sx + 1, y: sy - 2, dir: 'down', sprite: 'corbin', move: 'static', name: 'Sous-chef Vipère', when: () => this.etape(d) >= 1, talk: () => this.sousChef(d) });
+    }
+    if (s.id === 'p7') m.npc({ id: `${d.id}:souschef-7`, x: P.depart[0], y: P.depart[1], dir: 'up', sprite: 'corbin', move: 'static', name: 'Sous-chef Vipère', when: () => !!this.sceneVol, talk: () => {} });
     // passages entre les étages : bords de la carte, escaliers, porte de fer fermée à clé
     for (const [c, l] of Object.entries(P.objets)) {
       const o = d.objets[c]; if (o.type !== 'lien') continue;
@@ -83,7 +110,12 @@ export const Tombeau = {
     if (!estTombeau(d)) return;
     const g = this.game, e = this.etats[d.id], st = g.state, pris = !!this.dTombeau(d, 's1').sceptre;
     if (this.runTombeau !== e.run) { this.runTombeau = e.run; this.reveles = new Set(); }
-    if (st) { if (pris && this.estDans(d)) st.bag[SCEPTRE] = 1; else delete st.bag[SCEPTRE]; }
+    const E7 = this.dTombeau(d, 'p7'), E10 = this.dTombeau(d, 'g10'), dedans = this.estDans(d);
+    if (st) {
+      const garde = (k, v) => { if (v && dedans) st.bag[k] = 1; else delete st.bag[k]; };
+      garde(SCEPTRE, pris && E7.vol !== 1 && !E10.ouverte); garde(CLE7, E7.vol === 2 && !E7.ouverte); garde(JUMEAU, !!E10.jumeau && !E10.ouverte);
+    }
+    this.appliquerProfondeurs(d);
     for (const s of d.salles) {
       const m = g.world.maps[s.carte]; if (!m?.tomb) continue;
       for (const [x, y] of m.donjon.plan.objets.L || []) this.propTombeau(m, x, y, pris ? 'socle_vide' : 'socle_sceptre');
@@ -98,6 +130,257 @@ export const Tombeau = {
     if (g.mapObj === m) { g.view.decoAt.set(cle(x, y), dd); g.view.rebuildAt(x, y); }
   },
 
+  /* ---------------- les profondeurs : l'éboulement, le vol, les morts-vivants, la porte scellée ---------------- */
+  /** 0 : rien ; 1 : le sous-chef a volé le sceptre ; 2 : on l'a repris (la lutte contre les morts-vivants a commencé) */
+  etape(d) { return this.dTombeau(d, 'p7').vol || 0; },
+  aLeSceptre(d) { return !!this.game.state?.bag[SCEPTRE]; },
+  /** un décor qui bloque, ou rien (la case redevient du sol) */
+  decorTombeau(m, x, y, k) {
+    const g = this.game, dd = m.deco.find((q) => q.x === x && q.y === y && q.k !== 'exitlight' && q.k !== 'ladder');
+    if ((dd?.k || null) === (k || null)) return;
+    m.deco = m.deco.filter((q) => !(q.x === x && q.y === y));
+    if (k) { m.set(x, y, T.BLOCK); m.deco.push({ k, x, y }); } else m.set(x, y, T.CAVE);
+    if (g.mapObj === m) { const nd = m.deco.find((q) => q.x === x && q.y === y); if (nd) g.view.decoAt.set(cle(x, y), nd); else g.view.decoAt.delete(cle(x, y)); g.view.rebuildAt(x, y); }
+  },
+  appliquerProfondeurs(d) {
+    const g = this.game, M = (id) => g.world.maps[d.salles.find((q) => q.id === id)?.carte];
+    const passe = !!this.dTombeau(d, 'b3').passe, etape = this.etape(d), E7 = this.dTombeau(d, 'p7'), E10 = this.dTombeau(d, 'g10');
+    // l'éboulement : le passage du -3 au -4 est bouché, des deux côtés
+    const m4 = M('p4'), m3 = M('b3');
+    if (m4?.donjon.plan.sortie) {
+      const [x, y] = m4.donjon.plan.sortie, k = cle(x, y);
+      if (passe && m4.warps.has(k)) { m4.warps.delete(k); m4.deco = m4.deco.filter((q) => !(q.x === x && q.y === y)); }
+      if (passe) this.decorTombeau(m4, x, y, 'eboulement');
+    }
+    if (m3?.donjon.plan.suivante && passe) { const [x, y] = m3.donjon.plan.suivante; this.decorTombeau(m3, x, y + 1, 'eboulement'); this.decorTombeau(m3, x + 1, y + 1, 'caverock'); }
+    // au -6 et au -7, les corps et les mourants n'apparaissent qu'avec la lutte
+    for (const id of ['p6', 'p7']) { const m = M(id); for (const [x, y, k] of m?.tomb?.apres || []) this.decorTombeau(m, x, y, etape >= 2 ? k : null); }
+    // la grille du -7
+    const m7 = M('p7'); for (const [x, y] of m7?.donjon.plan.objets['¤'] || []) this.decorTombeau(m7, x, y, E7.ouverte ? null : 'porte_grille');
+    // le sable mouvant du piège
+    if (m7 && E7.sable && !m7.deco.some((q) => q.k === 'sable_mouvant')) { const [x, y] = E7.sable; m7.deco.push({ k: 'sable_mouvant', x, y }); if (g.mapObj === m7) { g.view.decoAt.set(cle(x, y), m7.deco[m7.deco.length - 1]); g.view.rebuildAt(x, y); } }
+    // la porte scellée
+    const m10 = M('g10'); for (const [x, y] of m10?.donjon.plan.objets['Ж'] || []) this.decorTombeau(m10, x, y, E10.ouverte ? 'porte_grande_o' : 'porte_grande');
+  },
+  /** un corps, un mourant */
+  async gisant(d, m, x, y, type) {
+    const g = this.game, ui = g.ui, s = this.salleTombeau(d, m);
+    if ((s.id === 'p6' || s.id === 'p7') && this.etape(d) < 2) return;
+    if (type === 'corps') { await ui.say((x + y) % 2 ? 'Un pilleur de Sable-Noir. Il ne bougera plus.' : 'Il ne respire plus.'); return; }
+    await ui.say(MOURANTS[(x * 3 + y * 5) % MOURANTS.length], { speaker: 'Pilleur mourant' });
+  },
+  /** un pilleur de Sable-Noir : avec le sceptre, il attaque ; sans, il se moque */
+  async parlerPilleur(d, k) {
+    if (this.aLeSceptre(d)) return this.engager(d, k);
+    const P = d.pnj[k];
+    await this.game.ui.say(MOQUE[[...k].reduce((a, c) => a + c.charCodeAt(0), 0) % MOQUE.length], { speaker: `${P.cls} ${P.nom}` });
+  },
+  async parlerLutteur(d, k) {
+    const P = d.pnj[k], e = this.etats[d.id], adv = Object.keys(d.pnj).find((q) => d.pnj[q].lutte && d.pnj[q].id.startsWith(P.id.split('-')[0]) && this.mortVoisin(d, k, q));
+    await this.game.ui.say(adv && !battu(e, d, adv) ? P.cris : ['Merci... Va-t\'en d\'ici...', '... tant que tu peux encore.'], { speaker: `${P.cls} ${P.nom}` });
+  },
+  /** le mort-vivant de la lutte : juste à droite du pilleur */
+  mortVoisin(d, k, q) {
+    const s = d.salles.find((x) => x.pnj?.includes(k)), m = s && this.game.world.maps[s.carte], P = m?.donjon.plan.pnj;
+    return P?.[k] && P?.[q] && P[q][0][0] === P[k][0][0] + 1 && P[q][0][1] === P[k][0][1];
+  },
+  /** une abomination : un combat comme contre un Pokémon sauvage (sans capture possible) */
+  async attaqueMort(d, k) {
+    const g = this.game, P = d.pnj[k], e = this.etats[d.id];
+    if (battu(e, d, k)) return;
+    const r = await this.demande(d.id, { a: 'prendre', pnj: k });
+    if (!r.ok) return;
+    g.musicLock = true;
+    const res = await g.runBattle({ wild: createMon(P.mortvivant.sp, P.mortvivant.lvl, { met: 'Tombeau du Roi Sans Nom' }), music: 'legend', noWhiteout: true });
+    g.musicLock = false; g.updateZone();
+    if (res === 'win') { await this.demande(d.id, { a: 'gagne', pnj: k }); await g.ui.say('L\'abomination s\'effondre en poussière.'); return; }
+    await this.demande(d.id, { a: 'lacher', pnj: k });
+    if (res === 'lose') await this.defaite(d);
+    else (this.morts ||= {})[`${d.id}:${P.id}`] = { mode: 'repos', t: performance.now() + 4000 };
+  },
+  /** les morts-vivants avancent très lentement ; ils regardent autour d'eux, et marchent sur qui passe devant eux */
+  tickMorts(d, m) {
+    const g = this.game, p = g.player, now = performance.now(), e = this.etats[d.id];
+    if (g.busy || g.bv.alive || !g.input.free) return;
+    const occupe = (x, y) => (x === p.x && y === p.y) || g.npcs.some((n) => n.x === x && n.y === y);
+    const libre = (x, y) => walkable(m.get(x, y)) && !occupe(x, y);
+    for (const n of g.npcs) {
+      const k = Object.keys(d.pnj).find((q) => `${d.id}:${d.pnj[q].id}` === n.id), P = k && d.pnj[k];
+      if (!P?.mortvivant || P.lutte || battu(e, d, k) || n.move) continue;
+      const S = ((this.morts ||= {})[n.id] ||= { mode: 'ronde', t: now + 1500 + Math.random() * 2000 });
+      const dist = Math.abs(p.x - n.x) + Math.abs(p.y - n.y);
+      if (S.mode === 'chasse' && dist === 1) {
+        n.dir = p.x > n.x ? 'right' : p.x < n.x ? 'left' : p.y > n.y ? 'down' : 'up';
+        g.busy = true; S.mode = 'repos'; S.t = now + 5000;
+        (async () => { g.sound.sfx('encounter'); await g.ui.say('L\'abomination t\'attrape !'); await this.attaqueMort(d, k); })().catch((x) => console.error(x)).finally(() => { g.busy = false; });
+        return;
+      }
+      if (S.mode === 'repos') { if (now > S.t) S.mode = 'ronde'; continue; }
+      if (S.mode === 'ronde') {
+        if (now > S.t) { S.t = now + 2200 + Math.random() * 2500; const l = ['down', 'up', 'left', 'right'].filter((q) => { const [a, b] = DIRV[q]; return walkable(m.get(n.x + a, n.y + b)); }); if (l.length) n.dir = l[Math.floor(Math.random() * l.length)]; }
+        const [dx, dy] = DIRV[n.dir];
+        for (let i = 1; i <= 5; i++) {
+          const x = n.x + dx * i, y = n.y + dy * i;
+          if (x === p.x && y === p.y) { S.mode = 'chasse'; S.t = now + 700; n.bang = true; g.sound.sfx('bang'); setTimeout(() => { n.bang = false; }, 650); break; }
+          if (!walkable(m.get(x, y)) || g.npcs.some((o) => o.x === x && o.y === y)) break;
+        }
+        continue;
+      }
+      // la chasse : un pas toutes les 0,85 seconde, vers le joueur ; trop loin, il abandonne
+      if (dist > 11) { S.mode = 'ronde'; continue; }
+      if (now < S.t) continue;
+      S.t = now + 850;
+      const ax = Math.sign(p.x - n.x), ay = Math.sign(p.y - n.y);
+      const essais = Math.abs(p.x - n.x) >= Math.abs(p.y - n.y) ? [[ax, 0], [0, ay]] : [[0, ay], [ax, 0]];
+      for (const [a, b] of essais) {
+        if (!a && !b) continue;
+        if (!libre(n.x + a, n.y + b)) continue;
+        n.move = { fx: n.x, fy: n.y, t: 0, dur: 0.8 }; n.x += a; n.y += b; n.step++;
+        n.dir = a > 0 ? 'right' : a < 0 ? 'left' : b > 0 ? 'down' : 'up';
+        break;
+      }
+    }
+  },
+  /** les luttes : le pilleur et le mort-vivant se rendent les coups */
+  tickLuttes(d) {
+    const g = this.game, t = Math.floor(performance.now() / 420);
+    if (this.tLutte === t) return; this.tLutte = t;
+    for (const n of g.npcs) {
+      const k = Object.keys(d.pnj).find((q) => `${d.id}:${d.pnj[q].id}` === n.id), P = k && d.pnj[k];
+      if (!P || !(P.lutteur || P.lutte) || n.move) continue;
+      if ((t + (P.lutte ? 1 : 0)) % 3 === 0) { n.step++; n.bang = Math.random() < 0.08; }
+    }
+  },
+  /** le piège du -7 : passé le milieu de la salle, le sable se dérobe ; le sous-chef vole le sceptre */
+  async piegeSable(d) {
+    const g = this.game, ui = g.ui, m = g.mapObj, p = g.player, qui = { speaker: 'Sous-chef Vipère' };
+    await this.demande(d.id, { a: 'maj', salle: 'p7', donnees: { sable: [p.x, p.y] } });
+    g.sound.sfx('ledge'); g.view.shake = 0.3;
+    await ui.say(['Le sol se dérobe sous tes pieds !', 'Du sable mouvant ! Tu t\'enfonces jusqu\'à la taille !']);
+    // il arrive d'en bas, se penche, prend le sceptre et repart
+    // il sort de l'ombre, à quelques pas (plutôt du côté d'où l'on vient)
+    const def = m.npcs.find((q) => q.id === `${d.id}:souschef-7`), loin = this.casesA(m, p.x, p.y, 6);
+    const c = loin.sort((a, b) => b[1] - a[1])[0]; if (def && c) { def.x = c[0]; def.y = c[1]; }
+    this.sceneVol = true; g.refreshNpcs();
+    const n = g.npcs.find((q) => q.id === `${d.id}:souschef-7`);
+    if (n) await this.marcherVers(n, m, p.x, p.y, 1);
+    await ui.say(['Tiens, tiens... Regardez-moi ce qui s\'est pris dans mon sable.', 'Et qu\'est-ce que tu tiens là ? Le sceptre du Roi Sans Nom...', 'Le chef va être ravi. Merci pour le cadeau, gamin !'], qui);
+    await this.demande(d.id, { a: 'maj', salle: 'p7', donnees: { vol: 1 } });
+    g.sound.sfx('item');
+    await ui.say('Le sous-chef t\'arrache le Sceptre du Roi Sans Nom !');
+    await ui.say('Bon courage pour sortir de là ! Ha ha ha !', qui);
+    if (n) { const [sx, sy] = m.donjon.plan.depart; await this.marcherVers(n, m, sx, sy, 0, 9); }
+    this.sceneVol = false; g.refreshNpcs();
+    await this.debattre();
+    await ui.say(['Tu t\'extirpes du sable, à bout de souffle.', 'Le sous-chef est reparti vers le haut du tombeau. Il faut le rattraper !']);
+  },
+  /** se débattre : appuyer sur les flèches, dans tous les sens */
+  debattre() {
+    const g = this.game, box = el('div', 'box tombeau-sable');
+    box.style.cssText = 'position:absolute;left:50%;bottom:120px;transform:translateX(-50%);padding:10px 18px;text-align:center;z-index:40;min-width:260px';
+    box.innerHTML = '<b>Débats-toi !</b><br>Appuie sur les flèches, dans tous les sens.<div style="margin-top:8px;height:10px;background:#3a2a1c;border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:0;background:#e0a040"></i></div>';
+    g.ui.root.appendChild(box);
+    const barre = box.querySelector('i'), BUT = 16;
+    return new Promise((res) => {
+      let n = 0, der = null;
+      const touche = (ev) => {
+        const k = ev.key;
+        if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'z', 'q', 's', 'd', 'w', 'a'].includes(k)) return;
+        ev.preventDefault(); ev.stopPropagation();
+        if (k === der) return;
+        der = k; n++; g.view.shake = 0.08; barre.style.width = `${Math.min(100, (n / BUT) * 100)}%`;
+        if (n >= BUT) { removeEventListener('keydown', touche, true); box.remove(); res(); }
+      };
+      addEventListener('keydown', touche, true);
+    });
+  },
+  /** les cases à exactement r pas de (x, y), à pied */
+  casesA(m, x0, y0, r) {
+    const vus = new Map([[cle(x0, y0), 0]]), f = [[x0, y0]], out = [];
+    while (f.length) {
+      const [x, y] = f.shift(), k = vus.get(cle(x, y));
+      if (k === r) { out.push([x, y]); continue; }
+      for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const c = cle(x + a, y + b); if (!vus.has(c) && walkable(m.get(x + a, y + b))) { vus.set(c, k + 1); f.push([x + a, y + b]); } }
+    }
+    return out;
+  },
+  /** un PNJ marche vers une case (jusqu'à « pres » cases d'elle), par le plus court chemin ; max : nombre de pas */
+  async marcherVers(n, m, tx, ty, pres = 0, max = 80) {
+    const g = this.game, key = (x, y) => x + ',' + y, prev = new Map([[key(n.x, n.y), null]]), f = [[n.x, n.y]];
+    let fin = null;
+    while (f.length) {
+      const [x, y] = f.shift();
+      if (Math.abs(x - tx) + Math.abs(y - ty) <= pres) { fin = [x, y]; break; }
+      for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const k = key(x + a, y + b);
+        if (prev.has(k) || !walkable(m.get(x + a, y + b)) || (x + a === g.player.x && y + b === g.player.y && pres)) continue;
+        prev.set(k, [x, y]); f.push([x + a, y + b]);
+      }
+    }
+    if (!fin) return;
+    const pas = []; for (let c = fin; prev.get(key(...c)); c = prev.get(key(...c))) pas.unshift(c);
+    let [x, y] = [n.x, n.y];
+    for (const [a, b] of pas.slice(0, max)) { await g.npcWalk(n, a > x ? 'right' : a < x ? 'left' : b > y ? 'down' : 'up', 1); [x, y] = [a, b]; }
+    if (pres) n.dir = g.player.x > n.x ? 'right' : g.player.x < n.x ? 'left' : g.player.y > n.y ? 'down' : 'up';
+  },
+  /** au -4, devant l'éboulement : le sous-chef comprend qu'il est pris au piège */
+  async sousChef(d) {
+    const g = this.game, ui = g.ui, qui = { speaker: 'Sous-chef Vipère' }, n = g.npcs.find((q) => q.id === `${d.id}:souschef-4`);
+    if (this.etape(d) >= 2) { await ui.say(['Laisse-moi...', 'Je n\'ai plus rien. Plus de sortie, plus de sceptre.'], qui); return; }
+    if (n) { n.dir = 'down'; }
+    await ui.say(['Non... non, non, non !', 'Le passage... il est bouché ! Des tonnes de pierres !', 'Je ne sortirai jamais d\'ici... Je vais crever dans ce tombeau...'], qui);
+    if (n) { n.bang = true; g.sound.sfx('bang'); await attendre(650); n.bang = false; n.dir = g.player.x > n.x ? 'right' : g.player.x < n.x ? 'left' : g.player.y > n.y ? 'down' : 'up'; }
+    await ui.say(['TOI ! C\'est à cause de toi, tout ça !', 'Si je dois mourir ici, tu tomberas avec moi !'], qui);
+    const P = d.pnj['Ҩ'];
+    for (;;) {
+      const res = await this.combat({ ...P, perd: 'Non... pas comme ça...' }, this.equipe(P.equipe));
+      if (res === 'win') break;
+      await this.defaite(d); return;
+    }
+    await ui.say(['C\'est fini... Prends-le, ton sceptre.', 'Et tiens, la clé de la grille du -7. Là où tu vas, elle te servira plus qu\'à moi.'], qui);
+    await this.demande(d.id, { a: 'maj', salle: 'p7', donnees: { vol: 2 } });
+    g.sound.sfx('item');
+    await ui.say([`${g.state.name} reprend le Sceptre du Roi Sans Nom !`, `${g.state.name} reçoit la Clé de Sable-Noir !`]);
+  },
+  async grille(d) {
+    const g = this.game, ui = g.ui;
+    if (this.dTombeau(d, 'p7').ouverte) return;
+    if (!g.state.bag[CLE7]) { await ui.say('Une grille de fer, fermée à clé.'); return; }
+    g.sound.sfx('door');
+    await this.demande(d.id, { a: 'maj', salle: 'p7', donnees: { ouverte: true } });
+    await ui.say('La Clé de Sable-Noir tourne dans la serrure. La grille s\'ouvre en grinçant.');
+  },
+  /** au -10 : le chef de Sable-Noir devant la porte scellée */
+  async chef(d) {
+    const g = this.game, ui = g.ui, E = this.dTombeau(d, 'g10'), qui = { speaker: 'Khamsin' }, n = g.npcs.find((q) => q.id === `${d.id}:chef`);
+    if (E.battu) { await ui.say(['Vas-y... Ouvre-la.', 'Moi, je n\'ai plus personne à qui la montrer.'], qui); return; }
+    if (n) n.dir = 'up';
+    await ui.say(['Pourquoi... Pourquoi ne s\'ouvre-t-elle pas ?', 'J\'ai le sceptre. Le sceptre du roi, sous le nez de toute la ville...', 'Je l\'ai posé sur la porte, et le tombeau a grondé. Il a compris qu\'on était des pillards.', 'Et ces... choses sont sorties des murs pour le défendre.'], qui);
+    if (n) { n.bang = true; g.sound.sfx('bang'); await attendre(650); n.bang = false; n.dir = 'down'; }
+    await ui.say(['... Toi ?', 'Le gamin du musée...', 'Tu viens voir ce qui reste de Sable-Noir ? Il ne reste rien. Rien !', 'Mes hommes sont morts. Tués par des abominations. Pour une porte qui ne s\'ouvre pas...'], qui);
+    g.sound.sfx('encounter');
+    await ui.say(['... Attends.', 'Ce que tu tiens... Un deuxième sceptre ?!', 'Bien sûr... Il en fallait deux. Les deux ensemble.', 'Et moi, avec un seul, j\'ai réveillé les morts.', 'Donne-le-moi. DONNE-LE-MOI !'], qui);
+    const P = d.pnj['Ѡ'];
+    const res = await this.combat({ ...P, perd: 'C\'est... impossible...' }, this.equipe(P.equipe));
+    if (res !== 'win') { await this.defaite(d); return; }
+    await ui.say(['C\'est fini.', 'Je n\'ai plus d\'hommes, plus de forces. Fais ce que tu veux.', 'Ouvre-la, cette porte.'], qui);
+    await this.demande(d.id, { a: 'maj', salle: 'g10', donnees: { battu: true, jumeau: true } });
+    g.sound.sfx('item');
+    await ui.say(['Le chef laisse tomber son sceptre à tes pieds.', `${g.state.name} ramasse le Sceptre Jumeau !`]);
+  },
+  async porteScellee(d) {
+    const g = this.game, ui = g.ui, E = this.dTombeau(d, 'g10');
+    if (E.ouverte) { await ui.say(['Derrière la porte, un escalier descend dans le noir.', 'La sépulture du roi n\'est pas encore prête : la suite viendra.']); return; }
+    await ui.say(['Une porte immense, couverte de hiéroglyphes.', 'Au centre, deux encoches en forme de sceptre, l\'une sur l\'autre.']);
+    if (!E.battu) return;
+    if (!(await ui.yesNo('Poser les deux sceptres dans les encoches ?'))) return;
+    g.sound.sfx('select');
+    await ui.say(['Tu poses le Sceptre du Roi Sans Nom, puis le Sceptre Jumeau par-dessus.', 'Ils s\'emboîtent dans un déclic.']);
+    g.view.shake = 0.5; g.sound.sfx('bang');
+    await this.demande(d.id, { a: 'maj', salle: 'g10', donnees: { ouverte: true } });
+    await ui.say(['Le tombeau tout entier tremble...', 'La porte scellée s\'ouvre lentement.']);
+  },
+
   /* ---------------- déplacements ---------------- */
   avantPasTombeau() { return false; },
   /** après un pas : gouffres, pièges, regard des pilleurs */
@@ -110,7 +393,13 @@ export const Tombeau = {
     try {
       if (T0.gouffres.has(ici)) { await this.chute(d); return; }
       if (T0.pieges.has(ici)) await this.piege();
-      const k = this.pilleurQuiVoit(d, m); if (k) await this.engager(d, k);
+      // le piège du -7 : passé le milieu de la salle, avec le sceptre
+      if (s.piege && this.etape(d) === 0 && this.aLeSceptre(d) && p.y < m.h / 2) { await this.piegeSable(d); return; }
+      // au -4, le sous-chef devant l'éboulement
+      if (s.id === 'p4' && this.etape(d) === 1) { const n = g.npcs.find((q) => q.id === `${d.id}:souschef-4`); if (n && Math.abs(n.x - p.x) + Math.abs(n.y - p.y) <= 4) { await this.sousChef(d); return; } }
+      // au -10, le chef devant la porte
+      if (s.id === 'g10' && !this.dTombeau(d, 'g10').battu) { const n = g.npcs.find((q) => q.id === `${d.id}:chef`); if (n && Math.abs(n.x - p.x) + Math.abs(n.y - p.y) <= 4) { await this.chef(d); return; } }
+      const k = this.aLeSceptre(d) && this.pilleurQuiVoit(d, m); if (k) await this.engager(d, k);
     } finally { g.busy = false; }
   },
   async chute() {
@@ -355,6 +644,7 @@ export const Tombeau = {
       if (cleZ !== this.zonesVues) { this.zonesVues = cleZ; dessinerZones(g.view, zones); }
     } else if (this.zonesVues) { this.zonesVues = null; dessinerZones(g.view, []); dessinerZzz(g.view, []); }
     this.eclairerTombeau(s, m, moines);
+    if (s && !s.gardes) { this.tickMorts(d, m); this.tickLuttes(d); }
     if (!moines.length || g.busy || g.bv.alive || !g.input.free) return;
     const p = g.player;
     for (const [n, v] of moines) {
@@ -449,11 +739,17 @@ export const Tombeau = {
     g.view.shake = 0.4; g.sound.sfx('bang');
     await ui.say(['Des cris éclatent dans tout le repaire. Des dizaines de brigands se tournent vers toi.', 'Pas le temps de discuter : tu fonces dans le passage !']);
     for (const n of g.npcs) n.bang = false;
-    await this.demande(d.id, { a: 'maj', salle: 'b3', donnees: { passe: true } });
-    const s3 = d.salles.find((q) => q.id === 's3'), m3 = g.world.maps[s3.carte], [x, y] = m3.donjon.plan.depart;
+    // ton premier Pokémon force le passage... et la voûte s'effondre derrière toi
+    const mon = g.lead?.() || g.state.party.find((q) => q.hp > 0);
+    if (mon) { g.sound.cry(ASSETS.cry(mon.sp)); await ui.say(`${monName(mon)} jaillit de sa Poké Ball et fonce dans le passage !`); }
+    const p4 = d.salles.find((q) => q.id === 'p4'), m4 = g.world.maps[p4.carte], [x, y] = m4.donjon.plan.depart;
     g.sound.sfx('exit');
-    await g.warp({ map: m3.id, x, y: y - 1, dir: 'up' }, 'exit');
-    await ui.say('Le noir complet... Derrière toi, les cris des brigands s\'éloignent.');
+    await g.warp({ map: m4.id, x, y: y - 1, dir: 'up' }, 'exit');
+    g.view.shake = 0.6; g.sound.sfx('bang');
+    await this.demande(d.id, { a: 'maj', salle: 'b3', donnees: { passe: true } });
+    await ui.say(['Dans la violence du passage, la voûte craque...', 'BRAOUM ! Des tonnes de pierres s\'effondrent derrière toi !']);
+    if (mon) await ui.say(`${monName(mon)} revient dans sa Poké Ball.`);
+    await ui.say(['Le passage est bouché. Impossible de revenir en arrière.', 'Le noir complet... De l\'autre côté des roches, les cris des brigands s\'étouffent.']);
   },
 
   /* ---------------- les brigands du -3 ---------------- */

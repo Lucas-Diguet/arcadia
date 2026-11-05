@@ -987,7 +987,7 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   ok(!d.salles.some((s) => s.pendentif) && !Object.values(d.objets).some((o) => ['sarcophage', 'socleLunettes', 'autel', 'cache', 'piegeCache'].includes(o.type)) && Object.values(d.objets).filter((o) => o.type === 'relique').length === 1, 'tombeau : ni pendentif ni monocle ; une seule relique, le sceptre');
   ok(M.s1.donjon.plan.objets.L?.length === 1 && ITEMS['sceptre-roi']?.key, 'tombeau : le Sceptre du Roi Sans Nom est au -1');
   // à pied : murs, décor, objets qui bloquent et personnages ; le gouffre aussi
-  const bloquees = (m, sans = []) => { const P = m.donjon.plan; return new Set([...P.decor.map(([, x, y]) => `${x},${y}`), ...Object.entries(P.pnj).filter(([k]) => !sans.includes(k)).flatMap(([, l]) => l).map(([x, y]) => `${x},${y}`), ...(P.objets._ || []).map(([x, y]) => `${x},${y}`), ...Object.entries(P.objets).filter(([c]) => !d.objets[c].sol).flatMap(([, l]) => l.map(([x, y]) => `${x},${y}`))]); };
+  const bloquees = (m, sans = []) => { const P = m.donjon.plan; return new Set([...P.decor.map(([, x, y]) => `${x},${y}`), ...Object.entries(P.pnj).filter(([k]) => !sans.includes(k)).flatMap(([, l]) => l).map(([x, y]) => `${x},${y}`), ...(P.objets._ || []).map(([x, y]) => `${x},${y}`), ...Object.entries(P.objets).filter(([c]) => !d.objets[c].sol && d.objets[c].type !== 'verrou').flatMap(([, l]) => l.map(([x, y]) => `${x},${y}`))]); };
   const parcours = (m, sans, dep = m.donjon.plan.depart) => {
     const P = m.donjon.plan, bloque = bloquees(m, sans), sol = new Set(P.sol.map(([x, y]) => `${x},${y}`)), vus = new Set([dep.join()]), f = [dep];
     while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = `${x + dx},${y + dy}`; if (vus.has(k) || !sol.has(k) || bloque.has(k)) continue; vus.add(k); f.push([x + dx, y + dy]); } }
@@ -1005,14 +1005,14 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   {
     const P = M.b3.donjon.plan, [nx, ny] = P.suivante;
     ok(portiers.length === 2 && !parcours(M.b3, []).has(`${nx},${ny + 1}`) && portiers.every((k) => d.pnj[k].equipe.every(([sp, l]) => SPECIES[sp] && l >= 36 && l <= 42)), 'tombeau : deux brigands gardent le passage du -4, on ne passe pas à côté d\'eux');
-    ok(M.b3.donjon.versSuivante?.map === M.s3.id && d.salles[d.salles.length - 1].id === 's3' && d.salles.find((q) => q.id === 's3').lumiere === 'noire', 'tombeau : le passage mène au -4, bien plus sombre');
+    ok(M.b3.donjon.versSuivante?.map === M.p4.id && d.salles.find((q) => q.id === 'b3').ouvertPar === 'jamais', 'tombeau : le passage mène au -4 (on y est emmené par la scène des portiers)');
   }
   // les passages entre étages vont deux à deux
   const liens = Object.entries(d.objets).filter(([, o]) => o.type === 'lien');
   ok(liens.every(([c, o]) => { const s = d.salles.find((q) => q.id === o.vers), e = d.objets[o.cible]; return s && M[s.id].donjon.plan.objets[o.cible] && e.cible === c && !!e.porte === !!o.porte && cartes.some((m) => m.donjon.plan.objets[c]); }), 'tombeau : chaque passage entre étages a son pendant de l\'autre côté');
   ok(d.objets['α'].porte && M.b3.donjon.plan.objets['α'] && M.s2.donjon.plan.objets['β'], 'tombeau : la porte de fer relie le -3 et le -2');
   ok(['b4a', 'b4b', 'b4c'].every((id) => liens.some(([c, q]) => q.vers === id && M.b3.donjon.plan.objets[c])) && Object.values(d.pnj).filter((p) => p.brigand).length >= 15 && M.b4a.donjon.plan.pnj['Ŵ'] && Object.keys(M.b4a.donjon.plan.pnj).length === 1, 'tombeau : un seul étage de brigands (-3, avec la Caverne d\'Ali Baba, le tripot et le dortoir) ; Ali Baba seul dans sa caverne');
-  const BRIG = new Set(['voleur', 'brume', 'brume_f', 'brutus', 'spectrel', 'corbin', 'croupier']);
+  const BRIG = new Set(['voleur', 'brume', 'brume_f', 'brutus', 'corbin', 'croupier']);
   ok(Object.values(d.pnj).filter((p) => p.brigand || p.portier != null).every((p) => BRIG.has(p.sprite)), 'tombeau : les brigands ont tous une tête de brigand');
   const feux = (id) => M[id].donjon.plan.decor.filter(([k]) => ['torche', 'brasero', 'lanterne'].includes(k)).length;
   ok(d.salles.find((q) => q.id === 'b4a').lumiere === 'vive' && feux('b4a') >= 6, 'tombeau : la Caverne d\'Ali Baba est bien éclairée');
@@ -1043,7 +1043,22 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     ok(R.ronde.length === 1 && Math.abs(rx - lx) + Math.abs(ry - ly) === 2 && entree.length >= 8, 'tombeau : -1, le gardien du sceptre, immobile, surveille la chambre');
     ok(pret && traverse(m1, gardes(s1, true), [rx - 1, ry], voisin([lx, ly])) && traverse(m1, gardes(s1, true), [rx - 1, ry], voisin(ou(m1, 'δ'))), 'tombeau : -1, on se glisse derrière le gardien sans être vu, on prend le sceptre et on ressort');
   }
-  ok(Object.values(d.pnj).filter((p) => p.pilleur).every((p) => p.equipe.every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 42)) && Object.values(d.pnj).filter((p) => p.pilleur).length >= 2, 'tombeau : des pilleurs au -4, aux bons niveaux');
+  ok(Object.values(d.pnj).filter((p) => p.pilleur).every((p) => p.equipe.every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 42)) && Object.values(d.pnj).filter((p) => p.pilleur).length >= 18, 'tombeau : des pilleurs de Sable-Noir du -4 au -7, aux bons niveaux');
+  // les profondeurs : du -4 au -10, dans le noir
+  {
+    const ids = ['p4', 'p5', 'p6', 'p7', 'm8', 'm9', 'g10'], S = (id) => d.salles.find((q) => q.id === id), lettres = (id, f) => (S(id).pnj || []).filter((k) => f(d.pnj[k]));
+    ok(ids.every((id, i) => S(id) && S(id).lumiere === 'noire' && (i === ids.length - 1 || M[id].donjon.versSuivante?.map === M[ids[i + 1]].id)) && ids.slice(0, 6).every((id) => M[id].w * M[id].h > 58 * 40), 'tombeau : du -4 au -10, de longues salles plongées dans le noir, à la suite');
+    ok(['p4', 'p5', 'p6', 'p7'].every((id) => lettres(id, (p) => p.pilleur).length >= 4) && ['m8', 'm9'].every((id) => !lettres(id, (p) => p.pilleur).length), 'tombeau : les pilleurs de Sable-Noir rôdent du -4 au -7');
+    ok(['p6', 'p7'].every((id) => lettres(id, (p) => p.lutteur).length >= 3 && lettres(id, (p) => p.mortvivant).length >= 4 && lettres(id, (p) => p.mortvivant || p.lutteur).every((k) => d.pnj[k].apres)) && ['p4', 'p5'].every((id) => !lettres(id, (p) => p.mortvivant).length), 'tombeau : au -6 et au -7, la lutte contre les morts-vivants (après le vol du sceptre)');
+    const gis = (id) => (M[id].donjon.plan.objets['ɠ'] || []).length + (M[id].donjon.plan.objets['ɑ'] || []).length;
+    ok(['m8', 'm9'].every((id) => lettres(id, (p) => p.mortvivant).length >= 6 && gis(id) >= 14 && (M[id].donjon.plan.objets['ɑ'] || []).length >= 3), 'tombeau : au -8 et au -9, l\'hécatombe (morts-vivants, corps, mourants)');
+    ok(Object.values(d.pnj).filter((p) => p.mortvivant).every((p) => p.sprite === 'spectrel' && SPECIES[p.mortvivant.sp]?.nonCapturable && p.mortvivant.lvl >= 38 && p.mortvivant.lvl <= 46) && Object.values(d.pnj).filter((p) => p.pilleur || p.lutteur || p.brigand || p.portier != null).every((p) => p.sprite !== 'spectrel'), 'tombeau : les abominations, créées pour le tombeau, ne se capturent pas');
+    const P7 = M.p7.donjon.plan, [nx, ny] = P7.suivante;
+    ok(S('p7').piege && P7.objets['¤']?.[0][0] === nx && P7.objets['¤'][0][1] === ny + 1, 'tombeau : au -7, le piège, et la grille fermée à clé sous la sortie');
+    const P10 = M.g10.donjon.plan;
+    ok(P10.objets['Ж'] && P10.pnj['Ѡ'] && d.pnj['Ѡ'].chef && M.g10.w * M.g10.h > M.b4b.w * M.b4b.h && !P10.suivante, 'tombeau : au -10, la grande salle, la porte scellée et le chef de Sable-Noir');
+    ok(d.pnj['Ҩ']?.souschef && d.pnj['Ҩ'].equipe.every(([sp]) => SPECIES[sp]) && d.pnj['Ѡ'].equipe.length === 6 && ITEMS['sceptre-jumeau']?.key && ITEMS['cle-sable-noir']?.key, 'tombeau : le sous-chef, le chef, le Sceptre Jumeau et la Clé de Sable-Noir');
+  }
   const e = nouvelEtat(d, { joueurs: 1 });
   ok(appliquer(d, e, '1', { a: 'maj', salle: 's2', donnees: { dorment: ['x'] } }).ok && e.salles.s2.donnees.dorment.join() === 'x' && appliquer(d, e, '1', { a: 'maj', salle: 's2', donnees: { dorment: [] } }).ok && !e.salles.s2.donnees.dorment.length, 'tombeau : on endort un moine, il se réveille quand on quitte la salle');
 }

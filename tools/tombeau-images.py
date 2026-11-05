@@ -287,5 +287,84 @@ def zzz():
     return contour(im)
 images['zzz'] = zzz()
 
+# ---- les profondeurs : corps de pilleurs (les personnages couchés), éboulement, sable mouvant ----
+import re as _re, random as _rnd
+_SP = open(os.path.join(os.path.dirname(DOSSIER), '..', '..', 'odyssee', 'js', 'data', 'sprites.js')).read()
+_ROWS = {k: int(v) for k, v in _re.findall(r'"?(\w+)"?:\s*(\d+)', _SP[_SP.index('rows'):_SP.index('}', _SP.index('rows'))])}
+_CHARS = Image.open(os.path.join(os.path.dirname(DOSSIER), '..', '..', 'odyssee', 'img', 'chars.png')).convert('RGBA')
+def couche(sprite, sens):
+    """le personnage de face, couché sur le côté (sens : 90 ou -90), à 16 pixels par case"""
+    r = _ROWS[sprite]
+    im = _CHARS.crop((0, r * 64, 64, r * 64 + 64))
+    bb = im.getbbox(); im = im.crop(bb).rotate(sens, expand=True)
+    im = im.resize((max(1, im.width // 2), max(1, im.height // 2)), Image.NEAREST)
+    # un peu plus sombre, et un peu de poussière
+    px = im.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            c = px[x, y]
+            if c[3]: px[x, y] = (int(c[0] * 0.72), int(c[1] * 0.66), int(c[2] * 0.62), c[3])
+    out = toile(max(32, im.width), 16)
+    out.alpha_composite(im, ((out.width - im.width) // 2, max(0, 16 - im.height)))
+    return out
+for sp in ('voleur', 'brume', 'brume_f', 'brutus'):
+    images[f'gisant_{sp}'] = couche(sp, 90)
+    images[f'gisant_{sp}_2'] = couche(sp, -90)
+def eboulement():
+    im = toile(48, 32); r = _rnd.Random(4)
+    G = [(62, 44, 34, 255), (92, 66, 48, 255), (124, 92, 64, 255), (150, 116, 80, 255)]
+    for _ in range(26):
+        w, h = r.randint(6, 13), r.randint(5, 9); x, y = r.randint(0, 48 - w), r.randint(6, 32 - h)
+        rect(im, x, y, w, h, G[1]); rect(im, x + 1, y, w - 2, 1, G[2]); rect(im, x, y + h - 1, w, 1, G[0]); rect(im, x + 1, y + 1, 2, 1, G[3])
+    return contour(im)
+images['eboulement'] = eboulement()
+def sable_mouvant():
+    im = toile(16, 16); C = [(120, 78, 40, 200), (150, 100, 56, 220), (90, 56, 28, 230)]
+    for y in range(16):
+        for x in range(16):
+            d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5
+            if d < 7.6: im.putpixel((x, y), C[int(d * 1.3) % 3])
+    return im
+images['sable_mouvant'] = sable_mouvant()
+
+# ---- les abominations du tombeau (combat) : face, dos, icône ----
+def abomination(teinte, yeux, forme, dos=False):
+    W = 80; im = toile(W, W); r = _rnd.Random(hash(forme) & 0xffff)
+    T = [tuple(int(c * f) for c in teinte) + (255,) for f in (0.45, 0.7, 1.0, 1.2)]
+    T = [tuple(min(255, v) for v in t) for t in T]
+    # le corps : une silhouette voûtée, en lambeaux
+    for y in range(10, 76):
+        lw = int(12 + 10 * min(1, (y - 10) / 28) + (6 if forme == 'large' else 0) - (y > 60) * (y - 60) * (0.4 if forme != 'spectre' else 0.9))
+        cx = 40 + int(3 * ((y // 7) % 2) - 1)
+        for x in range(cx - lw, cx + lw):
+            if forme == 'spectre' and y > 62 and (x + y) % 5 == 0: continue
+            c = T[1] if (y // 4 + (x // 6)) % 3 else T[2]
+            if (y * 7 + x * 3) % 11 == 0: c = T[0]
+            im.putpixel((x, y), c)
+    # bandelettes
+    for k in range(9):
+        y = 18 + k * 6 + r.randint(-1, 1)
+        for x in range(26, 54):
+            if im.getpixel((x, y))[3]: im.putpixel((x, y), T[3])
+    # les bras, tendus
+    for side in (-1, 1):
+        for i in range(16):
+            x, y = 40 + side * (16 + i), 30 + i // 3
+            if 0 <= x < W: rect(im, min(x, x + side), y, 2, 3, T[1])
+        rect(im, 40 + side * 32 - (1 if side < 0 else 0), 34, 3, 4, T[0])
+    # la tête, et les yeux (de dos : rien)
+    for y in range(2, 18):
+        for x in range(31, 49):
+            if (x - 40) ** 2 / 81 + (y - 10) ** 2 / 64 <= 1: im.putpixel((x, y), T[2] if (x + y) % 4 else T[3])
+    if not dos:
+        rect(im, 35, 9, 3, 3, yeux); rect(im, 42, 9, 3, 3, yeux)
+        rect(im, 37, 14, 6, 1, T[0])
+    return contour(im)
+ABOMS = {'lambeaumort': ((150, 136, 104), (180, 240, 120, 255), 'mince'), 'sablegrince': ((176, 128, 78), (255, 120, 40, 255), 'large'), 'hurlemort': ((96, 86, 120), (240, 60, 60, 255), 'spectre')}
+for k, (t, yx, f) in ABOMS.items():
+    images[f'abom_{k}-f'] = abomination(t, yx, f)
+    images[f'abom_{k}-b'] = abomination(t, yx, f, True)
+    images[f'abom_{k}-i'] = abomination(t, yx, f).resize((32, 32), Image.NEAREST)
+
 for k, im in images.items(): im.save(os.path.join(DOSSIER, k + '.png'))
 print('écrit', len(images), 'images dans', DOSSIER)

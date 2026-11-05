@@ -477,9 +477,23 @@ porte de fer, ouverte par la Clé de Fer dans les deux sens) :
   seringue en poche ; ils se réveillent tous quand on quitte la salle (`dorment`). Le gardien du sceptre (`relique`)
   ne bouge pas et surveille l'entrée de sa chambre : on passe par le couloir de service pour se glisser derrière lui.
   Le générateur et `test-testodyssee.mjs` vérifient (`sansEtreVu`) qu'on traverse sans être vu, à toute heure.
-- -4, Galerie des Pilleurs (`s3`, bien plus sombre) : des pilleurs qui attaquent qui passe devant eux. La suite viendra.
+- Le passage (scène des portiers) : ton premier Pokémon force le passage, la voûte s'effondre (`passe` de b3 :
+  le passage est muré au -3, un éboulement bouche la sortie du -4).
+- -4 à -7 (`p4` à `p7`, `lumiere: 'noire'`) : longues salles des pilleurs de Sable-Noir. Ils n'attaquent que si l'on a le
+  sceptre (ils s'en étonnent), sinon ils se moquent. Au -7 (`piege`), passé le milieu de la salle avec le sceptre, le sable
+  mouvant : le sous-chef Vipère prend le sceptre et remonte (`vol` de p7 : 1) ; on se débat aux flèches. La sortie du -7
+  est fermée par une grille (`¤`). Au -4, devant l'éboulement, le sous-chef se sait pris au piège et défie le joueur ;
+  battu, il rend le sceptre et donne la Clé de Sable-Noir (`vol` : 2).
+- À partir de là (`apres` des PNJ, des corps et des mourants), au -6 et au -7 les pilleurs se battent contre les
+  morts-vivants (`lutteur` contre `lutte`). -8 et -9 (`m8`, `m9`) : l'hécatombe. Les morts-vivants (`mortvivant`, sprite
+  `spectrel`) sont des abominations du labo (`ABOMINATIONS` de `contenu.js`, sans capture possible) : ils regardent
+  autour d'eux, marchent lentement sur qui passe devant eux, et se combattent comme des Pokémon sauvages. Corps (`ɠ`)
+  et mourants (`ɑ`, quelques mots chacun) : des brigands couchés (`gisant_*`).
+- -10 (`g10`) : la grande salle, la porte scellée (`Ж`) et le chef Khamsin. Il se lamente, voit le second sceptre,
+  attaque ; battu, il laisse le Sceptre Jumeau ; les deux sceptres ouvrent la porte (`ouverte` de g10). La sépulture viendra.
 
-La Galerie vient de `python3 tools/tombeau.py [graine]` (`js/donjons/tombeau-salles.js`). Images :
+Les salles du -4 au -9 viennent de `python3 tools/tombeau.py [graine]` (`js/donjons/tombeau-salles.js`, ne pas le
+modifier à la main). Images :
 `python3 tools/tombeau-images.py` (`img/tombeau/`). Le Pendentif Maudit et le Monocle de Vérité (objets de
 `contenu.js`, action `artefact` d'`etat.js`) sont gardés pour un autre donjon.
 

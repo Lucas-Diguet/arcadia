@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 4.34 — 5 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : la suite, jusqu'au -10.
+  - Ton premier Pokémon force le passage du -4, et la voûte s'effondre derrière toi : plus de retour possible.
+  - Du -4 au -7, de longues salles plongées dans le noir, pleines de pilleurs de Sable-Noir. Ils en veulent à ton sceptre.
+  - Au -7, un piège : le sous-chef de Sable-Noir te vole le sceptre et remonte. Rattrape-le !
+  - Au -6 et au -7, les pilleurs se battent contre des morts-vivants. Au -8 et au -9, il ne reste presque que des corps et des mourants.
+  - Les morts-vivants avancent lentement, mais ils ne lâchent pas ceux qu'ils voient. Ils se combattent comme des Pokémon sauvages, sans pouvoir être capturés.
+  - Au -10, une porte scellée et le chef de Sable-Noir. La suite viendra.
+
 ## 4.33 — 5 novembre 2026
 - **TestOdyssée** — Le labo reprend les nouveautés d'Arcadia jusqu'à la 4.32 (Odyssée, manette, Backrooms), sans rien perdre de ses donjons.
 - **TestOdyssée** — Tombeau du Roi Sans Nom : un donjon solo d'infiltration.

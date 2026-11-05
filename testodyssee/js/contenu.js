@@ -11,6 +11,8 @@ const IMG = new URL('../img/', import.meta.url).href;
 const mv = (key) => Object.values(MOVES).find((m) => m.key === key).id;
 
 export const SPECTRE_PIERRE = 2001;
+/** les abominations du Tombeau du Roi Sans Nom : nées du tombeau pour le défendre, on ne les capture pas */
+export const ABOMINATIONS = { lambeaumort: 2101, sablegrince: 2102, hurlemort: 2103 };
 
 // attaques créées pour le labo ; Éruption et Giclédo (et leur pendant Plante) perdent de la force avec les PV du lanceur
 export const ATTAQUES = {
@@ -48,6 +50,27 @@ export const ESPECES = {
     dex: 'On dit qu\'il hante encore la salle des marchés, un casque sur les oreilles, à surveiller la volatilité.',
     img: 'spectre-pierre.png',
   },
+  [ABOMINATIONS.lambeaumort]: {
+    n: 'Lambeaumort', k: 'lambeaumort', t: ['ghost', 'poison'], b: [85, 95, 80, 60, 75, 45], nonCapturable: true,
+    cr: 0, xp: 170, g: 1, gr: -1, h: 17, w: 400, genus: 'Abomination',
+    ls: [[1, mv('shadow-claw')], [1, mv('poison-jab')], [1, mv('will-o-wisp')], [1, mv('hex')]],
+    dex: 'Un corps sans nom, enroulé dans ses bandelettes. Le tombeau l\'a relevé pour chasser les pillards.',
+    img: 'tombeau/abom_lambeaumort',
+  },
+  [ABOMINATIONS.sablegrince]: {
+    n: 'Sablegrince', k: 'sablegrince', t: ['ghost', 'ground'], b: [100, 105, 95, 45, 70, 30], nonCapturable: true,
+    cr: 0, xp: 180, g: 1, gr: -1, h: 19, w: 800, genus: 'Abomination',
+    ls: [[1, mv('bulldoze')], [1, mv('shadow-punch')], [1, mv('mud-shot')], [1, mv('bone-rush')]],
+    dex: 'Fait de sable et de vieilles bandelettes. Il avance lentement, mais rien ne l\'arrête.',
+    img: 'tombeau/abom_sablegrince',
+  },
+  [ABOMINATIONS.hurlemort]: {
+    n: 'Hurlemort', k: 'hurlemort', t: ['ghost', 'dark'], b: [75, 80, 65, 95, 75, 60], nonCapturable: true,
+    cr: 0, xp: 190, g: 1, gr: -1, h: 20, w: 300, genus: 'Abomination',
+    ls: [[1, mv('shadow-ball')], [1, mv('dark-pulse')], [1, mv('night-shade')], [1, mv('ominous-wind')]],
+    dex: 'Une ombre qui hurle sans bouche. On dit qu\'elle garde la voix des pillards qu\'elle a emportés.',
+    img: 'tombeau/abom_hurlemort',
+  },
 };
 
 const PARCHEMIN = 'Un vieux parchemin trouvé dans le Donjon des Miroirs. Son texte parle d\'un autre lieu, encore inconnu.';
@@ -83,6 +106,8 @@ export const OBJETS = {
   'symbole-or-pyramide': { pocket: 'cles', price: 0, key: true, name: 'Symbole d\'Or de la Pyramide', img: 'pyramide/objet_symbole.png', desc: 'Remis à qui atteint le sommet de la Pyramide de l\'Ascension encore debout, et y bat le dernier adversaire.' },
   'bouchon-or': { pocket: 'objets', price: 0, name: 'Bouchon d\'Or', img: 'miroirs/objet_bouchon.png', iv: true, desc: 'Un bouchon doré et brillant. Il porte au maximum toutes les valeurs cachées (IV) d\'un Pokémon.' },
   // le Tombeau du Roi Sans Nom : sa relique (elle ne quitte pas le tombeau), et deux artefacts gardés pour un autre donjon
+  'sceptre-jumeau': { pocket: 'cles', price: 0, key: true, name: 'Sceptre Jumeau', img: 'tombeau/objet_sceptre_roi.png', desc: 'Le jumeau du Sceptre du Roi Sans Nom. Le chef de Sable-Noir l\'avait apporté jusqu\'à la porte scellée.' },
+  'cle-sable-noir': { pocket: 'cles', price: 0, key: true, name: 'Clé de Sable-Noir', img: 'tombeau/objet_cle_fer.png', desc: 'La clé du sous-chef de Sable-Noir. Elle ouvre la grille du -7 du tombeau.' },
   'sceptre-roi': { pocket: 'cles', price: 0, key: true, name: 'Sceptre du Roi Sans Nom', img: 'tombeau/objet_sceptre_roi.png', desc: 'Le sceptre d\'or et de lapis du Roi Sans Nom. Il ouvre la dernière salle du tombeau, celle de sa sépulture.' },
   'pendentif-maudit': { pocket: 'cles', price: 0, key: true, name: 'Pendentif Maudit', img: 'tombeau/objet_pendentif.png', desc: 'Le pendentif du Roi Sans Nom. Il ronge les Pokémon de qui le porte, un peu à chaque pas. À porter jusqu\'à l\'Autel du Soleil. Utilise-le pour le poser ou le donner à un voisin.' },
   'lunettes-verite': { pocket: 'cles', price: 0, key: true, name: 'Monocle de Vérité', img: 'tombeau/objet_lunettes.png', desc: 'Il montre le regard des gardiens, le chemin invisible au-dessus des gouffres et les pièges cachés. Il repousse le pendentif. Utilise-le pour le poser ou le donner à un voisin.' },
@@ -130,7 +155,7 @@ export const DECOR = [
   ...['pyramide', 'obelisque', 'porte_1', 'porte_2', 'porte_3', 'porte_4', 'porte_1_f', 'porte_2_f', 'porte_3_f', 'porte_4_f'].map((k) => [k, IMG + 'pyramide/' + k + '.png']),
   ...['porte_feu', 'porte_feu_f', 'porte_eau', 'porte_eau_f', 'porte_plante', 'porte_plante_f', 'porte_grande', 'porte_grande_o', 'dalle_or', 'teleporteur', 'cle_feu', 'cle_eau', 'cle_plante', 'liane', 'cascade'].map((k) => [k, IMG + 'temple/' + k + '.png']),
   ...['borne', 'coffre_fort', 'drapeau', 'piege_trou', 'piege_roche', 'piege_brume', 'piege_colle', 'piege_alarme', 'piege_renvoi', 'piege_degats1', 'piege_degats2', 'piege_degats3', 'piege_combat'].map((k) => [k, IMG + 'ile/' + k + '.png']),
-  ...['entree_tombeau', 'cordon', 'zzz', 'sarcophage', 'sarcophage_vide', 'socle_lunettes', 'socle_sceptre', 'socle_vide', 'autel_soleil', 'autel_soleil_on', 'pendentif_sol', 'lunettes_sol', 'torche'].map((k) => [k, IMG + 'tombeau/' + k + '.png']),
+  ...['entree_tombeau', 'cordon', 'zzz', 'sarcophage', 'sarcophage_vide', 'socle_lunettes', 'socle_sceptre', 'socle_vide', 'autel_soleil', 'autel_soleil_on', 'pendentif_sol', 'lunettes_sol', 'torche', 'eboulement', 'sable_mouvant', ...['voleur', 'brume', 'brume_f', 'brutus'].flatMap((b) => [`gisant_${b}`, `gisant_${b}_2`])].map((k) => [k, IMG + 'tombeau/' + k + '.png']),
   ...['porte_sagesse', 'porte_force', 'porte_courage', 'porte_sagesse_f', 'porte_force_f', 'porte_courage_f', 'porte_code', 'porte_grille', 'coffre', 'coffre_ouvert', 'interrupteur', 'interrupteur_on', 'socle_statue'].map((k) => [k, IMG + 'voies/' + k + '.png']),
 ];
 export const IMAGES = { copycat: IMG + 'miroirs/copycat.png', horloge: IMG + 'miroirs/horloge.png' };
@@ -156,6 +181,12 @@ export function installerContenu(ASSETS) {
     if (mv.m?.u !== 'meteo') return speciale.call(this, i, d, mv);
     if (this.weather === mv.m.meteo) this.say('Mais cela échoue !'); else this.setWeather(mv.m.meteo, 5);
     return true;
+  };
+  // les abominations du tombeau ne se capturent pas
+  const lancer = Battle.prototype.throwBall;
+  Battle.prototype.throwBall = function (item) {
+    if (this.wild && SPECIES[this.foe.sp]?.nonCapturable) { this.say(`Vous lancez une ${ITEMS[item]?.name || 'Ball'} !`); this.ev.push({ t: 'ball', item, blocked: true }); this.say('La Ball rebondit sur l\'abomination ! Elle ne se laisse pas capturer.'); return false; }
+    return lancer.call(this, item);
   };
   if (!ASSETS) return;
   const front = ASSETS.front, item = ASSETS.item, cry = ASSETS.cry;
