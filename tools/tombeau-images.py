@@ -264,6 +264,21 @@ def torche():
         rect(im, x0, y, w, 1, c)
     return contour(im)
 images['torche'] = torche()
+# le sceptre du Roi Sans Nom : sur son socle, et en icône
+LAPIS = [(20, 40, 110, 255), (40, 80, 170, 255), (90, 140, 220, 255)]
+def sceptre_roi(im, ox=0, oy=0, h=18):
+    for i in range(h):
+        x = ox + 11 + (i * 2) // h
+        rect(im, x, oy + 4 + i, 2, 1, OR[1] if i % 5 else LAPIS[1]); im.putpixel((x, oy + 4 + i), OR[2])
+    rect(im, ox + 9, oy + 1, 6, 4, OR[2]); rect(im, ox + 10, oy, 4, 1, OR[3]); rect(im, ox + 10, oy + 2, 4, 2, LAPIS[2]); rect(im, ox + 11, oy + 2, 2, 1, (240, 250, 255, 255))
+    rect(im, ox + 7, oy + 5, 10, 1, OR[1])
+images['objet_sceptre_roi'] = icone(lambda im: sceptre_roi(im, 0, 1, 17))
+def socle_sceptre():
+    im = images['socle_vide'].copy()
+    for y in range(3, 11): rect(im, 7, y, 2, 1, OR[1] if y % 3 else LAPIS[1]); im.putpixel((7, y), OR[2])
+    rect(im, 6, 0, 4, 3, OR[2]); rect(im, 7, 1, 2, 1, LAPIS[2]); rect(im, 5, 3, 6, 1, OR[1])
+    return contour(im)
+images['socle_sceptre'] = socle_sceptre()
 # « Zzz » au-dessus d'un gardien endormi
 def zzz():
     im = toile(16, 14)

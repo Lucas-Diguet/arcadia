@@ -7,11 +7,55 @@ import { T } from '../../odyssee/js/world/tiles.js';
 
 // textures d'Odyssée reprises pour les styles de donjon : clair (miroirs), sable (pyramide)
 const CLAIR = { sol: 'floor_musee', mur: 'wall_mart', haut: ['snow', 'floor_lab', 'floor_mart'], glace: 'floor_gymWater', fond: '#e8eef8' };
-const EGYPTE = { sol: ['gl_sable'], mur: ['wall_in'], haut: ['cavetop'], fond: '#1c1408' };
+const EGYPTE = { sol: ['gl_sable'], mur: ['mur_tombeau', 'wall_in'], haut: ['haut_tombeau', 'cavetop'], fond: '#1c1408' };
 const STYLES = { clair: CLAIR, egypte: EGYPTE, bois: { sol: ['floor_wood'], mur: ['wall_in', 'wall_center'], haut: ['roof_flat', 'floor_wood'], fond: '#0c0a14' }, sable: { sol: ['floor_sand', 'gl_sable', 'floor_gymRock'], mur: ['wall_gym'], haut: ['floor_gymRock', 'cavetop'], fond: '#1a1008', relief: true } };
 const cellule = (A, k) => (Array.isArray(k) ? k.map((q) => A[q]).find(Boolean) : A[k]);
 const SOLS = new Set([T.CAVE, T.BLOCK, T.CAVEWALL, T.CAVEDOOR, T.FLOOR]);
 const REVELE = 'floor_gymWater';
+
+/** tuiles du labo ajoutées à l'atlas d'Odyssée, à la suite des siennes : les murs du tombeau (grès orangé, vieilles pierres) */
+function hasard(g) { let s = g >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+const TUILES = {
+  mur_tombeau(x, r) {
+    // assises de blocs de grès, joints sombres, usure et petites fissures
+    x.fillStyle = '#9a5a2c'; x.fillRect(0, 0, 32, 32);
+    for (let j = 0; j < 4; j++) {
+      const y = j * 8, dec = j % 2 ? 8 : 0;
+      for (let i = -1; i < 3; i++) {
+        const bx = i * 16 + dec, t = r();
+        x.fillStyle = t < 0.33 ? '#a6643a' : t < 0.66 ? '#8e522a' : '#9c5c30'; x.fillRect(bx + 1, y + 1, 14, 6);
+        x.fillStyle = 'rgba(255,200,140,0.18)'; x.fillRect(bx + 1, y + 1, 14, 1);
+        x.fillStyle = 'rgba(40,16,4,0.35)'; x.fillRect(bx + 1, y + 6, 14, 1);
+      }
+      x.fillStyle = '#4a2810'; x.fillRect(0, y, 32, 1);
+      for (let i = -1; i < 3; i++) x.fillRect(i * 16 + dec, y, 1, 8);
+    }
+    for (let k = 0; k < 40; k++) { x.fillStyle = r() < 0.5 ? 'rgba(60,24,6,0.35)' : 'rgba(200,130,70,0.3)'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 1, 1); }
+    x.fillStyle = 'rgba(50,20,6,0.6)'; let cx = 6 + r() * 20 | 0, cy = 2 + r() * 10 | 0;
+    for (let k = 0; k < 7; k++) { x.fillRect(cx, cy, 1, 1); cx += r() < 0.5 ? 1 : 0; cy += 1; }
+  },
+  haut_tombeau(x, r) {
+    x.fillStyle = '#3a2214'; x.fillRect(0, 0, 32, 32);
+    for (let k = 0; k < 60; k++) { x.fillStyle = r() < 0.5 ? '#46291a' : '#2c180c'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 2); }
+  },
+};
+function ajouterTuiles(view) {
+  const A = view.A; if (!A || A.cells.mur_tombeau) return;
+  const P2 = 34, C2 = 32, SIZE = A.size || A.canvas.width, cols = Math.floor(SIZE / P2);
+  let n = 0;
+  for (const [u, v] of Object.values(A.cells)) n = Math.max(n, Math.round((v * SIZE - 1) / P2) * cols + Math.round((u * SIZE - 1) / P2) + 1);
+  const ctx = A.canvas.getContext('2d');
+  Object.entries(TUILES).forEach(([k, f], i) => {
+    const c = document.createElement('canvas'); c.width = c.height = C2; f(c.getContext('2d'), hasard(97 + i * 31));
+    const cx = (n % cols) * P2, cy = Math.floor(n / cols) * P2; n++;
+    ctx.drawImage(c, cx + 1, cy + 1);
+    // bord dupliqué autour de la tuile (pas de joint visible au filtrage)
+    ctx.drawImage(c, 0, 0, C2, 1, cx + 1, cy, C2, 1); ctx.drawImage(c, 0, C2 - 1, C2, 1, cx + 1, cy + C2 + 1, C2, 1);
+    ctx.drawImage(c, 0, 0, 1, C2, cx, cy + 1, 1, C2); ctx.drawImage(c, C2 - 1, 0, 1, C2, cx + C2 + 1, cy + 1, 1, C2);
+    A.cells[k] = [(cx + 1) / SIZE, (cy + 1) / SIZE, (cx + 1 + C2) / SIZE, (cy + 1 + C2) / SIZE];
+  });
+  if (view.texA) view.texA.needsUpdate = true;
+}
 
 export function brancherRendu() {
   const P = WorldView.prototype;
@@ -76,6 +120,7 @@ export function brancherRendu() {
   };
   const carte = P.setMap;
   P.setMap = function (map) {
+    ajouterTuiles(this);
     carte.call(this, map);
     const A = this.A?.cells; if (A && !A.dec_dalle_pontns) { A.dec_dalle_pontns = A.bridge; A.dec_dalle_pontew = A.bridgeEW || A.bridge; }
     // style clair : murs droits et blancs, sans les gradins de roche des grottes d'Odyssée

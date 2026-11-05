@@ -446,55 +446,42 @@ pokeheartgold. La fusion suit l'ordre des jeux : Vert Feuille, HeartGold, Émera
 
 ### Le Tombeau du Roi Sans Nom
 
-À trois exactement (`js/donjons/tombeau.js`, mécaniques `js/donjon/tombeau.js`), en style `egypte` (sable, murs de
-grès : `js/rendu.js`). Les salles sont sombres : une toile multipliée par-dessus l'image (`eclairerTombeau`) donne une
-pénombre brun-orangé, éclaircie autour des torches (`Ϯ`, posées le long des murs du haut par `torches()`), des
-braseros, des lanternes et des joueurs.
+Un donjon solo d'infiltration (`js/donjons/tombeau.js`, mécaniques `js/donjon/tombeau.js`), en style `egypte` (sol de
+sable, murs de grès orangé dessinés par `js/rendu.js` et ajoutés à l'atlas d'Odyssée). Les salles sont sombres : une
+toile multipliée par-dessus l'image (`eclairerTombeau`) donne une pénombre brun-orangé, éclaircie autour des torches
+(`Ϯ`, posées le long des murs du haut par `torches()`), des braseros, des lanternes, du joueur et des moines. `lumiere`
+d'une salle : `vive` (la Caverne d'Ali Baba) ou `noire` (le -4).
 
 Dehors, la Vallée des Rois Oubliés : la façade (`entree_tombeau`) et sa porte officielle sont fermées, derrière un
-cordon et trois gardiens ; des touristes (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac explique le plan (les deux
-reliques du -1 et du -2 ouvrent la dernière salle ; il demande le trésor contre une récompense) et donne la Clé de Fer
-(`cle-ruinemaniac`), la Carte du Tombeau (`carte-tombeau`, du -1 au -4 : liste `CARTE` de `donjon/tombeau.js`) et
-5 000 ₽ ; la roche fissurée du bord droit (`porte`, parmi `roches` ; les autres ne disent rien) se pousse avec Force et
-laisse place à une échelle : l'entrée des pilleurs (`trou` dans la salle s1, partagé par le groupe). `devant` :
-où les gardiens jettent ceux qu'ils attrapent ; `arrivee` : où l'on apparaît ; `panneau` : le panneau d'entrée.
+cordon et trois gardiens ; des touristes (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac indique l'entrée des
+pilleurs, explique qu'il faut le sceptre du roi pour ouvrir sa sépulture, demande qu'on lui rapporte le trésor contre une
+récompense, et donne la Clé de Fer (`cle-ruinemaniac`) et la Carte du Tombeau (`carte-tombeau`, du -1 au -4 : liste
+`CARTE`). La roche fissurée du bord droit (`porte`, parmi `roches`) se pousse avec Force et laisse place à une échelle
+(`trou` dans la salle s1). `devant` : où les moines jettent ceux qu'ils attrapent.
 
 Étages (les salles se relient par des passages `lien` : `vers` la salle, `cible` la marque d'en face ; `porte` : la
-porte de fer, qui s'ouvre avec la Clé de Fer, dans les deux sens) :
-- -3, Repaire des Brigands (`b3`, la première salle : on y arrive par le trou) et ses salles : la Caverne d'Ali Baba
-  (`b4a`), le tripot (`b4b`), le dortoir (`b4c`). Les brigands (`brigand`) n'attaquent
-  jamais ; ceux qui ont un `combat` le proposent, autant de fois qu'on veut, et soignent après. Le passage du fond
-  du repaire mène au -4 (la suite : les salles des pilleurs, où le pendentif est exigé pour sortir, `pendentif`).
-- Ali Baba (`boutique`) vend la liste `boutique` du donjon : le classique et des
-  objets « parfaitement légaux » ou des antiquités (`contenu.js` : `desc`, l'alibi ; `replique`, ce que dit le
-  marchand à l'achat). Seule la Seringue Somnifère sert : elle endort un gardien (une seringue par gardien).
-- -2, Chambre du Sarcophage (`s2`, par la porte de fer) et -1, Crypte des Gardiens (`s1`) : des moines gardiens
-  (`garde` : `tourne`, la liste de leurs regards, une direction toutes les `PERIODE` secondes, `decal` en quarts de
-  seconde, `portee`). Ils voient comme des dresseurs, en ligne droite : qui y passe se fait courir dessus et jeter
-  dehors, et les reliques qu'il portait retournent à leur place (`origine`). Chaque relique a son gardien au regard
-  fixe (`relique`) : il faut l'endormir pour la prendre. On endort un gardien en lui parlant sans être vu, une
-  seringue en poche ; ils se réveillent tous dès qu'un joueur quitte la salle (`dorment` de la salle). Le porteur
-  du monocle voit les regards en rouge. `test-testodyssee.mjs` vérifie qu'on peut endormir le gardien, prendre la
-  relique et ressortir sans jamais être vu.
+porte de fer, ouverte par la Clé de Fer dans les deux sens) :
+- -3, Repaire des Brigands (`b3`, la première salle) et ses salles : la Caverne d'Ali Baba (`b4a`), le tripot
+  (`b4b`), le dortoir (`b4c`). Les brigands (`brigand`) n'attaquent jamais ; ceux qui ont un `combat` le proposent,
+  autant de fois qu'on veut, et soignent après. Ali Baba (`boutique`) vend la liste `boutique` (alibis `desc` et
+  répliques `replique` dans `contenu.js`) ; seule la Seringue Somnifère sert.
+- Le passage du -4 (`N` du repaire) est bouché par deux brigands (`portier`) : sans le sceptre, ils ne laissent pas
+  passer ; avec, il faut les battre l'un après l'autre (`duel` de b3), puis ils remarquent le sceptre, ameutent tout le
+  repaire, et on file au -4 (`passe` de b3 : ils ne sont plus là).
+- -2, Galeries des Moines (`s2`) et -1, Crypte du Sceptre (`s1`) : plans et rondes générés par
+  `node tools/tombeau-gardes.mjs [graine]` (`js/donjons/tombeau-gardes-plans.js`, ne pas le modifier à la main).
+  Une ronde (`gardes` de la salle) est une liste de points `[x, y, ...regards]` ; le moine marche de l'un à l'autre
+  au rythme de l'horloge (`PAS`, `js/donjons/tombeau-gardes.js`) et regarde devant lui avec sa lanterne
+  (`vueGarde` : droit devant, puis une case de chaque côté à partir de la troisième). Qui y passe se fait courir
+  dessus et jeter dehors, et le sceptre retourne sur son socle. On endort un moine en lui parlant sans être vu, une
+  seringue en poche ; ils se réveillent tous quand on quitte la salle (`dorment`). Le gardien du sceptre (`relique`)
+  ne bouge pas et surveille l'entrée de sa chambre : on passe par le couloir de service pour se glisser derrière lui.
+  Le générateur et `test-testodyssee.mjs` vérifient (`sansEtreVu`) qu'on traverse sans être vu, à toute heure.
+- -4, Galerie des Pilleurs (`s3`, bien plus sombre) : des pilleurs qui attaquent qui passe devant eux. La suite viendra.
 
-Les reliques (action `artefact` d'`etat.js`, rangées dans la première salle) : le Pendentif Maudit (`pend`) et le
-Monocle de Vérité (`lun`).
-- Le pendentif retire `MORSURE` (à zéro pour l'instant, en attendant de l'équilibrer) des PV max de chaque Pokémon de son porteur à chaque pas. Toute l'équipe à
-  terre : il le lâche et se réveille à l'entrée de la salle (un tiers des PV). On ne passe la sortie d'une salle
-  qu'avec le pendentif en main (ou volé).
-- Les lunettes montrent à leur seul porteur le chemin invisible `:` au-dessus du gouffre `_` (on y tombe : retour à
-  la dernière case sûre) et les pièges cachés `?` (les pièges `x` se voient). Leurs porteurs ne s'approchent pas à
-  moins de `DISTANCE` (5) cases l'un de l'autre.
-- Les pilleurs (`pilleur: true`) attaquent qui passe devant eux : 3 cases, 7 pour le porteur du pendentif.
-- Nef du Guet-apens : la ligne `g` déclenche le vol (`voler`, puis `vol` dans la salle s5) ; la bande de la scène
-  (`scene: 'vol'`) n'apparaît que pendant la scène. Poursuite : des fuyards `f` devant la sortie, des pièges. Au
-  Repaire, quand Sable-Noir et sa bande sont battus (combat de groupe), l'hôte rend le pendentif sur la case `j`.
-- L'Autel du Soleil (`A`) termine le donjon quand son porteur l'y pose.
-Les grandes salles (Galerie des Lunettes, Salle des Abîmes, Couloir Piégé, Ossuaire, Escalier du Soleil) viennent de
-`python3 tools/tombeau.py [graine]` (`js/donjons/tombeau-salles.js`, ne pas le modifier à la main) : le générateur
-vérifie qu'on ne sort pas d'une salle à gouffre sans le chemin invisible, et que les lunettes s'atteignent avant le
-premier gouffre. Images : `python3 tools/tombeau-images.py` (`img/tombeau/`). Le rendu (gouffre noir, chemin révélé)
-est dans `js/rendu.js`.
+La Galerie vient de `python3 tools/tombeau.py [graine]` (`js/donjons/tombeau-salles.js`). Images :
+`python3 tools/tombeau-images.py` (`img/tombeau/`). Le Pendentif Maudit et le Monocle de Vérité (objets de
+`contenu.js`, action `artefact` d'`etat.js`) sont gardés pour un autre donjon.
 
 ### Le Mont Givrécime
 

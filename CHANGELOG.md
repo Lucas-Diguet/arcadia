@@ -1,5 +1,16 @@
 # Journal des versions — Arcadia
 
+## 4.12 — 5 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : un donjon solo d'infiltration.
+  - Plus de Pendentif Maudit ni de Monocle de Vérité ici : on cherche une seule relique, le Sceptre du Roi Sans Nom, au -1. Sans lui, la sépulture du roi ne s'ouvre pas.
+  - Le ruinemaniac donne la Clé de Fer et la carte, mais plus d'argent.
+  - Au -2, les Galeries des Moines : presque un labyrinthe, avec des moines qui font leur ronde, lanterne à la main. On arrive à l'abri de leur regard.
+  - Au -1, la Crypte du Sceptre : une antichambre, une grande salle à colonnes où tournent deux moines, et un couloir de service pour se glisser derrière le gardien du sceptre et l'endormir.
+  - Ce qu'un moine voit est éclairé par sa lanterne. S'il te voit, il te court dessus, te jette dehors et reprend le sceptre.
+  - Au fond du repaire, deux brigands gardent le passage du -4. Avec le sceptre, il faut les battre tous les deux... et la suite se gâte. Le -4 est plongé dans le noir.
+  - Les brigands ont tous une tête de brigand. Le garde du corps d'Ali Baba est parti, et sa caverne est mieux éclairée.
+  - Les murs du tombeau sont en vieux grès orangé.
+
 ## 4.11 — 5 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : une histoire plus cohérente, et des salles dans la pénombre.
   - Le ruinemaniac explique tout : la dernière salle du tombeau ne s'ouvre qu'avec deux reliques, le Monocle de Vérité au -1 et le Pendentif Maudit au -2. Il ne propose plus de partager : il demande qu'on lui rapporte le trésor, contre une récompense qui va plaire.

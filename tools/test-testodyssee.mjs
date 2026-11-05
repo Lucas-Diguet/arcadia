@@ -25,6 +25,7 @@ import * as USINE_M from '../testodyssee/js/ile/usine.js';
 const { construire: construireIle, nouvelleIle } = ILE_M;
 import { EQUIPES } from '../testodyssee/js/equipes.js';
 import { walkable, T } from '../odyssee/js/world/tiles.js';
+import { ronde, vueGarde, sansEtreVu } from '../testodyssee/js/donjons/tombeau-gardes.js';
 import { cle, explorerGlace, faisceau, resoudreReflet, cheminGlace } from '../testodyssee/js/donjon/casse-tetes.js';
 
 installerContenu();
@@ -982,68 +983,69 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
 /* ---------------- Tombeau du Roi Sans Nom ---------------- */
 {
   const d = DONJONS.find((q) => q.id === 'tombeau'), cartes = construireSalles(d), M = Object.fromEntries(cartes.map((m) => [m.salle, m]));
-  ok(d.joueurs.mode === 'exact' && d.joueurs.n === 3 && d.salles[0].id === 'b3', 'tombeau : à trois, et le trou des pilleurs mène au repaire (-3)');
-  // à pied : murs, décor, objets qui bloquent et personnages ; le gouffre aussi ; le chemin invisible porte (sans lui : bloqué)
-  const bloquees = (m, chemin) => { const P = m.donjon.plan; return new Set([...P.decor.map(([, x, y]) => `${x},${y}`), ...Object.values(P.pnj).flat().map(([x, y]) => `${x},${y}`), ...(P.objets._ || []).map(([x, y]) => `${x},${y}`), ...(chemin ? [] : (P.objets[':'] || []).map(([x, y]) => `${x},${y}`)), ...Object.entries(P.objets).filter(([c]) => !d.objets[c].sol).flatMap(([, l]) => l.map(([x, y]) => `${x},${y}`))]); };
-  const parcours = (m, chemin, dep = m.donjon.plan.depart) => {
-    const P = m.donjon.plan, bloque = bloquees(m, chemin), sol = new Set(P.sol.map(([x, y]) => `${x},${y}`)), vus = new Set([dep.join()]), f = [dep];
+  ok(d.joueurs.mode === 'solo' && d.salles[0].id === 'b3', 'tombeau : en solo, et le trou des pilleurs mène au repaire (-3)');
+  ok(!d.salles.some((s) => s.pendentif) && !Object.values(d.objets).some((o) => ['sarcophage', 'socleLunettes', 'autel', 'cache', 'piegeCache'].includes(o.type)) && Object.values(d.objets).filter((o) => o.type === 'relique').length === 1, 'tombeau : ni pendentif ni monocle ; une seule relique, le sceptre');
+  ok(M.s1.donjon.plan.objets.L?.length === 1 && ITEMS['sceptre-roi']?.key, 'tombeau : le Sceptre du Roi Sans Nom est au -1');
+  // à pied : murs, décor, objets qui bloquent et personnages ; le gouffre aussi
+  const bloquees = (m, sans = []) => { const P = m.donjon.plan; return new Set([...P.decor.map(([, x, y]) => `${x},${y}`), ...Object.entries(P.pnj).filter(([k]) => !sans.includes(k)).flatMap(([, l]) => l).map(([x, y]) => `${x},${y}`), ...(P.objets._ || []).map(([x, y]) => `${x},${y}`), ...Object.entries(P.objets).filter(([c]) => !d.objets[c].sol).flatMap(([, l]) => l.map(([x, y]) => `${x},${y}`))]); };
+  const parcours = (m, sans, dep = m.donjon.plan.depart) => {
+    const P = m.donjon.plan, bloque = bloquees(m, sans), sol = new Set(P.sol.map(([x, y]) => `${x},${y}`)), vus = new Set([dep.join()]), f = [dep];
     while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = `${x + dx},${y + dy}`; if (vus.has(k) || !sol.has(k) || bloque.has(k)) continue; vus.add(k); f.push([x + dx, y + dy]); } }
     return vus;
   };
   const pres = (v, [x, y]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => v.has(`${x + dx},${y + dy}`));
+  const portiers = Object.keys(d.pnj).filter((k) => d.pnj[k].portier != null);
   for (const m of cartes) {
-    const P = m.donjon.plan, v = parcours(m, true), s = d.salles.find((q) => q.carte === m.id);
+    const P = m.donjon.plan, v = parcours(m, portiers), s = d.salles.find((q) => q.carte === m.id);
     if (P.suivante) ok(v.has(`${P.suivante[0]},${P.suivante[1] + 1}`), `tombeau : ${s.nom}, on va de l'entrée à la sortie`);
-    for (const [k, [p]] of Object.entries(P.pnj)) if (!d.pnj[k].scene) ok(pres(v, p), `tombeau : ${s.nom}, on atteint ${d.pnj[k].cls} ${d.pnj[k].nom}`);
-    for (const [c, l] of Object.entries(P.objets)) if (['ramasser', 'sarcophage', 'socleLunettes', 'autel', 'retour', 'fuyards', 'lien'].includes(d.objets[c].type)) for (const p of l) ok(v.has(p.join()) || pres(v, p), `tombeau : ${s.nom}, on atteint ${c}`);
-    if (P.objets[':']) ok(P.suivante && !parcours(m, false).has(`${P.suivante[0]},${P.suivante[1] + 1}`) && m.w * m.h >= 2400, `tombeau : ${s.nom} est grande, et son gouffre ne se traverse que par le chemin invisible`);
+    for (const [k, [p]] of Object.entries(P.pnj)) ok(pres(v, p), `tombeau : ${s.nom}, on atteint ${d.pnj[k].cls} ${d.pnj[k].nom}`);
+    for (const [c, l] of Object.entries(P.objets)) if (['ramasser', 'relique', 'lien'].includes(d.objets[c].type)) for (const p of l) ok(v.has(p.join()) || pres(v, p), `tombeau : ${s.nom}, on atteint ${c}`);
+  }
+  // le passage du -4 : deux brigands le bouchent ; ils ne laissent passer qu'avec le sceptre, après deux duels
+  {
+    const P = M.b3.donjon.plan, [nx, ny] = P.suivante;
+    ok(portiers.length === 2 && !parcours(M.b3, []).has(`${nx},${ny + 1}`) && portiers.every((k) => d.pnj[k].equipe.every(([sp, l]) => SPECIES[sp] && l >= 36 && l <= 42)), 'tombeau : deux brigands gardent le passage du -4, on ne passe pas à côté d\'eux');
+    ok(M.b3.donjon.versSuivante?.map === M.s3.id && d.salles[d.salles.length - 1].id === 's3' && d.salles.find((q) => q.id === 's3').lumiere === 'noire', 'tombeau : le passage mène au -4, bien plus sombre');
   }
   // les passages entre étages vont deux à deux
   const liens = Object.entries(d.objets).filter(([, o]) => o.type === 'lien');
   ok(liens.every(([c, o]) => { const s = d.salles.find((q) => q.id === o.vers), e = d.objets[o.cible]; return s && M[s.id].donjon.plan.objets[o.cible] && e.cible === c && !!e.porte === !!o.porte && cartes.some((m) => m.donjon.plan.objets[c]); }), 'tombeau : chaque passage entre étages a son pendant de l\'autre côté');
   ok(d.objets['α'].porte && M.b3.donjon.plan.objets['α'] && M.s2.donjon.plan.objets['β'], 'tombeau : la porte de fer relie le -3 et le -2');
-  ok(!M.b4 && M.b3.donjon.versSuivante?.map === M.s3.id && ['b4a', 'b4b', 'b4c'].every((id) => Object.values(d.objets).some((q) => q.type === 'lien' && q.vers === id && M.b3.donjon.plan.objets[Object.keys(d.objets).find((c) => d.objets[c] === q)])) && Object.values(d.pnj).filter((p) => p.brigand).length >= 15 && Object.values(d.pnj).some((p) => p.boutique) && M.b4a.donjon.plan.pnj['Ŵ'], 'tombeau : un seul étage de brigands (-3, avec la Caverne d\'Ali Baba, le tripot et le dortoir), qui mène plus bas ; des brigands partout');
+  ok(['b4a', 'b4b', 'b4c'].every((id) => liens.some(([c, q]) => q.vers === id && M.b3.donjon.plan.objets[c])) && Object.values(d.pnj).filter((p) => p.brigand).length >= 15 && M.b4a.donjon.plan.pnj['Ŵ'] && Object.keys(M.b4a.donjon.plan.pnj).length === 1, 'tombeau : un seul étage de brigands (-3, avec la Caverne d\'Ali Baba, le tripot et le dortoir) ; Ali Baba seul dans sa caverne');
+  const BRIG = new Set(['voleur', 'brume', 'brume_f', 'brutus', 'spectrel', 'corbin', 'croupier']);
+  ok(Object.values(d.pnj).filter((p) => p.brigand || p.portier != null).every((p) => BRIG.has(p.sprite)), 'tombeau : les brigands ont tous une tête de brigand');
+  const feux = (id) => M[id].donjon.plan.decor.filter(([k]) => ['torche', 'brasero', 'lanterne'].includes(k)).length;
+  ok(d.salles.find((q) => q.id === 'b4a').lumiere === 'vive' && feux('b4a') >= 6, 'tombeau : la Caverne d\'Ali Baba est bien éclairée');
   ok(ITEMS['cle-ruinemaniac'] && ITEMS['carte-tombeau'] && !ITEMS['cle-fragile'] && !d.boutique.some((k) => /cle/.test(k)), 'tombeau : la clé de la porte de fer et la carte viennent du ruinemaniac ; Ali Baba ne vend pas de clé');
   ok(Object.values(d.pnj).filter((p) => p.brigand?.combat).length >= 4 && Object.values(d.pnj).filter((p) => p.brigand?.combat).every((p) => p.brigand.combat.every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 40)), 'tombeau : certains brigands proposent un combat');
-  // la boutique : des objets connus, chacun avec sa description, les objets louches avec la réplique du marchand
   ok(d.boutique.length >= 20 && d.boutique.every((k) => ITEMS[k]?.price > 0 && ITEMS[k].desc) && d.boutique.filter((k) => OBJETS[k]).every((k) => OBJETS[k].replique) && d.boutique.includes('seringue-somnifere'), 'tombeau : la Caverne d\'Ali Baba vend du classique, du louche et des antiquités');
-  // les salles des gardiens : un gardien par relique, au regard fixe ; on l'approche sans être vu, on l'endort, on prend la relique,
-  // et on ressort sans se faire voir (un pas par quart de seconde, on peut attendre ; même vue que le jeu : en ligne droite)
+  // les moines : rondes dans le sol, et on traverse sans être vu (aller et retour), quelle que soit l'heure d'arrivée
   {
-    const DV = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
-    for (const [sid, but, sortie] of [['s1', 'L', 'δ'], ['s2', 'P', 'β']]) {
-      const m = M[sid], P = m.donjon.plan, gardes = Object.entries(P.pnj).filter(([k]) => d.pnj[k].garde).map(([k, [[x, y]]]) => ({ k, x, y, G: d.pnj[k].garde }));
-      const rel = gardes.find((q) => q.G.relique), occ = new Set(gardes.map((q) => `${q.x},${q.y}`)), bl = bloquees(m, true);
-      const bloque = (x, y) => { const t = m.get(x, y); return t === T.CAVEWALL || t === T.BLOCK || occ.has(`${x},${y}`); };
-      const vue = (q, dir) => { const [dx, dy] = DV[dir], out = []; for (let k = 1; k <= (q.G.portee || 6); k++) { const x = q.x + dx * k, y = q.y + dy * k; if (bloque(x, y)) break; out.push(`${x},${y}`); } return out; };
-      const cycle = 12 * gardes.reduce((a, q) => { const b = q.G.tourne.length; const pg = (u, v) => (v ? pg(v, u % v) : u); return a * b / pg(a, b); }, 1);
-      const vus = (sans) => Array.from({ length: cycle }, (_, t) => new Set(gardes.filter((q) => q !== sans).flatMap((q) => vue(q, q.G.tourne[Math.floor((t + (q.G.decal || 0)) / 12) % q.G.tourne.length]))));
-      const atteint = (dep, cible, V) => { const dej = new Set([`${dep[0]},${dep[1]},0`]), f = [[dep[0], dep[1], 0]]; while (f.length) { const [x, y, t] = f.shift(); if (cible(x, y)) return [x, y]; const u = (t + 1) % cycle; for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = x + dx, b = y + dy, k = `${a},${b},${u}`; if (dej.has(k) || bloque(a, b) || bl.has(`${a},${b}`) || !walkable(m.get(a, b)) || V[u].has(`${a},${b}`) || V[t].has(`${a},${b}`)) continue; dej.add(k); f.push([a, b, u]); } } return null; };
-      const [bx, by] = P.objets[but][0], [sx, sy] = P.objets[sortie][0], tous = vus(null), sansRel = vus(rel);
-      const aCote = (x0, y0) => (x, y) => Math.abs(x - x0) + Math.abs(y - y0) === 1;
-      const pret = atteint(P.depart, (x, y) => aCote(rel.x, rel.y)(x, y), tous);
-      const relique = pret && atteint(pret, aCote(bx, by), sansRel), dehors = relique && atteint(relique, aCote(sx, sy), tous);
-      ok(rel && rel.G.tourne.length === 1 && Math.abs(rel.x - bx) + Math.abs(rel.y - by) === 1, `tombeau : ${m.name}, un gardien au regard fixe veille sur la relique`);
-      ok(pret && relique && dehors, `tombeau : ${m.name}, on endort le gardien de la relique sans être vu, on la prend, et on ressort`);
-      ok(tous.some((v) => v.size >= 15) && gardes.length >= 6, `tombeau : ${m.name}, les gardiens surveillent la salle`);
-    }
+    const outils = (m) => {
+      const bl = bloquees(m);
+      return { libre: (x, y) => walkable(m.get(x, y)) && !bl.has(`${x},${y}`), solide: (x, y) => { const t = m.get(x, y); return t === T.CAVEWALL || t === T.BLOCK || t === T.CAVEDOOR; } };
+    };
+    const gardes = (s, sans) => s.gardes.filter((G) => !(sans && G.relique)).map((G) => ({ frames: ronde(G.ronde).map((f) => ({ ...f, x: f.x + 1, y: f.y + 1 })), decal: G.decal || 0, portee: G.portee || 5 }));
+    const voisin = ([x0, y0]) => (x, y) => Math.abs(x - x0) + Math.abs(y - y0) === 1;
+    const traverse = (m, G, dep, but) => { const o = outils(m); return [0, 11, 29, 53].every((t0) => sansEtreVu({ ...o, gardes: G, dep, but, t0 })); };
+    const s2 = d.salles.find((q) => q.id === 's2'), s1 = d.salles.find((q) => q.id === 's1'), m2 = M.s2, m1 = M.s1;
+    const ou = (m, c) => m.donjon.plan.objets[c][0];
+    ok(gardes(s2).every((g) => g.frames.every((f) => outils(m2).libre(f.x, f.y))) && gardes(s1).every((g) => g.frames.every((f) => outils(m1).libre(f.x, f.y))), 'tombeau : les rondes des moines passent sur le sol');
+    ok(s2.gardes.length >= 6 && s2.gardes.every((G) => G.ronde.length >= 2) && m2.donjon.plan.sol.length < m2.w * m2.h * 0.6, 'tombeau : -2, des galeries étroites et des moines qui bougent');
+    // l'arrivée au -2 : jamais dans le regard d'un moine, ni les quelques cases au-dessus
+    const vuesUnJour = new Set(gardes(s2).flatMap((g) => g.frames.flatMap((f) => [[f.x, f.y], ...vueGarde(outils(m2).solide, f.x, f.y, f.dir, g.portee)].map((c) => c.join()))));
+    const [ax, ay] = M.s2.donjon.plan.depart;
+    ok([[0, 0], [0, -1], [0, -2], [-1, 0], [1, 0]].every(([dx, dy]) => !vuesUnJour.has(`${ax + dx},${ay + dy}`)), 'tombeau : -2, on arrive à l\'abri des moines');
+    ok(traverse(m2, gardes(s2), ou(m2, 'β'), voisin(ou(m2, 'γ'))) && traverse(m2, gardes(s2), ou(m2, 'γ').map((v, i) => v + (i ? 1 : 0)), voisin(ou(m2, 'β'))), 'tombeau : -2, on traverse les galeries sans être vu, à l\'aller comme au retour');
+    const R = s1.gardes.find((G) => G.relique), [rx, ry] = [R.ronde[0][0] + 1, R.ronde[0][1] + 1], [lx, ly] = ou(m1, 'L');
+    const derriere = (x, y) => voisin([rx, ry])(x, y) && !vueGarde(outils(m1).solide, rx, ry, R.ronde[0][2], R.portee).some(([a, b]) => a === x && b === y);
+    const pret = traverse(m1, gardes(s1), ou(m1, 'δ'), derriere), entree = vueGarde(outils(m1).solide, rx, ry, R.ronde[0][2], R.portee);
+    ok(R.ronde.length === 1 && Math.abs(rx - lx) + Math.abs(ry - ly) === 2 && entree.length >= 8, 'tombeau : -1, le gardien du sceptre, immobile, surveille la chambre');
+    ok(pret && traverse(m1, gardes(s1, true), [rx - 1, ry], voisin([lx, ly])) && traverse(m1, gardes(s1, true), [rx - 1, ry], voisin(ou(m1, 'δ'))), 'tombeau : -1, on se glisse derrière le gardien sans être vu, on prend le sceptre et on ressort');
   }
-  ok(M.s6.donjon.plan.objets['?']?.length >= 10 && M.s6.donjon.plan.objets.x?.length >= 10 && M.s7.donjon.plan.objets['?']?.length >= 10, 'tombeau : pièges visibles et cachés dans les salles de la poursuite');
-  ok(Object.values(d.pnj).filter((p) => p.pilleur).every((p) => p.equipe.every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 42)) && Object.values(d.pnj).filter((p) => p.pilleur).length >= 10, 'tombeau : des pilleurs plus bas, aux bons niveaux');
-  // les reliques : un porteur à la fois, jamais les deux, on les pose, on les donne ; rendues à leur place ; volé puis rendu ; posé sur l'autel
-  const e = nouvelEtat(d, { joueurs: 3 }), A = () => e.salles.b3.donnees.art;
-  ok(appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok && !appliquer(d, e, '2', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : un seul porteur du pendentif');
-  ok(!appliquer(d, e, '1', { a: 'artefact', k: 'lun', op: 'prendre' }).ok && appliquer(d, e, '2', { a: 'artefact', k: 'lun', op: 'prendre' }).ok, 'tombeau : on ne porte pas le pendentif et le monocle à la fois');
-  ok(!appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'donner', a2: '2' }).ok && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'donner', a2: '3' }).ok && A().pend.p === '3', 'tombeau : on donne le pendentif, mais pas au porteur du monocle');
-  ok(appliquer(d, e, '3', { a: 'artefact', k: 'pend', op: 'poser', ou: ['x', 4, 5] }).ok && A().pend.p === null && A().pend.sol.join() === 'x,4,5' && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : on pose le pendentif, un autre le reprend');
-  ok(appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'origine' }).ok && !A().pend.p && !A().pend.sol && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : pris par un gardien, le pendentif retourne sur le sarcophage');
-  appliquer(d, e, '2', { a: 'parti' });
-  ok(A().lun.p === null && A().lun.sol === null, 'tombeau : un joueur qui part : son monocle retourne sur son socle');
-  ok(appliquer(d, e, '0', { a: 'artefact', k: 'pend', op: 'voler' }).ok && A().pend.vole && !A().pend.p && !appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : volé, le pendentif ne se prend plus');
-  ok(appliquer(d, e, '0', { a: 'artefact', k: 'pend', op: 'rendre', ou: ['r', 1, 1] }).ok && !A().pend.vole && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : rendu au repaire, on le reprend');
-  ok(appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'fin' }).ok && A().pend.fin && !appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : posé sur l\'autel, il y reste');
-  // les gardiens endormis : dans la salle, partagés par le groupe
-  ok(appliquer(d, e, '1', { a: 'maj', salle: 's2', donnees: { dorment: ['Γ'] } }).ok && e.salles.s2.donnees.dorment.join() === 'Γ' && appliquer(d, e, '2', { a: 'maj', salle: 's2', donnees: { dorment: [] } }).ok && !e.salles.s2.donnees.dorment.length, 'tombeau : on endort un gardien, il se réveille quand quelqu\'un quitte la salle');
+  ok(Object.values(d.pnj).filter((p) => p.pilleur).every((p) => p.equipe.every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 42)) && Object.values(d.pnj).filter((p) => p.pilleur).length >= 2, 'tombeau : des pilleurs au -4, aux bons niveaux');
+  const e = nouvelEtat(d, { joueurs: 1 });
+  ok(appliquer(d, e, '1', { a: 'maj', salle: 's2', donnees: { dorment: ['x'] } }).ok && e.salles.s2.donnees.dorment.join() === 'x' && appliquer(d, e, '1', { a: 'maj', salle: 's2', donnees: { dorment: [] } }).ok && !e.salles.s2.donnees.dorment.length, 'tombeau : on endort un moine, il se réveille quand on quitte la salle');
 }
 
 /* ---------------- Mont Givrécime ---------------- */
