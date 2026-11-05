@@ -8,8 +8,8 @@
 //  - une cassette posée dans un renfoncement en hauteur, qu'on n'atteint qu'avec l'échelle cachée ailleurs.
 
 export const PIT_HALF = 1.0; // un trou fait 2 m de côté dans une case de 2,5 m : il reste des arêtes de 50 cm
-export const FLOOR_DY = 3.4; // l'étage du bas est 3,40 m plus bas (3 m sous plafond et 40 cm de dalle)
-export const PIT_DEPTH = FLOOR_DY; // on tombe d'un étage
+export const FLOOR_DY = 6.4; // l'étage du bas est 6,40 m plus bas (3 m sous plafond et 3,40 m de dalle : les trous sont des puits)
+export const PIT_DEPTH = FLOOR_DY; // on tombe d'un étage, de très haut
 export const NICHE_Y = 2.25; // hauteur de la cassette dans son renfoncement
 
 // tous les objets qu'on ramasse avec F : 'bottle', 'battery', 'ladder' (id unique, position, pris ou non)
@@ -32,17 +32,27 @@ export const T = {
   WALL: 2,
   EXIT: 3, // cabine de l'ascenseur : un mur tant qu'il est fermé
   SHELF: 4, // étagère métallique (Level 1) : bloque le passage et la vue comme un mur
+  PILLAR: 5, // pilier plus petit que la case (Level 0) : l'entité le contourne, les joueurs passent à côté
 };
 
-// cases qui bloquent le passage (et la vue) : murs, étagères et cabine d'ascenseur
-export const blocks = (v) => v === T.WALL || v === T.SHELF || v === T.EXIT;
+// cases qui bloquent le passage (et la vue) : murs, étagères, cabine d'ascenseur ; un pilier fin seulement pour les
+// chemins de l'entité (les collisions et la vue suivent sa vraie forme, voir outsidePillar)
+export const blocks = (v) => v === T.WALL || v === T.SHELF || v === T.EXIT || v === T.PILLAR;
+
+// le point (x, z) est-il hors du pilier ? (p : { x, z, h, round }, h : demi-côté ou rayon)
+export function outsidePillar(p, x, z, margin = 0) {
+  if (p.round) return Math.hypot(x - p.x, z - p.z) > p.h + margin;
+  return Math.abs(x - p.x) > p.h + margin || Math.abs(z - p.z) > p.h + margin;
+}
 
 // Creuse la cabine de l'ascenseur dans un mur voisin de la case d'entrée : la cabine est fermée sur trois côtés,
 // on y entre par l'entrée. Renvoie { gx, gz, x, z, dx, dz } (dx, dz : de l'entrée vers la cabine) ou null.
 export function carveElevator(grid, W, H, entrance, spawn, rnd, avoid = null) {
   const at = (x, z) => (x < 0 || x >= W || z < 0 || z >= H ? T.WALL : grid[z * W + x]);
+  let lastD = null;
   const reach = () => {
     const d = bfs(grid, W, H, spawn.x, spawn.z);
+    lastD = d;
     let n = 0;
     for (let i = 0; i < W * H; i++) if (d[i] >= 0) n++;
     return n;
@@ -53,7 +63,7 @@ export function carveElevator(grid, W, H, entrance, spawn, rnd, avoid = null) {
     const cx = entrance.x + dx;
     const cz = entrance.z + dz;
     if (cx < 1 || cx > W - 2 || cz < 1 || cz > H - 2) continue;
-    if (at(cx, cz) === T.FLOOR) continue; // la cabine se creuse dans un mur
+    if (at(cx, cz) === T.FLOOR || at(cx, cz) === T.PILLAR) continue; // la cabine se creuse dans un mur (pas dans un pilier fin)
     const around = [[cx + dx, cz + dz], [cx + dz, cz + dx], [cx - dz, cz - dx]];
     if (avoid && [[cx, cz], ...around].some(([x, z]) => avoid.has(z * W + x))) continue;
     const saved = around.map(([x, z]) => at(x, z));
@@ -62,8 +72,8 @@ export function carveElevator(grid, W, H, entrance, spawn, rnd, avoid = null) {
       if (x > 0 && x < W - 1 && z > 0 && z < H - 1) grid[z * W + x] = T.WALL;
     });
     grid[cz * W + cx] = T.EXIT;
-    // fermer la cabine ne doit couper aucun passage
-    if (reach() >= before - 3) {
+    // fermer la cabine ne doit couper aucun passage, ni isoler sa propre entrée
+    if (reach() >= before - 3 && lastD[entrance.z * W + entrance.x] >= 0) {
       return { gx: cx, gz: cz, x: (cx + 0.5) * CELL_SIZE, z: (cz + 0.5) * CELL_SIZE, dx, dz };
     }
     grid[cz * W + cx] = orig;
@@ -84,7 +94,18 @@ export const PROP_KINDS = [
   { m: 'Television_01', h: 0.45, r: 0.3 },
   { m: 'trashbag', h: 0.5, r: 0.3 },
   { m: 'WetFloorSign_01', h: 0.62, r: 0.22 },
+  { m: 'Sofa_01', h: 0.9, r: 0.62 },
+  { m: 'modern_arm_chair_01', h: 0.86, r: 0.38, turn: true },
+  { m: 'SchoolDesk_01', h: 0.75, r: 0.4, turn: true },
+  { m: 'standing_chalkboard_01', h: 1.2, r: 0.32 },
+  { m: 'worn_metal_rack', h: 1.6, r: 0.45 },
+  { m: 'tool_cart', h: 0.9, r: 0.45, turn: true },
+  { m: 'projector_screen', h: 1.8, r: 0.35 },
+  { m: 'wooden_ladder', h: 1.5, r: 0.35 },
 ];
+// Le matériel des chantiers abandonnés (dessiné dans le code) : projecteurs éteints sur trépied et cônes
+export const WORKLIGHT = { m: 'worklight', h: 1.75, r: 0.32, proc: true };
+export const CONE = { m: 'cone', h: 0.5, r: 0.18, proc: true };
 
 // opts.lower : étage du bas (pas de couloir piégé, de renfoncement ni d'échelle) ; opts.forced : cases qui doivent
 // rester du sol accessible (sous les trous de l'étage du dessus)
@@ -184,6 +205,43 @@ export function createBackroomsMap(seed = 42, opts = {}) {
     if (!onLine(x, z) && !inHall(x, z)) set(x, z, T.WALL);
   }
 
+  // 4b. Dans les grandes salles, de gros piliers carrés (2 × 2 cases) çà et là
+  for (const r of halls) {
+    for (let z = r.z + 2; z + 1 < r.z + r.h - 2; z += 4 + Math.floor(rnd() * 2)) {
+      for (let x = r.x + 2; x + 1 < r.x + r.w - 2; x += 4 + Math.floor(rnd() * 2)) {
+        if (rnd() < 0.45) continue;
+        for (const [dx, dz] of [[0, 0], [1, 0], [0, 1], [1, 1]]) set(x + dx, z + dz, T.WALL);
+      }
+    }
+  }
+
+  // 4c. Moins de culs-de-sac : au fond d'une impasse, on perce le mur s'il y a du sol derrière (on en garde environ un sur trois)
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const isF = (x, z) => get(x, z) === T.FLOOR;
+  for (let pass = 0; pass < 2; pass++) {
+    for (let z = 1; z < H - 1; z++) {
+      for (let x = 1; x < W - 1; x++) {
+        if (!isF(x, z)) continue;
+        const open = DIRS.filter(([dx, dz]) => isF(x + dx, z + dz));
+        if (open.length !== 1 || rnd() < 0.35) continue;
+        const [ox, oz] = open[0];
+        // en face d'abord, sinon sur les côtés ; un mur d'une case, ou de deux
+        for (const [dx, dz] of [[-ox, -oz], ...(rnd() < 0.5 ? [[oz, ox], [-oz, -ox]] : [[-oz, -ox], [oz, ox]])]) {
+          if (!inside(x + dx, z + dz) || get(x + dx, z + dz) !== T.WALL) continue;
+          if (isF(x + 2 * dx, z + 2 * dz)) {
+            set(x + dx, z + dz, T.FLOOR);
+            break;
+          }
+          if (inside(x + 2 * dx, z + 2 * dz) && isF(x + 3 * dx, z + 3 * dz)) {
+            set(x + dx, z + dz, T.FLOOR);
+            set(x + 2 * dx, z + 2 * dz, T.FLOOR);
+            break;
+          }
+        }
+      }
+    }
+  }
+
   // 5. Point de départ près du centre, sur une case libre reliée à la plus grande partie du dédale
   let floorCount = 0;
   for (let i = 0; i < W * H; i++) if (grid[i] === T.FLOOR) floorCount++;
@@ -251,6 +309,27 @@ export function createBackroomsMap(seed = 42, opts = {}) {
   const D = (c) => dist[c.z * W + c.x];
   const cellPos = (c) => ({ x: (c.x + 0.5) * CELL_SIZE, z: (c.z + 0.5) * CELL_SIZE, gx: c.x, gz: c.z });
 
+  // 6b. Piliers de toutes les tailles : un mur isolé (du sol tout autour) devient souvent un pilier plus petit que la
+  // case, carré (60 cm à 1,5 m) ou rond (colonne de 60 cm à 1,1 m), un peu décentré ; les autres restent pleins
+  const pillars = {};
+  for (let z = 2; z < H - 2; z++) {
+    for (let x = 2; x < W - 2; x++) {
+      const k = z * W + x;
+      if (grid[k] !== T.WALL || DIRS.some(([dx, dz]) => get(x + dx, z + dz) !== T.FLOOR)) continue;
+      if (rnd() < 0.3) continue;
+      const round = rnd() < 0.4;
+      const h = round ? [0.3, 0.42, 0.55][Math.floor(rnd() * 3)] : [0.3, 0.48, 0.75][Math.floor(rnd() * 3)];
+      const slack = CELL_SIZE / 2 - h - 0.05;
+      grid[k] = T.PILLAR;
+      pillars[k] = {
+        x: (x + 0.5) * CELL_SIZE + (rnd() - 0.5) * slack * 0.6,
+        z: (z + 0.5) * CELL_SIZE + (rnd() - 0.5) * slack * 0.6,
+        h,
+        round,
+      };
+    }
+  }
+
   const spawn = cellPos({ x: sx, z: sz });
 
   // 7. La sortie : un ascenseur creusé dans un mur, devant l'une des cases les plus éloignées (en marche) du départ
@@ -268,6 +347,7 @@ export function createBackroomsMap(seed = 42, opts = {}) {
   // 7b. Les trous : posés plus bas, une fois les cassettes en place (le couloir piégé qui garde l'une d'elles)
   const pitGrid = new Int16Array(W * H).fill(-1);
   const pits = [];
+  let trap = null;
 
   // 8. Les 5 cassettes : une par secteur autour du départ, loin du départ, de la sortie et entre elles
   const cassettes = [];
@@ -380,6 +460,8 @@ export function createBackroomsMap(seed = 42, opts = {}) {
       pits.push({ id: pits.length, gx: x, gz: z, x: (x + 0.5) * CELL_SIZE, z: (z + 0.5) * CELL_SIZE });
     }
     cas.vault = true;
+    // devant l'entrée du couloir piégé, tourné vers les trous (pour ?parkour)
+    trap = { x: ((exits[0][0] + exits[1][0]) / 2 + 0.5 + lx * 0.2) * CELL_SIZE, z: ((exits[0][1] + exits[1][1]) / 2 + 0.5 + lz * 0.2) * CELL_SIZE, yaw: Math.atan2(lx, lz) };
     return true;
   };
   const byFar = lower ? [] : [...cassettes].sort((a, b) => D({ x: b.gx, z: b.gz }) - D({ x: a.gx, z: a.gz }));
@@ -441,8 +523,11 @@ export function createBackroomsMap(seed = 42, opts = {}) {
       const nearSpawn = Math.hypot(x - sx, z - sz) < 7;
       const v = zone(x, z);
       let state = 'on';
-      if (!nearSpawn && v < 0.46) state = 'off';
-      else if (!nearSpawn && (v < 0.56 || rnd() < 0.1)) state = 'flicker';
+      // des zones claires (tous les néons marchent, ils éclairent plus fort et plus loin), des zones mortes, et entre
+      // les deux des néons grillés çà et là : des îlots de lumière séparés par le noir
+      const bright = nearSpawn || v > 0.66;
+      if (!bright && (v < 0.46 || rnd() < 0.15)) state = 'off';
+      else if (!bright && (v < 0.56 || rnd() < 0.1)) state = 'flicker';
       lights.push({
         x: (x + 0.5) * CELL_SIZE,
         y: WALL_HEIGHT - 0.02,
@@ -451,6 +536,7 @@ export function createBackroomsMap(seed = 42, opts = {}) {
         gz: z,
         state,
         flicker: state === 'flicker',
+        bright,
       });
     }
   }
@@ -475,9 +561,63 @@ export function createBackroomsMap(seed = 42, opts = {}) {
       r: kind.r,
       x: (c.x + 0.5) * CELL_SIZE + wall[0] * off + (rnd() - 0.5) * 0.3,
       z: (c.z + 0.5) * CELL_SIZE + wall[1] * off + (rnd() - 0.5) * 0.3,
-      rot: rot + (kind.chair ? (rnd() - 0.5) * 2 : (rnd() - 0.5) * 0.25),
+      rot: rot + (kind.chair ? (rnd() - 0.5) * 2 : kind.turn ? (rnd() - 0.5) * 1.2 : (rnd() - 0.5) * 0.25),
       tipped: !!kind.chair && rnd() < 0.3,
     });
+  }
+  // 10a. Chantiers abandonnés : de la rubalise jaune et noire arrachée qui traîne par terre en travers du couloir
+  // (elle ne bloque rien), des cônes au pied des murs et un projecteur éteint sur son trépied juste avant
+  const tapes = [];
+  const prop = (kind, x, z, rot) => props.push({ m: kind.m, h: kind.h, r: kind.r, proc: true, x, z, rot, tipped: false });
+  const nearPit = (c) => pits.some((p) => Math.abs(p.gx - c.x) <= 1 && Math.abs(p.gz - c.z) <= 1);
+  for (let i = 0; i < 400 && tapes.length < 14; i++) {
+    const c = pick(walkable);
+    if (busy.has(c.z * W + c.x) || nearPit(c) || Math.hypot(c.x - sx, c.z - sz) < 4) continue;
+    // couloir : des murs des deux côtés sur un axe, du sol des deux côtés sur l'autre
+    const alongZ = get(c.x - 1, c.z) === T.WALL && get(c.x + 1, c.z) === T.WALL && get(c.x, c.z - 1) !== T.WALL && get(c.x, c.z + 1) !== T.WALL;
+    const alongX = get(c.x, c.z - 1) === T.WALL && get(c.x, c.z + 1) === T.WALL && get(c.x - 1, c.z) !== T.WALL && get(c.x + 1, c.z) !== T.WALL;
+    if (!alongZ && !alongX) continue;
+    busy.add(c.z * W + c.x);
+    const cx = (c.x + 0.5) * CELL_SIZE;
+    const cz = (c.z + 0.5) * CELL_SIZE;
+    const h = CELL_SIZE / 2;
+    // un ou deux morceaux couchés au sol, d'un pied de mur vers l'autre, en biais ; wave : ses ondulations
+    for (let k = rnd() < 0.4 ? 2 : 1; k > 0; k--) {
+      const a = (rnd() - 0.5) * 1.6;
+      const b = (rnd() - 0.5) * 1.6;
+      const s1 = h - 0.15 - rnd() * 0.5;
+      const s2 = h - 0.15 - rnd() * 0.9;
+      const wave = { amp: 0.12 + rnd() * 0.25, freq: 1.5 + rnd() * 2.5, ph: rnd() * 6.28 };
+      if (alongZ) tapes.push({ x1: cx - s1, z1: cz + a, x2: cx + s2, z2: cz + b, wave });
+      else tapes.push({ x1: cx + a, z1: cz - s1, x2: cx + b, z2: cz + s2, wave });
+    }
+    // cônes au pied des murs (1 ou 2), dont un parfois renversé
+    const side = alongZ ? [1, 0] : [0, 1];
+    for (const s of rnd() < 0.5 ? [-1, 1] : [rnd() < 0.5 ? -1 : 1]) {
+      const px = cx + side[0] * s * (h - 0.35);
+      const pz = cz + side[1] * s * (h - 0.35);
+      props.push({ m: CONE.m, h: CONE.h, r: CONE.r, proc: true, x: px, z: pz, rot: rnd() * 6.28, tipped: rnd() < 0.25 });
+    }
+    // le projecteur, dans la case d'avant ou d'après, tourné vers la rubalise
+    const dir = rnd() < 0.5 ? -1 : 1;
+    const nx = c.x + (alongZ ? 0 : dir);
+    const nz = c.z + (alongZ ? dir : 0);
+    if (rnd() < 0.8 && !busy.has(nz * W + nx) && get(nx, nz) !== T.WALL) {
+      busy.add(nz * W + nx);
+      const s = rnd() < 0.5 ? -1 : 1;
+      const px = (nx + 0.5) * CELL_SIZE + side[0] * s * (h - 0.45);
+      const pz = (nz + 0.5) * CELL_SIZE + side[1] * s * (h - 0.45);
+      prop(WORKLIGHT, px, pz, Math.atan2(cx - px, cz - pz));
+    }
+  }
+  // et quelques projecteurs oubliés ailleurs, contre un mur
+  for (let i = 0; i < 200 && props.filter((p) => p.m === WORKLIGHT.m).length < 18; i++) {
+    const c = pick(walkable);
+    const wall = nearWall(c);
+    if (busy.has(c.z * W + c.x) || !wall || nearPit(c) || Math.hypot(c.x - sx, c.z - sz) < 3) continue;
+    busy.add(c.z * W + c.x);
+    const off = CELL_SIZE / 2 - 0.5;
+    prop(WORKLIGHT, (c.x + 0.5) * CELL_SIZE + wall[0] * off, (c.z + 0.5) * CELL_SIZE + wall[1] * off, Math.atan2(-wall[0], -wall[1]) + (rnd() - 0.5) * 1.5);
   }
   const bottles = [];
   for (let i = 0; i < 40 && bottles.length < 9; i++) {
@@ -530,10 +670,12 @@ export function createBackroomsMap(seed = 42, opts = {}) {
     cassettes,
     lights,
     props,
+    tapes,
     bottles,
     batteries,
     items,
     pits,
+    trap,
     niche,
     dist,
     // numéro du trou sous une case (-1 : pas de trou)
@@ -542,13 +684,22 @@ export function createBackroomsMap(seed = 42, opts = {}) {
       return pitGrid[gz * W + gx];
     },
     monsterSpawn: cellPos(monsterCell),
+    pillars,
     isWall(gx, gz) {
       if (gx < 0 || gx >= W || gz < 0 || gz >= H) return true;
       return blocks(grid[gz * W + gx]);
     },
+    // le pilier de la case (gx, gz), s'il y en a un (et que la case n'a pas été reprise depuis)
+    pillarAt(gx, gz) {
+      if (gx < 0 || gx >= W || gz < 0 || gz >= H) return null;
+      const k = gz * W + gx;
+      return grid[k] === T.PILLAR ? pillars[k] || null : null;
+    },
     isWalkableWorld(wx, wz) {
       const gx = Math.floor(wx / CELL_SIZE);
       const gz = Math.floor(wz / CELL_SIZE);
+      const p = this.pillarAt(gx, gz);
+      if (p) return outsidePillar(p, wx, wz);
       return !this.isWall(gx, gz);
     },
   };
@@ -588,7 +739,9 @@ export function createLevel0(seed = 42) {
   const forced = up.pits.map((p) => [p.gx, p.gz]);
   const down = createBackroomsMap(seed + 7919, { lower: true, forced });
 
-  // les escaliers : une case libre aux deux étages, loin des trous, avec une case pour arriver de chaque côté
+  // les escaliers coudés : deux volées côte à côte reliées par un palier (6 cases libres aux deux étages, loin des
+  // trous). On entre en bas par la case d'avant la première volée (étage du bas), on monte, on fait demi-tour sur le
+  // palier, on remonte par la seconde volée et on arrive en haut sur la case d'à côté (étage du haut).
   let s = (seed * 31 + 7) >>> 0 || 1;
   const rnd = () => {
     s = (s + 0x6d2b79f5) >>> 0;
@@ -597,31 +750,84 @@ export function createLevel0(seed = 42) {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  const free = (m, x, z) => m.grid[z * W + x] === T.FLOOR && m.dist[z * W + x] >= 0 && m.pitAt(x, z) < 0;
+  const free = (m, x, z) => x > 0 && z > 0 && x < W - 1 && z < W - 1 && m.grid[z * W + x] === T.FLOOR && m.dist[z * W + x] >= 0 && m.pitAt(x, z) < 0;
   const busyCell = (m, x, z) =>
     m.cassettes.some((c) => c.gx === x && c.gz === z) || m.items.some((i) => i.gx === x && i.gz === z) || (m.exit.gx === x && m.exit.gz === z) || (m.spawn.gx === x && m.spawn.gz === z);
   const farFromPits = (x, z, d) => up.pits.every((p) => Math.abs(p.gx - x) + Math.abs(p.gz - z) >= d);
+  const ok = (x, z) => free(up, x, z) && free(down, x, z) && !busyCell(up, x, z) && !busyCell(down, x, z);
+  // la cage d'escalier ne doit couper aucun des deux étages en morceaux
+  const stillLinked = (m, cells, enter) => {
+    const blocked = new Set(cells.map(([x, z]) => z * W + x));
+    const g = m.grid.map((v, i) => (blocked.has(i) ? T.WALL : v));
+    const d = bfs(g, W, m.H, enter[0], enter[1]);
+    for (let i = 0; i < W * m.H; i++) if (m.dist[i] >= 0 && !blocked.has(i) && d[i] < 0) return false;
+    return true;
+  };
   const stairs = [];
-  for (const minPit of [10, 6]) {
+  const C = CELL_SIZE;
+  for (const minPit of [10, 6, 4]) {
     const cand = up.walkable.filter((c) => farFromPits(c.x, c.z, minPit) && Math.hypot(c.x - up.spawn.gx, c.z - up.spawn.gz) > 6).sort(() => rnd() - 0.5);
     for (const c of cand) {
       if (stairs.length >= 2) break;
-      if (!free(up, c.x, c.z) || !free(down, c.x, c.z) || busyCell(up, c.x, c.z) || busyCell(down, c.x, c.z)) continue;
       if (stairs.some((st) => Math.abs(st.gx - c.x) + Math.abs(st.gz - c.z) < 24)) continue;
-      // on monte vers (dx, dz) : on arrive en haut sur la case devant, on redescend sur la case derrière
-      const dir = [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(() => rnd() - 0.5).find(([dx, dz]) => free(up, c.x + dx, c.z + dz) && free(down, c.x - dx, c.z - dz));
-      if (!dir) continue;
-      const [dx, dz] = dir;
-      const at = (x, z) => ({ x: (x + 0.5) * CELL_SIZE, z: (z + 0.5) * CELL_SIZE });
-      stairs.push({ id: stairs.length, gx: c.x, gz: c.z, ...at(c.x, c.z), dx, dz, up: at(c.x + dx, c.z + dz), down: at(c.x - dx, c.z - dz) });
+      // c : la case d'en bas (étage du bas) ; on monte vers (dx, dz) ; la seconde volée est du côté (px, pz)
+      const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(() => rnd() - 0.5);
+      let found = null;
+      for (const [dx, dz] of dirs) {
+        for (const side of rnd() < 0.5 ? [1, -1] : [-1, 1]) {
+          const px = -dz * side;
+          const pz = dx * side;
+          const cells = [];
+          for (let k = 1; k <= 3; k++) for (const l of [0, 1]) cells.push([c.x + dx * k + px * l, c.z + dz * k + pz * l]);
+          if (!cells.every(([x, z]) => ok(x, z) && farFromPits(x, z, minPit))) continue;
+          if (!free(down, c.x, c.z) || !free(up, c.x + px, c.z + pz)) continue;
+          if (!stillLinked(down, cells, [c.x, c.z]) || !stillLinked(up, cells, [c.x + px, c.z + pz])) continue;
+          found = { dx, dz, px, pz, cells };
+          break;
+        }
+        if (found) break;
+      }
+      if (!found) continue;
+      const { dx, dz, px, pz, cells } = found;
+      const at = (x, z) => ({ x: (x + 0.5) * C, z: (z + 0.5) * C });
+      // repère de la cage : o, le coin d'en bas de la première volée ; u le long des volées (0 à 3 cases), v en travers
+      // (0 à 1 case : première volée, 1 à 2 cases : seconde volée) ; le palier occupe u de 2 à 3 cases
+      const ox = (c.x + 0.5 + dx * 0.5 - px * 0.5) * C;
+      const oz = (c.z + 0.5 + dz * 0.5 - pz * 0.5) * C;
+      stairs.push({
+        id: stairs.length,
+        gx: c.x + dx,
+        gz: c.z + dz,
+        cells: cells.map(([x, z]) => ({ gx: x, gz: z })),
+        ox,
+        oz,
+        dx,
+        dz,
+        px,
+        pz,
+        // x, z : le milieu du palier
+        x: ox + dx * 2.5 * C + px * C,
+        z: oz + dz * 2.5 * C + pz * C,
+        // le milieu de toute la cage
+        cx: ox + dx * 1.5 * C + px * C,
+        cz: oz + dz * 1.5 * C + pz * C,
+        up: at(c.x + px, c.z + pz),
+        down: at(c.x, c.z),
+      });
     }
     if (stairs.length >= 2) break;
   }
   up.stairs = stairs;
   down.stairs = stairs;
-  // pas d'objet ni de meuble sur les marches
+  // pas de néon dans la cage d'escalier de l'étage du bas (son plafond est ouvert sur l'étage du haut)
+  // ni sous les trous de l'étage du haut (le néon flotterait au milieu du puits)
+  const inWell = (l) => stairs.some((st) => st.cells.some((k) => k.gx === l.gx && k.gz === l.gz)) || up.pits.some((p) => p.gx === l.gx && p.gz === l.gz);
+  down.lights = down.lights.filter((l) => !inWell(l));
+  // pas d'objet ni de meuble sur les marches ni autour de la cage
+  const nearWell = (x, z, d) => stairs.some((st) => st.cells.some((k) => Math.hypot(x - (k.gx + 0.5) * C, z - (k.gz + 0.5) * C) < d));
   for (const m of [up, down]) {
-    m.props = m.props.filter((p) => !stairs.some((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2));
+    m.props = m.props.filter((p) => !nearWell(p.x, p.z, 2.2 + (p.r || 0)));
+    m.tapes = m.tapes.filter((t) => !nearWell((t.x1 + t.x2) / 2, (t.z1 + t.z2) / 2, 2.6));
   }
 
   // les cassettes : 3 en haut (dont celle du couloir piégé et celle du renfoncement), 2 en bas

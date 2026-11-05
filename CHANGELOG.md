@@ -1,6 +1,7 @@
 # Journal des versions — Arcadia
 
-## 4.12 — 5 novembre 2026
+## 4.33 — 5 novembre 2026
+- **TestOdyssée** — Le labo reprend les nouveautés d'Arcadia jusqu'à la 4.32 (Odyssée, manette, Backrooms), sans rien perdre de ses donjons.
 - **TestOdyssée** — Tombeau du Roi Sans Nom : un donjon solo d'infiltration.
   - Plus de Pendentif Maudit ni de Monocle de Vérité ici : on cherche une seule relique, le Sceptre du Roi Sans Nom, au -1. Sans lui, la sépulture du roi ne s'ouvre pas.
   - Le ruinemaniac donne la Clé de Fer et la carte, mais plus d'argent.
@@ -10,8 +11,6 @@
   - Au fond du repaire, deux brigands gardent le passage du -4. Avec le sceptre, il faut les battre tous les deux... et la suite se gâte. Le -4 est plongé dans le noir.
   - Les brigands ont tous une tête de brigand. Le garde du corps d'Ali Baba est parti, et sa caverne est mieux éclairée.
   - Les murs du tombeau sont en vieux grès orangé.
-
-## 4.11 — 5 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : une histoire plus cohérente, et des salles dans la pénombre.
   - Le ruinemaniac explique tout : la dernière salle du tombeau ne s'ouvre qu'avec deux reliques, le Monocle de Vérité au -1 et le Pendentif Maudit au -2. Il ne propose plus de partager : il demande qu'on lui rapporte le trésor, contre une récompense qui va plaire.
   - Il donne la Clé de Fer de la porte entre le -3 et le -2 (elle sert autant de fois qu'on veut) et une carte du tombeau, du -1 au -4, à consulter depuis le Sac.
@@ -19,8 +18,6 @@
   - Un seul étage de brigands, le -3, avec la Caverne d'Ali Baba, le tripot et le dortoir. Ali Baba ne vend plus de clés.
   - Les moines qui gardent les reliques ne se tournent plus vers toi quand tu leur parles.
   - Toutes les salles sont sombres, d'un orange de vieille pierre : on voit bien près des torches, de moins en moins en s'en éloignant.
-
-## 4.10 — 5 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : le repaire des brigands, la Caverne d'Ali Baba, et des gardiens à endormir.
   - L'entrée des pilleurs est sous la roche fissurée du bord droit de la place ; les autres roches ne disent rien. Le ruinemaniac donne aussi un peu d'argent pour les frais.
   - On arrive au -3, dans le repaire des brigands, qui descend au -4 : le quartier, le tripot, le dortoir et la Caverne d'Ali Baba. Les brigands n'attaquent jamais ; certains proposent un combat, autant de fois qu'on veut, et soignent ensuite.
@@ -28,37 +25,27 @@
   - Au -2 et au -1, les gardiens sont des moines. Ils voient en ligne droite, comme des dresseurs : ils te courent dessus et te jettent dehors (« Et ne reviens pas ici, maudit profanateur ! »).
   - Chaque relique (le Pendentif Maudit au -2, le Monocle de Vérité au -1) a son gardien, qui ne détourne jamais le regard. Il faut l'approcher sans être vu et l'endormir avec une Seringue Somnifère. Tous les gardiens d'une salle se réveillent dès qu'un joueur en sort.
   - Les Lunettes de Vérité s'appellent maintenant le Monocle de Vérité.
-
-## 4.09 — 5 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : nouvelle entrée, et deux salles d'infiltration.
   - La Vallée des Rois Oubliés devient une grande place égyptienne : la façade du tombeau, gardée derrière un cordon, une foule de touristes qui prennent des photos, des passants, un marchand, une archéologue.
   - L'entrée officielle est fermée. Un ruinemaniac propose un marché et donne une clé : l'une des roches du bord de la place est fissurée, et cache l'entrée des pilleurs.
   - Les deux premières salles sont surveillées par des gardiens qui tournent la tête. S'ils te voient, ils te jettent dehors devant l'entrée officielle, et reprennent ce que tu avais volé. Il faut voler les Lunettes de Vérité, puis le Pendentif Maudit, sans te faire repérer. Avec les lunettes, on voit où ils regardent.
   - Le tombeau prend des couleurs de désert : sable et murs de grès.
   - Le pendentif ne fait plus de dégâts pour l'instant, le temps d'essayer le donjon.
-
-## 4.08 — 5 novembre 2026
 - **TestOdyssée** — Nouveau donjon à trois : le Tombeau du Roi Sans Nom, dix salles à remonter jusqu'à l'Autel du Soleil.
   - Le Pendentif Maudit ronge les Pokémon de qui le porte, un peu à chaque pas : il faut se le passer (le poser, ou le donner à un voisin depuis le Sac), sinon l'équipe tombe. On ne quitte une salle qu'avec lui.
   - Les Lunettes de Vérité montrent à leur seul porteur le chemin invisible au-dessus des gouffres et les pièges cachés : il guide les autres à la voix. Le pendentif et les lunettes se repoussent, leurs porteurs ne peuvent pas s'approcher l'un de l'autre.
   - Des pilleurs attaquent qui passe devant eux, et repèrent le porteur du pendentif de bien plus loin : aux autres de se battre à sa place.
   - Dans la Nef du Guet-apens, leur bande vole le pendentif. On la poursuit à travers des salles piégées jusqu'à leur repaire, où l'on bat leur chef tous ensemble.
   - Grandes salles qui ne vont pas tout droit, avec des culs-de-sac et des objets au fond.
-
-## 4.07 — 5 novembre 2026
 - **TestOdyssée** — Nouveau lieu pour l'aventure solo : le Mont Givrécime, une montagne enneigée de dix grandes salles qu'on gravit tantôt dedans, tantôt dehors.
   - Dehors : pentes et corniches enneigées, falaises, sapins, herbes enneigées et rebords à sauter ; dedans : grottes de glace, stalagmites, lacs à traverser en surfant, rochers à casser ou à pousser.
   - Rien n'est en ligne droite : sentiers et galeries qui tournent, boucles, culs-de-sac avec un objet au fond. On passe d'une grotte à la pente par des entrées dans la falaise, d'une grotte à l'autre par des échelles.
   - Plusieurs chemins mènent au Sommet du Mont Givrécime.
   - Pokémon sauvages de glace et de roche (niveaux 44 à 52) et vingt-neuf dresseurs.
-
-## 4.06 — 5 novembre 2026
 - **TestOdyssée** — Pyramide de l'Ascension : les grottes de chaque porte (Sables, Murmures, Tombeaux) sont bien plus grandes et ne vont plus tout droit.
   - Des cavités reliées par des galeries qui tournent, des boucles, des culs-de-sac et des tunnels avec un objet au fond : il faut chercher la sortie.
   - Un rebord par grotte, qu'on ne passe qu'en descendant : un raccourci pour revenir en bas.
   - Huit objets par grotte, et les deux dresseurs gardent le milieu du chemin et la dernière cavité.
-
-## 4.05 — 5 novembre 2026
 - **TestOdyssée** — Temple des Éléments : les trois salles de chaque chemin passent dans le temple à trois, et le solo retrouve ses couloirs pour l'instant.
 - **TestOdyssée** — Les salles des chemins sont bien plus grandes et ne sont plus en ligne droite : des cavités reliées par des galeries qui tournent, des boucles, des culs-de-sac avec un objet au fond. Il faut chercher la sortie.
   - Chemin du Feu : lacs et coulées de lave traversés par des ponts de bois, roches, rochers fissurés, et des rochers à pousser sur des boutons pour abaisser les barrières.
@@ -66,8 +53,6 @@
   - Chemin de la Plante : une jungle très dense, avec de petits arbres à couper pour se frayer un passage.
   - En revenant dans une salle, les rochers reprennent leur place : on ne peut plus rester coincé.
   - Les Pokémon sauvages des chemins sont au niveau du temple à trois (20 à 28).
-
-## 4.04 — 4 novembre 2026
 - **TestOdyssée** — Les dalles du Sanctuaire des Trois Voies, du Temple des Éléments et des autres donjons sont de nouveau visibles avec les nouveaux décors d'Odyssée.
 - **TestOdyssée** — Sanctuaire des Trois Voies : la Salle des Trois Voies est plus haute, les statues sont plus loin des portes.
 - **TestOdyssée** — Temple des Éléments, en solo : chaque chemin compte maintenant trois salles avant la Salle des Clés.
@@ -78,12 +63,8 @@
 - **TestOdyssée** — Nouvelle capacité : Cascade. En surfant, on remonte les cascades (on peut toujours les descendre). Toutes les équipes du labo l'ont, et elle marche aussi sur les Routes Victoire.
 - **TestOdyssée** — Dans les donjons du labo, les capacités de terrain servent sans attendre les badges.
 - **TestOdyssée** — Dans les grottes, les rebords sont des marches de roche, plus des rebords d'herbe.
-
-## 4.03 — 4 novembre 2026
 - **TestOdyssée** — Sanctuaire des Trois Voies : une fontaine au centre des trois grandes statues, et le panneau juste en dessous.
 - **TestOdyssée** — Épreuve de la Sagesse : on désigne chaque statue (elle dit la vérité, elle ment, ou on ne sait pas encore) sans être puni en cas d'erreur. On peut changer d'avis à tout moment ; quand toutes les statues sont bien désignées, la porte s'ouvre.
-
-## 4.02 — 4 novembre 2026
 - **TestOdyssée** — Le labo d'Odyssée reprend toutes les nouveautés d'Odyssée jusqu'à la 4.01 : mêmes décors, mêmes grottes, mêmes combats et mêmes écrans que dans le vrai jeu.
 - **TestOdyssée** — La Route Victoire de HeartGold rejoint le labo (1F, 2F, 3F), recopiée d'après les plans des étages. Les objets, les objets cachés, les rochers, les échelles et Silver sont à leur place d'origine ; Silver joue l'une de ses trois équipes, tirée au hasard.
 - **TestOdyssée** — La fusion enchaîne maintenant les quatre Routes Victoire dans l'ordre des jeux : Vert Feuille, HeartGold, Émeraude, Platine.
@@ -199,6 +180,260 @@
   - Un brasier à rallumer avec les Feux Follets des Pokémon Feu, puis des miroirs à tourner pour envoyer la lumière sur deux soleils.
   - Copycat, ton reflet, refait tous tes pas en miroir dans un grand labyrinthe vu de plus haut : rejoins-le pour affronter ta propre équipe.
   - À la fin : un Bouchon d'Or (IV au maximum) et un Éclat de Miroir.
+
+## 4.32 — 5 novembre 2026
+- **Arcadia** — Les 18 jeux se jouent à la manette.
+  - DavidSimulator, Tête de Calcul, Bastion Clash, Fil Rouge et Mini-Golf Party : un curseur se déplace au stick, A clique (maintenu pour glisser), X fait le clic droit et les gâchettes zooment.
+  - Birdie Party, Poké Duel et Odyssée : la croix et le stick remplacent les flèches, A valide, B annule.
+  - La fiche de chaque jeu indique ses commandes à la manette.
+- **The Backrooms** — Manette : stick gauche pour avancer, stick droit pour regarder, A ramasse, X utilise, Y allume la lampe, RB change d'objet, B siffle, LB court.
+- **Poké Duel** — Nouvelle description et nouvelles commandes dans la fiche : des centaines de Pokémon, le double façon VGC et le 2 contre 2.
+- **Accueil** — La présentation du site parle bien des 18 jeux.
+
+## 4.31 — 5 novembre 2026
+- **The Backrooms** — au Level 0, les piliers ne se ressemblent plus : colonnes rondes, piliers carrés fins ou épais, piliers pleins, et de gros blocs dans les grandes salles. On passe à côté des plus fins.
+- **The Backrooms** — beaucoup moins de culs-de-sac : la plupart des impasses débouchent maintenant sur un autre couloir (il en reste quelques-unes).
+- **The Backrooms** — l'entité encore calme qui t'aperçoit va se tapir dans le noir pour t'observer au lieu de charger ; tout près, même tapie, on l'entend.
+
+## 4.30 — 5 novembre 2026
+- **The Backrooms** — ramasser une cassette (ou un fusible au Level 1) ne fige plus le jeu une à deux secondes chez tout le monde, pas plus que l'ascenseur qui se referme une fois toutes les cassettes trouvées.
+
+## 4.29 — 5 novembre 2026
+- **The Backrooms** — l'entité prend corps en 3D : une grande silhouette décharnée et voûtée, aux bras qui pendent jusqu'aux genoux, aux doigts interminables et au cou trop long, avec le même visage aux yeux blancs et à la bouche béante. Elle marche, court et s'arrête vraiment.
+- **The Backrooms** — au début de la partie, l'entité se tapit dans les coins sombres pour observer les explorateurs de loin, sans attaquer ; braquer sa lampe sur elle la fait fuir dans le noir.
+  - À chaque cassette trouvée, elle devient plus agressive : elle voit et entend plus loin, charge plus vite, lâche moins facilement, et observe de moins en moins avant d'attaquer.
+- **The Backrooms** — les bruits d'ambiance sont joués très bas, à peine audibles.
+
+## 4.28 — 5 novembre 2026
+- **The Backrooms** — à plusieurs, tes coéquipiers sont de vrais explorateurs en combinaison jaune, casque à visière et gants noirs, qui marchent, courent et attendent.
+- **The Backrooms** — la lampe des autres joueurs éclaire vraiment les murs devant eux, sans le gros cône dessiné dans l'air ; ta propre lampe a un faisceau plus doux, avec un halo autour.
+- **The Backrooms** — l'entité ne sait plus où tu es quand elle te perd de vue : elle court là où elle t'a vu pour la dernière fois, fouille les environs, puis reprend sa ronde. On peut enfin la semer en se cachant.
+- **The Backrooms** — l'eau d'amande remplit bien la barre d'endurance quand on n'est pas l'hôte de la partie.
+- **The Backrooms** — à plusieurs, monter ou descendre l'escalier ne te ramène plus en arrière, et les autres te voient au bon endroit.
+
+## 4.27 — 5 novembre 2026
+- **The Backrooms** — le Level 1 fait enfin peau neuve : un vrai entrepôt souterrain, bien plus réaliste.
+  - Des rayonnages à palettes : échelles bleues percées, lisses orange, croisillons, planchers et fonds grillagés, protections jaunes et noires en bout de rangée.
+  - Les étagères sont pleines de marchandises posées sur des palettes en bois : piles de cartons, palettes filmées, fûts, sacs de ciment, bacs en plastique.
+  - Des murs en parpaings peints, un sol en béton usé, taché d'huile et de flaques, des lignes jaunes au pied des rayonnages.
+  - Au plafond, des gaines d'aération, des tuyaux et des réglettes suspendues à des chaînettes.
+  - Les piliers sont balisés et numérotés, et un panneau marque l'entrée de chaque allée.
+  - On trouve aussi plus de matériel abandonné dans les allées : groupe électrogène, armoires électriques, coffres à outils, pneus, jerricans, bouteilles de gaz.
+
+## 4.26 — 5 novembre 2026
+- **The Backrooms** — au Level 0, les deux étages sont bien plus loin l'un de l'autre : les trous du couloir piégé sont maintenant de vrais puits de plus de 6 mètres.
+  - Rater une arête, c'est une vraie chute : on tombe pendant plus d'une seconde, l'air siffle, le choc est lourd, l'image tremble et on reste sonné plus longtemps, à bout de souffle.
+  - Depuis l'étage du bas, on voit le puits au-dessus de sa tête.
+  - Plus aucun néon ne flotte au milieu des puits.
+- **The Backrooms** — les escaliers entre les deux étages sont coudés : une première volée, un palier à mi-hauteur, demi-tour, puis une seconde volée qui surplombe la première, au fond d'une grande cage obscure.
+- **The Backrooms** — l'entité prend l'escalier par le bas ou par le haut, comme les joueurs.
+- **The Backrooms** — de nouveaux sons : quand l'entité te poursuit, on entend ses cris, et par-dessus ses pas lourds, de plus en plus forts et rapprochés à mesure qu'elle approche ; quand elle est sur toi, un son de mort ; et le reste du temps, des ambiances angoissantes au hasard.
+- **The Backrooms** — l'entité va plus vite : elle te rattrape en marchant, il faut sprinter pour lui échapper.
+
+## 4.25 — 5 novembre 2026
+- **Odyssée** — Les 24 Méga-Gemmes imaginées par des fans sont cachées sur les routes de la fin de l'aventure.
+- **Odyssée** — Tous les Pokémon qui ont une Méga-Évolution peuvent être capturés : les partenaires de départ des six régions, Riolu, Kabuto, Amonita, Barpau, Goinfrex, Sepiatop et d'autres apparaissent (rarement) dans les zones de la fin du jeu.
+  - Latias et Latios t'attendent quelque part avec sept badges, Diancie avec huit.
+- **Odyssée** — À partir de la sixième arène, les Champions méga-évoluent, et au moins un dresseur sur trois aussi. Prépare-toi !
+
+## 4.24 — 5 novembre 2026
+- **Odyssée** — 24 Méga-Évolutions inédites, imaginées par des fans : Méga-Ronflex, Méga-Libégon, Méga-Milobellus, Méga-Typhlosion, Méga-Grolem, Méga-Papilusion, Méga-Chartor, Méga-Élekable et bien d'autres.
+  - Leurs Méga-Gemmes se vendent chez le professeur Orme, à Port-Granit.
+  - Méganium, Aligatueur, Minotaupe, Némélios et Darkrai ont désormais deux Méga au choix : l'officielle et une version Δ, chacune avec sa gemme.
+
+## 4.23 — 5 novembre 2026
+- **Odyssée** — La Méga-Évolution arrive ! 81 Méga-Évolutions, dont les toutes nouvelles de Légendes Z-A (Méga-Dracolosse, Méga-Méganium, Méga-Aligatueur, Méga-Amphinobi, Méga-Raichu X et Y, Méga-Lucario Z…).
+  - À Port-Granit, le professeur Orme te remet le Méga-Anneau dès ton cinquième badge, avec la gemme de ton partenaire de départ quand sa lignée en a une.
+  - Fais tenir sa Méga-Gemme à un Pokémon, puis appuie sur MÉGA (ou M) avant de choisir une attaque : il méga-évolue, une fois par combat.
+  - Douze gemmes sont cachées sur les routes de la fin de l'aventure, et le professeur Orme vend les autres (celles des légendaires, seulement au Maître de la Ligue).
+  - Attention : Théo, Ombrelle et Célestine savent aussi méga-évoluer…
+  - Méga-Évolution possible aussi dans les duels entre amis.
+- **Odyssée** — Les cris des Pokémon sont désormais inclus dans le jeu : plus besoin de connexion pour les entendre.
+
+## 4.22 — 5 novembre 2026
+- **Odyssée** — Carte de Dresseur : tes 15 badges s'affichent en vitrine au centre (ceux qui manquent en silhouette), et l'en-tête est plus sobre.
+- **Odyssée** — Carte de la région : le nom des villes visitées s'affiche sous leur repère.
+- **Odyssée** — Pokédex : une barre de progression en haut, et un emplacement mystère pour les créatures que tu n'as pas encore croisées.
+
+## 4.21 — 5 novembre 2026
+- **Odyssée** — Nouvelle musique : les mêmes airs, joués par de vrais instruments (mélodie douce, piano, basse, batterie et réverbération). Les bruitages suivent. L'ancien son 8 bits reste disponible dans les Options (« Style musical »).
+- **Odyssée** — Les starters d'Odyssée sont de retour au labo : chaque capsule propose trois partenaires (Odyssée, Kanto et Johto).
+- **Odyssée** — Interfaces plus claires :
+  - Fini le jargon technique (« 5G », « GPS », coordonnées…) sur la carte, la Carte de Dresseur et l'écran des amis.
+  - Le menu Échap a des icônes et des noms clairs (« Carte de Dresseur » au lieu de ton prénom).
+  - Le Pokédex et les Options prennent le même style que les autres écrans.
+  - Le HUD est plus discret : capsules d'équipe plus petites, compteur de joueurs seulement quand d'autres sont connectés.
+  - En combat, la fiche d'une attaque ne cache plus tes PV, et l'efficacité n'est indiquée que lorsqu'elle compte.
+  - Les boîtes PC tiennent enfin dans l'écran, et les emplacements vides sont plus discrets.
+
+## 4.20 — 5 novembre 2026
+- **Odyssée** — Arènes : tu peux maintenant ressortir en plein défi. Le guide te prévient : si tu sors avant d'avoir battu le Champion, tous les dresseurs de l'arène sont à rebattre.
+- **Odyssée** — Théo ne t'attend plus sur la Route 2 avant ton premier badge (il te le demande, après tout).
+- **Odyssée** — Le Conseil 4 monte en puissance d'une salle à l'autre : Brutus passe avant Spectrel.
+- **Odyssée** — Gaspard, Ferdinand, Corbin et Célestine perdent un niveau : ils restent redoutables, mais la difficulté monte plus régulièrement.
+- **Odyssée** — Le Cocoreille des dresseurs Insecte sait enfin attaquer : fini les combats sans fin à coups d'Armure.
+- **Odyssée** — Le nombre d'arènes est le même partout : quinze, huit au Nord et sept dans les Terres du Sud.
+
+## 4.19 — 5 novembre 2026
+- **Odyssée** — Un début d'aventure plus accueillant (la suite garde sa difficulté) :
+  - Le premier combat contre Théo au labo se joue à armes égales : même niveau que toi, et il ne joue pas encore les malins.
+  - Tant que tu n'as aucun badge, Théo reste à ton niveau quand il te défie sur la route.
+  - Les dresseurs de la Route 1 n'ont plus qu'un ou deux Pokémon, de niveau débutant.
+  - Hector, le premier Champion, est un peu moins coriace (niveaux un cran plus bas, pas d'objet tenu, moins de Potions).
+  - Perdre un combat coûte désormais une somme qui dépend de tes badges, comme dans les jeux, et jamais plus de la moitié de ta bourse.
+- **Odyssée** — Finitions du début de partie :
+  - L'écran d'apparence se valide avec Entrée depuis n'importe quelle ligne, et ne redemande plus Garçon / Fille.
+  - Au réveil, on sait où aller : le Prof. Saule t'attend à son labo.
+  - Le combat contre Théo a enfin un décor de labo, et la fenêtre de choix du starter ne cache plus le Prof. ni Théo.
+  - Le nom du lieu s'affiche en bas de l'écran et ne passe plus sous le HUD.
+  - Dialogues corrigés au labo (nombre de créatures par capsule, Théo, réaction du Prof. après une défaite, Poké Balls).
+
+## 4.18 — 5 novembre 2026
+- **Odyssée** — Nouvelles météos dans la région :
+  - Brume du matin dans les forêts, entre 5 h et 10 h : un voile blanc qui dérive sur le paysage.
+  - Pluie de cendres sur les terres volcaniques, en alternance avec la tempête de sable.
+  - Comme dans les jeux de la 5e génération, la brume et les cendres ne changent rien en combat.
+
+## 4.17 — 5 novembre 2026
+- **Odyssée** — Carte de la région plus fiable :
+  - « ⌖ Ma position » et Espace / Entrée recentrent vraiment la carte sur vous.
+  - La carte n'est plus étirée sur les écrans qui ne sont pas en 16/10.
+  - Cliquer sur une ville marche aussi bien en vue zoomée qu'en vue de la région, et la carte reste fluide pendant les zooms.
+- **Odyssée** — Le temps change sur les routes : averses ou grand soleil toutes les dix minutes, le même pour tous les joueurs, et repris en combat.
+- **Odyssée** — Liste d'amis : le code ami qu'on tape ne s'efface plus et le curseur ne saute plus pendant la mise à jour des joueurs connectés.
+
+## 4.16 — 5 novembre 2026
+- **The Backrooms** — L'entité du mode normal ne ressemble plus à un dessin : peau sombre marbrée de veines, contours déchiquetés qui s'effilochent comme de la fumée, matière qui grouille quand elle bouge.
+
+## 4.15 — 5 novembre 2026
+- **The Backrooms** — L'entité du mode normal est bien plus flippante : silhouette voûtée qui fume, bras inégaux aux doigts interminables, tête penchée à un angle impossible, bouche béante pleine de dents et gestes saccadés.
+
+## 4.14 — 5 novembre 2026
+- **The Backrooms** — Le jeu est de retour pour tout le monde ! En mode normal, une nouvelle entité vous traque : une longue silhouette noire aux yeux blancs, qui grogne dans le noir.
+  - Les comptes VIP peuvent choisir « ⭐ VIP mode » dans les réglages pour jouer avec les monstres d'origine (tous les joueurs de la partie les voient alors).
+
+## 4.13 — 4 novembre 2026
+- **The Backrooms** — le dédale aux murs jaunes est bien plus encombré, comme si d'autres étaient passés avant toi.
+  - Des chantiers abandonnés : rubalise jaune et noire arrachée qui traîne par terre en travers des couloirs (elle ne bloque jamais le passage), cônes orange et projecteurs éteints sur leur trépied.
+  - Nouveaux meubles laissés là : vieux canapés, fauteuils, pupitres d'école, tableaux noirs, étagères en métal, chariots à outils, écrans de projection et escabeaux.
+  - Des dessins sur les murs : sourires à la craie, bonshommes bâtons, « EXIT ? » et sa flèche, jours comptés en bâtons, « DON'T RUN » à la peinture qui coule, maisons d'enfant, mains sales.
+- **The Backrooms** — tout le jeu passe en anglais : objectifs, messages, inventaire, écrans de pause et de fin, inscriptions sur les murs, étiquettes des cassettes et des bouteilles. Les réglages restent en français.
+- **The Backrooms** — à plusieurs, chacun commence dans son coin du dédale, à quelques couloirs des autres : assez loin pour ne pas se voir, assez près pour s'entendre siffler.
+- **The Backrooms** — le son est en 3D : on entend d'où viennent le sifflet, les pas des autres joueurs et l'entité (devant, derrière, à gauche, à droite), étouffés quand ils sont à l'autre étage.
+- **The Backrooms** — les couloirs résonnent : chaque bruit a son écho, plus long dans l'entrepôt en béton du Level 1.
+- **The Backrooms** — la bouteille d'eau d'amande a une vraie étiquette et un bouchon blanc, à tous les niveaux (au Level 1, elle restait parfois sans étiquette).
+- **The Backrooms** — la lampe torche est toujours dans la case 1 dès le départ : il n'y a plus aucune table à lampes.
+- **The Backrooms** — de vrais escaliers entre les deux étages du Level 0 : on les monte et on les descend en marchant, marche après marche, au lieu d'être téléporté. Rampes le long des marches, garde-corps autour de la cage d'escalier en haut.
+- **The Backrooms** — un éclairage bien plus angoissant : chaque néon ne fait plus qu'une petite flaque de lumière nette, le noir complet reprend juste à côté, un néon sur quatre est grillé, et le caméscope ne rattrape plus l'obscurité.
+- **The Backrooms** — une image plus propre, comme dans les vidéos des Backrooms : plus nette, des jaunes plus francs, des noirs plus profonds ; le grain, les lignes de balayage et la bavure des couleurs sont bien plus discrets, et l'image ne glitche plus en permanence : les parasites de la cassette ne reviennent que quand l'entité est tout près, et moins fort.
+- **The Backrooms** — on voit ce qu'on tient : la lampe torche dans la main droite, et dans la main gauche l'eau d'amande ou les piles quand leur case est choisie. Ils bougent avec le pas et prennent la lumière d'où l'on est.
+- **The Backrooms** — des zones plus claires : par endroits tous les néons marchent et éclairent plus fort et plus loin, entre des couloirs sombres ; moins de néons grillés au hasard, et le caméscope rattrape un peu plus l'obscurité.
+- **The Backrooms** — à bout de souffle après avoir trop couru, on ne peut plus courir pendant une seconde.
+- **The Backrooms** — nouvelle affiche dans le salon : une vraie image du jeu, une salle du Level 0 sous les néons.
+
+## 4.11 — 4 novembre 2026
+- **Arcadia** — Un cinquième compte reçoit le grade VIP.
+
+## 4.10 — 4 novembre 2026
+- Perfections visuelles 16:10 et alignement pixel-art du Registre Ami C-Gear (v4.09) (Amiel)
+
+## 4.09 — 4 novembre 2026
+- **Odyssée** — Visualisation des Joueurs Connectés en direct & Registre Ami B2W2 C-Gear 5G :
+  - **Affichage en direct du nombre de joueurs connectés** :
+    - **Dans le HUD Pokégear (en haut à droite)** : capsule d'état multijoueur avec voyant LED vert pulsé (🟢 X en ligne), réactif en temps réel dès qu'un dresseur rejoint ou quitte la région.
+    - **Dans la barre d'accès rapide** : bouton dédié AMIS (X) avec icône pixel-art personnalisée img/hud/friends.png.
+    - **Dans le Menu Pause (START / Entrée / Échap)** : entrée dynamique AMIS & EN LIGNE (X 🟢) indiquant le nombre exact de dresseurs présents.
+    - **Raccourci clavier universel** : touche O ou G pour ouvrir instantanément l'écran des amis et connexions.
+  - **Écran interactif Registre Ami & Connexions C-Gear 5G (friendsScreen)** :
+    - **Mon Code Ami Personnel** : affichage du code dresseur unique à 8 caractères (XXXX-XXXX) avec bouton de copie en un clic dans le presse-papier et retour visuel animé.
+    - **Onglet Dresseurs en direct** : liste de tous les dresseurs actifs dans la session avec leur sprite miniature, nom, genre, statut en temps réel (Disponible, En combat PvP, Occupé) et localisation GPS exacte (Route 1, Port-Écume, etc.).
+    - **Actions instantanées sur chaque dresseur** : consulter sa Carte de Dresseur complète, lui proposer un duel PvP 1v1, un échange de Pokémon, ou l'ajouter en ami en un clic.
+    - **Onglet Mes Amis** : carnet d'amis complet affichant le statut en ligne/hors-ligne, le numéro de salon de jeu avec possibilité de rejoindre leur salon ou de leur envoyer une invitation.
+    - **Onglet Ajouter un Ami** : formulaire de saisie de Code Ami avec validation automatique et gestion des demandes d'amis reçues (Accepter / Refuser).
+  - **Architecture résiliente (Hub Arcadia & Standalone)** :
+    - Module odyssee/js/net/friends.js unifiant HubFriends, HubBridge et un fallback local (localStorage) fonctionnel même hors-ligne ou hors Hub.
+    - Contrôles non-destructifs : Espace et Entrée n'échappent pas et exécutent les actions, ◄ / ► naviguent entre onglets, Échap referme proprement.
+  - **Tests & Démonstration** :
+    - Suite de tests complète tools/test-friends-and-online.mjs validant 100% des cas d'usage.
+    - Page de prévisualisation autonome odyssee/preview_friends_b2w2.html.
+
+## 4.08 — 4 novembre 2026
+- **The Backrooms** — Le jeu est désormais réservé aux comptes VIP. Si un VIP le lance dans son salon, ses invités peuvent y jouer avec lui.
+
+## 4.07 — 4 novembre 2026
+- **Arcadia** — Les premiers comptes en ligne, protégés par mot de passe, reçoivent le grade VIP (« ⭐ VIP » sous le nom).
+
+## 4.06 — 4 novembre 2026
+- **Odyssée** — Accessibilité universelle du Système de Stockage des Pokémon (Boîtes PC) :
+  - **PC interactifs dans la ville de départ (Bourg-Aube)** :
+    - Ajout du PC personnel du joueur dans sa chambre à Bourg-Aube (sur le bureau à côté de la télévision), comme dans les jeux Pokémon classiques.
+    - Activation des deux ordinateurs du Laboratoire du Professeur Saule à Bourg-Aube (m.object(5, 2, { type: 'pc' }) et (7, 2)).
+    - Rappel : un PC est également présent dans chaque Centre Pokémon de la région (en haut à droite, en case 11, 2).
+  - **Accès nomade aux Boîtes PC depuis le Menu Principal (START / Échap)** :
+    - Ajout de l'option BOÎTES PC directement dans le menu pause sous ÉQUIPE, permettant d'organiser, déposer et retirer ses créatures n'importe où en voyage (fonctionnalité moderne de type Boîte Pokémon nomade / C-Gear).
+  - **Raccourci direct dans l'Écran ÉQUIPE (partyScreen)** :
+    - Bouton tactile BOÎTES PC 💻 ajouté dans la barre d'action inférieure de l'équipe pour basculer en un clic vers le système de stockage.
+  - **Normalisation des contrôles clavier du PC (pcScreen)** :
+    - Prise en charge unifiée des touches Espace et Entrée pour sélectionner et déplacer des créatures sans conflit, et Échap pour annuler la prise en main ou éteindre le PC.
+  - **Tests automatisés** :
+    - Création de 	ools/test-pc-storage-access.mjs validant la présence et l'interactivité de tous les PC du monde ainsi que les raccourcis d'interface (100% succès).
+
+## 4.05 — 4 novembre 2026
+- **Odyssée** — Résolution du bug de superposition cartographique et interactivité GPS temps réel de la Carte C-Gear 5G :
+  - **Suppression du bug visuel de double-carte et faux textes** :
+    - Remplacement de l'image de fond IA c_gear_b2w2_bg.jpg (qui contenait une fausse carte peinte avec « Route 02 », « Cités 01 », « PORT-ÉCUME » et des panneaux désalignés) par un **châssis C-Gear 5G 100% propre en pixel-art 16-bit** généré procéduralement (	ools/generate_clean_cgear_texture.py), sans aucun texte intrusif ni fausse illustration.
+  - **Grand Écran Cartographique Haute Définition (Format 16:10)** :
+    - Élargissement complet de la zone cartographique .map-wrap qui passe d'une colonne étroite comprimée (ratio 0.84) à un véritable écran panoramique Nintendo DS 16:10 occupant toute la largeur utile avec biseaux cyan néon et coins technologiques.
+    - Voile radar semi-transparent B2W2 (au lieu d'un bloc noir opaque brutal) : les zones explorées sont 100% vives, lumineuses et détaillées, tandis que les zones inexplorées restent sous un élégant filtre radar technologique C-Gear à 72% d'opacité laissant deviner la topographie de l'archipel.
+  - **Positionnement en direct & Interactivité tactile complète** :
+    - **Bandeau GPS en direct** : affichage en temps réel du lieu actuel (GPS EN DIRECT : BOURG-EN-VOL), des coordonnées exactes [LOC: X, Y] et voyant vert pulsant (gpsPulse).
+    - **Balise Joueur interactive** : balise avec double anneau radar expansif (.map-me-radar-outer et .map-me-radar), noyau cyan lumineux et badge flottant « VOUS ÊTES ICI ». Clic direct sur la balise pour se recentrer avec effet sonore.
+    - **Bouton « ⌖ MA POSITION »** : raccourci tactile pour centrer instantanément la caméra et le réticule sur la position actuelle du joueur.
+    - **Bouton « 🗺️ VUE RÉGION / 🔍 VUE ZOOMÉE »** : bascule fluide animée entre la vue détaillée zoomée sur la zone explorée et la vue panoramique d'ensemble de toute la région d'Odyssée (ullRegionView).
+    - **Waypoints GPS au clic libre** : cliquer n'importe où sur la carte pose un repère technologique instantané avec calcul automatique de la distance en pas et de la direction cardinale (À ~45 pas au Nord-Est).
+    - **Calcul de distance & orientation sur les villes** : chaque lieu ou arène affiche sa distance et sa direction par rapport à votre position actuelle en direct.
+  - **Aperçu & Tests** :
+    - Page de démonstration interactive odyssee/preview_map_b2w2.html.
+    - Validation complète des tests 	ools/test-b2w2-map.mjs et 	ools/test-screen-keyboard-inputs.mjs (100% succès).
+
+## 4.04 — 4 novembre 2026
+- **Odyssée** — Refonte 100% Pixel-Art Nanobanana de l'interface de la Carte et de la Cartographie Régionale B2W2 :
+  - **Interface C-Gear B2W2 (Concept 1 validé)** :
+    - Remplacement de l'ancien écran par un véritable châssis rétro Nintendo DS façon C-Gear 5G (`c_gear_b2w2_bg.jpg`) au fini carbone bleu nuit, biseaux métalliques chanfreinés et trame de scanlines.
+    - Nouvel en-tête avec voyant C-Gear holographique animé (`cgearPulse`), titre lumineux cyan `#00e0ff`, compteur dynamique des villes découvertes et badge de niveau max (Level Cap).
+    - Cadre cartographique biseauté avec 4 coins de visée néon et affichage tête haute (coordonnées GPS en direct et mention « RADAR 5G ACTIF »).
+    - Nouveau radar de joueur (« VOUS ÊTES ICI ») avec onde circulaire expansive pulsante (`mapRadarWave`) et noyau lumineux.
+    - Marqueurs interactifs avec symboles distinctifs pour les Arènes (`★`), les badges obtenus (`✓`) et la Ligue Pokémon (`👑`).
+    - Curseur de ciblage technologique réticulaire (`map-cur-bracket`) avec animation fluide de déplacement.
+    - Tiroir de contrôle tactile inférieur avec boutons rétro 3D DS (`◀ LIEU PRÉC.` et `LIEU SUIV. ▶`), fiche descriptive détaillée et légende complète à 4 pastilles (Vous, Ville, Arène, Ligue).
+  - **Cartographie Régionale B2W2 (Option A validée)** :
+    - Nouvelle palette haute définition B2W2 (`B2W2_PALETTE`) : océan profond sapphire en dégradé d'altimétrie et écume cyan vif, côtes et falaises étagées aux teintes chaudes, plaines d'Unys et forêts denses contrastées.
+    - Voies terrestres et maritimes à liseré sombre et coeur clair cyan néon pour une visibilité cartographique optimale.
+    - Intégration de l'illustration de référence `odyssee_region_map_b2w2.jpg` dans les assets du jeu (`ASSETS.regionMapB2W2`).
+  - **Tests automatisés** :
+    - Création de `tools/test-b2w2-map.mjs` validant les assets d'arrière-plan, les endpoints `ASSETS`, le cycle de vie de `mapScreen` et les contrôles clavier non-destructifs (100% succès).
+
+## 4.03 — 4 novembre 2026
+- **Odyssée** — Normalisation des touches d'action Clavier (Espace, Entrée et Échap) sur tous les écrans modaux :
+  - **Correction du comportement des touches Espace & Entrée (`'a'`)** :
+    - Sur la **Carte de Dresseur** (`cardScreen`) : appuyer sur Espace ou Entrée bascule désormais instantanément entre le Profil (Face A) et les 15 Badges (Face B), ou fait tinter le carillon musical cristallin du badge sélectionné avec brillance visuelle. La carte ne se ferme plus intempestivement.
+    - Sur le **Pokédex** (`dexScreen`) : appuyer sur Espace ou Entrée joue le cri authentique de l'espèce sélectionnée et anime le sprite en rebond dynamique au lieu de fermer le Pokédex. Seule la touche Échap (`'b'`) ou le clic sur fermer quitte l'écran.
+    - Sur le **Résumé de Pokémon** (`summaryScreen`) : appuyer sur Espace ou Entrée fait défiler cycliquement les pages (Informations générales → Capacités & PP → Statistiques) avec sonorité rétro sans quitter l'écran.
+    - Sur la **Carte de la Région** (`mapScreen`) : appuyer sur Espace ou Entrée pulse et met en valeur le lieu ciblé avec son de confirmation sans fermer la carte.
+  - **Tests automatisés & validation** :
+    - Création de `tools/test-screen-keyboard-inputs.mjs` vérifiant que `'a'` (Espace / Entrée) exécute les interactions prévues sans jamais fermer aucun écran modal, et que `'b'` (Échap) assure la fermeture propre (100% de succès).
+
+## 4.02 — 4 novembre 2026
+- **Odyssée** — Refonte intégrale et correction de la Carte de Dresseur B2W2 (Résolution du bug de superposition et pixel-art authentique) :
+  - **Suppression définitive des textes et boîtes incrustés dans l'image de fond** :
+    - Remplacement des images d'arrière-plan IA qui contenaient du faux texte (« TEMPS DE JEU ») et des fausses boîtes désalignées par de **véritables textures de châssis haute fidélité en pixel art 16-bit** (`tools/generate_clean_card_textures.py`).
+    - Trame de carbone micro-tissée avec dithering Bayer authentique Nintendo DS, biseaux métalliques aux angles chanfreinés et liserés néon sans aucun artefact visuel pour les 5 rangs de prestige (`normal`, `bronze`, `silver`, `gold`, `master`).
+    - Face B (`card_back_case.jpg`) : écrin en velours bleu saphir matelassé avec ferrures dorées et alvéoles réceptrices sans texte polluant.
+  - **Refonte ergonomique et visuelle de la Face A (Profil de Dresseur)** :
+    - **Disposition en grille technologique B2W2** : remplacement de la longue colonne de lignes sombres par un en-tête héroïque (Dresseur + Titre officiel) et une grille de modules statistiques biseautés aux couleurs officielles (Argent ₽, Temps de jeu, Pokédex avec barre de complétion, Badges avec 15 mini pips lumineux, Médailles B2W2 et accès direct au Panthéon).
+    - **Portrait du Dresseur épuré** : suppression du tag « DRESSEUR » qui masquait la tête du personnage, piédestal holographique rayonnant et sceau officiel de la Ligue d'Odyssée.
+    - **Plateau d'équipe 6 Pokémon authentique** : élimination des blocs « SLOT VIDE » génériques au profit d'alvéoles circulaires en retrait gravées dans le métal (`tc-ts-socket`) avec mention discrète « Libre », et cartouches d'équipe interactifs avec cri du Pokémon au clic.
+  - **Page d'aperçu dédiée** : ajout de `preview_card_b2w2.html` permettant de tester instantanément toutes les variantes de rangs et les deux faces de la carte.
 
 ## 4.01 — 4 novembre 2026
 - **Odyssée** — Animations visuelles avancées des attaques majeures, Météo dynamique overworld et Panthéon interactif :
