@@ -450,20 +450,31 @@ pokeheartgold. La fusion suit l'ordre des jeux : Vert Feuille, HeartGold, Émera
 grès : `js/rendu.js`).
 
 Dehors, la Vallée des Rois Oubliés : la façade (`entree_tombeau`) et sa porte officielle sont fermées, derrière un
-cordon et trois gardiens ; des touristes devant (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac donne la Clé du
-Ruinemaniac ; l'une des roches du bord (`roches`, la vraie est `porte`) est fissurée : avec la clé, elle laisse place à
-une échelle, l'entrée des pilleurs (`trou` dans la salle s1, partagé par le groupe). `devant` : là où les gardiens
-jettent ceux qu'ils attrapent ; `arrivee` : où l'on apparaît en choisissant le lieu ; `panneau` : le panneau d'entrée.
+cordon et trois gardiens ; des touristes (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac donne la Clé du
+Ruinemaniac (et 5 000 ₽) ; la roche fissurée du bord droit (`porte`, parmi `roches` ; les autres ne disent rien) laisse
+place, avec la clé, à une échelle : l'entrée des pilleurs (`trou` dans la salle s1, partagé par le groupe). `devant` :
+où les gardiens jettent ceux qu'ils attrapent ; `arrivee` : où l'on apparaît ; `panneau` : le panneau d'entrée.
 
-Les deux premières salles (Crypte des Gardiens, Chambre du Sarcophage, `gardiens: true`) n'ont ni pilleurs ni Pokémon
-sauvages : des gardiens (`garde` : `tourne`, la liste de leurs regards, une direction toutes les `PERIODE` secondes,
-`decal` en quarts de seconde, `portee`) tournent la tête, à la même horloge pour tous. Qui entre dans un regard (un
-cône devant le gardien, arrêté par les murs et le décor) est jeté dehors, et ce qu'il portait retourne à sa place
-(`origine`). Le porteur des lunettes voit les regards en rouge. On y vole les lunettes (s1) puis le pendentif (s2).
-`test-testodyssee.mjs` vérifie qu'on peut le faire sans jamais être vu (en attendant le bon moment). Deux artefacts tenus par l'hôte
-(action `artefact` d'`etat.js`, rangés dans `salles.s1.donnees.art`) : le Pendentif Maudit (`pend`) et les Lunettes de
-Vérité (`lun`). Un porteur à la fois, jamais les deux (sauf en mode test) ; on les pose et on les donne à un voisin
-depuis le Sac, on ramasse ce qui est posé en le regardant. Un joueur qui part : son artefact retourne à sa place.
+Étages (les salles se relient par des passages `lien` : `vers` la salle, `cible` la marque d'en face ; `porte` : la
+porte de fer, qui demande une Clé Fragile à chaque passage, la clé se brise) :
+- -3, Repaire des Brigands (`b3`, la première salle : on y arrive par le trou) ; -4, Quartier des Brigands (`b4`) et
+  ses salles : la Caverne d'Ali Baba (`b4a`), le tripot (`b4b`), le dortoir (`b4c`). Les brigands (`brigand`) n'attaquent
+  jamais ; ceux qui ont un `combat` le proposent, autant de fois qu'on veut, et soignent après. Le passage du fond
+  du quartier mène au -5 (la suite : les salles des pilleurs, où le pendentif est exigé pour sortir, `pendentif`).
+- Ali Baba (`boutique`) vend la liste `boutique` du donjon : le classique, la Clé Fragile (par deux, `lot`), et des
+  objets « parfaitement légaux » ou des antiquités (`contenu.js` : `desc`, l'alibi ; `replique`, ce que dit le
+  marchand à l'achat). Seule la Seringue Somnifère sert : elle endort un gardien (une seringue par gardien).
+- -2, Chambre du Sarcophage (`s2`, par la porte de fer) et -1, Crypte des Gardiens (`s1`) : des moines gardiens
+  (`garde` : `tourne`, la liste de leurs regards, une direction toutes les `PERIODE` secondes, `decal` en quarts de
+  seconde, `portee`). Ils voient comme des dresseurs, en ligne droite : qui y passe se fait courir dessus et jeter
+  dehors, et les reliques qu'il portait retournent à leur place (`origine`). Chaque relique a son gardien au regard
+  fixe (`relique`) : il faut l'endormir pour la prendre. On endort un gardien en lui parlant sans être vu, une
+  seringue en poche ; ils se réveillent tous dès qu'un joueur quitte la salle (`dorment` de la salle). Le porteur
+  du monocle voit les regards en rouge. `test-testodyssee.mjs` vérifie qu'on peut endormir le gardien, prendre la
+  relique et ressortir sans jamais être vu.
+
+Les reliques (action `artefact` d'`etat.js`, rangées dans la première salle) : le Pendentif Maudit (`pend`) et le
+Monocle de Vérité (`lun`).
 - Le pendentif retire `MORSURE` (à zéro pour l'instant, en attendant de l'équilibrer) des PV max de chaque Pokémon de son porteur à chaque pas. Toute l'équipe à
   terre : il le lâche et se réveille à l'entrée de la salle (un tiers des PV). On ne passe la sortie d'une salle
   qu'avec le pendentif en main (ou volé).

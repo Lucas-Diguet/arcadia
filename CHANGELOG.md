@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 4.10 — 5 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : le repaire des brigands, la Caverne d'Ali Baba, et des gardiens à endormir.
+  - L'entrée des pilleurs est sous la roche fissurée du bord droit de la place ; les autres roches ne disent rien. Le ruinemaniac donne aussi un peu d'argent pour les frais.
+  - On arrive au -3, dans le repaire des brigands, qui descend au -4 : le quartier, le tripot, le dortoir et la Caverne d'Ali Baba. Les brigands n'attaquent jamais ; certains proposent un combat, autant de fois qu'on veut, et soignent ensuite.
+  - Ali Baba vend des soins, des repousses, des antiquités « achetées en toute légalité » et une foule d'objets « parfaitement légaux », chacun avec son excuse, et une réplique à chaque achat. Et des Clés Fragiles, par deux : la porte de fer entre le -3 et le -2 en casse une à chaque passage.
+  - Au -2 et au -1, les gardiens sont des moines. Ils voient en ligne droite, comme des dresseurs : ils te courent dessus et te jettent dehors (« Et ne reviens pas ici, maudit profanateur ! »).
+  - Chaque relique (le Pendentif Maudit au -2, le Monocle de Vérité au -1) a son gardien, qui ne détourne jamais le regard. Il faut l'approcher sans être vu et l'endormir avec une Seringue Somnifère. Tous les gardiens d'une salle se réveillent dès qu'un joueur en sort.
+  - Les Lunettes de Vérité s'appellent maintenant le Monocle de Vérité.
+
 ## 4.09 — 5 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : nouvelle entrée, et deux salles d'infiltration.
   - La Vallée des Rois Oubliés devient une grande place égyptienne : la façade du tombeau, gardée derrière un cordon, une foule de touristes qui prennent des photos, des passants, un marchand, une archéologue.

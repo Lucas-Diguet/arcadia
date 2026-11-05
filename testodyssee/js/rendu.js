@@ -1,7 +1,7 @@
 // testodyssee/js/rendu.js — ce que le labo ajoute au rendu d'Odyssée : donjons « clairs » (sol et murs blancs),
 // sol glacé, et faisceaux de lumière. Branché une fois au démarrage (navigateur seulement).
 import * as THREE from 'three';
-import { WorldView } from '../../odyssee/js/render/world3d.js';
+import { WorldView, HPX } from '../../odyssee/js/render/world3d.js';
 import { Sol } from '../../odyssee/js/render/sol.js';
 import { T } from '../../odyssee/js/world/tiles.js';
 
@@ -94,6 +94,19 @@ export function dessinerZones(view, cases) {
   const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xff3a3a, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide }));
   me.renderOrder = 4; me.frustumCulled = false;
   view.root.add(me); view.__zones = me; view.__zonesRoot = view.root;
+}
+
+/** « Zzz » au-dessus des personnages endormis (les gardiens du tombeau) ; liste vide : efface */
+export function dessinerZzz(view, npcs) {
+  const vus = new Set();
+  for (const n of npcs) {
+    const id = 'zzz:' + n.id; vus.add(id);
+    const r = view.S?.rects?.zzz; if (!r) continue;
+    const a = view.actor(id, { kind: 'bang' });
+    if (!a.zzz) { view.setSpriteRect(a, r, r.w, r.h); a.zzz = true; }
+    a.mesh.position.set(n.x + 0.5, 34 * HPX + Math.sin(performance.now() / 400) * 0.04, n.y + 0.56);
+  }
+  for (const id of [...view.actors.keys()]) if (id.startsWith('zzz:') && !vus.has(id)) view.removeActor(id);
 }
 
 /**

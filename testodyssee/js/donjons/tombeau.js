@@ -59,7 +59,7 @@ function exterieur() {
   m.edge = T.ROCK;
   // le cordon (des bornes) et les gardiens : on ne passe pas
   for (let x = fx - 2; x <= fx + fw + 1; x++) m.prop('cordon', x, py + 3);
-  for (const dx of [-2, 0, 2]) m.npc({ id: `tombeau-garde-dehors${dx}`, x: px + dx, y: py + 4, dir: 'down', sprite: 'garde', move: 'static', name: 'Gardien du tombeau', text: dx ? 'Le tombeau est fermé au public. Ordre du Conservatoire des Antiquités.' : 'Halte ! Personne n\'entre dans le tombeau du Roi Sans Nom. Personne.' });
+  for (const dx of [-2, 0, 2]) m.npc({ id: `tombeau-garde-dehors${dx}`, x: px + dx, y: py + 4, dir: 'down', sprite: 'pretre', move: 'static', name: 'Gardien du tombeau', text: dx ? 'Le tombeau est fermé au public. Ordre du Conservatoire des Antiquités.' : 'Halte ! Personne n\'entre dans le tombeau du Roi Sans Nom. Personne.' });
   for (const [dx, dy, sprite, dir, move, name, text] of TOURISTES) m.npc({ id: `tombeau-touriste${dx},${dy}`, x: px + dx, y: py + dy, dir, sprite, move, name, text });
   for (const [x, y, sprite, dir, move, name, text] of PASSANTS) m.npc({ id: `tombeau-passant${x},${y}`, x, y, dir, sprite, move, name, text });
   // le ruinemaniac, à l'ombre des palmiers de l'ouest
@@ -78,7 +78,7 @@ function exterieur() {
   const roches = [[5, 13], [5, 21], [6, 30], [42, 11], [42, 23], [41, 28], [13, 35], [34, 35]];
   for (const [x, y] of roches) m.prop('rocher_grand', x, y);
   m.zone(0, 0, W - 1, H - 1, { name: 'Vallée des Rois Oubliés', music: 'mystic' });
-  return { carte: m, porte: [5, 21], roches, devant: [px, py + 5], arrivee: [px, H - 6], panneau: [px + 4, py + 5] };
+  return { carte: m, porte: [42, 23], roches, devant: [px, py + 5], arrivee: [px, H - 6], panneau: [px + 4, py + 5] };
 }
 
 // les pilleurs des grandes salles : une lettre chacun (le plan généré dit seulement « t »)
@@ -115,14 +115,54 @@ function pilleurs(sid, gen, pnj) {
   return { plan, lettres };
 }
 
+// les brigands du -3 et du -4 : ils n'attaquent jamais ; certains proposent un combat (autant de fois qu'on veut)
+const brig = (cls, nom, sprite, dir, dit, combat) => ({ cls, nom, sprite, dir, toujours: true, prix: combat ? 900 : 0, brigand: { dit, combat } });
+const BRIGANDS = Object.fromEntries(Object.entries({
+  // -3, le repaire
+  'ñ': brig('Brigand', 'Fernand', 'voleur', 'right', 'Encore un nouveau ? Bienvenue au repaire. Ici, personne ne pose de questions.'),
+  'ç': brig('Brigande', 'Sidonie', 'brume_f', 'down', 'Les gardiens d\'en haut ? Ils ne descendent jamais. Trop peur de nous.'),
+  'ø': brig('Brigand', 'Marcel', 'montagnard', 'up', 'J\'ai creusé le tunnel jusqu\'ici pendant six mois. À la petite cuillère.'),
+  'æ': brig('Brigand', 'Ange', 'brume', 'left', ['Tu veux monter au -2 ? Il te faut une clé pour la porte de fer.', 'Ali Baba en vend, au -4. Des clés... très spéciales.']),
+  'œ': brig('Brigand', 'Riton', 'voleur', 'down', 'Je m\'ennuie à mourir. Un petit combat pour passer le temps ?', [[52, 34], [19, 35], [20, 35]]),
+  'ß': brig('Brigande', 'Lulu', 'brume_f', 'down', 'Tu as l\'air d\'en avoir dans le ventre. Un combat, histoire de rigoler ?', [[41, 35], [96, 35], [302, 36]]),
+  'ð': brig('Brigand', 'Comptable', 'savant', 'up', 'Chut ! Je compte le butin. Quatre cent douze, quatre cent treize... Zut, je recommence.'),
+  'þ': brig('Brigande', 'Mado', 'dame', 'left', ['Les reliques du roi sont gardées par des moines. Ils ne dorment jamais.', 'Enfin... jamais tout seuls.']),
+  'ą': brig('Brigand', 'Boris', 'karateka', 'right', 'Cette porte de fer mène au -2. Elle mange les clés, je te préviens.'),
+  'ć': brig('Brigand', 'Gégé', 'habitant', 'down', 'Le Roi Sans Nom ? Un voisin comme un autre. Il ne se plaint jamais du bruit.'),
+  'ę': brig('Brigande', 'Rosine', 'randonneuse', 'right', 'Il paraît que plus bas, sous le quartier, il y a des pilleurs bien moins sympathiques que nous.'),
+  // -4, le quartier
+  'ł': brig('Brigand', 'Tonton', 'voleur', 'down', 'On parie sur un combat ? Si tu gagnes, tu gagnes. Si tu perds... tu perds.', [[198, 36], [215, 36]]),
+  'ń': brig('Brigande', 'Fanfan', 'brume_f', 'left', 'La Caverne d\'Ali Baba, c\'est à gauche. Tout y est à vendre, même ce qui ne l\'est pas.'),
+  'ś': brig('Brigand', 'Nono', 'brume', 'up', 'Mes Pokémon rouillent. Un combat, vite fait ?', [[105, 36], [93, 37]]),
+  'ź': brig('Brigand', 'Dédé', 'gamin', 'right', 'Le tripot est à droite. Ne joue pas contre le croupier : il triche. Mais il triche bien.'),
+  'ż': brig('Brigande', 'Josette', 'habitante', 'up', 'En bas, c\'est le dortoir. Ne réveille pas Gros-Louis : il mord.'),
+  'ğ': brig('Brigand', 'Sentinelle', 'garde', 'up', 'Le passage du fond descend au -5, chez les pilleurs de Sable-Noir. Eux, ils attaquent tout ce qui bouge.'),
+  // -4, le tripot
+  'ŝ': brig('Brigand', 'Lucky', 'topdresseur', 'down', 'Une partie ? Pas aux dés : aux Pokémon. Et à la loyale, promis juré.', [[262, 37], [229, 37]]),
+  'ŷ': brig('Brigande', 'Margot', 'topdresseuse', 'left', 'J\'ai perdu ma chemise, ma pelle et mon chameau. Mais je me refais à la prochaine.'),
+  'ẑ': brig('Croupier', 'Fortuné', 'croupier', 'up', ['Faites vos jeux ! Rien ne va plus !', 'Tu n\'as rien à miser ? Alors misons nos Pokémon !'], [[302, 38], [198, 38], [359, 38]]),
+  'ŕ': brig('Brigand', 'Double-Six', 'voleur', 'up', 'Le double six ! Encore ! Ces dés sont formidables. Je les ai achetés chez Ali Baba.'),
+  'ŧ': brig('Brigande', 'Pipette', 'fillette2', 'right', 'Psst. Tu veux acheter un dé qui tombe toujours sur six ? Non ? Tant pis pour toi.'),
+  // -4, le dortoir
+  'ǩ': brig('Brigand', 'Gros-Louis', 'montagnard', 'down', 'Zzz... Touche pas... à mon butin... Zzz...'),
+  'ǯ': brig('Brigande', 'Nini', 'brume_f', 'down', 'Zzz... Encore cinq minutes... Zzz...'),
+  'ǰ': brig('Brigand', 'Petit-Paul', 'enfant', 'down', 'Zzz... Un pendentif... maudit... Zzz...'),
+  // -4, la Caverne d'Ali Baba
+  'ı': brig('Garde du corps', 'Bouboule', 'karateka', 'down', 'Tu achètes ou tu circules. Le patron n\'aime pas les badauds.'),
+}).map(([k, p], i) => [k, { id: `brigand-${i}`, ...p }]));
+
 const pnj = {
+  'Ŵ': { id: 'alibaba', cls: 'Marchand', nom: 'Ali Baba', sprite: 'vendeur', dir: 'down', toujours: true, boutique: true },
   // les gardiens des deux premières salles : ils tournent la tête ; qui entre dans leur champ de vision est jeté dehors
   ...gardiens({
     K: { tourne: ['down', 'left', 'down', 'right'], decal: 0 }, M: { tourne: ['right', 'up'], decal: 6 }, O: { tourne: ['left', 'up', 'left', 'down'], decal: 3 },
     T: { tourne: ['down', 'left'], decal: 9 }, U: { tourne: ['right', 'down', 'left', 'up'], decal: 4 }, H: { tourne: ['up', 'left', 'up', 'right'], decal: 7 },
     I: { tourne: ['right', 'down'], decal: 0 }, J: { tourne: ['left', 'down'], decal: 6 }, E: { tourne: ['up', 'right'], decal: 3 },
     F: { tourne: ['up', 'left'], decal: 9 }, Z: { tourne: ['left', 'down', 'right', 'down'], decal: 2 }, B: { tourne: ['down', 'left', 'down', 'right'], decal: 5, portee: 4 },
+    // les gardiens des reliques : leur regard ne bouge pas ; il faut les endormir pour prendre la relique
+    'Λ': { tourne: ['left'], relique: 'lun' }, 'Γ': { tourne: ['down'], relique: 'pend' },
   }),
+  ...BRIGANDS,
   // la bande du Guet-apens (n'apparaît que pendant la scène du vol)
   V: { id: 'vol-chef', cls: 'Chef des pilleurs', nom: 'Sable-Noir', sprite: 'nox', dir: 'down', scene: 'vol', toujours: true },
   W: { id: 'vol-1', cls: 'Pilleur', nom: '', sprite: 'voleur', dir: 'right', scene: 'vol', toujours: true },
@@ -140,7 +180,7 @@ const pnj = {
 /** gardiens : regard qui tourne (une direction toutes les PERIODE secondes, décalées de decal quarts de seconde) */
 export const PERIODE = 3;
 function gardiens(o) {
-  return Object.fromEntries(Object.entries(o).map(([k, g], i) => [k, { id: `garde-${k}`, cls: 'Gardien du tombeau', nom: '', sprite: 'garde', dir: g.tourne[0], toujours: true, garde: { portee: 6, ...g } }]));
+  return Object.fromEntries(Object.entries(o).map(([k, g], i) => [k, { id: `garde-${k}`, cls: 'Gardien du tombeau', nom: '', sprite: 'pretre', dir: g.tourne[0], toujours: true, garde: { portee: 6, ...g } }]));
 }
 
 const G = Object.fromEntries(['lunettes', 'abimes', 'piege1', 'piege2', 'escalier'].map((k) => [k, SALLES_TOMBEAU[k]]));
@@ -160,7 +200,7 @@ export default {
   style: 'egypte',
   tombeau: true,
   exterieur,
-  decor: { '%': 'caverock', '|': 'colonne', l: 'stele', b: 'brasero', k: 'sarcophage_vide' },
+  decor: { '%': 'caverock', '|': 'colonne', l: 'stele', b: 'brasero', k: 'sarcophage_vide', c: 'caisse', n: 'tonneau', p: 'table', y: 'coffre', v: 'lanterne', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter' },
   objets: {
     // le gouffre : on y tombe ; le chemin invisible : seul le porteur des lunettes le voit
     _: { type: 'gouffre', sol: true, decor: 'gouffre' },
@@ -178,6 +218,13 @@ export default {
     A: { type: 'autel', decor: 'autel_soleil' },
     Q: { type: 'panneau', texte: 'Ici repose le Roi Sans Nom.\nQue son pendentif rejoigne l\'Autel du Soleil, tout en haut du tombeau, et la malédiction s\'éteindra.\nQui le porte le paiera de ses forces. Qui voit la vérité ne peut l\'approcher.' },
     R: { type: 'panneau', texte: 'Ce panneau a été gravé par un pilleur : « Les lunettes du roi montrent le chemin au-dessus du vide. Ne marchez pas dans le noir sans elles. »' },
+    // passages entre les étages (vers : la salle, cible : la marque du passage d'en face) ; porte : fermée à clé
+    'α': { type: 'lien', vers: 's2', cible: 'β', porte: true }, 'β': { type: 'lien', vers: 'b3', cible: 'α', porte: true },
+    'γ': { type: 'lien', vers: 's1', cible: 'δ', sol: true }, 'δ': { type: 'lien', vers: 's2', cible: 'γ', sol: true },
+    'ε': { type: 'lien', vers: 'b4', cible: 'ζ', sol: true }, 'ζ': { type: 'lien', vers: 'b3', cible: 'ε', sol: true },
+    'η': { type: 'lien', vers: 'b4a', cible: 'θ', sol: true }, 'θ': { type: 'lien', vers: 'b4', cible: 'η', sol: true },
+    'ι': { type: 'lien', vers: 'b4b', cible: 'λ', sol: true }, 'λ': { type: 'lien', vers: 'b4', cible: 'ι', sol: true },
+    'κ': { type: 'lien', vers: 'b4c', cible: 'μ', sol: true }, 'μ': { type: 'lien', vers: 'b4', cible: 'κ', sol: true },
     // objets à ramasser (chacun les siens)
     h: { type: 'ramasser', objet: 'hyper-potion' },
     r: { type: 'ramasser', objet: 'revive' },
@@ -187,17 +234,58 @@ export default {
     z: { type: 'ramasser', objet: 'full-restore' },
   },
   pnj,
+  // ce que vend Ali Baba : le classique, puis les objets « parfaitement légaux », puis les antiquités
+  boutique: ['super-potion', 'hyper-potion', 'max-potion', 'full-heal', 'revive', 'max-repel', 'ultra-ball', 'cle-fragile',
+    'seringue-somnifere', 'batte-bricolage', 'couteau-pot-au-feu', 'vieux-couteau', 'pied-de-biche', 'cagoule', 'bougie-anniversaire',
+    'carte-conservatoire', 'gants-velours', 'pelle-pliante', 'sac-toile', 'fausse-moustache',
+    'scarabee-or', 'masque-funeraire', 'vase-canope', 'papyrus-ancien', 'chat-momifie', 'sceptre-pharaon'],
   salles: [
     // niveau -1 : on arrive par le tunnel des pilleurs ; les Lunettes de Vérité sur leur socle, au fond, derrière les gardiens
-    { id: 's1', nom: 'Crypte des Gardiens', type: 'libre', gardiens: true, plan: [
+    // -3 : le repaire des brigands, où l'on arrive par le trou des pilleurs ; la porte de fer vers le -2, l'escalier vers le -4
+    { id: 'b3', nom: 'Repaire des Brigands (-3)', type: 'libre', suivante: null, plan: [
+      "##############################################",
+      "#########α####################################",
+      "#########..###################################",
+      "#########..###################################",
+      "###...............####........b...b........###",
+      "###.v...........v.####..w.w.............w..###",
+      "###...............####.....................###",
+      "###...............####....................w###",
+      "###.........ć............ą.................###",
+      "###...k.......k............|.........|.....###",
+      "###...............####.....................###",
+      "###....ę..........####........œ............###",
+      "###...............####.........ppp.........###",
+      "###.v...........v.####............ß........###",
+      "###...............####..........ð..........###",
+      "##########..##########..................þ..###",
+      "##########..##########.....................###",
+      "##########..##########.....|.........|.....###",
+      "###n.....b......c...n#.....................###",
+      "###n.................#.....................###",
+      "###...pp..........æ........................###",
+      "###.....ñ...............w.................w###",
+      "###...........pp.....#.....................###",
+      "###..ø.......ç.......##################..#####",
+      "###..............b...##################..#####",
+      "###..................##################..#####",
+      "###c........c......nn##################..#####",
+      "####..#################################..#####",
+      "####..#################################..#####",
+      "####..#################################..#####",
+      "####S.#################################ε######",
+      "####D#########################################",
+    ] },
+    // -1 : le Monocle de Vérité sur son socle, au fond, gardé ; on y monte depuis le -2
+    { id: 's1', nom: 'Crypte des Gardiens (-1)', type: 'libre', gardiens: true, suivante: null, plan: [
       "##########################################",
-      "##########################N###############",
+      "##########################################",
       "##########################..##############",
       "##########################..##############",
       "##########################..##############",
       "###b..................................b###",
       "###.................K..........T.........#",
-      "###.....................................L#",
+      "###....................................ΛL#",
       "###....|....|....|....|....|....|........#",
       "#........................................#",
       "#h..........kk.............kk..........###",
@@ -219,12 +307,12 @@ export default {
       "######..##################################",
       "######..##################################",
       "######S.##################################",
-      "######D###################################",
+      "######δ###################################",
     ] },
-    // niveau -2 : le Pendentif Maudit sur le sarcophage du roi, au milieu de la chambre, sous l'œil des gardiens
-    { id: 's2', nom: 'Chambre du Sarcophage', type: 'libre', gardiens: true, plan: [
+    // -2 : le Pendentif Maudit sur le sarcophage du roi, gardé ; on y monte depuis le -3 par la porte de fer
+    { id: 's2', nom: 'Chambre du Sarcophage (-2)', type: 'libre', gardiens: true, suivante: null, plan: [
       "############################################",
-      "#####################N######################",
+      "#####################γ######################",
       "#####################..#####################",
       "#####################..#####################",
       "#####################..#####################",
@@ -237,7 +325,7 @@ export default {
       "##..##............|......|............##..##",
       "##..##................................##..##",
       "##..##...............P................##..##",
-      "##..##....................................##",
+      "##..##...............Γ....................##",
       "##....................................##..##",
       "##..##............|......|............##..##",
       "##..##................................##..##",
@@ -254,11 +342,94 @@ export default {
       "#####################..#####################",
       "#####################..#####################",
       "#####################S.#####################",
-      "#####################D######################",
+      "#####################β######################",
     ] },
-    { id: 's3', nom: 'Galerie des Pilleurs', type: 'combat', pnj: P3.lettres, plan: P3.plan },
-    { id: 's4', nom: 'Salle des Abîmes', type: 'combat', pnj: P4.lettres, plan: P4.plan },
-    { id: 's5', nom: 'Nef du Guet-apens', type: 'libre', ouvertPar: 'vol', plan: [
+    // -4 : le quartier des brigands, et ses trois salles
+    { id: 'b4', nom: 'Quartier des Brigands (-4)', type: 'libre', suivante: 's3', pendentif: true, plan: [
+      "####ζ#######################################",
+      "####..############################N#########",
+      "####S.############################..########",
+      "####..############################..########",
+      "####..############################..########",
+      "####..############################..########",
+      "####..############################..########",
+      "###n......b.....n.......b.....ww........n###",
+      "###......................................###",
+      "###......................................###",
+      "###.....|..........................|.....###",
+      "###......................................###",
+      "###.................ppp....................ι",
+      "###..................ł..............ź......#",
+      "η........................................###",
+      "#..............|............|............###",
+      "###......................................###",
+      "###.........ń............................###",
+      "###.........pp................ś..........###",
+      "###......................................###",
+      "###.....|................ğ.........|.....###",
+      "###...ż..................................###",
+      "###...................................w..###",
+      "###......................................###",
+      "###n.....................n..............n###",
+      "####################..######################",
+      "####################..######################",
+      "####################..######################",
+      "####################..######################",
+      "####################κ#######################",
+    ] },
+    { id: 'b4a', nom: 'Caverne d\'Ali Baba (-4)', type: 'libre', suivante: null, plan: [
+      "##################",
+      "##################",
+      "##ww.y.k..k.y.ww##",
+      "##..ı...........##",
+      "##......Ŵ......n##",
+      "##v...ŖŖ.ŖŖ.....##",
+      "##..............##",
+      "##............S..θ",
+      "##v..............#",
+      "##..............##",
+      "##.............n##",
+      "##w............w##",
+      "##################",
+      "##################",
+    ] },
+    { id: 'b4b', nom: 'Tripot (-4)', type: 'libre', suivante: null, plan: [
+      "######################",
+      "######################",
+      "##n.......b.......n###",
+      "##.................###",
+      "##....ŝ............###",
+      "##....pp.....pp....###",
+      "##............ŷ....###",
+      "λ....................#",
+      "#...|...........|....#",
+      "##........ẑ........###",
+      "##.......ppp.......###",
+      "##.ŧ........ŕ......###",
+      "##........S........###",
+      "##n...............n###",
+      "######################",
+      "######################",
+    ] },
+    { id: 'b4c', nom: 'Dortoir (-4)', type: 'libre', suivante: null, plan: [
+      "############μ#############",
+      "############..############",
+      "##.....................n##",
+      "##..........S...........##",
+      "##..ʙ...ʙ.......ʙ...ʙ...##",
+      "##...ǩ..................##",
+      "##e..................ǰ..##",
+      "##......................##",
+      "##...............ǯ......##",
+      "##..ʙ...ʙ.......ʙ...ʙ...##",
+      "##.....................h##",
+      "##n........c..c........n##",
+      "##########################",
+      "##########################",
+    ] },
+    { id: 's3', nom: 'Galerie des Pilleurs', pendentif: true, type: 'combat', pnj: P3.lettres, plan: P3.plan },
+    { id: 's4', nom: 'Salle des Abîmes', pendentif: true, type: 'combat', pnj: P4.lettres, plan: P4.plan },
+    { id: 's5', nom: 'Nef du Guet-apens', pendentif: true, type: 'libre', ouvertPar: 'vol', plan: [
       '##########################',
       '############N#############',
       '###########...############',
@@ -287,9 +458,9 @@ export default {
       '############S#############',
       '############D#############',
     ] },
-    { id: 's6', nom: 'Couloir Piégé', type: 'libre', poursuite: true, plan: G.piege1.plan },
-    { id: 's7', nom: 'Ossuaire', type: 'combat', poursuite: true, pnj: P7.lettres, plan: P7.plan },
-    { id: 's8', nom: 'Repaire des Pilleurs', type: 'groupe', pnj: ['C'], plan: [
+    { id: 's6', nom: 'Couloir Piégé', pendentif: true, type: 'libre', poursuite: true, plan: G.piege1.plan },
+    { id: 's7', nom: 'Ossuaire', pendentif: true, type: 'combat', poursuite: true, pnj: P7.lettres, plan: P7.plan },
+    { id: 's8', nom: 'Repaire des Pilleurs', pendentif: true, type: 'groupe', pnj: ['C'], plan: [
       '##############################',
       '##############N###############',
       '#############...##############',
@@ -309,7 +480,7 @@ export default {
       '##############S###############',
       '##############D###############',
     ] },
-    { id: 's9', nom: 'Escalier du Soleil', type: 'combat', pnj: P9.lettres, plan: P9.plan },
+    { id: 's9', nom: 'Escalier du Soleil', pendentif: true, type: 'combat', pnj: P9.lettres, plan: P9.plan },
     { id: 's10', nom: 'Autel du Soleil', type: 'libre', plan: [
       '#########################',
       '#########################',
@@ -329,9 +500,10 @@ export default {
     ] },
   ],
   journal: [
-    { id: 'entree', nom: 'L\'entrée des pilleurs', salle: 's1', but: 'L\'entrée officielle est gardée. Le ruinemaniac de la place connaît un autre accès.' },
-    { id: 'lunettes', nom: 'Les lunettes', salle: 's1', but: 'Volez les Lunettes de Vérité sans vous faire voir des gardiens : s\'ils vous voient, ils vous jettent dehors. Avec les lunettes, on voit où regardent les gardiens.' },
-    { id: 'pendentif', nom: 'Le pendentif', salle: 's2', but: 'Volez le Pendentif Maudit sur le sarcophage, toujours sans vous faire voir. Pour le poser ou le donner : Sac, Pendentif Maudit.' },
+    { id: 'entree', nom: 'L\'entrée des pilleurs', salle: 'b3', but: 'L\'entrée officielle est gardée. Le ruinemaniac de la place connaît un autre accès, qui mène au repaire des brigands (-3).' },
+    { id: 'cle', nom: 'La porte de fer', salle: 'b3', but: 'La porte de fer du -3 mène au -2. Il faut une clé : la Caverne d\'Ali Baba, au -4, en vend.' },
+    { id: 'reliques', nom: 'Les reliques', salle: 's2', but: 'Le Monocle de Vérité (-1) et le Pendentif Maudit (-2) sont gardés par des moines qui ne détournent jamais le regard. Approchez-vous sans être vus et endormez-les.' },
+    { id: 'descente', nom: 'La descente', salle: 'b4', but: 'Redescendez les reliques jusqu\'au -4 sans vous faire repérer. Le passage du fond du quartier mène plus bas.' },
     { id: 'vol', nom: 'Le vol', salle: 's5', but: 'Des pilleurs ont volé le pendentif. Rattrapez-les : leur repaire est plus haut, derrière les salles piégées.' },
     { id: 'autel', nom: 'L\'autel', salle: 's10', but: 'Portez le pendentif jusqu\'à l\'Autel du Soleil et posez-le dessus.' },
   ],

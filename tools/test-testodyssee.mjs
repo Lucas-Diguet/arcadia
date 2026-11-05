@@ -982,11 +982,11 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
 /* ---------------- Tombeau du Roi Sans Nom ---------------- */
 {
   const d = DONJONS.find((q) => q.id === 'tombeau'), cartes = construireSalles(d), M = Object.fromEntries(cartes.map((m) => [m.salle, m]));
-  ok(d.salles.length === 10 && d.joueurs.mode === 'exact' && d.joueurs.n === 3, 'tombeau : dix salles, à trois');
-  // à pied : murs, décor et pilleurs bloquent ; le gouffre aussi ; le chemin invisible porte (sans lui : bloqué)
-  const parcours = (m, chemin) => {
-    const P = m.donjon.plan, bloque = new Set([...P.decor.map(([, x, y]) => `${x},${y}`), ...Object.values(P.pnj).flat().map(([x, y]) => `${x},${y}`), ...(P.objets._ || []).map(([x, y]) => `${x},${y}`), ...(chemin ? [] : (P.objets[':'] || []).map(([x, y]) => `${x},${y}`)), ...['P', 'L', 'A'].flatMap((c) => (P.objets[c] || []).map(([x, y]) => `${x},${y}`))]);
-    const sol = new Set(P.sol.map(([x, y]) => `${x},${y}`)), vus = new Set([P.depart.join()]), f = [P.depart];
+  ok(d.joueurs.mode === 'exact' && d.joueurs.n === 3 && d.salles[0].id === 'b3', 'tombeau : à trois, et le trou des pilleurs mène au repaire (-3)');
+  // à pied : murs, décor, objets qui bloquent et personnages ; le gouffre aussi ; le chemin invisible porte (sans lui : bloqué)
+  const bloquees = (m, chemin) => { const P = m.donjon.plan; return new Set([...P.decor.map(([, x, y]) => `${x},${y}`), ...Object.values(P.pnj).flat().map(([x, y]) => `${x},${y}`), ...(P.objets._ || []).map(([x, y]) => `${x},${y}`), ...(chemin ? [] : (P.objets[':'] || []).map(([x, y]) => `${x},${y}`)), ...Object.entries(P.objets).filter(([c]) => !d.objets[c].sol).flatMap(([, l]) => l.map(([x, y]) => `${x},${y}`))]); };
+  const parcours = (m, chemin, dep = m.donjon.plan.depart) => {
+    const P = m.donjon.plan, bloque = bloquees(m, chemin), sol = new Set(P.sol.map(([x, y]) => `${x},${y}`)), vus = new Set([dep.join()]), f = [dep];
     while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = `${x + dx},${y + dy}`; if (vus.has(k) || !sol.has(k) || bloque.has(k)) continue; vus.add(k); f.push([x + dx, y + dy]); } }
     return vus;
   };
@@ -995,40 +995,54 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     const P = m.donjon.plan, v = parcours(m, true), s = d.salles.find((q) => q.carte === m.id);
     if (P.suivante) ok(v.has(`${P.suivante[0]},${P.suivante[1] + 1}`), `tombeau : ${s.nom}, on va de l'entrée à la sortie`);
     for (const [k, [p]] of Object.entries(P.pnj)) if (!d.pnj[k].scene) ok(pres(v, p), `tombeau : ${s.nom}, on atteint ${d.pnj[k].cls} ${d.pnj[k].nom}`);
-    for (const c of ['h', 'r', 'u', 'e', 'm', 'z', 'P', 'L', 'A', 'j', 'f']) for (const p of P.objets[c] || []) ok(v.has(p.join()) || pres(v, p), `tombeau : ${s.nom}, on atteint l'objet ${c}`);
-    // les salles à gouffre : sans le chemin invisible, on n'en sort pas
+    for (const [c, l] of Object.entries(P.objets)) if (['ramasser', 'sarcophage', 'socleLunettes', 'autel', 'retour', 'fuyards', 'lien'].includes(d.objets[c].type)) for (const p of l) ok(v.has(p.join()) || pres(v, p), `tombeau : ${s.nom}, on atteint ${c}`);
     if (P.objets[':']) ok(P.suivante && !parcours(m, false).has(`${P.suivante[0]},${P.suivante[1] + 1}`) && m.w * m.h >= 2400, `tombeau : ${s.nom} est grande, et son gouffre ne se traverse que par le chemin invisible`);
   }
-  // les salles des gardiens : on vole les lunettes, puis le pendentif, et on sort, sans jamais entrer dans un regard
-  // (un pas par quart de seconde, on peut attendre ; mêmes regards que le jeu : donjon/tombeau.js, champGardien)
+  // les passages entre étages vont deux à deux
+  const liens = Object.entries(d.objets).filter(([, o]) => o.type === 'lien');
+  ok(liens.every(([c, o]) => { const s = d.salles.find((q) => q.id === o.vers), e = d.objets[o.cible]; return s && M[s.id].donjon.plan.objets[o.cible] && e.cible === c && !!e.porte === !!o.porte && cartes.some((m) => m.donjon.plan.objets[c]); }), 'tombeau : chaque passage entre étages a son pendant de l\'autre côté');
+  ok(d.objets['α'].porte && M.b3.donjon.plan.objets['α'] && M.s2.donjon.plan.objets['β'], 'tombeau : la porte de fer relie le -3 et le -2');
+  ok(M.b4.donjon.versSuivante?.map === M.s3.id && Object.values(d.pnj).filter((p) => p.brigand).length >= 20 && Object.values(d.pnj).some((p) => p.boutique) && M.b4a.donjon.plan.pnj['Ŵ'], 'tombeau : le -4 (quartier, Caverne d\'Ali Baba, tripot, dortoir) mène plus bas ; des brigands partout');
+  ok(Object.values(d.pnj).filter((p) => p.brigand?.combat).length >= 4 && Object.values(d.pnj).filter((p) => p.brigand?.combat).every((p) => p.brigand.combat.every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 40)), 'tombeau : certains brigands proposent un combat');
+  // la boutique : des objets connus, chacun avec sa description, les objets louches avec la réplique du marchand
+  ok(d.boutique.length >= 20 && d.boutique.every((k) => ITEMS[k]?.price > 0 && ITEMS[k].desc) && d.boutique.filter((k) => OBJETS[k]).every((k) => OBJETS[k].replique) && ITEMS['cle-fragile'].lot === 2 && d.boutique.includes('seringue-somnifere'), 'tombeau : la Caverne d\'Ali Baba vend du classique, du louche et des antiquités');
+  // les salles des gardiens : un gardien par relique, au regard fixe ; on l'approche sans être vu, on l'endort, on prend la relique,
+  // et on ressort sans se faire voir (un pas par quart de seconde, on peut attendre ; même vue que le jeu : en ligne droite)
   {
     const DV = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
-    for (const [sid, but] of [['s1', 'L'], ['s2', 'P']]) {
-      const m = M[sid], P = m.donjon.plan, gardes = Object.entries(P.pnj).filter(([k]) => d.pnj[k].garde).map(([k, [[x, y]]]) => ({ x, y, G: d.pnj[k].garde }));
-      const occ = new Set(gardes.map((q) => `${q.x},${q.y}`)), bloque = (x, y) => { const t = m.get(x, y); return t === T.CAVEWALL || t === T.BLOCK || occ.has(`${x},${y}`); };
-      const champ = (q, dir) => { const [dx, dy] = DV[dir], out = []; for (let f = 1; f <= (q.G.portee || 6); f++) for (let l = -(f >> 1); l <= f >> 1; l++) { const x = q.x + dx * f - dy * l, y = q.y + dy * f + dx * l; if (bloque(x, y)) continue; const n = Math.max(Math.abs(x - q.x), Math.abs(y - q.y)); let vu = true; for (let k = 1; k < n; k++) if (bloque(Math.round(q.x + (x - q.x) * k / n), Math.round(q.y + (y - q.y) * k / n))) { vu = false; break; } if (vu) out.push(`${x},${y}`); } return out; };
+    for (const [sid, but, sortie] of [['s1', 'L', 'δ'], ['s2', 'P', 'β']]) {
+      const m = M[sid], P = m.donjon.plan, gardes = Object.entries(P.pnj).filter(([k]) => d.pnj[k].garde).map(([k, [[x, y]]]) => ({ k, x, y, G: d.pnj[k].garde }));
+      const rel = gardes.find((q) => q.G.relique), occ = new Set(gardes.map((q) => `${q.x},${q.y}`)), bl = bloquees(m, true);
+      const bloque = (x, y) => { const t = m.get(x, y); return t === T.CAVEWALL || t === T.BLOCK || occ.has(`${x},${y}`); };
+      const vue = (q, dir) => { const [dx, dy] = DV[dir], out = []; for (let k = 1; k <= (q.G.portee || 6); k++) { const x = q.x + dx * k, y = q.y + dy * k; if (bloque(x, y)) break; out.push(`${x},${y}`); } return out; };
       const cycle = 12 * gardes.reduce((a, q) => { const b = q.G.tourne.length; const pg = (u, v) => (v ? pg(v, u % v) : u); return a * b / pg(a, b); }, 1);
-      const vus = Array.from({ length: cycle }, (_, t) => new Set(gardes.flatMap((q) => champ(q, q.G.tourne[Math.floor((t + (q.G.decal || 0)) / 12) % q.G.tourne.length]))));
-      const [bx, by] = P.objets[but][0], [nx, ny] = P.suivante;
-      const atteint = ([x0, y0], cible) => { const dej = new Set([`${x0},${y0},0`]), f = [[x0, y0, 0]]; while (f.length) { const [x, y, t] = f.shift(); if (cible(x, y)) return true; const u = (t + 1) % cycle; for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = x + dx, b = y + dy, k = `${a},${b},${u}`; if (dej.has(k) || bloque(a, b) || !walkable(m.get(a, b)) || vus[u].has(`${a},${b}`) || vus[t].has(`${a},${b}`)) continue; dej.add(k); f.push([a, b, u]); } } return false; };
-      ok(gardes.length >= 5 && atteint(P.depart, (x, y) => x === bx && y === by + 1) && atteint([bx, by + 1], (x, y) => x === nx && y === ny + 1), `tombeau : ${m.name}, on vole ${but === 'L' ? 'les lunettes' : 'le pendentif'} et on sort sans se faire voir`);
-      // et il faut vraiment se cacher : sans attendre le bon moment, les regards couvrent du terrain
-      ok(vus.some((v) => v.size >= 40), `tombeau : ${m.name}, les gardiens surveillent une bonne partie de la salle`);
+      const vus = (sans) => Array.from({ length: cycle }, (_, t) => new Set(gardes.filter((q) => q !== sans).flatMap((q) => vue(q, q.G.tourne[Math.floor((t + (q.G.decal || 0)) / 12) % q.G.tourne.length]))));
+      const atteint = (dep, cible, V) => { const dej = new Set([`${dep[0]},${dep[1]},0`]), f = [[dep[0], dep[1], 0]]; while (f.length) { const [x, y, t] = f.shift(); if (cible(x, y)) return [x, y]; const u = (t + 1) % cycle; for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = x + dx, b = y + dy, k = `${a},${b},${u}`; if (dej.has(k) || bloque(a, b) || bl.has(`${a},${b}`) || !walkable(m.get(a, b)) || V[u].has(`${a},${b}`) || V[t].has(`${a},${b}`)) continue; dej.add(k); f.push([a, b, u]); } } return null; };
+      const [bx, by] = P.objets[but][0], [sx, sy] = P.objets[sortie][0], tous = vus(null), sansRel = vus(rel);
+      const aCote = (x0, y0) => (x, y) => Math.abs(x - x0) + Math.abs(y - y0) === 1;
+      const pret = atteint(P.depart, (x, y) => aCote(rel.x, rel.y)(x, y), tous);
+      const relique = pret && atteint(pret, aCote(bx, by), sansRel), dehors = relique && atteint(relique, aCote(sx, sy), tous);
+      ok(rel && rel.G.tourne.length === 1 && Math.abs(rel.x - bx) + Math.abs(rel.y - by) === 1, `tombeau : ${m.name}, un gardien au regard fixe veille sur la relique`);
+      ok(pret && relique && dehors, `tombeau : ${m.name}, on endort le gardien de la relique sans être vu, on la prend, et on ressort`);
+      ok(tous.some((v) => v.size >= 15) && gardes.length >= 6, `tombeau : ${m.name}, les gardiens surveillent la salle`);
     }
   }
   ok(M.s6.donjon.plan.objets['?']?.length >= 10 && M.s6.donjon.plan.objets.x?.length >= 10 && M.s7.donjon.plan.objets['?']?.length >= 10, 'tombeau : pièges visibles et cachés dans les salles de la poursuite');
-  ok(Object.values(d.pnj).every((p) => (p.equipe || []).every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 42)) && Object.values(d.pnj).filter((p) => p.pilleur).length >= 10, 'tombeau : des pilleurs partout, aux bons niveaux');
-  // les artefacts : un porteur à la fois, jamais les deux, on les pose, on les donne ; volé puis rendu ; posé sur l'autel
-  const e = nouvelEtat(d, { joueurs: 3 }), A = () => e.salles.s1.donnees.art;
+  ok(Object.values(d.pnj).filter((p) => p.pilleur).every((p) => p.equipe.every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 42)) && Object.values(d.pnj).filter((p) => p.pilleur).length >= 10, 'tombeau : des pilleurs plus bas, aux bons niveaux');
+  // les reliques : un porteur à la fois, jamais les deux, on les pose, on les donne ; rendues à leur place ; volé puis rendu ; posé sur l'autel
+  const e = nouvelEtat(d, { joueurs: 3 }), A = () => e.salles.b3.donnees.art;
   ok(appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok && !appliquer(d, e, '2', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : un seul porteur du pendentif');
-  ok(!appliquer(d, e, '1', { a: 'artefact', k: 'lun', op: 'prendre' }).ok && appliquer(d, e, '2', { a: 'artefact', k: 'lun', op: 'prendre' }).ok, 'tombeau : on ne porte pas le pendentif et les lunettes à la fois');
-  ok(!appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'donner', a2: '2' }).ok && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'donner', a2: '3' }).ok && A().pend.p === '3', 'tombeau : on donne le pendentif, mais pas au porteur des lunettes');
+  ok(!appliquer(d, e, '1', { a: 'artefact', k: 'lun', op: 'prendre' }).ok && appliquer(d, e, '2', { a: 'artefact', k: 'lun', op: 'prendre' }).ok, 'tombeau : on ne porte pas le pendentif et le monocle à la fois');
+  ok(!appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'donner', a2: '2' }).ok && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'donner', a2: '3' }).ok && A().pend.p === '3', 'tombeau : on donne le pendentif, mais pas au porteur du monocle');
   ok(appliquer(d, e, '3', { a: 'artefact', k: 'pend', op: 'poser', ou: ['x', 4, 5] }).ok && A().pend.p === null && A().pend.sol.join() === 'x,4,5' && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : on pose le pendentif, un autre le reprend');
+  ok(appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'origine' }).ok && !A().pend.p && !A().pend.sol && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : pris par un gardien, le pendentif retourne sur le sarcophage');
   appliquer(d, e, '2', { a: 'parti' });
-  ok(A().lun.p === null && A().lun.sol === null, 'tombeau : un joueur qui part : ses lunettes retournent sur leur socle');
+  ok(A().lun.p === null && A().lun.sol === null, 'tombeau : un joueur qui part : son monocle retourne sur son socle');
   ok(appliquer(d, e, '0', { a: 'artefact', k: 'pend', op: 'voler' }).ok && A().pend.vole && !A().pend.p && !appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : volé, le pendentif ne se prend plus');
   ok(appliquer(d, e, '0', { a: 'artefact', k: 'pend', op: 'rendre', ou: ['r', 1, 1] }).ok && !A().pend.vole && appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : rendu au repaire, on le reprend');
   ok(appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'fin' }).ok && A().pend.fin && !appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : posé sur l\'autel, il y reste');
+  // les gardiens endormis : dans la salle, partagés par le groupe
+  ok(appliquer(d, e, '1', { a: 'maj', salle: 's2', donnees: { dorment: ['Γ'] } }).ok && e.salles.s2.donnees.dorment.join() === 'Γ' && appliquer(d, e, '2', { a: 'maj', salle: 's2', donnees: { dorment: [] } }).ok && !e.salles.s2.donnees.dorment.length, 'tombeau : on endort un gardien, il se réveille quand quelqu\'un quitte la salle');
 }
 
 /* ---------------- Mont Givrécime ---------------- */

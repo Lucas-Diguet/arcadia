@@ -147,5 +147,112 @@ def cordon():
     for x in range(3, 14): im.putpixel((x, 6 + (1 if 5 <= x <= 10 else 0)), (170, 30, 40, 255)); im.putpixel((x, 7 + (1 if 5 <= x <= 10 else 0)), (120, 20, 30, 255))
     return contour(im)
 images['cordon'] = cordon()
+
+# ---------------- la Caverne d'Ali Baba : icônes du Sac (24 × 24) ----------------
+GRIS = [(70, 74, 82, 255), (120, 126, 136, 255), (180, 186, 196, 255), (230, 234, 240, 255)]
+BOIS = [(90, 56, 30, 255), (140, 92, 50, 255), (184, 132, 80, 255)]
+ROUGE = [(120, 20, 24, 255), (190, 40, 40, 255), (230, 110, 90, 255)]
+def ligne(im, x0, y0, x1, y1, c, e=1):
+    n = max(abs(x1 - x0), abs(y1 - y0), 1)
+    for k in range(n + 1):
+        x, y = round(x0 + (x1 - x0) * k / n), round(y0 + (y1 - y0) * k / n)
+        rect(im, x, y, e, e, c)
+def icone24(fn):
+    im = toile(24, 24); fn(im); return contour(im)
+def seringue(im):
+    ligne(im, 5, 18, 15, 8, GRIS[3], 3); ligne(im, 6, 18, 14, 10, (150, 220, 160, 255), 2)
+    ligne(im, 15, 8, 20, 3, GRIS[1]); ligne(im, 3, 20, 5, 18, GRIS[1], 2); rect(im, 13, 6, 3, 1, GRIS[1]); rect(im, 17, 9, 1, 3, GRIS[1])
+def batte(im):
+    ligne(im, 4, 20, 18, 6, BOIS[1], 3); ligne(im, 4, 20, 8, 16, BOIS[0], 3)
+    for x, y in ((12, 10), (15, 8), (17, 5), (14, 12), (18, 9)): rect(im, x, y - 2, 1, 2, GRIS[3]); rect(im, x - 2, y, 2, 1, GRIS[2])
+    ligne(im, 11, 9, 19, 5, GRIS[1])
+def couteau(im, grand=True):
+    if grand: ligne(im, 9, 16, 21, 3, GRIS[3], 3); ligne(im, 10, 16, 21, 4, GRIS[2]); ligne(im, 3, 21, 8, 16, BOIS[0], 3)
+    else:
+        ligne(im, 9, 15, 18, 6, GRIS[2], 2); ligne(im, 4, 20, 8, 16, BOIS[1], 3)
+        for x, y in ((13, 11), (16, 8), (11, 13)): rect(im, x, y, 2, 1, ROUGE[1])
+def pied_de_biche(im):
+    ligne(im, 5, 20, 17, 6, ROUGE[1], 2); ligne(im, 17, 6, 20, 5, ROUGE[1], 2); ligne(im, 20, 5, 21, 8, ROUGE[1], 2); ligne(im, 4, 20, 3, 18, ROUGE[1], 2)
+def cagoule(im):
+    for y in range(4, 21):
+        for x in range(5, 19):
+            if ((x - 11.5) / 7) ** 2 + ((y - 12) / 8.5) ** 2 <= 1: im.putpixel((x, y), (40, 40, 46, 255))
+    rect(im, 7, 10, 4, 3, (240, 210, 180, 255)); rect(im, 13, 10, 4, 3, (240, 210, 180, 255)); rect(im, 10, 15, 4, 2, (240, 210, 180, 255))
+    rect(im, 8, 11, 2, 1, (30, 30, 30, 255)); rect(im, 14, 11, 2, 1, (30, 30, 30, 255))
+def bougie(im):
+    rect(im, 8, 8, 8, 13, ROUGE[1]); rect(im, 9, 8, 2, 13, ROUGE[2]); rect(im, 8, 12, 8, 1, ROUGE[0]); rect(im, 8, 17, 8, 1, ROUGE[0])
+    ligne(im, 12, 8, 15, 3, (60, 60, 60, 255)); rect(im, 15, 1, 3, 3, OR[2]); im.putpixel((16, 2), OR[3])
+def carte(im):
+    rect(im, 3, 6, 18, 12, (240, 236, 220, 255)); rect(im, 3, 6, 18, 3, (60, 90, 160, 255)); rect(im, 5, 11, 5, 5, (190, 170, 140, 255))
+    for y in (12, 14, 16): rect(im, 12, y, 7, 1, (120, 120, 120, 255))
+    rect(im, 15, 14, 4, 3, ROUGE[1])
+def gants(im):
+    for ox in (2, 12):
+        rect(im, ox + 1, 10, 8, 9, (30, 30, 40, 255)); rect(im, ox + 1, 5, 2, 6, (30, 30, 40, 255)); rect(im, ox + 4, 4, 2, 7, (30, 30, 40, 255)); rect(im, ox + 7, 5, 2, 6, (30, 30, 40, 255)); rect(im, ox + 1, 18, 8, 2, (90, 30, 50, 255))
+def pelle(im):
+    ligne(im, 5, 19, 15, 9, BOIS[1], 2); rect(im, 3, 18, 4, 3, BOIS[0])
+    for y in range(3, 12):
+        for x in range(14, 22):
+            if abs(x - 18) + abs(y - 7) <= 4: im.putpixel((x, y), GRIS[2])
+def sac(im):
+    for y in range(6, 22):
+        for x in range(4, 20):
+            if ((x - 12) / 8) ** 2 + ((y - 14) / 8) ** 2 <= 1: im.putpixel((x, y), (190, 170, 120, 255))
+    rect(im, 9, 3, 6, 4, (160, 140, 90, 255)); rect(im, 11, 11, 2, 8, (60, 90, 40, 255)); rect(im, 9, 12, 6, 1, (60, 90, 40, 255)); rect(im, 9, 17, 6, 1, (60, 90, 40, 255))
+def moustache(im):
+    for x in range(3, 21):
+        h = 3 - abs(x - 12) // 3
+        if h > 0: rect(im, x, 12 - (1 if abs(x - 12) > 6 else 0), 1, h + 1, (50, 34, 24, 255))
+    rect(im, 2, 10, 2, 2, (50, 34, 24, 255)); rect(im, 20, 10, 2, 2, (50, 34, 24, 255))
+def scarabee(im):
+    for y in range(5, 21):
+        for x in range(6, 18):
+            if ((x - 11.5) / 6) ** 2 + ((y - 13) / 8) ** 2 <= 1: im.putpixel((x, y), OR[1] if x < 12 else OR[2])
+    rect(im, 11, 8, 1, 12, OR[0]); rect(im, 9, 3, 6, 3, OR[1])
+    for y in (9, 13, 17): rect(im, 3, y, 3, 1, OR[0]); rect(im, 18, y, 3, 1, OR[0])
+def masque(im):
+    for y in range(3, 22):
+        for x in range(4, 20):
+            if ((x - 12) / 8) ** 2 + ((y - 11) / 9) ** 2 <= 1: im.putpixel((x, y), OR[2])
+    for y in range(3, 10): rect(im, 3, y, 2, 1, (40, 70, 160, 255)); rect(im, 19, y, 2, 1, (40, 70, 160, 255))
+    rect(im, 8, 9, 3, 2, (20, 20, 30, 255)); rect(im, 13, 9, 3, 2, (20, 20, 30, 255)); rect(im, 11, 12, 2, 4, OR[1]); rect(im, 10, 17, 4, 1, ROUGE[0]); rect(im, 11, 19, 2, 3, OR[1])
+def vase(im):
+    for y in range(8, 22):
+        w = 6 - abs(y - 15) // 2
+        rect(im, 12 - w, y, 2 * w, 1, (200, 190, 160, 255))
+    rect(im, 8, 3, 8, 5, (70, 60, 50, 255)); rect(im, 10, 2, 4, 2, (70, 60, 50, 255)); rect(im, 9, 4, 1, 1, OR[2])
+    for y in (12, 16): rect(im, 7, y, 10, 1, (60, 90, 140, 255))
+def papyrus(im):
+    rect(im, 4, 5, 16, 14, (230, 210, 160, 255)); rect(im, 3, 4, 2, 16, (190, 160, 110, 255)); rect(im, 19, 4, 2, 16, (190, 160, 110, 255))
+    for k in range(9):
+        x, y = 7 + (k % 3) * 4, 7 + (k // 3) * 4
+        rect(im, x, y, 2, 2, (70, 50, 30, 255))
+def chat(im):
+    for y in range(5, 22):
+        for x in range(7, 17):
+            if ((x - 12) / 5) ** 2 + ((y - 14) / 8) ** 2 <= 1: im.putpixel((x, y), (220, 210, 180, 255))
+    rect(im, 8, 3, 2, 3, (220, 210, 180, 255)); rect(im, 14, 3, 2, 3, (220, 210, 180, 255))
+    for y in range(8, 21, 3): rect(im, 7, y, 10, 1, (170, 150, 110, 255))
+    rect(im, 10, 7, 1, 1, (30, 30, 30, 255)); rect(im, 13, 7, 1, 1, (30, 30, 30, 255))
+def sceptre(im):
+    ligne(im, 6, 21, 16, 5, OR[1], 2); ligne(im, 7, 21, 16, 6, (40, 70, 160, 255))
+    rect(im, 14, 2, 6, 4, OR[2]); rect(im, 15, 3, 3, 2, (40, 70, 160, 255))
+def cle_fragile(im):
+    rect(im, 3, 9, 6, 6, GRIS[2]); rect(im, 4, 10, 4, 4, (0, 0, 0, 0)); rect(im, 9, 11, 11, 2, GRIS[2])
+    for x in (12, 15, 18): im.putpixel((x, 11), (40, 40, 40, 255))
+    rect(im, 16, 13, 1, 3, GRIS[2]); rect(im, 19, 13, 1, 2, GRIS[2])
+for k, fn in {'seringue': seringue, 'batte': batte, 'couteau': lambda im: couteau(im, True), 'vieux_couteau': lambda im: couteau(im, False),
+              'pied_de_biche': pied_de_biche, 'cagoule': cagoule, 'bougie': bougie, 'carte': carte, 'gants': gants, 'pelle': pelle,
+              'sac': sac, 'moustache': moustache, 'scarabee': scarabee, 'masque': masque, 'vase': vase, 'papyrus': papyrus,
+              'chat': chat, 'sceptre': sceptre, 'cle_fragile': cle_fragile}.items():
+    images['objet_' + k] = icone24(fn)
+# « Zzz » au-dessus d'un gardien endormi
+def zzz():
+    im = toile(16, 14)
+    for ox, oy, t in ((1, 8, 4), (6, 4, 4), (11, 0, 4)):
+        rect(im, ox, oy, t, 1, (250, 250, 255, 255)); ligne(im, ox + t - 1, oy + 1, ox, oy + t - 2, (250, 250, 255, 255)); rect(im, ox, oy + t - 1, t, 1, (250, 250, 255, 255))
+    return contour(im)
+images['zzz'] = zzz()
+
 for k, im in images.items(): im.save(os.path.join(DOSSIER, k + '.png'))
 print('écrit', len(images), 'images dans', DOSSIER)
