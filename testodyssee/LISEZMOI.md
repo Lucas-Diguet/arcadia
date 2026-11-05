@@ -444,6 +444,22 @@ décompilation : ses étages sont recopiés à la main dans `tools/rv-heartgold.
 perspective, donc à une case ou deux près), et ses événements (échelles, objets, rochers, Silver) viennent de
 pokeheartgold. La fusion suit l'ordre des jeux : Vert Feuille, HeartGold, Émeraude, Platine.
 
+### Le Mont Givrécime
+
+Une montagne enneigée pour l'aventure solo, pas un donjon : ni groupe, ni boss, ni état partagé. Dix grandes salles
+(`js/mont/plans.js`, dessinées par `python3 tools/mont.py [graine]`, ne pas modifier à la main), tantôt dehors (pentes,
+corniches, sommet : neige, sapins, rochers, herbes enneigées, falaises en plateaux de roche), tantôt dedans (grottes de
+glace : stalagmites, lacs à surfer, rochers fissurés, rochers à pousser). Dans chaque salle, des replats ou des cavités
+reliés par des sentiers et des galeries qui tournent, des boucles, des culs-de-sac et des tunnels avec un objet au fond,
+des rebords qu'on ne passe qu'en descendant (dehors), deux ou trois dresseurs.
+
+Les salles se relient par `LIENS` (`[salle basse, salle haute, sorte, marque]`) : `bord` (sentier qui sort par le bord
+de la carte), `bouche` (entrée de grotte dans une falaise, sortie au bord de la grotte), `echelle` (d'une grotte à
+l'autre). La même marque (0 à 9, puis a à d) est posée dans les deux salles. Plusieurs chemins mènent au sommet :
+`test-testodyssee.mjs` vérifie qu'en retirant n'importe quel lien, il reste atteignable, et que depuis chaque arrivée
+on atteint toutes les sorties, les objets et les dresseurs. Pokémon sauvages, objets et dresseurs de chaque salle :
+`js/mont/mont.js`. On y entre par la liste du labo, ou `?lieu=mont:0`.
+
 ## Passer un lieu dans Odyssée
 
 La carte construite par `plan.js` est une carte d'Odyssée ordinaire (`GameMap`). Pour l'intégrer : l'ajouter dans

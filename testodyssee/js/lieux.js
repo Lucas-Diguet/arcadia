@@ -5,6 +5,7 @@ import { nearestWalkable } from '../../odyssee/js/world/mapgen.js';
 import { texteJoueurs } from './donjon/plan.js';
 import { ILE, ARRIVEE } from './ile/modele.js';
 import { construireRoutes } from './rv/routes.js';
+import { construireMont } from './mont/mont.js';
 
 const libre = (m, x, y) => walkable(m.get(x, y)) && ![T.DOOR, T.CAVEDOOR, T.MAT, T.STAIRS].includes(m.get(x, y)) && !m.warpAt(x, y) && !m.npcs.some((n) => n.x === x && n.y === y);
 
@@ -30,6 +31,8 @@ export function listerLieux(world, donjons) {
   out.labo.push({ nom: 'Mon île', note: 'île privée, à construire', map: ILE, x: ARRIVEE[0], y: ARRIVEE[1], dir: 'up', equipe: 'milieu', ile: true });
   // les Routes Victoire des jeux d'origine, seules puis à la suite
   out.labo.push(...(world.rvLieux ||= construireRoutes(world.maps)));
+  // le Mont Givrécime : dix salles à gravir, dedans et dehors (aventure solo)
+  out.labo.push(world.montLieu ||= construireMont(world.maps));
   for (const t of Object.values(world.towns)) {
     const [x, y] = t.centerDoor ? pres(W, t.centerDoor[0], t.centerDoor[1] + 1) : pres(W, t.x + (t.w >> 1), t.y + (t.h >> 1));
     out.villes.push({ nom: t.name, map: 'monde', x, y, dir: 'down' });
@@ -41,7 +44,7 @@ export function listerLieux(world, donjons) {
     out.routes.push({ nom, map: 'monde', x, y, dir: 'down' });
   }
   for (const m of Object.values(world.maps)) {
-    if (m.id === 'monde' || m.donjon || m.rv || !(m.floor === 'cave' || m.outdoor)) continue;
+    if (m.id === 'monde' || m.donjon || m.rv || m.mont || !(m.floor === 'cave' || m.outdoor)) continue;
     const w = [...m.warps.keys()][0];
     const [wx, wy] = w ? w.split(',').map(Number) : [m.w >> 1, m.h >> 1];
     const [x, y] = pres(m, wx, wy);

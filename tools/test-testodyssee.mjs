@@ -18,6 +18,8 @@ import { SPECIES } from '../odyssee/js/data/species.js';
 import { ITEMS } from '../odyssee/js/core/items.js';
 import { buildWorld } from '../odyssee/js/world/region.js';
 import { listerLieux } from '../testodyssee/js/lieux.js';
+import { construireMont, idSalle } from '../testodyssee/js/mont/mont.js';
+import { SALLES as MONT_SALLES, LIENS as MONT_LIENS } from '../testodyssee/js/mont/plans.js';
 import * as ILE_M from '../testodyssee/js/ile/modele.js';
 import * as USINE_M from '../testodyssee/js/ile/usine.js';
 const { construire: construireIle, nouvelleIle } = ILE_M;
@@ -901,7 +903,7 @@ const world = buildWorld();
 for (const dd of DONJONS) { const cs = dd.plan ? [construireCarte(dd)] : construireSalles(dd); for (const c of cs) world.maps[c.id] = c; const e = relierExterieur(dd, cs[0]); if (e) world.maps[e.id] = e; }
 construireIle(world.maps, nouvelleIle('Test'));
 const lieux = listerLieux(world, DONJONS);
-ok(lieux.labo.length === DONJONS.length + 1 + ROUTES.length + 1 && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
+ok(lieux.labo.length === DONJONS.length + 1 + ROUTES.length + 1 + 1 && lieux.labo.some((l) => l.nom === 'Mont Givrécime') && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
 for (const l of Object.values(lieux).flat()) {
   const m = world.maps[l.map];
   ok(m && walkable(m.get(l.x, l.y)) && !m.warpAt(l.x, l.y), `on apparaît sur une case libre : ${l.nom}`);
@@ -973,6 +975,48 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   ok(maps['rv:vf:VictoryRoad_3F'].rv.trous.length === 1 && RV.vf.etages[1].rochers.some((r) => r[2]), 'routes victoire : le trou du 3F et le rocher qui tombe au 2F');
   ok(maps['rv:em:VictoryRoad_B2F'].surf && maps['rv:em:VictoryRoad_B2F'].rv.cascades.size > 0, 'routes victoire : l\'eau et les cascades du SS2 d\'Émeraude');
   ok(OBJETS['ct50-rv'] && refusCt('ct50-rv', 6) === 'Ne peut pas l\'apprendre', 'routes victoire : Surchauffe reste réservée (CT50 de Vert Feuille)');
+}
+
+/* ---------------- Mont Givrécime ---------------- */
+{
+  const maps = {}, lieu = construireMont(maps), salles = MONT_SALLES.map((_, i) => maps[idSalle(i)]);
+  ok(salles.length === 10 && salles.filter((m) => m.outdoor).length >= 4 && salles.filter((m) => !m.outdoor).length >= 4, 'mont : dix salles, dehors et dedans');
+  ok(walkable(maps[lieu.map].get(lieu.x, lieu.y)), 'mont : on arrive à pied au bas du mont');
+  // on marche comme dans le jeu : rebords en descendant seulement, eau en surfant, rochers fissurés cassés ; pas à travers les dresseurs
+  const passe = (m, x, y) => { const t = m.get(x, y); return (walkable(t) || t === T.WATER || t === T.SMASH || t === T.DOOR || t === T.CAVEDOOR) && !m.npcs.some((n) => n.x === x && n.y === y) && !(t === T.LEDGE); };
+  const parcours = (m, x0, y0) => {
+    const vus = new Set([`${x0},${y0}`]), file = [[x0, y0]];
+    while (file.length) {
+      const [x, y] = file.pop();
+      for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+        let tx = x + dx, ty = y + dy;
+        if (m.get(tx, ty) === T.LEDGE) { if (dy !== 1) continue; ty++; }
+        if (tx < 0 || ty < 0 || tx >= m.w || ty >= m.h || !passe(m, tx, ty) || vus.has(`${tx},${ty}`)) continue;
+        vus.add(`${tx},${ty}`); file.push([tx, ty]);
+      }
+    }
+    return vus;
+  };
+  const aCote4 = (v, x, y) => [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => v.has(`${x + dx},${y + dy}`));
+  // chaque sortie mène à une case où l'on tient, et revient
+  const arrivees = salles.map(() => []);
+  for (const m of salles) for (const [k, w] of m.warps) {
+    const d = maps[w.map];
+    ok(d && passe(d, w.x, w.y) && [...d.warps.values()].some((q) => q.map === m.id), `mont : la sortie ${k} de ${m.name} mène à ${d?.name} et on peut en revenir`);
+    if (d) arrivees[salles.indexOf(d)].push([w.x, w.y]);
+  }
+  salles.forEach((m, i) => {
+    const deps = i === 0 ? [[lieu.x, lieu.y], ...arrivees[i]] : arrivees[i];
+    const sorties = [...m.warps.keys()].map((k) => k.split(',').map(Number));
+    for (const [x, y] of deps) {
+      const v = parcours(m, x, y);
+      ok(sorties.every(([sx, sy]) => v.has(`${sx},${sy}`)) && m.items.every((it) => v.has(`${it.x},${it.y}`)) && m.npcs.every((n) => aCote4(v, n.x, n.y)), `mont : dans ${m.name}, depuis ${x},${y} on atteint toutes les sorties, les objets et les dresseurs`);
+    }
+    ok(m.w * m.h >= 2000 && m.items.length >= 5 && m.npcs.filter((n) => n.trainer).length >= 2 && m.warps.size >= 2, `mont : ${m.name} est grande, avec des objets, des dresseurs et au moins deux sorties`);
+  });
+  // plusieurs chemins mènent au sommet : en retirant n'importe quel lien, il reste atteignable
+  const atteint = (sauf) => { const vus = new Set([0]), f = [0]; while (f.length) { const a = f.pop(); for (const [k, [x, y, , c]] of MONT_LIENS.entries()) { if (k === sauf) continue; const b = x === a ? y : y === a ? x : null; if (b != null && !vus.has(b)) { vus.add(b); f.push(b); } } } return vus.has(9); };
+  ok(MONT_LIENS.every((_, k) => atteint(k)), 'mont : plusieurs chemins mènent au sommet');
 }
 
 console.log(fails ? `${fails} échec(s) sur ${checks} vérifications` : `TestOdyssée : ${checks} vérifications, tout est bon.`);

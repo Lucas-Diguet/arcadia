@@ -23,13 +23,14 @@ export function brancherRendu() {
   // barrières des grottes : le sol de grotte dessous
   Sol.prototype.pump = function () {
     const m = this.map, nus = m?.deco ? new Set(m.deco.filter((d) => SOUS.has(d.k)).map((d) => d.x + ',' + d.y)) : null;
-    const lave = m?.biome === 'magma' && !m.outdoor, grotte = m && !m.outdoor && m.floor === 'cave';
-    if (!nus?.size && !lave && !grotte) return pompe.call(this);
+    const lave = m?.biome === 'magma' && !m.outdoor, grotte = m && !m.outdoor && m.floor === 'cave', neige = m?.mont && m.outdoor;
+    if (!nus?.size && !lave && !grotte && !neige) return pompe.call(this);
     m.get = function (x, y) {
       if (nus?.has(x + ',' + y)) return T.FLOOR;
       const t = Object.getPrototypeOf(this).get.call(this, x, y);
       if (lave && t === T.BRIDGE) return T.LAVA;
       if (grotte && (t === T.BARRIER_R || t === T.BARRIER_B)) return T.CAVE;
+      if (neige && t === T.LEDGE) return T.LAVA;   // le jeu dessine lui-même le rebord (une marche de roche)
       return t;
     };
     try { return pompe.call(this); } finally { delete m.get; }
@@ -50,6 +51,8 @@ export function brancherRendu() {
       }
       if (t === T.LEDGE || t === T.LEDGE_E || t === T.LEDGE_W || m.rv.sol[y]?.[x] === 'e') return { c: A.cavestairs };
     }
+    // Mont Givrécime : les rebords dehors sont des marches de roche dans la neige, pas des talus d'herbe
+    if (m.mont && m.outdoor && m.get(x, y) === T.LEDGE) return { c: A.cavestairs };
     // pont sur la lave (chemins du Temple) : la lave dessous, les planches en décalque
     if (m.biome === 'magma' && !m.outdoor && m.get(x, y) === T.BRIDGE) return { anim: this.N.cells.lava };
     const st = STYLES[m.style];

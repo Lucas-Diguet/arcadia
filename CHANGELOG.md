@@ -1,5 +1,12 @@
 # Journal des versions — Arcadia
 
+## 4.07 — 5 novembre 2026
+- **TestOdyssée** — Nouveau lieu pour l'aventure solo : le Mont Givrécime, une montagne enneigée de dix grandes salles qu'on gravit tantôt dedans, tantôt dehors.
+  - Dehors : pentes et corniches enneigées, falaises, sapins, herbes enneigées et rebords à sauter ; dedans : grottes de glace, stalagmites, lacs à traverser en surfant, rochers à casser ou à pousser.
+  - Rien n'est en ligne droite : sentiers et galeries qui tournent, boucles, culs-de-sac avec un objet au fond. On passe d'une grotte à la pente par des entrées dans la falaise, d'une grotte à l'autre par des échelles.
+  - Plusieurs chemins mènent au Sommet du Mont Givrécime.
+  - Pokémon sauvages de glace et de roche (niveaux 44 à 52) et vingt-neuf dresseurs.
+
 ## 4.06 — 5 novembre 2026
 - **TestOdyssée** — Pyramide de l'Ascension : les grottes de chaque porte (Sables, Murmures, Tombeaux) sont bien plus grandes et ne vont plus tout droit.
   - Des cavités reliées par des galeries qui tournent, des boucles, des culs-de-sac et des tunnels avec un objet au fond : il faut chercher la sortie.
