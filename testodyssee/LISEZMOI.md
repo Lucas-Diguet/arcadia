@@ -447,21 +447,25 @@ pokeheartgold. La fusion suit l'ordre des jeux : Vert Feuille, HeartGold, Émera
 ### Le Tombeau du Roi Sans Nom
 
 À trois exactement (`js/donjons/tombeau.js`, mécaniques `js/donjon/tombeau.js`), en style `egypte` (sable, murs de
-grès : `js/rendu.js`).
+grès : `js/rendu.js`). Les salles sont sombres : une toile multipliée par-dessus l'image (`eclairerTombeau`) donne une
+pénombre brun-orangé, éclaircie autour des torches (`Ϯ`, posées le long des murs du haut par `torches()`), des
+braseros, des lanternes et des joueurs.
 
 Dehors, la Vallée des Rois Oubliés : la façade (`entree_tombeau`) et sa porte officielle sont fermées, derrière un
-cordon et trois gardiens ; des touristes (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac donne la Clé du
-Ruinemaniac (et 5 000 ₽) ; la roche fissurée du bord droit (`porte`, parmi `roches` ; les autres ne disent rien) laisse
-place, avec la clé, à une échelle : l'entrée des pilleurs (`trou` dans la salle s1, partagé par le groupe). `devant` :
+cordon et trois gardiens ; des touristes (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac explique le plan (les deux
+reliques du -1 et du -2 ouvrent la dernière salle ; il demande le trésor contre une récompense) et donne la Clé de Fer
+(`cle-ruinemaniac`), la Carte du Tombeau (`carte-tombeau`, du -1 au -4 : liste `CARTE` de `donjon/tombeau.js`) et
+5 000 ₽ ; la roche fissurée du bord droit (`porte`, parmi `roches` ; les autres ne disent rien) se pousse avec Force et
+laisse place à une échelle : l'entrée des pilleurs (`trou` dans la salle s1, partagé par le groupe). `devant` :
 où les gardiens jettent ceux qu'ils attrapent ; `arrivee` : où l'on apparaît ; `panneau` : le panneau d'entrée.
 
 Étages (les salles se relient par des passages `lien` : `vers` la salle, `cible` la marque d'en face ; `porte` : la
-porte de fer, qui demande une Clé Fragile à chaque passage, la clé se brise) :
-- -3, Repaire des Brigands (`b3`, la première salle : on y arrive par le trou) ; -4, Quartier des Brigands (`b4`) et
-  ses salles : la Caverne d'Ali Baba (`b4a`), le tripot (`b4b`), le dortoir (`b4c`). Les brigands (`brigand`) n'attaquent
+porte de fer, qui s'ouvre avec la Clé de Fer, dans les deux sens) :
+- -3, Repaire des Brigands (`b3`, la première salle : on y arrive par le trou) et ses salles : la Caverne d'Ali Baba
+  (`b4a`), le tripot (`b4b`), le dortoir (`b4c`). Les brigands (`brigand`) n'attaquent
   jamais ; ceux qui ont un `combat` le proposent, autant de fois qu'on veut, et soignent après. Le passage du fond
-  du quartier mène au -5 (la suite : les salles des pilleurs, où le pendentif est exigé pour sortir, `pendentif`).
-- Ali Baba (`boutique`) vend la liste `boutique` du donjon : le classique, la Clé Fragile (par deux, `lot`), et des
+  du repaire mène au -4 (la suite : les salles des pilleurs, où le pendentif est exigé pour sortir, `pendentif`).
+- Ali Baba (`boutique`) vend la liste `boutique` du donjon : le classique et des
   objets « parfaitement légaux » ou des antiquités (`contenu.js` : `desc`, l'alibi ; `replique`, ce que dit le
   marchand à l'achat). Seule la Seringue Somnifère sert : elle endort un gardien (une seringue par gardien).
 - -2, Chambre du Sarcophage (`s2`, par la porte de fer) et -1, Crypte des Gardiens (`s1`) : des moines gardiens

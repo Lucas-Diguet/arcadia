@@ -237,15 +237,33 @@ def chat(im):
 def sceptre(im):
     ligne(im, 6, 21, 16, 5, OR[1], 2); ligne(im, 7, 21, 16, 6, (40, 70, 160, 255))
     rect(im, 14, 2, 6, 4, OR[2]); rect(im, 15, 3, 3, 2, (40, 70, 160, 255))
-def cle_fragile(im):
-    rect(im, 3, 9, 6, 6, GRIS[2]); rect(im, 4, 10, 4, 4, (0, 0, 0, 0)); rect(im, 9, 11, 11, 2, GRIS[2])
-    for x in (12, 15, 18): im.putpixel((x, 11), (40, 40, 40, 255))
-    rect(im, 16, 13, 1, 3, GRIS[2]); rect(im, 19, 13, 1, 2, GRIS[2])
+def cle_fer(im):
+    F = [(40, 40, 46, 255), (78, 80, 90, 255), (120, 124, 134, 255)]
+    rect(im, 2, 7, 9, 9, F[1]); rect(im, 4, 9, 5, 5, (0, 0, 0, 0)); rect(im, 2, 7, 9, 1, F[2])
+    rect(im, 11, 10, 11, 3, F[1]); rect(im, 11, 10, 11, 1, F[2])
+    rect(im, 15, 13, 2, 4, F[1]); rect(im, 19, 13, 2, 5, F[1]); rect(im, 19, 17, 2, 1, F[0])
+def plan_tombeau(im):
+    P = [(150, 110, 60, 255), (214, 180, 120, 255), (236, 210, 156, 255)]
+    rect(im, 3, 3, 18, 18, P[1]); rect(im, 3, 3, 18, 1, P[2]); rect(im, 3, 20, 18, 1, P[0]); rect(im, 3, 3, 1, 18, P[0]); rect(im, 20, 3, 1, 18, P[0])
+    E = (90, 50, 26, 255)
+    for y, x0, w in ((6, 6, 12), (10, 8, 9), (14, 5, 11), (18, 9, 8)): rect(im, x0, y, w, 2, E)
+    for x, y in ((12, 8), (10, 12), (14, 16)): rect(im, x, y, 1, 2, E)
+    rect(im, 16, 18, 2, 2, (170, 30, 30, 255))
 for k, fn in {'seringue': seringue, 'batte': batte, 'couteau': lambda im: couteau(im, True), 'vieux_couteau': lambda im: couteau(im, False),
               'pied_de_biche': pied_de_biche, 'cagoule': cagoule, 'bougie': bougie, 'carte': carte, 'gants': gants, 'pelle': pelle,
               'sac': sac, 'moustache': moustache, 'scarabee': scarabee, 'masque': masque, 'vase': vase, 'papyrus': papyrus,
-              'chat': chat, 'sceptre': sceptre, 'cle_fragile': cle_fragile}.items():
+              'chat': chat, 'sceptre': sceptre, 'cle_fer': cle_fer, 'plan_tombeau': plan_tombeau}.items():
     images['objet_' + k] = icone24(fn)
+# torche sur pied : un poteau de bois, une coupelle de bronze, une flamme
+def torche():
+    im = toile(12, 30)
+    rect(im, 5, 10, 2, 19, BOIS[1]); rect(im, 5, 10, 1, 19, BOIS[2]); rect(im, 3, 28, 6, 2, BOIS[0])
+    rect(im, 2, 8, 8, 3, OR[0]); rect(im, 2, 8, 8, 1, OR[1])
+    for y, x0, w, c in ((7, 3, 6, (200, 70, 20, 255)), (6, 3, 6, (230, 110, 30, 255)), (5, 4, 4, (245, 150, 40, 255)), (4, 4, 4, (250, 190, 70, 255)),
+                        (3, 5, 2, (255, 220, 120, 255)), (2, 5, 2, (255, 236, 170, 255)), (1, 6, 1, (255, 245, 200, 255))):
+        rect(im, x0, y, w, 1, c)
+    return contour(im)
+images['torche'] = torche()
 # « Zzz » au-dessus d'un gardien endormi
 def zzz():
     im = toile(16, 14)

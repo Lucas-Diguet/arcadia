@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 4.11 — 5 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : une histoire plus cohérente, et des salles dans la pénombre.
+  - Le ruinemaniac explique tout : la dernière salle du tombeau ne s'ouvre qu'avec deux reliques, le Monocle de Vérité au -1 et le Pendentif Maudit au -2. Il ne propose plus de partager : il demande qu'on lui rapporte le trésor, contre une récompense qui va plaire.
+  - Il donne la Clé de Fer de la porte entre le -3 et le -2 (elle sert autant de fois qu'on veut) et une carte du tombeau, du -1 au -4, à consulter depuis le Sac.
+  - La roche fissurée n'a plus de serrure : on la pousse avec Force pour découvrir le trou.
+  - Un seul étage de brigands, le -3, avec la Caverne d'Ali Baba, le tripot et le dortoir. Ali Baba ne vend plus de clés.
+  - Les moines qui gardent les reliques ne se tournent plus vers toi quand tu leur parles.
+  - Toutes les salles sont sombres, d'un orange de vieille pierre : on voit bien près des torches, de moins en moins en s'en éloignant.
+
 ## 4.10 — 5 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : le repaire des brigands, la Caverne d'Ali Baba, et des gardiens à endormir.
   - L'entrée des pilleurs est sous la roche fissurée du bord droit de la place ; les autres roches ne disent rien. Le ruinemaniac donne aussi un peu d'argent pour les frais.

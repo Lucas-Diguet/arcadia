@@ -17,7 +17,11 @@ import { ASSETS } from '../../../odyssee/js/assets.js';
 import { el, esc } from '../../../odyssee/js/ui/ui.js';
 import { DISTANCE, PERIODE } from '../donjons/tombeau.js';
 import { dessinerZones, dessinerZzz } from '../rendu.js';
+import { HPX } from '../../../odyssee/js/render/world3d.js';
 import { artVide, prisPar, battu } from './etat.js';
+
+/** les salles que montre la carte du ruinemaniac (du -1 au -4 ; plus tard, un peu plus bas) */
+const CARTE = ['s1', 's2', 'b3', 'b4a', 'b4b', 'b4c', 's3'];
 
 const cle = (x, y) => x + ',' + y;
 const estTombeau = (d) => !!d?.tombeau;
@@ -68,7 +72,7 @@ export const Tombeau = {
     // gardiens (leur parler : les endormir, ou se faire prendre), brigands (bavards, certains se battent), le marchand
     for (const n of m.npcs) {
       const k = Object.keys(d.pnj).find((q) => `${d.id}:${d.pnj[q].id}` === n.id), P = k && d.pnj[k]; if (!P) continue;
-      if (P.garde) { n.talk = () => this.parlerGardien(d, m, k); n.when = () => true; }
+      if (P.garde) { n.talk = (api, vivant) => { if (vivant) vivant.dir = this.regardGardien(P); return this.parlerGardien(d, m, k); }; n.when = () => true; }
       else if (P.brigand) { n.talk = () => this.brigand(d, k); n.when = () => true; }
       else if (P.boutique) { n.talk = () => this.boutique(d); n.when = () => true; }
     }
@@ -91,6 +95,7 @@ export const Tombeau = {
     }
     // les artefacts se posent et se donnent depuis le Sac
     for (const k of ['pend', 'lun']) if (ITEMS[ITEM[k]]) ITEMS[ITEM[k]].use = async () => { await this.menuArtefact(d, k); return true; };
+    if (ITEMS['carte-tombeau']) ITEMS['carte-tombeau'].use = async () => { await this.carteTombeau(d); return true; };
   },
 
   /** le décor suit l'état : sarcophage, socle, artefacts posés, chemin révélé ; le Sac suit qui porte quoi */
@@ -171,11 +176,11 @@ export const Tombeau = {
     if (A[k].p) { await ui.say(`${this.nomDe(A[k].p)} les a déjà.`); return; }
     const non = this.peutPrendre(d, k); if (non) { await ui.say(non); return; }
     if (intro) await ui.say(intro);
-    if (!(await ui.yesNo(k === 'pend' ? 'Prendre le Pendentif Maudit ? Il rongera tes Pokémon à chaque pas.' : 'Prendre le Monocle de Vérité ?'))) return;
+    if (!(await ui.yesNo(k === 'pend' ? 'Prendre le Pendentif Maudit ?' : 'Prendre le Monocle de Vérité ?'))) return;
     const r = await this.demande(d.id, { a: 'artefact', k, op: 'prendre', test: !!g.modeTest });
     if (!r.ok) { await ui.say(r.why === 'reseau' ? 'L\'hôte du salon ne répond pas...' : r.why === 'pris' ? 'Quelqu\'un vient de le prendre !' : 'Impossible pour l\'instant.'); return; }
     g.sound.sfx('item');
-    if (k === 'pend') await ui.say([`${g.state.name} prend le Pendentif Maudit.`, 'Un froid terrible te traverse. Tes Pokémon frissonnent.', 'Pour le poser ou le donner à un voisin : Sac, Pendentif Maudit.']);
+    if (k === 'pend') await ui.say(`${g.state.name} prend le Pendentif Maudit.`);
     else await ui.say([`${g.state.name} prend le Monocle de Vérité.`, 'À travers son verre violet, tu vois ce qui est caché. Guide les autres !', 'Pour le poser ou le donner à un voisin : Sac, Monocle de Vérité.']);
   },
   async sarcophage(d) {
@@ -370,29 +375,39 @@ export const Tombeau = {
   /* ---------------- la place : le ruinemaniac et l'entrée des pilleurs ---------------- */
   async ruinemaniac(d) {
     const g = this.game, ui = g.ui, st = g.state, qui = { speaker: 'Ruinemaniac' };
-    if (this.dTombeau(d, 's1').trou) { await ui.say('Le passage est ouvert ? Bonne chance là-dessous... Et n\'oublie pas ma part du trésor !', qui); return; }
-    if (st.bag['cle-ruinemaniac']) { await ui.say(['Alors, cette roche ? Elle est au bord de la place, quelque part.', 'Cherche celle qui est fissurée.'], qui); return; }
+    if (st.bag['cle-ruinemaniac']) {
+      await ui.say(this.dTombeau(d, 's1').trou
+        ? ['Le passage est ouvert ? Parfait.', 'Rappelle-toi : le Monocle au -1, le Pendentif au -2. Sans eux, la dernière salle ne s\'ouvrira pas.', 'Et rapporte-moi le trésor. Tu ne le regretteras pas.']
+        : ['Alors, cette roche ? Elle est au bord est de la place. Celle qui est fissurée.', 'Pas besoin de clé pour elle : un Pokémon costaud avec Force, et elle roulera.'], qui);
+      return;
+    }
     await ui.say(['Psst, gamin ! Viens par là.', 'Je vois que t\'as l\'air d\'un dresseur drôlement costaud. J\'ai un plan à te proposer.',
       'L\'entrée du tombeau est bien gardée : impossible d\'y entrer par là. Mais il existe un autre accès, connu seulement des pilleurs.',
-      'Faisons un marché : je t\'indique cette entrée, avec la clé qui l\'ouvre. Toi, tu descends au fond du tombeau, et on partage le trésor.'], qui);
+      'Une roche fissurée, au bord est de la place. Pousse-la avec Force : dessous, il y a un trou qui descend au -3, dans le repaire des brigands.',
+      'Le trésor du Roi Sans Nom dort tout au fond, dans une salle scellée. Pour l\'ouvrir, il faut deux reliques.',
+      'Le Monocle de Vérité, au -1, et le Pendentif Maudit, au -2. Il faudra remonter les chercher, puis redescendre avec.',
+      'Du -3, une porte de fer mène au -2. Voici sa clé : je l\'ai gardée de ma jeunesse.',
+      'Va me chercher le trésor. En échange, je te donnerai une récompense qui va te plaire, crois-moi.'], qui);
     if (!(await ui.yesNo('Marché conclu ?', qui))) { await ui.say('Réfléchis bien. Je ne bouge pas d\'ici.', qui); return; }
-    g.give('cle-ruinemaniac', 1); g.sound.sfx('item');
-    await ui.say(`${st.name} reçoit la Clé du Ruinemaniac !`);
+    g.give('cle-ruinemaniac', 1); g.give('carte-tombeau', 1); g.sound.sfx('item');
+    await ui.say([`${st.name} reçoit la Clé de Fer !`, `${st.name} reçoit la Carte du Tombeau !`]);
     st.money += 5000;
-    await ui.say(['Et tiens, quelques billets pour les frais. En bas, il y a un marchand... arrangeant.', `${st.name} reçoit 5 000 ₽ !`], qui);
-    await ui.say(['L\'entrée est cachée sous une roche, au bord de la place. Une roche fissurée, tu verras.',
-      'En bas, méfie-toi des gardiens : s\'ils te voient, ils te jettent dehors. Et ne te fais pas prendre avec le butin !'], qui);
+    await ui.say(['Sur la carte, j\'ai noté ce que je connais : du -1 au -4. Plus bas, personne n\'est revenu pour me le dire.',
+      'Et tiens, quelques billets pour les frais. Au -3, il y a un marchand... arrangeant.', `${st.name} reçoit 5 000 ₽ !`], qui);
+    await ui.say('Méfie-toi des moines qui gardent les reliques : s\'ils te voient, ils te jettent dehors.', qui);
   },
   async roche(d, x, y) {
     const g = this.game, ui = g.ui, E = g.world.maps[d.carte].donjon.exterieur, vraie = E.porte[0] === x && E.porte[1] === y;
     if (!vraie) return;
     if (this.dTombeau(d, 's1').trou) return;
-    if (!g.state.bag['cle-ruinemaniac']) { await ui.say(['Cette roche semble anormalement fissurée.', 'Au milieu des fissures, on dirait... une serrure ?']); return; }
-    if (!(await ui.yesNo('Cette roche semble anormalement fissurée. Y insérer la clé du ruinemaniac ?'))) return;
+    const look = 'Cette roche semble anormalement fissurée. Elle a l\'air de pouvoir bouger.';
+    if (!g.hasField('force')) { await ui.say([look, 'Un Pokémon très costaud pourrait la pousser.']); return; }
+    if (!(await ui.yesNo(`${look}\nUtiliser Force ?`))) return;
+    const mon = g.fieldUser(); if (mon) g.sound.cry(ASSETS.cry(mon.sp));
     const r = await this.demande(d.id, { a: 'maj', salle: 's1', donnees: { trou: true } });
     if (!r.ok) { await ui.say('L\'hôte du salon ne répond pas...'); return; }
-    g.sound.sfx('bang'); g.view.shake = 0.3;
-    await ui.say(['La clé tourne. Un déclic sourd...', 'La roche se fend et s\'effondre : un trou s\'ouvre dans le sol ! Une vieille échelle descend dans le noir.']);
+    g.sound.sfx('ledge'); g.view.shake = 0.3;
+    await ui.say([`${mon ? monName(mon) : 'Ton Pokémon'} utilise Force !`, 'La roche roule sur le côté : dessous, un trou ! Une vieille échelle descend dans le noir.']);
   },
   /** le trou des pilleurs : la roche fissurée laisse place à une échelle (on y descend en marchant dessus) */
   ouvrirTrou(d, ouvert) {
@@ -403,6 +418,53 @@ export const Tombeau = {
     if (ouvert) { X.set(x, y, T.SAND); X.under.delete(cle(x, y)); X.deco = X.deco.filter((q) => !(q.x === x && q.y === y)); X.deco.push({ k: 'ladder', x, y }); }
     else if (!X.deco.some((q) => q.x === x && q.y === y && q.k === 'rocher_grand')) { X.deco = X.deco.filter((q) => !(q.x === x && q.y === y)); X.prop('rocher_grand', x, y); }
     if (g.mapObj === X) { g.view.decoAt.set(cle(x, y), X.deco.find((q) => q.x === x && q.y === y)); g.view.rebuildAt(x, y); }
+  },
+
+  /* ---------------- la carte du ruinemaniac : du -1 au -4 ---------------- */
+  async carteTombeau(d) {
+    const g = this.game, ui = g.ui, salles = CARTE.map((id) => d.salles.find((s) => s.id === id)).filter(Boolean);
+    let vue = salles.find((s) => g.world.maps[s.carte] === g.mapObj) || salles[0];
+    const box = el('div', 'box mine-plan'); ui.root.appendChild(box);
+    const titre = el('div', 'mine-titre'), cv = document.createElement('canvas'); box.append(titre, cv);
+    const dessiner = () => this.dessinerCarte(d, vue, cv, titre);
+    dessiner(); const iv = setInterval(dessiner, 300);
+    try {
+      for (;;) {
+        const items = salles.map((s) => { const e = /\((-\d+)\)/.exec(s.nom); return { label: `${e ? e[1] + ' · ' : ''}${s.nom.replace(/\s*\(.*\)/, '')}` }; });
+        items.push({ label: 'Ranger la carte' });
+        const k = await ui.list({ title: 'Carte du Tombeau', items, cls: 'shop mine-menu', cancel: items.length - 1, start: salles.indexOf(vue) });
+        if (k < 0 || k >= salles.length) return;
+        vue = salles[k]; g.sound.sfx('select');
+      }
+    } finally { clearInterval(iv); box.remove(); }
+  },
+  /** une salle sur la carte : sol, passages (avec leur destination), reliques, joueurs */
+  dessinerCarte(d, s, cv, titre) {
+    const g = this.game, m = g.world.maps[s.carte], P = m.donjon.plan, Z = 9;
+    if (cv.width !== m.w * Z) { cv.width = m.w * Z; cv.height = m.h * Z; }
+    const x = cv.getContext('2d');
+    x.fillStyle = '#1a0f08'; x.fillRect(0, 0, cv.width, cv.height);
+    for (const [i, j] of P.sol) { x.fillStyle = '#b98a56'; x.fillRect(i * Z, j * Z, Z, Z); }
+    const marque = (i, j, col, txt) => {
+      x.fillStyle = col; x.fillRect(i * Z - 1, j * Z - 1, Z + 2, Z + 2);
+      if (!txt) return;
+      x.font = 'bold 11px sans-serif'; x.textBaseline = 'middle'; x.textAlign = i > m.w / 2 ? 'right' : 'left';
+      const tx = i > m.w / 2 ? i * Z - 3 : i * Z + Z + 3;
+      x.strokeStyle = '#000'; x.lineWidth = 3; x.strokeText(txt, tx, j * Z + Z / 2); x.fillStyle = '#fff'; x.fillText(txt, tx, j * Z + Z / 2);
+    };
+    const court = (id) => (d.salles.find((q) => q.id === id)?.nom || '').replace(/\s*\(.*\)/, '');
+    for (const [c, l] of Object.entries(P.objets)) {
+      const o = d.objets[c];
+      if (o.type === 'lien') marque(l[0][0], l[0][1], o.porte ? '#7a8090' : '#e0a040', `${o.porte ? 'Porte de fer → ' : '→ '}${court(o.vers)}`);
+      else if (o.type === 'sarcophage') marque(l[0][0], l[0][1], '#a050c8', 'Pendentif Maudit');
+      else if (o.type === 'socleLunettes') marque(l[0][0], l[0][1], '#a050c8', 'Monocle de Vérité');
+    }
+    if (P.suivante) marque(P.suivante[0], P.suivante[1], '#e0a040', '→ plus bas');
+    if (s === d.salles[0]) marque(P.depart[0], P.depart[1], '#e8c840', 'Trou des pilleurs');
+    const points = [...(g.link?.others.values() || [])].filter((o) => o.map === m.id).map((o) => [o.dx ?? o.x, o.dy ?? o.y, o.color || '#5a88c8']);
+    if (g.mapObj === m) points.push([g.player.x, g.player.y, '#ffffff']);
+    for (const [i, j, col] of points) { x.fillStyle = col; x.beginPath(); x.arc(i * Z + Z / 2, j * Z + Z / 2, Z * 0.7, 0, 7); x.fill(); x.strokeStyle = '#000'; x.lineWidth = 2; x.stroke(); }
+    titre.innerHTML = `<b>${esc(s.nom)}</b> · <span class="mine-leg"><i style="background:#e0a040"></i>passage <i style="background:#7a8090"></i>porte de fer <i style="background:#a050c8"></i>relique <i style="background:#fff"></i>toi</span>`;
   },
 
   /* ---------------- passages entre les étages ---------------- */
@@ -416,15 +478,12 @@ export const Tombeau = {
     }
     return { map: m.id, x: P.depart[0], y: P.depart[1], dir: 'up' };
   },
-  /** la porte de fer entre le -3 et le -2 : une Clé Fragile la passe, une fois (la clé se brise) */
+  /** la porte de fer entre le -3 et le -2 : la Clé de Fer du ruinemaniac l'ouvre, dans les deux sens */
   async porteFer(d, m, c) {
     const g = this.game, ui = g.ui;
-    if (!g.state.bag['cle-fragile']) { await ui.say(['Une lourde porte de fer, fermée à clé.', 'La serrure a l\'air... délicate.']); return; }
-    if (!(await ui.yesNo('Une lourde porte de fer, fermée à clé. Utiliser une Clé Fragile ?'))) return;
-    g.take('cle-fragile'); g.sound.sfx('door');
+    if (!g.state.bag['cle-ruinemaniac']) { await ui.say('Une lourde porte de fer, fermée à clé.'); return; }
+    g.sound.sfx('door');
     await g.warp(this.arriveeLien(d, c), 'door');
-    g.sound.sfx('bang');
-    await ui.say('Crac ! La clé s\'est brisée dans la serrure. La porte s\'est refermée derrière toi.');
   },
 
   /* ---------------- les gardiens ---------------- */
@@ -446,8 +505,43 @@ export const Tombeau = {
   },
   /** à chaque image : les gardiens tournent la tête ; qui passe devant l'un d'eux se fait courir dessus et jeter dehors ;
    *  le porteur du monocle voit leurs regards ; les gardiens endormis ronflent ; quitter la salle les réveille tous */
+  /** le tombeau est sombre : on voit bien près des torches (et un peu autour de soi), de moins en moins en s'en éloignant */
+  eclairerTombeau(s, m) {
+    const g = this.game, v = g.view, root = g.ui.root;
+    let cv = this.nuit;
+    if (!s || !v?.camera) { if (cv) cv.style.display = 'none'; return; }
+    if (!cv) { cv = this.nuit = document.createElement('canvas'); cv.className = 'tombeau-nuit'; }
+    // juste au-dessus de l'image du jeu, sous l'interface : la toile s'y multiplie (mix-blend-mode)
+    if (cv.parentElement !== root.parentElement) root.parentElement.insertBefore(cv, root);
+    cv.style.display = '';
+    const C = v.renderer.domElement.getBoundingClientRect(), R = C, dpr = Math.min(2, window.devicePixelRatio || 1);
+    const W = Math.round(C.width * dpr), H = Math.round(C.height * dpr);
+    Object.assign(cv.style, { left: C.left + 'px', top: C.top + 'px', width: C.width + 'px', height: C.height + 'px' });
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const V = v.camera.position.constructor, proj = (x, y, h) => {
+      const p = new V(x + 0.5, h * HPX, y + 0.55).project(v.camera);
+      return [((C.left - R.left) + (p.x + 1) / 2 * C.width) * dpr, ((C.top - R.top) + (1 - p.y) / 2 * C.height) * dpr];
+    };
+    const px = g.player, a = proj(px.x, px.y, 0), b = proj(px.x + 1, px.y, 0), case_ = Math.hypot(b[0] - a[0], b[1] - a[1]) || 32 * dpr;
+    const x = cv.getContext('2d'), t = performance.now() / 1000;
+    // la toile se multiplie avec l'image (mix-blend-mode) : une pénombre brun-orangé partout, plus claire et plus chaude près des flammes
+    x.globalCompositeOperation = 'source-over'; x.fillStyle = 'rgb(74, 36, 18)'; x.fillRect(0, 0, W, H);
+    const feux = (m.deco || []).filter((q) => q.k === 'torche' || q.k === 'brasero' || q.k === 'lanterne');
+    const lum = [];
+    feux.forEach((q, i) => lum.push([...proj(q.x, q.y, 6), case_ * 4.6 * (1 + 0.035 * Math.sin(t * 7.3 + i * 1.7) + 0.02 * Math.sin(t * 13.1 + i)), [170, 112, 70]]));
+    lum.push([...proj(v.focus.x - 0.5, v.focus.z - 0.5, 10), case_ * 2.4, [70, 50, 36]]);
+    for (const o of g.link?.others?.values() || []) if (o.map === m.id) lum.push([...proj(o.dx ?? o.x, o.dy ?? o.y, 10), case_ * 2.4, [70, 50, 36]]);
+    x.globalCompositeOperation = 'lighter';
+    for (const [cx, cy, r, [cr, cg, cb]] of lum) {
+      if (cx < -r || cy < -r || cx > W + r || cy > H + r) continue;
+      const gr = x.createRadialGradient(cx, cy, 0, cx, cy, r);
+      gr.addColorStop(0, `rgb(${cr},${cg},${cb})`); gr.addColorStop(0.3, `rgba(${cr},${cg},${cb},0.8)`); gr.addColorStop(0.65, `rgba(${cr},${cg},${cb},0.32)`); gr.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+      x.fillStyle = gr; x.fillRect(cx - r, cy - r, 2 * r, 2 * r);
+    }
+  },
   tickTombeau(dt) {
     const g = this.game, d = this.tombeauIci() || [...this.defs.values()].find(estTombeau), m = g.mapObj, s = d && g.state && this.salleTombeau(d);
+    this.eclairerTombeau(s, m);
     // on vient de quitter une salle de gardiens : ils se réveillent tous
     if (this.salleGardiens && this.salleGardiens !== m?.id) {
       const q = d && d.salles.find((x) => x.carte === this.salleGardiens);
@@ -495,7 +589,7 @@ export const Tombeau = {
     if (g.state.bag['seringue-somnifere'] && await ui.yesNo('Le gardien ne t\'a pas encore vu. Lui planter une Seringue Somnifère ?')) {
       g.take('seringue-somnifere'); g.sound.sfx('select');
       await this.demande(d.id, { a: 'maj', salle: s.id, donnees: { dorment: [...this.dorment(d, s), k] } });
-      await ui.say(['Le gardien vacille... et s\'endort debout, en ronflant.', 'Il se réveillera dès que quelqu\'un quittera la salle.']);
+      await ui.say('Le gardien vacille... et s\'endort debout, en ronflant.');
       return;
     }
     await this.expulser(d);
