@@ -24,7 +24,7 @@ export function listerLieux(world, donjons) {
     // devant l'entrée quand le donjon a un extérieur, sinon directement à l'intérieur
     const m = world.maps[d.carte], E = m.donjon.exterieur;
     const note = [d.niveau, texteJoueurs(d)].filter(Boolean).join(' · ');
-    if (E) out.labo.push({ nom: d.nom, note, map: E.carte.id, x: E.porte[0], y: E.porte[1] + 2, dir: 'up', equipe: d.equipe });
+    if (E) { const [x, y] = E.arrivee || [E.porte[0], E.porte[1] + 2]; out.labo.push({ nom: d.nom, note, map: E.carte.id, x, y, dir: 'up', equipe: d.equipe }); }
     else { const [x, y] = m.donjon.plan.depart; out.labo.push({ nom: d.nom, note, map: d.carte, x, y, dir: 'up', equipe: d.equipe }); }
   }
   // l'île privée : chacun la sienne, gardée dans ce navigateur

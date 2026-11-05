@@ -198,8 +198,9 @@ function poserPanneau(def, carte, [px, py]) {
 
 export function relierExterieur(def, m) {
   if (!def.exterieur) return null;
-  const { carte, porte } = def.exterieur();
-  if (def.entree) poserPanneau(def, carte, porte);
+  const E = def.exterieur(), { carte, porte } = E;
+  // le panneau d'entrée : à la case demandée (E.panneau), sinon à côté de la porte
+  if (def.entree) { if (E.panneau) carte.sign(...E.panneau, textePanneau(def)); else poserPanneau(def, carte, porte); }
   const P = m.donjon.plan, [px, py] = porte;
   carte.warp(px, py, { map: m.id, x: P.depart[0], y: P.depart[1], dir: 'up' });
   if (P.sortie) {
@@ -209,7 +210,7 @@ export function relierExterieur(def, m) {
     m.deco.push({ k: 'exitlight', x: sx, y: sy });
   }
   m.outside = { map: carte.id, x: px, y: py + 1 };
-  m.donjon.exterieur = { carte, porte };
+  m.donjon.exterieur = { ...E, carte, porte };
   return carte;
 }
 

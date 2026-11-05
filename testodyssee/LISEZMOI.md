@@ -446,11 +446,25 @@ pokeheartgold. La fusion suit l'ordre des jeux : Vert Feuille, HeartGold, Émera
 
 ### Le Tombeau du Roi Sans Nom
 
-À trois exactement (`js/donjons/tombeau.js`, mécaniques `js/donjon/tombeau.js`). Deux artefacts tenus par l'hôte
+À trois exactement (`js/donjons/tombeau.js`, mécaniques `js/donjon/tombeau.js`), en style `egypte` (sable, murs de
+grès : `js/rendu.js`).
+
+Dehors, la Vallée des Rois Oubliés : la façade (`entree_tombeau`) et sa porte officielle sont fermées, derrière un
+cordon et trois gardiens ; des touristes devant (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac donne la Clé du
+Ruinemaniac ; l'une des roches du bord (`roches`, la vraie est `porte`) est fissurée : avec la clé, elle laisse place à
+une échelle, l'entrée des pilleurs (`trou` dans la salle s1, partagé par le groupe). `devant` : là où les gardiens
+jettent ceux qu'ils attrapent ; `arrivee` : où l'on apparaît en choisissant le lieu ; `panneau` : le panneau d'entrée.
+
+Les deux premières salles (Crypte des Gardiens, Chambre du Sarcophage, `gardiens: true`) n'ont ni pilleurs ni Pokémon
+sauvages : des gardiens (`garde` : `tourne`, la liste de leurs regards, une direction toutes les `PERIODE` secondes,
+`decal` en quarts de seconde, `portee`) tournent la tête, à la même horloge pour tous. Qui entre dans un regard (un
+cône devant le gardien, arrêté par les murs et le décor) est jeté dehors, et ce qu'il portait retourne à sa place
+(`origine`). Le porteur des lunettes voit les regards en rouge. On y vole les lunettes (s1) puis le pendentif (s2).
+`test-testodyssee.mjs` vérifie qu'on peut le faire sans jamais être vu (en attendant le bon moment). Deux artefacts tenus par l'hôte
 (action `artefact` d'`etat.js`, rangés dans `salles.s1.donnees.art`) : le Pendentif Maudit (`pend`) et les Lunettes de
 Vérité (`lun`). Un porteur à la fois, jamais les deux (sauf en mode test) ; on les pose et on les donne à un voisin
 depuis le Sac, on ramasse ce qui est posé en le regardant. Un joueur qui part : son artefact retourne à sa place.
-- Le pendentif retire `MORSURE` (0,7 %) des PV max de chaque Pokémon de son porteur à chaque pas. Toute l'équipe à
+- Le pendentif retire `MORSURE` (à zéro pour l'instant, en attendant de l'équilibrer) des PV max de chaque Pokémon de son porteur à chaque pas. Toute l'équipe à
   terre : il le lâche et se réveille à l'entrée de la salle (un tiers des PV). On ne passe la sortie d'une salle
   qu'avec le pendentif en main (ou volé).
 - Les lunettes montrent à leur seul porteur le chemin invisible `:` au-dessus du gouffre `_` (on y tombe : retour à

@@ -7,7 +7,8 @@ import { T } from '../../odyssee/js/world/tiles.js';
 
 // textures d'Odyssée reprises pour les styles de donjon : clair (miroirs), sable (pyramide)
 const CLAIR = { sol: 'floor_musee', mur: 'wall_mart', haut: ['snow', 'floor_lab', 'floor_mart'], glace: 'floor_gymWater', fond: '#e8eef8' };
-const STYLES = { clair: CLAIR, bois: { sol: ['floor_wood'], mur: ['wall_in', 'wall_center'], haut: ['roof_flat', 'floor_wood'], fond: '#0c0a14' }, sable: { sol: ['floor_sand', 'gl_sable', 'floor_gymRock'], mur: ['wall_gym'], haut: ['floor_gymRock', 'cavetop'], fond: '#1a1008', relief: true } };
+const EGYPTE = { sol: ['gl_sable'], mur: ['wall_in'], haut: ['cavetop'], fond: '#1c1408' };
+const STYLES = { clair: CLAIR, egypte: EGYPTE, bois: { sol: ['floor_wood'], mur: ['wall_in', 'wall_center'], haut: ['roof_flat', 'floor_wood'], fond: '#0c0a14' }, sable: { sol: ['floor_sand', 'gl_sable', 'floor_gymRock'], mur: ['wall_gym'], haut: ['floor_gymRock', 'cavetop'], fond: '#1a1008', relief: true } };
 const cellule = (A, k) => (Array.isArray(k) ? k.map((q) => A[q]).find(Boolean) : A[k]);
 const SOLS = new Set([T.CAVE, T.BLOCK, T.CAVEWALL, T.CAVEDOOR, T.FLOOR]);
 const REVELE = 'floor_gymWater';
@@ -81,6 +82,18 @@ export function brancherRendu() {
     const st = STYLES[map.style];
     if (st) { if (!st.relief) this.tiers = null; this.scene.background = new THREE.Color(st.fond); }
   };
+}
+
+/** cases colorées au sol (les regards des gardiens du tombeau, vus à travers les lunettes) ; tableau vide : efface */
+export function dessinerZones(view, cases) {
+  if (view.__zones) { view.__zonesRoot?.remove(view.__zones); view.__zones.geometry.dispose(); view.__zones = null; }
+  if (!cases.length || !view.root) return;
+  const pos = new Float32Array(cases.length * 18), H = 0.02;
+  cases.forEach(([x, y], i) => pos.set([x, H, y, x, H, y + 1, x + 1, H, y + 1, x, H, y, x + 1, H, y + 1, x + 1, H, y], i * 18));
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xff3a3a, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide }));
+  me.renderOrder = 4; me.frustumCulled = false;
+  view.root.add(me); view.__zones = me; view.__zonesRoot = view.root;
 }
 
 /**

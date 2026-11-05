@@ -95,5 +95,57 @@ def grand(fn, k):
 images['objet_pendentif'] = grand(lambda im: pendentif(im, 1, 2), 'p')
 images['objet_lunettes'] = grand(lambda im: lunettes(im, 0, 4), 'l')
 images['objet_sceau'] = icone(sceau)
+def facade():
+    """la façade du tombeau (9 cases de large) : deux pylônes, une corniche, des colonnes, la porte fermée, le soleil ailé"""
+    import random
+    r = random.Random(4)
+    W, H = 144, 84
+    im = toile(W, H)
+    SA = [(120, 86, 46, 255), (170, 128, 74, 255), (206, 166, 104, 255), (232, 200, 140, 255), (246, 224, 176, 255)]
+    # le corps : un mur de blocs de grès
+    rect(im, 8, 18, 128, 66, SA[2])
+    for y in range(18, 84, 6):
+        rect(im, 8, y, 128, 1, SA[1])
+        dec = 0 if (y // 6) % 2 else 8
+        for x in range(8 + dec, 136, 16): rect(im, x, y, 1, 6, SA[1])
+    # les deux pylônes, plus hauts, qui s'élargissent vers le bas
+    for x0 in (0, 104):
+        for y in range(4, 84):
+            l = 4 - (y - 4) // 20
+            rect(im, x0 + max(0, l), y, 40 - 2 * max(0, l), 1, SA[3] if y < 8 else SA[2])
+        for y in range(10, 84, 6): rect(im, x0 + 2, y, 36, 1, SA[1])
+        # hiéroglyphes
+        for k in range(18):
+            hx, hy = x0 + 8 + (k % 3) * 9, 16 + (k // 3) * 9
+            c = (60, 40, 20, 255)
+            forme = k % 4
+            if forme == 0: rect(im, hx, hy, 5, 1, c); rect(im, hx + 2, hy, 1, 5, c)
+            elif forme == 1: rect(im, hx, hy, 1, 5, c); rect(im, hx, hy + 4, 5, 1, c); rect(im, hx + 4, hy + 2, 1, 3, c)
+            elif forme == 2: rect(im, hx + 1, hy, 3, 3, c); rect(im, hx + 2, hy + 3, 1, 2, c)
+            else: rect(im, hx, hy + 2, 5, 1, c); rect(im, hx + 1, hy, 1, 5, c); rect(im, hx + 3, hy, 1, 5, c)
+        rect(im, x0, 2, 40, 3, SA[4]); rect(im, x0, 5, 40, 1, SA[0])
+    # corniche au-dessus de la porte, et le soleil ailé
+    rect(im, 40, 14, 64, 5, SA[4]); rect(im, 40, 19, 64, 1, SA[0])
+    rect(im, 66, 8, 12, 6, OR[2]); rect(im, 68, 9, 8, 4, OR[3])
+    for i in range(14): rect(im, 52 + i, 10 + i // 5, 1, 2, OR[1]); rect(im, 91 - i, 10 + i // 5, 1, 2, OR[1])
+    # deux colonnes à chapiteau
+    for cx in (48, 90):
+        rect(im, cx, 22, 6, 62, SA[3]); rect(im, cx + 1, 22, 1, 62, SA[4]); rect(im, cx + 5, 22, 1, 62, SA[1])
+        rect(im, cx - 2, 20, 10, 3, SA[4]); rect(im, cx - 2, 81, 10, 3, SA[1])
+    # la porte, fermée par une dalle
+    rect(im, 60, 34, 24, 50, (52, 36, 22, 255)); rect(im, 62, 36, 20, 48, SA[1]); rect(im, 62, 36, 20, 2, SA[0])
+    for y in range(42, 84, 8): rect(im, 62, y, 20, 1, SA[0])
+    rect(im, 70, 56, 4, 4, OR[1])
+    return contour(im)
+images['entree_tombeau'] = facade()
+def cle_icone(im):
+    rect(im, 4, 9, 6, 6, OR[1]); rect(im, 5, 10, 4, 4, (0, 0, 0, 0)); rect(im, 10, 11, 10, 2, OR[2]); rect(im, 16, 13, 2, 3, OR[1]); rect(im, 19, 13, 1, 4, OR[1]); rect(im, 4, 9, 6, 1, OR[3])
+images['objet_cle'] = icone(cle_icone)
+def cordon():
+    im = toile(16, 16)
+    for x0 in (0, 13): rect(im, x0 + 1, 4, 2, 12, OR[1]); rect(im, x0, 3, 4, 2, OR[2]); rect(im, x0, 14, 4, 2, OR[0])
+    for x in range(3, 14): im.putpixel((x, 6 + (1 if 5 <= x <= 10 else 0)), (170, 30, 40, 255)); im.putpixel((x, 7 + (1 if 5 <= x <= 10 else 0)), (120, 20, 30, 255))
+    return contour(im)
+images['cordon'] = cordon()
 for k, im in images.items(): im.save(os.path.join(DOSSIER, k + '.png'))
 print('écrit', len(images), 'images dans', DOSSIER)

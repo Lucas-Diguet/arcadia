@@ -13,7 +13,8 @@
 import { T } from '../../../odyssee/js/world/tiles.js';
 import { ITEMS, itemName } from '../../../odyssee/js/core/items.js';
 import { createMon, monName } from '../../../odyssee/js/core/mon.js';
-import { DISTANCE } from '../donjons/tombeau.js';
+import { DISTANCE, PERIODE } from '../donjons/tombeau.js';
+import { dessinerZones } from '../rendu.js';
 import { artVide, prisPar, battu } from './etat.js';
 
 const cle = (x, y) => x + ',' + y;
@@ -23,7 +24,8 @@ const NOM = { pend: 'le Pendentif Maudit', lun: 'les Lunettes de Vérité' };
 const SOL = { pend: 'pendentif_sol', lun: 'lunettes_sol' };
 const AUTRE = { pend: 'lun', lun: 'pend' };
 /** part des PV max qu'un pas avec le pendentif retire à chaque Pokémon */
-export const MORSURE = 0.007;
+// (à zéro pour l'instant, le temps d'essayer le donjon : il sera rééquilibré)
+export const MORSURE = 0;
 const PIEGE = 0.12, CHUTE = 0.1;
 const DIRV = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const cheb = (ax, ay, bx, by) => Math.max(Math.abs(ax - bx), Math.abs(ay - by));
@@ -61,6 +63,15 @@ export const Tombeau = {
       const [x, y] = m.tomb.fuyards;
       m.npc({ id: `${d.id}:fuyards:${s.id}`, x, y, dir: 'down', sprite: 'voleur', move: 'static', when: () => this.art(d).pend.vole && !this.fuis?.[m.id], talk: () => this.fuite(d, m) });
     }
+    // les gardiens : leur parler, c'est se faire prendre
+    for (const n of m.npcs) { const k = Object.keys(d.pnj).find((q) => `${d.id}:${d.pnj[q].id}` === n.id); if (k && d.pnj[k].garde) n.talk = () => this.attrape(d, k); }
+    // la place : la roche fissurée (l'entrée des pilleurs), les autres roches, le ruinemaniac
+    if (m.id === d.carte && m.donjon.exterieur) {
+      const E = m.donjon.exterieur, X = E.carte, [px, py] = E.porte;
+      const w = X.warpAt(px, py); if (w) w.step = true;
+      for (const [x, y] of E.roches) X.object(x, y, { use: () => this.roche(d, x, y) });
+      const r = X.npcs.find((n) => n.id === 'tombeau-ruinemaniac'); if (r) r.talk = () => this.ruinemaniac(d);
+    }
     // les artefacts se posent et se donnent depuis le Sac
     for (const k of ['pend', 'lun']) if (ITEMS[ITEM[k]]) ITEMS[ITEM[k]].use = async () => { await this.menuArtefact(d, k); return true; };
   },
@@ -89,6 +100,7 @@ export const Tombeau = {
       this.solsVus[k] = cleOu;
     }
     this.reveler(d, A.lun.p === this.moi || (g.modeTest && A.lun.p != null));
+    this.ouvrirTrou(d, !!this.dTombeau(d, 's1').trou);
     // le vol : la scène pour ceux qui sont dans la nef, une annonce pour les autres
     const s5 = d.salles.find((q) => q.id === 's5'), D5 = this.dTombeau(d, 's5');
     if (D5.vol && !this.volVu) {
@@ -122,7 +134,7 @@ export const Tombeau = {
       for (const c of m.tomb.caches) { const [x, y] = c.split(',').map(Number); this.decoSol(m, x, y, voit ? 'revele' : 'gouffre'); }
       for (const c of m.tomb.piegesCaches) { if (this.reveles?.has(`${m.id}:${c}`)) continue; const [x, y] = c.split(',').map(Number); this.decoSol(m, x, y, voit ? 'piege_degats3' : null); }
     }
-    if (this.tombeauIci()) g.ui.toast(voit ? 'À travers les lunettes, un chemin de lumière apparaît au-dessus du vide.' : 'Sans les lunettes, le vide redevient noir.', 2600);
+    if (this.tombeauIci()) g.ui.toast(voit ? 'À travers les lunettes, tu vois ce qui est caché : le regard des gardiens, le chemin au-dessus du vide, les pièges.' : 'Sans les lunettes, ce qui était caché disparaît.', 2600);
   },
 
   /* ---------------- les artefacts ---------------- */
@@ -228,7 +240,7 @@ export const Tombeau = {
     try {
       if (T0.gouffres.has(ici)) { await this.chute(d); return; }
       if (T0.pieges.has(ici) || T0.piegesCaches.has(ici)) await this.piege(d, m, ici);
-      if (A.pend.p === this.moi && !(await this.morsure(d))) return;
+      if (MORSURE && A.pend.p === this.moi && !(await this.morsure(d))) return;
       if (s.id === 's5' && T0.guet.has(ici) && !this.dTombeau(d, 's5').vol && !A.pend.vole) await this.guetApens(d);
       if (T0.fuyards && A.pend.vole && !this.fuis?.[m.id] && cheb(p.x, p.y, ...T0.fuyards) <= 5) await this.fuite(d, m);
       const k = this.pilleurQuiVoit(d, m); if (k) await this.engager(d, k);
@@ -334,6 +346,91 @@ export const Tombeau = {
     (this.fuis ||= {})[m.id] = true; g.refreshNpcs();
     g.sound.sfx('exit');
     await g.ui.say(['Deux pilleurs détalent devant toi, le pendentif à la main !', '« Trop lents ! Le chef vous attend au repaire... si vous y arrivez ! »']);
+  },
+
+  /* ---------------- la place : le ruinemaniac et l'entrée des pilleurs ---------------- */
+  async ruinemaniac(d) {
+    const g = this.game, ui = g.ui, st = g.state, qui = { speaker: 'Ruinemaniac' };
+    if (this.dTombeau(d, 's1').trou) { await ui.say('Le passage est ouvert ? Bonne chance là-dessous... Et n\'oublie pas ma part du trésor !', qui); return; }
+    if (st.bag['cle-ruinemaniac']) { await ui.say(['Alors, cette roche ? Elle est au bord de la place, quelque part.', 'Cherche celle qui est fissurée.'], qui); return; }
+    await ui.say(['Psst, gamin ! Viens par là.', 'Je vois que t\'as l\'air d\'un dresseur drôlement costaud. J\'ai un plan à te proposer.',
+      'L\'entrée du tombeau est bien gardée : impossible d\'y entrer par là. Mais il existe un autre accès, connu seulement des pilleurs.',
+      'Faisons un marché : je t\'indique cette entrée, avec la clé qui l\'ouvre. Toi, tu descends au fond du tombeau, et on partage le trésor.'], qui);
+    if (!(await ui.yesNo('Marché conclu ?', qui))) { await ui.say('Réfléchis bien. Je ne bouge pas d\'ici.', qui); return; }
+    g.give('cle-ruinemaniac', 1); g.sound.sfx('item');
+    await ui.say(`${st.name} reçoit la Clé du Ruinemaniac !`);
+    await ui.say(['L\'entrée est cachée sous une roche, au bord de la place. Une roche fissurée, tu verras.',
+      'En bas, méfie-toi des gardiens : s\'ils te voient, ils te jettent dehors. Et ne te fais pas prendre avec le butin !'], qui);
+  },
+  async roche(d, x, y) {
+    const g = this.game, ui = g.ui, E = g.world.maps[d.carte].donjon.exterieur, vraie = E.porte[0] === x && E.porte[1] === y;
+    if (!vraie) { await ui.say('Une grosse roche. Rien de particulier.'); return; }
+    if (this.dTombeau(d, 's1').trou) return;
+    if (!g.state.bag['cle-ruinemaniac']) { await ui.say(['Cette roche semble anormalement fissurée.', 'Au milieu des fissures, on dirait... une serrure ?']); return; }
+    if (!(await ui.yesNo('Cette roche semble anormalement fissurée. Y insérer la clé du ruinemaniac ?'))) return;
+    const r = await this.demande(d.id, { a: 'maj', salle: 's1', donnees: { trou: true } });
+    if (!r.ok) { await ui.say('L\'hôte du salon ne répond pas...'); return; }
+    g.sound.sfx('bang'); g.view.shake = 0.3;
+    await ui.say(['La clé tourne. Un déclic sourd...', 'La roche se fend et s\'effondre : un trou s\'ouvre dans le sol ! Une vieille échelle descend dans le noir.']);
+  },
+  /** le trou des pilleurs : la roche fissurée laisse place à une échelle (on y descend en marchant dessus) */
+  ouvrirTrou(d, ouvert) {
+    if (this.trouOuvert === ouvert) return;
+    this.trouOuvert = ouvert;
+    const g = this.game, E = g.world.maps[d.carte].donjon.exterieur; if (!E) return;
+    const X = E.carte, [x, y] = E.porte;
+    if (ouvert) { X.set(x, y, T.SAND); X.under.delete(cle(x, y)); X.deco = X.deco.filter((q) => !(q.x === x && q.y === y)); X.deco.push({ k: 'ladder', x, y }); }
+    else if (!X.deco.some((q) => q.x === x && q.y === y && q.k === 'rocher_grand')) { X.deco = X.deco.filter((q) => !(q.x === x && q.y === y)); X.prop('rocher_grand', x, y); }
+    if (g.mapObj === X) { g.view.decoAt.set(cle(x, y), X.deco.find((q) => q.x === x && q.y === y)); g.view.rebuildAt(x, y); }
+  },
+
+  /* ---------------- les gardiens ---------------- */
+  /** où regarde un gardien en ce moment (même horloge pour tous les joueurs) */
+  regardGardien(P) {
+    const G = P.garde, i = Math.floor((Date.now() / 1000 + (G.decal || 0) * 0.25) / PERIODE) % G.tourne.length;
+    return G.tourne[i];
+  },
+  /** cases que voit un gardien : un cône devant lui (portée, puis une case de large en plus toutes les deux cases), arrêté par les murs et le décor */
+  champGardien(m, gx, gy, dir, R, gardes) {
+    const [dx, dy] = DIRV[dir], out = [], bloque = (x, y) => { const t = m.get(x, y); return t === T.CAVEWALL || t === T.BLOCK || gardes.has(cle(x, y)); };
+    for (let f = 1; f <= R; f++) for (let l = -(f >> 1); l <= f >> 1; l++) {
+      const x = gx + dx * f - dy * l, y = gy + dy * f + dx * l;
+      if (x < 0 || y < 0 || x >= m.w || y >= m.h || bloque(x, y)) continue;
+      const n = Math.max(Math.abs(x - gx), Math.abs(y - gy));
+      let vu = true;
+      for (let k = 1; k < n; k++) { const ix = Math.round(gx + (x - gx) * k / n), iy = Math.round(gy + (y - gy) * k / n); if (bloque(ix, iy)) { vu = false; break; } }
+      if (vu) out.push(cle(x, y));
+    }
+    return out;
+  },
+  /** à chaque image : les gardiens tournent la tête ; qui est dans leur champ de vision est pris ; le porteur des lunettes voit leurs regards */
+  tickTombeau(dt) {
+    const g = this.game, d = this.tombeauIci(), m = g.mapObj, s = d && this.salleTombeau(d);
+    if (!s?.gardiens || !g.state) { if (this.zonesVues) { this.zonesVues = null; dessinerZones(g.view, []); } return; }
+    const gardes = new Set(), champ = new Set();
+    for (const n of g.npcs) { const P = n.def && Object.values(d.pnj).find((q) => `${d.id}:${q.id}` === n.id); if (P?.garde) gardes.add(cle(n.x, n.y)); }
+    for (const n of g.npcs) {
+      const P = Object.values(d.pnj).find((q) => `${d.id}:${q.id}` === n.id); if (!P?.garde) continue;
+      if (!g.busy) n.dir = this.regardGardien(P);
+      for (const c of this.champGardien(m, n.x, n.y, n.dir, P.garde.portee || 6, gardes)) champ.add(c);
+    }
+    // les regards : seulement à travers les lunettes
+    const montre = (this.voitTombeau ? [...champ].sort().join(';') : '') + '@' + m.id;
+    if (montre !== this.zonesVues) { this.zonesVues = montre; const l = montre.split('@')[0]; dessinerZones(g.view, l ? l.split(';').map((c) => c.split(',').map(Number)) : []); }
+    const p = g.player;
+    if (g.busy || g.bv.alive || !g.input.free) return;
+    if (champ.has(cle(p.x, p.y)) || (p.move && champ.has(cle(p.move.tx, p.move.ty)))) { g.busy = true; this.attrape(d).catch((e) => console.error(e)).finally(() => { g.busy = false; }); }
+  },
+  /** pris par un gardien : ce qu'on portait retourne à sa place, et on est jeté dehors, devant l'entrée officielle */
+  async attrape(d) {
+    const g = this.game, ui = g.ui, A = this.art(d), E = g.world.maps[d.carte].donjon.exterieur;
+    g.sound.sfx('encounter'); g.view.shake = 0.2;
+    await ui.say(['Halte, scélérat !', 'Maudit pilleur de tombe !'], { speaker: 'Gardien du tombeau' });
+    const pris = ['pend', 'lun'].filter((k) => A[k].p === this.moi);
+    for (const k of pris) await this.demande(d.id, { a: 'artefact', k, op: 'origine' });
+    if (pris.length) await ui.say(`Le gardien t'arrache ${pris.map((k) => NOM[k]).join(' et ')} et ${pris.length > 1 ? 'les remet' : 'le remet'} à sa place.`);
+    await g.warp({ map: E.carte.id, x: E.devant[0], y: E.devant[1], dir: 'down' }, 'exit');
+    await ui.say('Les gardiens te jettent dehors, devant l\'entrée officielle du tombeau.');
   },
 
   /* ---------------- encadré ---------------- */

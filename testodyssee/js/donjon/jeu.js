@@ -280,6 +280,7 @@ export class Donjons {
     this.tickMine(dt);
     this.tickTrain(dt);
     this.tickTemple(dt);
+    this.tickTombeau(dt);
     this.panT = (this.panT || 0) - dt;
     if (g.state && g.mapObj !== this.carteVue) {
       const avant = this.carteVue && [...this.defs.values()].find((q) => this.estDans(q, this.carteVue.id));

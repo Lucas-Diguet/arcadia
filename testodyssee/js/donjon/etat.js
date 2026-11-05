@@ -285,6 +285,7 @@ export function appliquer(def, e, qui, m, o = {}) {
           if (autre.p === a && !m.test) return res(false, false, 'deux');
           o.p = a; return res(true, true);
         }
+        case 'origine': if (o.p !== qui && !m.test) return res(false, false, 'pas'); o.p = null; o.sol = null; return res(true, true);
         case 'voler': if (o.vole) return res(true, false); o.p = null; o.sol = null; o.vole = true; return res(true, true);
         case 'rendre': if (!o.vole) return res(true, false); o.vole = false; o.sol = Array.isArray(m.ou) ? m.ou : null; return res(true, true);
         case 'fin': if (o.p !== qui && !m.test) return res(false, false, 'pas'); o.p = null; o.sol = null; o.fin = true; return res(true, true);

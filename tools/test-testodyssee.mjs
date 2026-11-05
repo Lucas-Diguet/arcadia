@@ -473,7 +473,9 @@ for (const d of DONJONS) {
   ok(panneaux.length === 1 && panneaux[0][1].split('\n').length === 3 && panneaux[0][1].split('\n')[2] === texteJoueurs(d), `${d.id} : un panneau d'entrée de trois pages dehors`);
   if (panneaux.length) {
     const [x, y] = panneaux[0][0].split(',').map(Number), vu = dehors.reach(px, py + 2);
-    ok(Math.abs(x - px) <= 2 && y - py >= 1 && y - py <= 3 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vu[(y + dy) * dehors.w + x + dx]), `${d.id} : le panneau est près de la porte et on peut le lire`);
+    const Ep = m.donjon.exterieur.panneau;
+    if (Ep) ok(x === Ep[0] && y === Ep[1] && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vu[(y + dy) * dehors.w + x + dx]), `${d.id} : le panneau est là où le donjon le pose, et on peut le lire`);
+    else ok(Math.abs(x - px) <= 2 && y - py >= 1 && y - py <= 3 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vu[(y + dy) * dehors.w + x + dx]), `${d.id} : le panneau est près de la porte et on peut le lire`);
   }
 }
 
@@ -997,10 +999,25 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     // les salles à gouffre : sans le chemin invisible, on n'en sort pas
     if (P.objets[':']) ok(P.suivante && !parcours(m, false).has(`${P.suivante[0]},${P.suivante[1] + 1}`) && m.w * m.h >= 2400, `tombeau : ${s.nom} est grande, et son gouffre ne se traverse que par le chemin invisible`);
   }
-  // les lunettes s'atteignent avant le premier gouffre
-  ok(pres(parcours(M.s3, false), M.s3.donjon.plan.objets.L[0]), 'tombeau : les lunettes s\'atteignent sans passer le gouffre');
+  // les salles des gardiens : on vole les lunettes, puis le pendentif, et on sort, sans jamais entrer dans un regard
+  // (un pas par quart de seconde, on peut attendre ; mêmes regards que le jeu : donjon/tombeau.js, champGardien)
+  {
+    const DV = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
+    for (const [sid, but] of [['s1', 'L'], ['s2', 'P']]) {
+      const m = M[sid], P = m.donjon.plan, gardes = Object.entries(P.pnj).filter(([k]) => d.pnj[k].garde).map(([k, [[x, y]]]) => ({ x, y, G: d.pnj[k].garde }));
+      const occ = new Set(gardes.map((q) => `${q.x},${q.y}`)), bloque = (x, y) => { const t = m.get(x, y); return t === T.CAVEWALL || t === T.BLOCK || occ.has(`${x},${y}`); };
+      const champ = (q, dir) => { const [dx, dy] = DV[dir], out = []; for (let f = 1; f <= (q.G.portee || 6); f++) for (let l = -(f >> 1); l <= f >> 1; l++) { const x = q.x + dx * f - dy * l, y = q.y + dy * f + dx * l; if (bloque(x, y)) continue; const n = Math.max(Math.abs(x - q.x), Math.abs(y - q.y)); let vu = true; for (let k = 1; k < n; k++) if (bloque(Math.round(q.x + (x - q.x) * k / n), Math.round(q.y + (y - q.y) * k / n))) { vu = false; break; } if (vu) out.push(`${x},${y}`); } return out; };
+      const cycle = 12 * gardes.reduce((a, q) => { const b = q.G.tourne.length; const pg = (u, v) => (v ? pg(v, u % v) : u); return a * b / pg(a, b); }, 1);
+      const vus = Array.from({ length: cycle }, (_, t) => new Set(gardes.flatMap((q) => champ(q, q.G.tourne[Math.floor((t + (q.G.decal || 0)) / 12) % q.G.tourne.length]))));
+      const [bx, by] = P.objets[but][0], [nx, ny] = P.suivante;
+      const atteint = ([x0, y0], cible) => { const dej = new Set([`${x0},${y0},0`]), f = [[x0, y0, 0]]; while (f.length) { const [x, y, t] = f.shift(); if (cible(x, y)) return true; const u = (t + 1) % cycle; for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = x + dx, b = y + dy, k = `${a},${b},${u}`; if (dej.has(k) || bloque(a, b) || !walkable(m.get(a, b)) || vus[u].has(`${a},${b}`) || vus[t].has(`${a},${b}`)) continue; dej.add(k); f.push([a, b, u]); } } return false; };
+      ok(gardes.length >= 5 && atteint(P.depart, (x, y) => x === bx && y === by + 1) && atteint([bx, by + 1], (x, y) => x === nx && y === ny + 1), `tombeau : ${m.name}, on vole ${but === 'L' ? 'les lunettes' : 'le pendentif'} et on sort sans se faire voir`);
+      // et il faut vraiment se cacher : sans attendre le bon moment, les regards couvrent du terrain
+      ok(vus.some((v) => v.size >= 40), `tombeau : ${m.name}, les gardiens surveillent une bonne partie de la salle`);
+    }
+  }
   ok(M.s6.donjon.plan.objets['?']?.length >= 10 && M.s6.donjon.plan.objets.x?.length >= 10 && M.s7.donjon.plan.objets['?']?.length >= 10, 'tombeau : pièges visibles et cachés dans les salles de la poursuite');
-  ok(Object.values(d.pnj).every((p) => (p.equipe || []).every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 42)) && Object.values(d.pnj).filter((p) => p.pilleur).length >= 12, 'tombeau : des pilleurs partout, aux bons niveaux');
+  ok(Object.values(d.pnj).every((p) => (p.equipe || []).every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 42)) && Object.values(d.pnj).filter((p) => p.pilleur).length >= 10, 'tombeau : des pilleurs partout, aux bons niveaux');
   // les artefacts : un porteur à la fois, jamais les deux, on les pose, on les donne ; volé puis rendu ; posé sur l'autel
   const e = nouvelEtat(d, { joueurs: 3 }), A = () => e.salles.s1.donnees.art;
   ok(appliquer(d, e, '1', { a: 'artefact', k: 'pend', op: 'prendre' }).ok && !appliquer(d, e, '2', { a: 'artefact', k: 'pend', op: 'prendre' }).ok, 'tombeau : un seul porteur du pendentif');

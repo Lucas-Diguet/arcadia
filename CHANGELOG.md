@@ -1,5 +1,13 @@
 # Journal des versions — Arcadia
 
+## 4.09 — 5 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : nouvelle entrée, et deux salles d'infiltration.
+  - La Vallée des Rois Oubliés devient une grande place égyptienne : la façade du tombeau, gardée derrière un cordon, une foule de touristes qui prennent des photos, des passants, un marchand, une archéologue.
+  - L'entrée officielle est fermée. Un ruinemaniac propose un marché et donne une clé : l'une des roches du bord de la place est fissurée, et cache l'entrée des pilleurs.
+  - Les deux premières salles sont surveillées par des gardiens qui tournent la tête. S'ils te voient, ils te jettent dehors devant l'entrée officielle, et reprennent ce que tu avais volé. Il faut voler les Lunettes de Vérité, puis le Pendentif Maudit, sans te faire repérer. Avec les lunettes, on voit où ils regardent.
+  - Le tombeau prend des couleurs de désert : sable et murs de grès.
+  - Le pendentif ne fait plus de dégâts pour l'instant, le temps d'essayer le donjon.
+
 ## 4.08 — 5 novembre 2026
 - **TestOdyssée** — Nouveau donjon à trois : le Tombeau du Roi Sans Nom, dix salles à remonter jusqu'à l'Autel du Soleil.
   - Le Pendentif Maudit ronge les Pokémon de qui le porte, un peu à chaque pas : il faut se le passer (le poser, ou le donner à un voisin depuis le Sac), sinon l'équipe tombe. On ne quitte une salle qu'avec lui.
