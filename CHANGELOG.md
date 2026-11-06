@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 4.41 — 6 novembre 2026
+- **TestOdyssée** — Salle du Reflet : le grand miroir se voit enfin vraiment. Une vitre plus claire, en grands panneaux, avec un cadre bleu foncé et des reflets.
+
 ## 4.40 — 6 novembre 2026
 - **TestOdyssée** — Salle du Reflet : le grand miroir est deux fois plus haut.
 

@@ -179,10 +179,12 @@ export function dessinerMiroir(view, M) {
     const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide }));
     me.renderOrder = 2; me.frustumCulled = false; g.add(me);
   };
-  vitre(M.x0 + w / 2, 0, w, H, 0xffffff, 0.5);
-  for (let x = M.x0 + 1.3; x < M.x1 - 0.5; x += 3.1) { vitre(x, H * 0.2, 0.12, H * 0.6, 0xffffff, 0.6, -0.35, 0.002); vitre(x + 0.3, H * 0.3, 0.05, H * 0.4, 0xffffff, 0.6, -0.35, 0.002); }
-  vitre(M.x0 + w / 2, H - 0.08, w, 0.08, 0x6f9fd8, 0.95, 0, 0.004);   // cadre du haut
-  vitre(M.x0 + w / 2, 0, w, 0.06, 0x6f9fd8, 0.95, 0, 0.004);          // cadre du bas
+  vitre(M.x0 + w / 2, 0, w, H, 0xeef6ff, 0.72);
+  for (let x = M.x0 + 1.3; x < M.x1 - 0.5; x += 2.6) { vitre(x, H * 0.15, 0.16, H * 0.7, 0xffffff, 0.9, -0.35, 0.002); vitre(x + 0.35, H * 0.3, 0.07, H * 0.4, 0xffffff, 0.9, -0.35, 0.002); }
+  const C = 0x2f5f9e, e = 0.16;
+  vitre(M.x0 + w / 2, H - e, w, e, C, 1, 0, 0.004);                  // cadre du haut
+  vitre(M.x0 + w / 2, 0, w, e * 0.8, C, 1, 0, 0.004);                // cadre du bas
+  for (let x = M.x0; x <= M.x1 + 0.01; x += w / Math.max(1, Math.round(w / 4))) vitre(Math.min(Math.max(x, M.x0 + e / 2), M.x1 - e / 2), 0, e, H, C, 1, 0, 0.004);   // montants : un panneau tous les 4 pas
   view.root.add(g); view.__miroir = g; view.__miroirRoot = view.root;
 }
 
