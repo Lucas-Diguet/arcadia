@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 4.38 — 6 novembre 2026
+- **TestOdyssée** — Salle du Reflet : la plaque est maintenant une affiche encadrée accrochée au mur en face de l'entrée. Le mur reste entier.
+
 ## 4.37 — 6 novembre 2026
 - **TestOdyssée** — Deux options dans le menu : couper les Pokémon sauvages, et traverser les murs. Elles restent réglées d'une partie à l'autre.
 - **TestOdyssée** — Salle du Reflet : le grand miroir se dresse sur toute la hauteur des murs, et la plaque qui ramène au début est sur le mur juste en face de l'entrée.

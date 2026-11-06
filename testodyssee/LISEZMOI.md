@@ -69,6 +69,8 @@ Le donjon se dessine en texte, une lettre par case :
 Autres objets : `ramasser` (`objet`, `n` : un objet du Sac posé au sol, gardé en sortant) et ceux du donjon des
 miroirs (`enigme`, `miroirMural`, `miroirPoche`, `robot`, `brasier`, `soleil`, `miroirFixe`, `socle`, `plaque`,
 `copycat`). Un panneau demandé se pose au centre de la première salle, pas juste à l'entrée.
+`mur: true` : l'objet est accroché au mur (sa lettre prend la place d'un `#`, la case reste un mur) ; il se lit en
+faisant face au mur, et une affiche encadrée est dessinée sur la face du mur (`affiche` : son texte, pour mémoire).
 
 Un ascenseur (`type: 'ascenseur'`) mène à l'ascenseur dont la lettre est `vers` ; on arrive sur la case libre à côté.
 Avec `salle` et `serrures`, il reste fermé tant que cette salle n'est pas terminée. Deux parties du plan qui ne se
@@ -202,7 +204,7 @@ de toutes les équipes du labo) :
    murs, sur la ligne du milieu (`dessinerMiroir`), purement visuelle ; collé à lui, le joueur y voit son reflet (son personnage, retourné, à
    demi transparent). Copycat refait chaque pas en miroir (gauche et droite pareil, haut et bas
    inversés), chacun de son côté de la ligne du milieu, dans un grand labyrinthe (65 pas au mieux). Arrivé à côté de
-   lui, on affronte sans un mot une copie soignée de toute sa propre équipe. Le menu (ou la plaque sur le mur juste en face de
+   lui, on affronte sans un mot une copie soignée de toute sa propre équipe. Le menu (ou l'affiche encadrée sur le mur juste en face de
    l'entrée) ramène au début de la salle.
 
 Récompenses : un Bouchon d'Or (IV au maximum, pour renforcer l'équipe) et un Éclat de Miroir (pour un futur donjon).
