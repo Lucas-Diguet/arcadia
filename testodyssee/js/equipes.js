@@ -42,6 +42,7 @@ export function partieTest(game, { nom, genre, equipe, lieu }) {
   st.money = E.argent;
   st.bag = { ...E.sac, 'town-map': 1 };
   for (const k of CS) st.bag[k] = 1;
+  st.bag['cle-miroirs'] = 1;
   for (const k of DEJA_VU) st.flags[k] = true;
   st.flags.starter = st.party[0].sp; st.flags.rivalSp = st.party[0].sp;
   for (const m of st.party) { if (!st.dex.caught.includes(m.sp)) st.dex.caught.push(m.sp); if (!st.dex.seen.includes(m.sp)) st.dex.seen.push(m.sp); }

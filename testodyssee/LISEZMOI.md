@@ -129,6 +129,9 @@ lisière à la grande carte, comme le fait `passage()` dans `quetes.js`.
 | `lumiere` | les deux faisceaux du brasier éclairent tous les soleils |
 | `reflet` | on rejoint Copycat et on bat la copie de sa propre équipe |
 
+`cle` du donjon : un objet du Sac sans lequel la porte de l'extérieur reste fermée (`textes.porteCle`). `hautMur` d'une
+salle : la tuile du haut de ses murs, si elle doit différer de celle du style (`haut_bleu`, tuiles du labo dans `js/rendu.js`).
+
 Un donjon `solo: true` n'est pas partagé : chaque joueur a le sien, et il se remet à zéro quand on en sort (les objets
 de `objetsDuDonjon` quittent alors le Sac). `style: 'clair'` dessine le donjon en blanc.
 
@@ -178,23 +181,27 @@ tout (`js/combat/raid.js`) ; l'écran de chaque joueur rejoue les tours (`js/com
 
 ### Le donjon des miroirs
 
-Seul, niveau 35, cinq salles séparées :
+Seul, niveau 35, cinq salles séparées. La porte s'ouvre avec la Clé du Donjon des Miroirs (`cle-miroirs`, dans le Sac
+de toutes les équipes du labo) :
 
 1. **Énigme** : le panneau au centre montre une horloge vue dans un miroir (3 h 40) et les trois réponses, avec une
    flèche vers leur miroir (`<-` gauche, `↑` milieu, `->` droite). Le bon miroir (gauche, 8 h 20) s'efface et
    découvre le passage ; les deux autres se brisent et font tomber l'équipe à la moitié de ses PV.
-2. **Galerie de Glace** (40 × 27) : un PC d'aide à l'entrée (indice, salle simplifiée, solution). Cinq petits miroirs sur la glace. Trois sont des miroirs de poche (dans le
+2. **Galerie de Glace** (40 × 27 de glace) : à l'entrée, un plateau de 7 × 4 cases et trois rangées sans glace sous la
+   zone glissante ; un PC d'aide sur le plateau (indice, salle simplifiée, solution). Cinq petits miroirs sur la glace. Trois sont des miroirs de poche (dans le
    journal), deux sont piégés et envoient une copie du premier Pokémon encore debout de l'équipe.
-3. **Grand Miroir Gelé** (40 × 27) : objets et parchemins à garder, et le robot Réflecteur (M. Mime, Qulbutoké,
+3. **Grand Miroir Gelé** (40 × 27 de glace, même entrée que la Galerie, sans PC) : objets et parchemins à garder, et le robot Réflecteur (M. Mime, Qulbutoké,
    Milobellus, tous avec Voile Miroir), le plus loin à atteindre, qui donne la CT Voile Miroir.
-4. **Salle du Brasier** : rencontres à 60 % Funécire, 10 % Mélancolux, 15 % Sorbébé, 10 % Sorboul, 5 % Hexagel.
+4. **Salle du Brasier** (huit rangées vides à l'entrée : le brasier est au centre) : rencontres à 60 % Funécire, 10 % Mélancolux, 15 % Sorbébé, 10 % Sorboul, 5 % Hexagel.
    Chaque Pokémon Feu battu laisse un Feu Follet ; on les jette un par un (un texte par stade du brasier), 5 l'allument
    et les rencontres s'arrêtent. Un Pokémon Glace battu donne une Eau Fraîche, et éteint le brasier s'il n'a pas ses
    5 feux. Puis on tourne les miroirs sur pied et on pose les 3 miroirs de poche sur les bons socles (une seule
    solution, 5 miroirs à tourner) jusqu'à éclairer les deux soleils : la grande porte s'ouvre.
-5. **Salle du Reflet** (vue de plus haut) : Copycat refait chaque pas en miroir (gauche et droite pareil, haut et bas
+5. **Salle du Reflet** (vue de plus haut, haut des murs en bleu) : le grand miroir est une bande de verre sur la ligne du
+   milieu (`dessinerMiroir`), purement visuelle ; collé à lui, le joueur y voit son reflet (son personnage, retourné, à
+   demi transparent). Copycat refait chaque pas en miroir (gauche et droite pareil, haut et bas
    inversés), chacun de son côté de la ligne du milieu, dans un grand labyrinthe (65 pas au mieux). Arrivé à côté de
-   lui, on affronte une copie soignée de toute sa propre équipe. Le menu (ou la plaque près de l'entrée) ramène au
+   lui, on affronte sans un mot une copie soignée de toute sa propre équipe. Le menu (ou la plaque près de l'entrée) ramène au
    début de la salle.
 
 Récompenses : un Bouchon d'Or (IV au maximum, pour renforcer l'équipe) et un Éclat de Miroir (pour un futur donjon).

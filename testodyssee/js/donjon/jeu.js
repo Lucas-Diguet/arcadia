@@ -250,6 +250,17 @@ export class Donjons {
     await g.warp({ map: m.id, x, y, dir: 'up' }, 'exit');
     return true;
   }
+  /** porte de l'extérieur d'un donjon fermé à clé (cle du donjon) : true si le pas vers elle est refusé */
+  porteACle(tx, ty) {
+    const g = this.game;
+    for (const d of this.defs.values()) {
+      const E = d.cle && g.world.maps[d.carte]?.donjon?.exterieur;
+      if (!E || g.mapObj?.id !== E.carte.id || E.porte[0] !== tx || E.porte[1] !== ty || g.state?.bag[d.cle]) continue;
+      if (!g.busy) { g.busy = true; g.ui.say(d.textes?.porteCle || 'La porte est fermée à clé.').finally(() => { g.busy = false; }); }
+      return true;
+    }
+    return false;
+  }
   dansUnDonjon() { return [...this.defs.values()].some((q) => this.estDans(q)); }
   /** on quitte un donjon (autre lieu, changement de lieu) : les objets de quête disparaissent */
   sortir(d) {

@@ -143,7 +143,7 @@ Ajouter `[skip changelog]` dans le message d'un commit purement technique pour q
   Donjon de Didier : questions, clés et ascenseur à serrures, journal du donjon (`testodyssee/js/donjon/mecaniques.js`), et combat à plusieurs
   contre un boss calculé par l'hôte (`testodyssee/js/combat/raid.js`, barre de vie à blocs façon PokéRogue) que chaque écran rejoue
   dans l'écran de combat d'Odyssée par `runPvp` (`testodyssee/js/combat/vue.js`). Pokémon et objets exclusifs du labo : `testodyssee/js/contenu.js`.
-  Donjon des Miroirs (solo, une carte par salle, `testodyssee/js/donjons/miroirs.js`, mécaniques dans `testodyssee/js/donjon/miroirs.js`) : glace, lumière et reflet
+  Donjon des Miroirs (solo, une carte par salle, ouvert par la Clé du Donjon des Miroirs (`cle` du donjon, dans le Sac des équipes du labo), `testodyssee/js/donjons/miroirs.js`, mécaniques dans `testodyssee/js/donjon/miroirs.js`) : glace, lumière et reflet
   résolus sans écran dans `testodyssee/js/donjon/casse-tetes.js`, vérifiés par `node tools/test-testodyssee.mjs`. Un panneau demandé se pose au centre de la première salle.
   Standard de tous les donjons : panneau d'entrée dehors (nom, `entree`, `joueurs` : solo, groupe ou exact) et « Quitter le donjon » ; un PC d'aide
   (`type: 'pc'`, `aide` de la salle) seulement dans les salles où l'auteur du donjon le demande.

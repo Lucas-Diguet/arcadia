@@ -11,7 +11,7 @@ import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { glisser, faisceau, refleter, cle, cheminGlace } from './casse-tetes.js';
 import { ouvrir } from './plan.js';
 import { IMAGES } from '../contenu.js';
-import { dessinerFaisceaux } from '../rendu.js';
+import { dessinerFaisceaux, dessinerMiroir } from '../rendu.js';
 
 const estMiroirs = (d) => d.salles.some((s) => s.type === 'reflet' || s.type === 'lumiere');
 const TYPES = new Set(['enigme', 'miroirMural', 'miroirPoche', 'robot', 'brasier', 'soleil', 'miroirFixe', 'socle', 'plaque', 'pc']);
@@ -284,6 +284,7 @@ export const Miroirs = {
   occupeReflet(x, y) { const R = this.reflet; return !!R && this.refletActif(R.d) && ((R.x === x && R.y === y) || (R.move && R.move.fx === x && R.move.fy === y)); },
   async dessinerReflet(dt) {
     const R = this.reflet, g = this.game, v = g.view;
+    this.dessinerGlace(R && this.refletActif(R.d) ? R.d : null);
     if (!R || !this.refletActif(R.d)) { if (v.actors.has('copycat')) v.removeActor('copycat'); return; }
     if (!this.imgCopycat) { if (!this.chargeCopycat) this.chargeCopycat = loadImg(IMAGES.copycat).then((im) => { this.imgCopycat = im; }); return; }
     let x = R.x, y = R.y;
@@ -291,13 +292,37 @@ export const Miroirs = {
     const a = v.imageActor('copycat', this.imgCopycat, 1.2);
     v.place(a, x, y, R.move ? Math.abs(Math.sin(R.move.t * Math.PI)) * 0.08 : 0);
   },
+  /** le grand miroir le long de la ligne du milieu, et le reflet du joueur quand il s'y colle */
+  dessinerGlace(d) {
+    const g = this.game, v = g.view, p = g.player;
+    if (!d) { dessinerMiroir(v, null); if (v.actors.has('reflet-joueur')) v.removeActor('reflet-joueur'); return; }
+    const Z = this.zoneReflet(d), m = Z.m, l = Z.ligne;
+    if (v.__miroirRoot !== v.root) {
+      const cases = []; for (let x = 0; x < m.w; x++) if (walkable(m.get(x, l)) || walkable(m.get(x, l - 1))) cases.push(x);
+      dessinerMiroir(v, { cases, y: l });
+    }
+    const contre = p.y === l && (!p.move || p.move.fy === l);
+    if (!contre) { if (v.actors.has('reflet-joueur')) v.removeActor('reflet-joueur'); return; }
+    const a = v.actor('reflet-joueur', {});
+    if (!a.verre) {
+      const M = v.mat.chars, mat = M.clone();
+      mat.onBeforeCompile = M.onBeforeCompile; mat.customProgramCacheKey = M.customProgramCacheKey;
+      mat.transparent = true; mat.opacity = 0.55; mat.depthWrite = false; mat.color.set(0xb8d4ff);
+      a.mesh.material = mat; a.mesh.renderOrder = 3; a.shadow.visible = false; a.verre = true;
+      const fin = a.dispose; a.dispose = () => { fin(); mat.dispose(); };
+    }
+    let x = p.x, pas = 0;
+    if (p.move) { const u = Math.min(1, p.move.t); x = p.move.fx + (p.move.tx - p.move.fx) * u; pas = u < 0.5 ? (p.step % 2 ? 1 : 2) : 0; }
+    v.setFrame(a, g.playerSprite(), { up: 'down', down: 'up' }[p.dir] || p.dir, pas);
+    v.place(a, x, 2 * l - p.y - 1.1);
+    a.shadow.visible = false;
+  },
   /** un pas plus loin : Copycat est-il sur la case visée ? */
   async parlerReflet(d) {
     const g = this.game, ui = g.ui, p = g.player, [dx, dy] = DIRS[p.dir], R = this.reflet;
     if (!this.refletActif(d) || R.x !== p.x + dx || R.y !== p.y + dy || R.move) return false;
     g.busy = true;
     try {
-      await ui.say(d.textes.copycat, { speaker: 'Copycat' });
       const res = await this.combat({ cls: 'Mime', nom: 'Copycat', bs: 'copycat_combat' }, copieSoignee(g.state.party));
       if (res !== 'win') { await ui.say(d.textes.copycatGagne); this.placerReflet(d); await this.defaite(d); return true; }
       await ui.say(d.textes.copycatBattu, { speaker: 'Copycat' });
@@ -394,11 +419,11 @@ export const Miroirs = {
     // la salle du reflet se voit de plus haut
     const vue = d && g.mapObj?.salle ? d.salles.find((s) => s.id === g.mapObj.salle)?.vue || 1 : 1;
     if (g.state && vue !== this.vueVoulue) { this.vueVoulue = vue; g.onVue?.(vue); }
-    if (!d) { if (g.view.actors.has('copycat')) g.view.removeActor('copycat'); return; }
+    if (!d) { if (g.view.actors.has('copycat')) g.view.removeActor('copycat'); if (g.view.actors.has('reflet-joueur')) g.view.removeActor('reflet-joueur'); dessinerMiroir(g.view, null); return; }
     // indice du PC : tracé au sol tant qu'on est dans sa salle
     if (this.indice && g.mapObj.id === this.indice.carte && (!this.indice.dessine || g.view.__faisceauxRoot !== g.view.root)) { dessinerFaisceaux(g.view, this.indice.traits); this.indice.dessine = true; }
     if (this.salleDe(d, 'lumiere')) this.dessinerLumiere(d);
-    if (this.salleDe(d, 'reflet')) this.dessinerReflet(dt);
+    if (this.salleDe(d, 'reflet')) this.dessinerReflet(dt); else this.dessinerGlace(null);
   },
   /** pas pris en charge ici (glissade sur la glace, ligne du miroir) : renvoie true si le pas est traité */
   pasSpecial(dir) {

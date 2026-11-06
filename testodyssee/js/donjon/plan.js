@@ -89,6 +89,7 @@ export function construireSalles(def) {
     const m = construireCarte({ ...def, carte: id, plan: s.plan, salles: [], style: 'style' in s ? s.style : def.style });
     m.zone(0, 0, m.w - 1, m.h - 1, { name: s.nom, music: s.musique || def.musique || 'cave', salle: s.id });
     m.salle = s.id;
+    if (s.hautMur) m.hautMur = s.hautMur;   // haut des murs d'une autre couleur que celle du style
     if (s.sombre) m.dark = 'arene';   // dans le noir, même avec Flash
     return m;
   });

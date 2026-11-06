@@ -24,8 +24,8 @@ export class TestGame extends Game {
     // Routes Victoire : hauteurs, cases fermées d'un côté, rochers qui tombent dans les trous
     if (pasCascade(this, d)) return;
     if ((this.rv ||= new RoutesVictoire(this)).avantPas(d)) return;
-    // tombeau : pas de sortie sans le pendentif, et ses porteurs ne s'approchent pas
-    { const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[d]; if (!p.move && D?.avantPasTombeau?.(p.x + dx, p.y + dy)) { p.dir = d; p.walking = false; return; } }
+    // porte d'un donjon fermée à clé ; tombeau : pas de sortie sans le pendentif, et ses porteurs ne s'approchent pas
+    { const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[d]; if (!p.move && (D?.porteACle(p.x + dx, p.y + dy) || D?.avantPasTombeau?.(p.x + dx, p.y + dy))) { p.dir = d; p.walking = false; return; } }
     const depart = [p.x, p.y], avant = p.move;
     super.tryStep(d);
     if (!avant && p.move) D?.apresDepart(d, depart);

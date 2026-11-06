@@ -38,9 +38,14 @@ const TUILES = {
     x.fillStyle = '#3a2214'; x.fillRect(0, 0, 32, 32);
     for (let k = 0; k < 60; k++) { x.fillStyle = r() < 0.5 ? '#46291a' : '#2c180c'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 2); }
   },
+  haut_bleu(x, r) {
+    // haut des murs de la salle du Reflet : un bleu net, pour bien voir le tracé du labyrinthe
+    x.fillStyle = '#3f6fc8'; x.fillRect(0, 0, 32, 32);
+    for (let k = 0; k < 40; k++) { x.fillStyle = r() < 0.5 ? '#4a7bd4' : '#3866bb'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 2); }
+  },
 };
 function ajouterTuiles(view) {
-  const A = view.A; if (!A || A.cells.mur_tombeau) return;
+  const A = view.A; if (!A || A.cells.haut_bleu) return;
   const P2 = 34, C2 = 32, SIZE = A.size || A.canvas.width, cols = Math.floor(SIZE / P2);
   let n = 0;
   for (const [u, v] of Object.values(A.cells)) n = Math.max(n, Math.round((v * SIZE - 1) / P2) * cols + Math.round((u * SIZE - 1) / P2) + 1);
@@ -115,7 +120,7 @@ export function brancherRendu() {
     const st = STYLES[this.map?.style];
     if (!st) return morceau.call(this, i, j);
     const A = this.A.cells, avant = { cavewall: A.cavewall, cavetop: A.cavetop };
-    A.cavewall = cellule(A, st.mur) || avant.cavewall; A.cavetop = cellule(A, st.haut) || avant.cavetop;
+    A.cavewall = cellule(A, st.mur) || avant.cavewall; A.cavetop = cellule(A, this.map.hautMur || st.haut) || avant.cavetop;
     try { return morceau.call(this, i, j); } finally { Object.assign(A, avant); }
   };
   const carte = P.setMap;
@@ -139,6 +144,26 @@ export function dessinerZones(view, cases) {
   const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xff3a3a, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide }));
   me.renderOrder = 4; me.frustumCulled = false;
   view.root.add(me); view.__zones = me; view.__zonesRoot = view.root;
+}
+
+/** grand miroir posé au sol le long d'une ligne (salle du Reflet) : une bande de verre bleuté sur la rangée y - 1,
+ *  bordée d'un trait clair du côté du joueur ; null : efface */
+export function dessinerMiroir(view, M) {
+  if (!M) { if (view.__miroir) { view.__miroirRoot?.remove(view.__miroir); view.__miroir.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); view.__miroir = null; view.__miroirRoot = null; } return; }
+  if (!view.root) return;
+  dessinerMiroir(view, null);
+  const g = new THREE.Group(), H = 0.015, y = M.y;
+  const bande = (x0, x1, z0, z1, color, opacity, h) => {
+    const geo = new THREE.PlaneGeometry(x1 - x0, z1 - z0); geo.rotateX(-Math.PI / 2); geo.translate((x0 + x1) / 2, h, (z0 + z1) / 2);
+    const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
+    me.renderOrder = 2; me.frustumCulled = false; g.add(me);
+  };
+  for (const x of M.cases) {
+    bande(x, x + 1, y - 1, y, 0x8fc4ff, 0.45, H);
+    bande(x + 0.15, x + 0.3, y - 0.95, y - 0.35, 0xffffff, 0.5, H + 0.001);   // reflets en biais sur le verre
+    bande(x, x + 1, y - 0.06, y, 0xeaf4ff, 0.9, H + 0.002);                   // le bord du miroir
+  }
+  view.root.add(g); view.__miroir = g; view.__miroirRoot = view.root;
 }
 
 /** « Zzz » au-dessus des personnages endormis (les gardiens du tombeau) ; liste vide : efface */

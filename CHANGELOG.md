@@ -1,5 +1,13 @@
 # Journal des versions — Arcadia
 
+## 4.35 — 6 novembre 2026
+- **TestOdyssée** — Donjon des Miroirs : plus clair et plus confortable.
+  - La porte du donjon s'ouvre avec la Clé du Donjon des Miroirs, déjà dans ton Sac.
+  - Galerie de Glace et Grand Miroir Gelé : un plateau t'accueille à l'entrée, et trois rangées sans glace avant la zone glissante. Le PC d'aide est bien visible.
+  - La Salle du Brasier est plus grande : le brasier est au centre.
+  - Salle du Reflet : le haut des murs est bleu, on voit enfin le tracé du labyrinthe. Le grand miroir se voit, et ton reflet y apparaît quand tu t'en approches.
+  - Copycat t'affronte sans un mot.
+
 ## 4.34 — 5 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la suite, jusqu'au -10.
   - Ton premier Pokémon force le passage du -4, et la voûte s'effondre derrière toi : plus de retour possible.
