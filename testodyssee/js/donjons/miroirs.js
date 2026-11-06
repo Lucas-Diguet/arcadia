@@ -1,7 +1,9 @@
 // testodyssee/js/donjons/miroirs.js — le Donjon des Miroirs : un donjon à faire seul, tout en blanc et en lumière.
 //
+// Salle 0 : un seul miroir, qui pose une devinette ; on tape la réponse (secret ou silence), sans pénalité.
 // Salle 1 : une énigme sur le panneau, trois miroirs au mur ; le bon (à gauche) s'efface et laisse passer, les autres se brisent
 //           (et coûtent des PV à l'équipe, comme dans le donjon de Didier).
+// Salle 1 bis : cinq miroirs à cadre de couleur, trois indices sur le panneau ; un mauvais miroir coûte un quart des PV.
 // Salle 2 : grande salle de glace, cinq petits miroirs ; trois sont des miroirs de poche (journal), deux sont des
 //           pièges qui renvoient une copie du premier Pokémon en forme de l'équipe.
 // Salle 3 : grande salle de glace ; objets et parchemins à garder, et un robot (CT Voile Miroir) difficile à atteindre.
@@ -43,7 +45,14 @@ export default {
   decor: { X: 'cristal', T: 'colonne' },
   portesDecor: { 4: 'porte_miroirs' },
   objets: {
+    M: { type: 'miroirSecret', decor: 'miroir_mur', reponses: ['secret', 'silence'] },
     P: { type: 'enigme', decor: 'sign' },
+    Q: { type: 'enigme', decor: 'sign', enigme: 'couleurs' },
+    H: { type: 'miroirMural', decor: 'miroir_mur_jaune' },
+    I: { type: 'miroirMural', decor: 'miroir_mur_rouge' },
+    J: { type: 'miroirMural', decor: 'miroir_mur_bleu' },
+    O: { type: 'miroirMural', decor: 'miroir_mur_noir', juste: true },
+    U: { type: 'miroirMural', decor: 'miroir_mur_vert' },
     A: { type: 'miroirMural', decor: 'miroir_mur', juste: true },
     B: { type: 'miroirMural', decor: 'miroir_mur' },
     C: { type: 'miroirMural', decor: 'miroir_mur' },
@@ -66,6 +75,18 @@ export default {
   },
   // une carte par salle : on passe de l'une à l'autre par N (en haut) et on revient par D (en bas)
   salles: [
+    { id: 's0', nom: 'Salle du Secret', type: 'enigme', porteObjet: 'M', suivi: 'parle au miroir', plan: [
+      '###########',
+      '#####N#####',
+      '#####M#####',
+      '##.......##',
+      '##.......##',
+      '##.......##',
+      '##.......##',
+      '##.......##',
+      '#####S#####',
+      '#####D#####',
+    ] },
     { id: 's1', nom: 'Salle de l\'Énigme', type: 'enigme', porteObjet: 'A', plan: [
       '###########',
       '###N#######',
@@ -77,6 +98,25 @@ export default {
       '##.......##',
       '#####S#####',
       '#####D#####',
+    ] },
+    // deux fois la taille de la Salle de l'Énigme ; le passage est derrière le miroir au cadre noir
+    { id: 's1b', nom: 'Salle des Cinq Miroirs', type: 'enigme', porteObjet: 'O', penalite: 'quart', plan: [
+      '#####################',
+      '#############N#######',
+      '####H##I##J##O##U####',
+      '##.................##',
+      '##.................##',
+      '##.................##',
+      '##.................##',
+      '##.................##',
+      '##........Q........##',
+      '##.................##',
+      '##.................##',
+      '##.................##',
+      '##.................##',
+      '##.................##',
+      '##########S##########',
+      '##########D##########',
     ] },
     { id: 's2', nom: 'Galerie de Glace', type: 'libre',
       // PC d'aide à l'entrée : indice (chemin vers le prochain miroir de poche), salle simplifiée, solution
@@ -214,7 +254,9 @@ export default {
     ] },
   ],
   journal: [
+    { id: 'secret', nom: 'Le miroir qui parle', salle: 's0', but: 'Le miroir pose une devinette. Tape ta réponse.' },
     { id: 'enigme', nom: 'L\'énigme des miroirs', salle: 's1', but: 'Lis le panneau et touche le miroir qui porte la bonne réponse.' },
+    { id: 'couleurs', nom: 'Les cinq cadres', salle: 's1b', but: 'Lis les trois indices du panneau et touche le bon miroir.' },
     { id: 'poche', nom: 'Les miroirs de poche', salle: 's2', but: 'Trois miroirs de poche sont posés sur la glace de la Galerie. Attention aux miroirs piégés.' },
     { id: 'brasier', nom: 'Rallumer le brasier', salle: 's4', but: 'Les Pokémon de Feu laissent des Feux Follets. Il en faut 5 dans le brasier.' },
     { id: 'reflet', nom: 'Affronter son reflet', salle: 's5', but: 'Copycat refait tes pas en miroir. Arrive à côté de lui.' },
@@ -222,6 +264,16 @@ export default {
   enigme: {
     texte: ['Une plaque est gravée d\'une horloge.', 'Dans le miroir, l\'horloge semble indiquer 3 h 40.\nQuelle heure est-il vraiment ?', '<-  8 h 20      ↑  9 h 20      ->  3 h 20', 'Touche le miroir de la bonne réponse.'],
     image: 'miroirs/horloge.png',
+  },
+  enigmes: {
+    couleurs: { texte: [
+      'Cinq miroirs, cinq cadres. Un seul cache le passage.\nDe gauche à droite : jaune, rouge, bleu, noir, vert.',
+      'Celui qui cache le passage a laissé trois indices :',
+      '« Je ne suis pas au bord. »',
+      '« Aucun de mes voisins n\'a un cadre rouge. »',
+      '« Mon cadre n\'a pas la couleur du feu. »',
+      'Touche le bon miroir. Un mauvais miroir se brise et blesse ton équipe.',
+    ] },
   },
   // rencontres de la Salle du Brasier : [espèce, niveau min, niveau max, poids]
   rencontres: [[607, 30, 33, 60], [608, 32, 34, 10], [582, 30, 33, 15], [583, 32, 34, 10], [615, 31, 34, 5]],
@@ -233,6 +285,11 @@ export default {
   textes: {
     porteCle: 'La porte est fermée. L\'ouvrir avec la Clé des Miroirs ?',
     porteFermee: 'La porte est fermée. Il faudrait la Clé des Miroirs.',
+    secret: ['Ton reflet te sourit... puis ses lèvres bougent toutes seules.', 'Je n\'existe que si tu me gardes, et je disparais dès que tu me dis. Qui suis-je ?'],
+    secretTitre: 'Qui suis-je ?',
+    secretJuste: ['Ton reflet hoche la tête.', 'Le miroir se trouble, puis s\'efface comme une brume... Un passage s\'ouvre !'],
+    secretFaux: 'Ton reflet secoue la tête. Le miroir reste en place.',
+    secretFait: 'Le miroir n\'est plus là.',
     miroirMur: 'Un grand miroir. Ton reflet te regarde.\nToucher ce miroir ?',
     juste: ['Le miroir se trouble, puis s\'efface comme une brume...', 'Un passage s\'ouvre derrière lui !'],
     faux: 'Le miroir se brise en mille éclats !',

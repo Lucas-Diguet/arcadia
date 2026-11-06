@@ -150,7 +150,7 @@ export const OBJETS = {
 export const DRESSEURS = { robot_combat: 'miroirs/robot_combat.png', copycat_combat: 'miroirs/copycat_combat.png', miroir_piege: 'miroirs/miroir_piege.png' };
 // décor du labo ajouté aux images d'Odyssée (dessiné à 16 pixels par case)
 export const DECOR = [
-  ...['miroir_mur', 'miroir_brise', 'miroir_d', 'miroir_g', 'miroir_poche', 'socle', 'brasier', 'brasier_on', 'soleil', 'soleil_on', 'porte_miroirs', 'robot'].map((k) => [k, IMG + 'miroirs/' + k + '.png']),
+  ...['miroir_mur', 'miroir_mur_jaune', 'miroir_mur_rouge', 'miroir_mur_bleu', 'miroir_mur_noir', 'miroir_mur_vert', 'miroir_brise', 'miroir_d', 'miroir_g', 'miroir_poche', 'socle', 'brasier', 'brasier_on', 'soleil', 'soleil_on', 'porte_miroirs', 'robot'].map((k) => [k, IMG + 'miroirs/' + k + '.png']),
   ...['train_quai', 'marchepied', 'traverse', 'comptoir'].map((k) => [k, IMG + 'train/' + k + '.png']),
   ...['barriere', 'cage', 'fissure', 'wagonnet', 'poste', 'entree_mine'].map((k) => [k, IMG + 'mine/' + k + '.png']),
   ...['pyramide', 'obelisque', 'porte_1', 'porte_2', 'porte_3', 'porte_4', 'porte_1_f', 'porte_2_f', 'porte_3_f', 'porte_4_f'].map((k) => [k, IMG + 'pyramide/' + k + '.png']),

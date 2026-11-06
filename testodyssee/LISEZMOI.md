@@ -184,12 +184,22 @@ tout (`js/combat/raid.js`) ; l'écran de chaque joueur rejoue les tours (`js/com
 
 ### Le donjon des miroirs
 
-Seul, niveau 35, cinq salles séparées. La porte s'ouvre avec la Clé des Miroirs (`cle-miroirs`, dans le Sac
+Seul, niveau 35, sept salles séparées. La porte s'ouvre avec la Clé des Miroirs (`cle-miroirs`, dans le Sac
 de toutes les équipes du labo) :
 
+0. **Salle du Secret** (`s0`, même taille que l'Énigme) : un seul miroir (`miroirSecret`), qui pose une devinette
+   (« Je n'existe que si tu me gardes, et je disparais dès que tu me dis. Qui suis-je ? »). On tape la réponse au
+   clavier ; « secret » et « silence » sont acceptés (`reponses`), sans tenir compte des majuscules, des accents, d'un
+   article au début ni d'un « s » final, et à une faute de frappe près pour les mots de 6 lettres ou plus
+   (`reponseJuste` de `casse-tetes.js`, vérifié par les tests). Mauvaise réponse : pas de pénalité, le miroir reste.
 1. **Énigme** : le panneau au centre montre une horloge vue dans un miroir (3 h 40) et les trois réponses, avec une
    flèche vers leur miroir (`<-` gauche, `↑` milieu, `->` droite). Le bon miroir (gauche, 8 h 20) s'efface et
    découvre le passage ; les deux autres se brisent et font tomber l'équipe à la moitié de ses PV.
+1 bis. **Salle des Cinq Miroirs** (`s1b`, au moins deux fois la surface de l'Énigme) : cinq miroirs au cadre de
+   couleur, de gauche à droite jaune, rouge, bleu, noir, vert (`miroir_mur_<couleur>`, le miroir d'origine recoloré).
+   Le panneau (`enigmes.couleurs`) donne trois indices : pas au bord, aucun voisin rouge, pas la couleur du feu. Seul
+   le noir convient (vérifié par les tests) et découvre le passage. Un mauvais miroir se brise et chaque Pokémon perd
+   un quart de ses PV, jamais K.O. (`penalite: 'quart'` de la salle).
 2. **Galerie de Glace** (40 × 27 de glace) : à l'entrée, un plateau de 7 × 4 cases et trois rangées sans glace sous la
    zone glissante ; un PC d'aide sur le plateau (indice, salle simplifiée, solution). Cinq petits miroirs sur la glace. Trois sont des miroirs de poche (dans le
    journal), deux sont piégés et envoient une copie du premier Pokémon encore debout de l'équipe.

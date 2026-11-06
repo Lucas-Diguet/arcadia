@@ -26,7 +26,7 @@ const { construire: construireIle, nouvelleIle } = ILE_M;
 import { EQUIPES } from '../testodyssee/js/equipes.js';
 import { walkable, T } from '../odyssee/js/world/tiles.js';
 import { ronde, vueGarde, sansEtreVu } from '../testodyssee/js/donjons/tombeau-gardes.js';
-import { cle, explorerGlace, faisceau, resoudreReflet, cheminGlace } from '../testodyssee/js/donjon/casse-tetes.js';
+import { cle, explorerGlace, faisceau, resoudreReflet, cheminGlace, reponseJuste } from '../testodyssee/js/donjon/casse-tetes.js';
 
 installerContenu();
 let fails = 0, checks = 0;
@@ -89,7 +89,7 @@ for (const d of DONJONS) {
   ok(dehors && cartes[0].warpAt(...cartes[0].donjon.plan.sortie)?.map === dehors.id, 'miroirs : la première salle sort dehors');
   // salle 1 : le passage est muré tant que l'énigme n'est pas résolue, et le bon miroir est à gauche
   {
-    const m = construireSalles(d)[0], P = m.donjon.plan;
+    const m = construireSalles(d)[d.salles.findIndex((s) => s.id === 's1')], P = m.donjon.plan;
     const vu = m.reach(...P.depart);
     ok(!vu[P.suivante[1] * m.w + P.suivante[0]] && m.get(...P.suivante) === T.CAVEWALL, 'miroirs : salle 1, le passage reste muré');
     const xs = ['A', 'B', 'C'].map((c) => P.objets[c][0][0]);
@@ -99,6 +99,35 @@ for (const d of DONJONS) {
     ok(Math.abs(px - (Math.min(...xs2) + Math.max(...xs2)) / 2) <= 1 && py > P.objets.A[0][1] + 1 && py < P.depart[1] - 1, 'miroirs : le panneau est au centre de la salle');
     ouvrir(m, ...P.objets.A[0]); passageSuivant(m, true);
     ok(m.reach(...P.depart)[P.suivante[1] * m.w + P.suivante[0]], 'miroirs : salle 1, le bon miroir ouvre le passage');
+  }
+  // salle 0 : le miroir qui parle, même taille que la salle 1 ; la réponse tapée au clavier
+  {
+    const C = construireSalles(d), i0 = d.salles.findIndex((s) => s.id === 's0'), m = C[i0], P = m.donjon.plan;
+    const m1 = C[d.salles.findIndex((s) => s.id === 's1')];
+    ok(i0 === 0 && m.w === m1.w && m.h === m1.h, `miroirs : la Salle du Secret ouvre le donjon, à la taille de la salle 1 (${m.w} × ${m.h})`);
+    ok(!m.reach(...P.depart)[P.suivante[1] * m.w + P.suivante[0]], 'miroirs : salle 0, le passage reste muré');
+    ok(P.objets.M[0][0] === P.suivante[0] && P.objets.M[0][1] === P.suivante[1] + 1, 'miroirs : salle 0, le passage est derrière le miroir');
+    ouvrir(m, ...P.objets.M[0]); passageSuivant(m, true);
+    ok(m.reach(...P.depart)[P.suivante[1] * m.w + P.suivante[0]], 'miroirs : salle 0, le miroir effacé ouvre le passage');
+    const R = d.objets.M.reponses;
+    for (const t of ['secret', 'Silence', 'le SILENCE !', 'C\'est un secret', 'Tes secrets', 'un sécret', 'secre', 'silense']) ok(reponseJuste(t, R), `miroirs : « ${t} » est accepté`);
+    for (const t of ['miroir', 'reflet', '', 'sel', 'ombre']) ok(!reponseJuste(t, R), `miroirs : « ${t} » est refusé`);
+  }
+  // salle 1 bis : cinq miroirs, deux fois la taille de la salle 1 ; les indices ne désignent que le cadre noir
+  {
+    const C = construireSalles(d), m = C[d.salles.findIndex((s) => s.id === 's1b')], P = m.donjon.plan, m1 = C[d.salles.findIndex((s) => s.id === 's1')];
+    ok(m.w >= 2 * m1.w - 3 && P.sol.length >= 2 * m1.donjon.plan.sol.length, `miroirs : la Salle des Cinq Miroirs est au moins deux fois plus grande (${m.w} × ${m.h} contre ${m1.w} × ${m1.h})`);
+    const ordre = ['H', 'I', 'J', 'O', 'U'].sort((a, b) => P.objets[a][0][0] - P.objets[b][0][0]);
+    const coul = ordre.map((c) => d.objets[c].decor.replace('miroir_mur_', ''));
+    ok(coul.join() === 'jaune,rouge,bleu,noir,vert', `miroirs : cadres de gauche à droite (${coul.join(', ')})`);
+    const bons = coul.map((c, i) => i > 0 && i < 4 && coul[i - 1] !== 'rouge' && coul[i + 1] !== 'rouge' && !['rouge', 'jaune'].includes(c));
+    ok(bons.filter(Boolean).length === 1 && d.objets[ordre[bons.indexOf(true)]].juste, 'miroirs : les trois indices ne laissent qu\'un miroir, le bon');
+    ok(['H', 'I', 'J', 'O', 'U'].filter((c) => d.objets[c].juste).length === 1, 'miroirs : un seul bon miroir');
+    const [ox, oy] = P.objets.O[0];
+    ok(ox === P.suivante[0] && oy === P.suivante[1] + 1, 'miroirs : salle 1 bis, le passage est derrière le cadre noir');
+    ok(!m.reach(...P.depart)[P.suivante[1] * m.w + P.suivante[0]], 'miroirs : salle 1 bis, le passage reste muré');
+    ouvrir(m, ox, oy); passageSuivant(m, true);
+    ok(m.reach(...P.depart)[P.suivante[1] * m.w + P.suivante[0]], 'miroirs : salle 1 bis, le bon miroir ouvre le passage');
   }
   // salles de glace : grandes, la sortie et chaque objet accessibles quels que soient ceux déjà pris, jamais coincé
   for (const [id, lettres, mini] of [['s2', ['p', 'q'], 8], ['s3', ['u', 'v', 'w', 'x', 'y'], 8]]) {

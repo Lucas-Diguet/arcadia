@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 4.43 — 6 novembre 2026
+- **TestOdyssée** — Donjon des Miroirs : deux nouvelles salles à énigme.
+  - En entrant, un miroir te pose une devinette. Tape ta réponse au clavier. Pas de punition si tu te trompes, mais il ne s'efface pas.
+  - Après la salle de l'horloge, cinq miroirs aux cadres de couleur et trois indices. Un seul cache le passage. Chaque mauvais miroir coûte un quart des PV de ton équipe.
+
 ## 4.42 — 6 novembre 2026
 - **TestOdyssée** — Salle du Reflet : le grand miroir n'a plus de barres bleues, c'est une seule grande vitre.
 

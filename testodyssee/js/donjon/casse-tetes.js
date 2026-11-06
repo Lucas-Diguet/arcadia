@@ -105,3 +105,25 @@ export function resoudreReflet(j, r, libreJ, libreR, max = 200000) {
   }
   return { n: -1, pas: [] };
 }
+
+/* ---------------- réponse tapée au clavier (énigme du miroir) ---------------- */
+const PETITS_MOTS = /^((c ?est|tu es|le|la|les|l|un|une|des|du|ton|ta|tes|mon|ma|mes|son|sa|ses)\s+)+/;
+/** minuscules, sans accents ni ponctuation, sans article au début ni « s » final : « C'est un Secret ! » → « secret » */
+export function nettoyerReponse(t) {
+  return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim()
+    .replace(PETITS_MOTS, '').replace(/s$/, '');
+}
+/** une lettre en trop, en moins ou différente (ou deux lettres voisines inversées) */
+function aUneLettre(a, b) {
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0; while (i < a.length && a[i] === b[i]) i++;
+  if (i === a.length && i === b.length) return true;
+  return a.slice(i + 1) === b.slice(i + 1) || a.slice(i) === b.slice(i + 1) || a.slice(i + 1) === b.slice(i)
+    || (a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2));
+}
+/** la saisie est-elle une des réponses ? Une faute de frappe passe pour les mots de 6 lettres ou plus */
+export function reponseJuste(saisie, reponses) {
+  const s = nettoyerReponse(saisie);
+  return !!s && reponses.some((r) => s === r || (r.length >= 6 && aUneLettre(s, r)));
+}

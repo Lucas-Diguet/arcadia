@@ -8,14 +8,32 @@ import { T, walkable, DIRS } from '../../../odyssee/js/world/tiles.js';
 import { loadImg } from '../../../odyssee/js/assets.js';
 import { el } from '../../../odyssee/js/ui/ui.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
-import { glisser, faisceau, refleter, cle, cheminGlace } from './casse-tetes.js';
+import { glisser, faisceau, refleter, cle, cheminGlace, reponseJuste } from './casse-tetes.js';
 import { ouvrir } from './plan.js';
 import { IMAGES } from '../contenu.js';
 import { dessinerFaisceaux, dessinerMiroir } from '../rendu.js';
 
 const estMiroirs = (d) => d.salles.some((s) => s.type === 'reflet' || s.type === 'lumiere');
-const TYPES = new Set(['enigme', 'miroirMural', 'miroirPoche', 'robot', 'brasier', 'soleil', 'miroirFixe', 'socle', 'plaque', 'pc']);
+const TYPES = new Set(['enigme', 'miroirMural', 'miroirSecret', 'miroirPoche', 'robot', 'brasier', 'soleil', 'miroirFixe', 'socle', 'plaque', 'pc']);
 const idAttaque = (key) => Object.values(MOVES).find((m) => m.key === key).id;
+/** saisie d'une réponse au clavier ; null si on annule */
+function saisirTexte(ui, titre) {
+  return new Promise((resolve) => {
+    const w = el('div', 'screen name-screen');
+    w.innerHTML = `<div class="box name-box"><div class="list-title"></div><input class="name-in" maxlength="24" spellcheck="false" autocomplete="off"><div class="hint">Ta réponse, puis Entrée (Échap : annuler)</div></div>`;
+    w.querySelector('.list-title').textContent = titre;
+    ui.root.appendChild(w);
+    const inp = w.querySelector('input'); setTimeout(() => inp.focus(), 30);
+    const pop = ui.input.push(() => {});
+    const fin = (v) => { pop(); w.remove(); resolve(v); };
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); ui.sound.sfx('select'); fin(inp.value); }
+      else if (e.key === 'Escape') { e.preventDefault(); ui.sound.sfx('cancel'); fin(null); }
+      e.stopPropagation();
+    });
+    inp.addEventListener('blur', () => setTimeout(() => inp.isConnected && inp.focus(), 10));
+  });
+}
 const copieSoignee = (party) => party.map((m) => { const c = JSON.parse(JSON.stringify(m)); healFull(c); delete c._ko; return c; });
 
 export const Miroirs = {
@@ -48,15 +66,17 @@ export const Miroirs = {
   /** le décor de toute la carte selon l'état (aussi pour tout remettre en place quand on recommence) */
   appliquerMiroirs(d) {
     if (!estMiroirs(d)) return;
-    const s1 = this.salleDe(d, 'enigme'), D1 = this.dm(d, s1.id), fait1 = this.etats[d.id].salles[s1.id].faite;
     const D2 = this.dm(d, 's2'), D4 = this.dm(d, this.salleDe(d, 'lumiere').id);
     for (const id of d.cartes || [d.carte]) {
     const m = this.game.world.maps[id], P = m.donjon.plan;
+    // salles à énigme : chacune ses miroirs (le bon s'efface quand la salle est faite, les mauvais restent brisés)
+    const sE = d.salles.find((q) => q.carte === id), DE = sE ? this.dm(d, sE.id) : {}, faitE = !!sE && this.etats[d.id].salles[sE.id].faite;
     for (const [c, l] of Object.entries(P.objets)) {
       const o = d.objets[c];
       for (const [x, y] of l) {
         const k = cle(x, y);
-        if (o.type === 'miroirMural') this.decor(m, x, y, o.juste && fait1 ? null : (D1.brises || []).includes(c) ? 'miroir_brise' : 'miroir_mur');
+        if (o.type === 'miroirMural') this.decor(m, x, y, o.juste && faitE ? null : (DE.brises || []).includes(c) ? 'miroir_brise' : o.decor || 'miroir_mur');
+        else if (o.type === 'miroirSecret') this.decor(m, x, y, faitE ? null : o.decor || 'miroir_mur');
         else if (o.type === 'miroirPoche') this.decor(m, x, y, D2.pris?.[k] ? null : 'miroir_poche');
         else if (o.type === 'miroirFixe') this.decor(m, x, y, (D4.orient?.[k] ?? o.sens) === '/' ? 'miroir_d' : 'miroir_g');
         else if (o.type === 'socle') { const s = D4.socles?.[k]; this.decor(m, x, y, s ? (s === '/' ? 'miroir_d' : 'miroir_g') : 'socle'); }
@@ -85,8 +105,9 @@ export const Miroirs = {
   async objetMiroirs(d, c, x, y) {
     const o = d.objets[c];
     switch (o.type) {
-      case 'enigme': return this.lireEnigme(d);
+      case 'enigme': return this.lireEnigme(d, o);
       case 'miroirMural': return this.miroirMural(d, c);
+      case 'miroirSecret': return this.miroirSecret(d, c);
       case 'miroirPoche': return this.miroirPoche(d, x, y, o.piege);
       case 'robot': return this.robot(d);
       case 'brasier': return this.brasier(d);
@@ -98,13 +119,35 @@ export const Miroirs = {
     }
   },
 
-  async lireEnigme(d) {
-    const ui = this.game.ui, img = el('div', 'box starter-pic testody-horloge', `<img src="${new URL('../../img/' + d.enigme.image, import.meta.url).href}" alt="">`);
-    ui.root.appendChild(img);
-    try { await ui.say(d.enigme.texte); } finally { img.remove(); }
+  async lireEnigme(d, o = {}) {
+    const ui = this.game.ui, E = o.enigme ? d.enigmes[o.enigme] : d.enigme;
+    const img = E.image && el('div', 'box starter-pic testody-horloge', `<img src="${new URL('../../img/' + E.image, import.meta.url).href}" alt="">`);
+    if (img) ui.root.appendChild(img);
+    try { await ui.say(E.texte); } finally { img?.remove(); }
+  },
+  /** la salle à énigme où l'on se trouve */
+  salleIci(d) { return d.salles.find((s) => s.carte === this.game.mapObj?.id) || this.salleDe(d, 'enigme'); },
+  /** le miroir qui parle : une devinette, la réponse tapée au clavier ; pas de pénalité */
+  async miroirSecret(d, c) {
+    const g = this.game, ui = g.ui, o = d.objets[c], s = this.salleIci(d);
+    if (this.etats[d.id].salles[s.id].faite) { await ui.say(d.textes.secretFait); return; }
+    await ui.say(d.textes.secret, { speaker: 'Miroir' });
+    const rep = await saisirTexte(ui, d.textes.secretTitre);
+    if (rep == null || !rep.trim()) return;
+    if (!reponseJuste(rep, o.reponses)) { await ui.say(d.textes.secretFaux); return; }
+    g.sound.sfx('learn'); await ui.flash(1, '#ffffff', 120);
+    await this.maj(d, s.id, {}, { faite: true });
+    await ui.say(d.textes.secretJuste);
+  },
+  /** mauvais miroir d'une salle « quart » : chaque Pokémon perd un quart de ses PV (jamais K.O.) */
+  async penaliteQuart() {
+    const g = this.game;
+    for (const m of g.state.party) if (m.hp > 0) m.hp = Math.max(1, m.hp - Math.ceil(m.stats[0] / 4));
+    g.hud?.update(true);
+    await g.ui.say('Une onde glacée traverse ton équipe : tes Pokémon perdent un quart de leurs PV !');
   },
   async miroirMural(d, c) {
-    const g = this.game, ui = g.ui, o = d.objets[c], s1 = this.salleDe(d, 'enigme'), D1 = this.dm(d, s1.id);
+    const g = this.game, ui = g.ui, o = d.objets[c], s1 = this.salleIci(d), D1 = this.dm(d, s1.id);
     if ((D1.brises || []).includes(c)) { await ui.say(d.textes.brise); return; }
     if (!(await ui.yesNo(d.textes.miroirMur))) return;
     if (o.juste) {
@@ -116,7 +159,7 @@ export const Miroirs = {
     g.sound.sfx('hitstrong'); g.view.shake = 0.3; await ui.flash(1, '#d0e8ff', 90);
     await this.maj(d, s1.id, { brises: [...(D1.brises || []), c] });
     await ui.say(d.textes.faux);
-    await this.penalite(d);
+    if (s1.penalite === 'quart') await this.penaliteQuart(); else await this.penalite(d);
   },
   /** miroirs de poche gardés : ramassés moins ceux posés sur un socle */
   miroirsEnPoche(d) {

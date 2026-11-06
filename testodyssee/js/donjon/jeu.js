@@ -349,7 +349,7 @@ export class Donjons {
       else if (s.type === 'serrures') txt = `serrures ${Object.values(S.cles).filter((c) => c.mise).length}/${s.pnj.length}`;
       else if (s.type === 'raid') txt = S.combat ? 'combat en cours' : `prêts ${S.prets.length}`;
       else if (s.type === 'groupe') txt = S.combat ? 'combat en cours' : `${S.battus.length}/${s.pnj.length} vaincus`;
-      else if (s.type === 'enigme') txt = 'lis le panneau';
+      else if (s.type === 'enigme') txt = s.suivi || 'lis le panneau';
       else if (s.type === 'libre') txt = 'à explorer';
       else if (s.type === 'lumiere') txt = (S.donnees.feux || 0) < 5 ? `brasier ${S.donnees.feux || 0}/5` : `soleils ${(S.donnees.soleils || []).length}/2`;
       else if (s.type === 'reflet') txt = 'rejoins ton reflet';
