@@ -129,8 +129,9 @@ lisière à la grande carte, comme le fait `passage()` dans `quetes.js`.
 | `lumiere` | les deux faisceaux du brasier éclairent tous les soleils |
 | `reflet` | on rejoint Copycat et on bat la copie de sa propre équipe |
 
-`cle` du donjon : un objet du Sac sans lequel la porte de l'extérieur reste fermée (`textes.porteCle`). `hautMur` d'une
-salle : la tuile du haut de ses murs, si elle doit différer de celle du style (`haut_bleu`, tuiles du labo dans `js/rendu.js`).
+`cle` du donjon : un objet du Sac qui ouvre la porte de l'extérieur. En y entrant, on propose de l'ouvrir avec la clé
+(`textes.porteCle`) ; sans la clé, `textes.porteFermee`. Une fois ouverte, elle le reste. `sol` d'une
+salle : la tuile de son sol, si elle doit différer de celle du style (`sol_reflet`, tuiles du labo dans `js/rendu.js`).
 
 Un donjon `solo: true` n'est pas partagé : chaque joueur a le sien, et il se remet à zéro quand on en sort (les objets
 de `objetsDuDonjon` quittent alors le Sac). `style: 'clair'` dessine le donjon en blanc.
@@ -181,7 +182,7 @@ tout (`js/combat/raid.js`) ; l'écran de chaque joueur rejoue les tours (`js/com
 
 ### Le donjon des miroirs
 
-Seul, niveau 35, cinq salles séparées. La porte s'ouvre avec la Clé du Donjon des Miroirs (`cle-miroirs`, dans le Sac
+Seul, niveau 35, cinq salles séparées. La porte s'ouvre avec la Clé des Miroirs (`cle-miroirs`, dans le Sac
 de toutes les équipes du labo) :
 
 1. **Énigme** : le panneau au centre montre une horloge vue dans un miroir (3 h 40) et les trois réponses, avec une
@@ -197,7 +198,7 @@ de toutes les équipes du labo) :
    et les rencontres s'arrêtent. Un Pokémon Glace battu donne une Eau Fraîche, et éteint le brasier s'il n'a pas ses
    5 feux. Puis on tourne les miroirs sur pied et on pose les 3 miroirs de poche sur les bons socles (une seule
    solution, 5 miroirs à tourner) jusqu'à éclairer les deux soleils : la grande porte s'ouvre.
-5. **Salle du Reflet** (vue de plus haut, haut des murs en bleu) : le grand miroir est une bande de verre sur la ligne du
+5. **Salle du Reflet** (vue de plus haut, sol bleu pâle sous les murs blancs) : le grand miroir est une bande de verre blanc sur la ligne du
    milieu (`dessinerMiroir`), purement visuelle ; collé à lui, le joueur y voit son reflet (son personnage, retourné, à
    demi transparent). Copycat refait chaque pas en miroir (gauche et droite pareil, haut et bas
    inversés), chacun de son côté de la ligne du milieu, dans un grand labyrinthe (65 pas au mieux). Arrivé à côté de

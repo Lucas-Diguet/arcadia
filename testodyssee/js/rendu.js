@@ -38,14 +38,15 @@ const TUILES = {
     x.fillStyle = '#3a2214'; x.fillRect(0, 0, 32, 32);
     for (let k = 0; k < 60; k++) { x.fillStyle = r() < 0.5 ? '#46291a' : '#2c180c'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 2); }
   },
-  haut_bleu(x, r) {
-    // haut des murs de la salle du Reflet : un bleu net, pour bien voir le tracé du labyrinthe
-    x.fillStyle = '#3f6fc8'; x.fillRect(0, 0, 32, 32);
-    for (let k = 0; k < 40; k++) { x.fillStyle = r() < 0.5 ? '#4a7bd4' : '#3866bb'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 2); }
+  sol_reflet(x) {
+    // sol de la salle du Reflet : dalles bleu pâle, assez foncées pour que le haut blanc des murs s'en détache
+    x.fillStyle = '#a9c9ee'; x.fillRect(0, 0, 32, 32);
+    x.fillStyle = '#b8d3f2'; x.fillRect(1, 1, 14, 14); x.fillRect(17, 17, 14, 14);
+    x.fillStyle = '#93b8e4'; x.fillRect(0, 15, 32, 1); x.fillRect(0, 31, 32, 1); x.fillRect(15, 0, 1, 32); x.fillRect(31, 0, 1, 32);
   },
 };
 function ajouterTuiles(view) {
-  const A = view.A; if (!A || A.cells.haut_bleu) return;
+  const A = view.A; if (!A || A.cells.sol_reflet) return;
   const P2 = 34, C2 = 32, SIZE = A.size || A.canvas.width, cols = Math.floor(SIZE / P2);
   let n = 0;
   for (const [u, v] of Object.values(A.cells)) n = Math.max(n, Math.round((v * SIZE - 1) / P2) * cols + Math.round((u * SIZE - 1) / P2) + 1);
@@ -111,7 +112,7 @@ export function brancherRendu() {
     // pont sur la lave (chemins du Temple) : la lave dessous, les planches en décalque
     if (m.biome === 'magma' && !m.outdoor && m.get(x, y) === T.BRIDGE) return { anim: this.N.cells.lava };
     const st = STYLES[m.style];
-    if (st && SOLS.has(m.get(x, y)) && !['exitlight', 'carpet'].includes(this.decoAt.get(x + ',' + y)?.k)) { const c = cellule(A, st.sol); if (c) return { c }; }
+    if (st && SOLS.has(m.get(x, y)) && !['exitlight', 'carpet'].includes(this.decoAt.get(x + ',' + y)?.k)) { const c = cellule(A, m.solSalle || st.sol); if (c) return { c }; }
     return sol.call(this, x, y);
   };
   // murs de grotte dessinés avec les textures claires, le temps de construire le morceau de carte
@@ -120,7 +121,7 @@ export function brancherRendu() {
     const st = STYLES[this.map?.style];
     if (!st) return morceau.call(this, i, j);
     const A = this.A.cells, avant = { cavewall: A.cavewall, cavetop: A.cavetop };
-    A.cavewall = cellule(A, st.mur) || avant.cavewall; A.cavetop = cellule(A, this.map.hautMur || st.haut) || avant.cavetop;
+    A.cavewall = cellule(A, st.mur) || avant.cavewall; A.cavetop = cellule(A, st.haut) || avant.cavetop;
     try { return morceau.call(this, i, j); } finally { Object.assign(A, avant); }
   };
   const carte = P.setMap;
@@ -146,8 +147,8 @@ export function dessinerZones(view, cases) {
   view.root.add(me); view.__zones = me; view.__zonesRoot = view.root;
 }
 
-/** grand miroir posé au sol le long d'une ligne (salle du Reflet) : une bande de verre bleuté sur la rangée y - 1,
- *  bordée d'un trait clair du côté du joueur ; null : efface */
+/** grand miroir posé au sol le long d'une ligne (salle du Reflet) : une bande de verre blanc sur la rangée y - 1,
+ *  bordée d'un trait bleu du côté du joueur ; null : efface */
 export function dessinerMiroir(view, M) {
   if (!M) { if (view.__miroir) { view.__miroirRoot?.remove(view.__miroir); view.__miroir.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); view.__miroir = null; view.__miroirRoot = null; } return; }
   if (!view.root) return;
@@ -159,9 +160,9 @@ export function dessinerMiroir(view, M) {
     me.renderOrder = 2; me.frustumCulled = false; g.add(me);
   };
   for (const x of M.cases) {
-    bande(x, x + 1, y - 1, y, 0x8fc4ff, 0.45, H);
-    bande(x + 0.15, x + 0.3, y - 0.95, y - 0.35, 0xffffff, 0.5, H + 0.001);   // reflets en biais sur le verre
-    bande(x, x + 1, y - 0.06, y, 0xeaf4ff, 0.9, H + 0.002);                   // le bord du miroir
+    bande(x, x + 1, y - 1, y, 0xffffff, 0.75, H);
+    bande(x + 0.15, x + 0.3, y - 0.95, y - 0.35, 0xc8dcf5, 0.8, H + 0.001);   // reflets en biais sur le verre
+    bande(x, x + 1, y - 0.06, y, 0x6f9fd8, 0.9, H + 0.002);                   // le bord du miroir
   }
   view.root.add(g); view.__miroir = g; view.__miroirRoot = view.root;
 }

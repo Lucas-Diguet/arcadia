@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 4.36 — 6 novembre 2026
+- **TestOdyssée** — Donjon des Miroirs :
+  - Devant la porte, on te propose de l'ouvrir avec la Clé des Miroirs.
+  - Salle du Reflet : les murs redeviennent blancs, le sol passe en bleu pâle. Le labyrinthe se lit mieux, et le grand miroir se détache en blanc.
+
 ## 4.35 — 6 novembre 2026
 - **TestOdyssée** — Donjon des Miroirs : plus clair et plus confortable.
   - La porte du donjon s'ouvre avec la Clé du Donjon des Miroirs, déjà dans ton Sac.

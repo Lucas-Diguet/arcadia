@@ -255,8 +255,16 @@ export class Donjons {
     const g = this.game;
     for (const d of this.defs.values()) {
       const E = d.cle && g.world.maps[d.carte]?.donjon?.exterieur;
-      if (!E || g.mapObj?.id !== E.carte.id || E.porte[0] !== tx || E.porte[1] !== ty || g.state?.bag[d.cle]) continue;
-      if (!g.busy) { g.busy = true; g.ui.say(d.textes?.porteCle || 'La porte est fermée à clé.').finally(() => { g.busy = false; }); }
+      const st = g.state, ouverte = 'ouverte:' + d.id;
+      if (!E || !st || g.mapObj?.id !== E.carte.id || E.porte[0] !== tx || E.porte[1] !== ty || st.flags[ouverte]) continue;
+      if (g.busy) return true;
+      g.busy = true;
+      (async () => {
+        if (!st.bag[d.cle]) { await g.ui.say(d.textes?.porteFermee || 'La porte est fermée à clé.'); return false; }
+        if (!(await g.ui.yesNo(d.textes?.porteCle || 'La porte est fermée. L\'ouvrir avec la clé ?'))) return false;
+        st.flags[ouverte] = true;
+        return true;
+      })().then((ok) => { g.busy = false; const w = ok && E.carte.warpAt(tx, ty); if (w) g.warp(w, 'door'); }, () => { g.busy = false; });
       return true;
     }
     return false;

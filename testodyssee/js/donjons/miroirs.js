@@ -186,7 +186,7 @@ export default {
       '##############S##############',
       '##############D##############',
     ] },
-    { id: 's5', nom: 'Salle du Reflet', type: 'reflet', ligne: 11, vue: 2, hautMur: 'haut_bleu', plan: [
+    { id: 's5', nom: 'Salle du Reflet', type: 'reflet', ligne: 11, vue: 2, sol: 'sol_reflet', plan: [
       '#############################',
       '#.K..........##............##',
       '###.##.....#....#....###...##',
@@ -231,7 +231,8 @@ export default {
     equipe: [[122, 36, ['mirror-coat', 'psychic', 'light-screen', 'reflect']], [202, 36, ['mirror-coat', 'counter', 'safeguard', 'amnesia']], [350, 37, ['mirror-coat', 'hydro-pump', 'ice-beam', 'recover']]],
   },
   textes: {
-    porteCle: 'La porte du temple est fermée à clé. Il faut la Clé du Donjon des Miroirs.',
+    porteCle: 'La porte est fermée. L\'ouvrir avec la Clé des Miroirs ?',
+    porteFermee: 'La porte est fermée. Il faudrait la Clé des Miroirs.',
     miroirMur: 'Un grand miroir. Ton reflet te regarde.\nToucher ce miroir ?',
     juste: ['Le miroir se trouble, puis s\'efface comme une brume...', 'Un passage s\'ouvre derrière lui !'],
     faux: 'Le miroir se brise en mille éclats !',
