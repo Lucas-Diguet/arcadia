@@ -26,6 +26,8 @@ export function lirePlan(def) {
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = x === 0 || x === w - 1 ? '#' : at(x, y);
     if (c === '#' || c === ' ') continue;
+    // objet accroché au mur (`mur: true`) : la case reste un mur, l'objet se lit en lui faisant face
+    if (def.objets?.[c]?.mur) { (out.objets[c] ||= []).push([x, y]); continue; }
     out.sol.push([x, y]);
     if (c === 'i') out.glace.add(x + ',' + y);
     else if (def.objets?.[c]) (out.objets[c] ||= []).push([x, y]);
@@ -58,6 +60,7 @@ export function construireCarte(def) {
       if (o.type === 'panneau') m.sign(x, y, o.texte || '...');
       else if (o.type === 'ramasser') m.item(x, y, o.objet, o.n || 1, `${def.carte}:${c}:${i}`);
       else if (o.sol) { if (o.decor) m.deco.push({ k: o.decor, x, y }); }   // objet sur lequel on marche (départ d'un personnage…)
+      else if (o.mur) (m.affiches ||= []).push({ x, y, texte: o.affiche });  // dessinée sur la face sud du mur (rendu.js)
       else m.prop(o.decor || DECOR_OBJET[o.type] || 'statue', x, y);
     });
   }

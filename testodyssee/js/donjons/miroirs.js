@@ -60,7 +60,7 @@ export default {
     f: { type: 'miroirFixe', decor: 'miroir_d', sens: '/' },
     g: { type: 'miroirFixe', decor: 'miroir_g', sens: '\\' },
     o: { type: 'socle', decor: 'socle' },
-    E: { type: 'plaque', decor: 'stele' },
+    E: { type: 'plaque', mur: true, affiche: 'Qui se perd dans son reflet peut toujours revenir au début.' },
     K: { type: 'copycat', sol: true },
     c: { type: 'pc', decor: 'pc', salle: 's2' },
   },
