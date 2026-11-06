@@ -136,7 +136,7 @@ export function brancherRendu() {
   };
 }
 
-/** une affiche encadrée sur la face sud d'un mur (case a.x, a.y) : papier clair, cadre bleu, quelques lignes d'écriture */
+/** une affiche encadrée sur la face sud d'un mur (case a.x, a.y) : papier clair, cadre de bois sombre, quelques lignes d'écriture */
 function poserAffiche(view, a) {
   const c = document.createElement('canvas'); c.width = 32; c.height = 26;
   const x = c.getContext('2d');
