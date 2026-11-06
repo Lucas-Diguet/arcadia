@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 4.40 — 6 novembre 2026
+- **TestOdyssée** — Salle du Reflet : le grand miroir est deux fois plus haut.
+
 ## 4.39 — 6 novembre 2026
 - **TestOdyssée** — Salle du Reflet : l'affiche du mur en face de l'entrée est plus grande, dans un cadre de bois sombre qui se détache du mur.
 

@@ -167,13 +167,13 @@ export function dessinerZones(view, cases) {
   view.root.add(me); view.__zones = me; view.__zonesRoot = view.root;
 }
 
-/** grand miroir debout le long d'une ligne (salle du Reflet) : une vitre blanche de la hauteur des murs, posée sur le bord
+/** grand miroir debout le long d'une ligne (salle du Reflet) : une vitre blanche deux fois plus haute que les murs, posée sur le bord
  *  nord de la rangée y, de x0 à x1, cadre bleu en haut et en bas ; null : efface */
 export function dessinerMiroir(view, M) {
   if (!M) { if (view.__miroir) { view.__miroirRoot?.remove(view.__miroir); view.__miroir.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); view.__miroir = null; view.__miroirRoot = null; } return; }
   if (!view.root) return;
   dessinerMiroir(view, null);
-  const g = new THREE.Group(), H = 1.25 * Math.tan(EL), z = M.y, w = M.x1 - M.x0;
+  const g = new THREE.Group(), H = 2.5 * Math.tan(EL), z = M.y, w = M.x1 - M.x0;   // deux fois la hauteur des murs
   const vitre = (cx, y0, larg, haut, color, opacity, rot = 0, dz = 0) => {
     const geo = new THREE.PlaneGeometry(larg, haut); if (rot) geo.rotateZ(rot); geo.translate(cx, y0 + haut / 2, z + dz);
     const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide }));
