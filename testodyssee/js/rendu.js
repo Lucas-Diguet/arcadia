@@ -138,18 +138,19 @@ export function brancherRendu() {
 
 /** une affiche encadrée sur la face sud d'un mur (case a.x, a.y) : papier clair, cadre bleu, quelques lignes d'écriture */
 function poserAffiche(view, a) {
-  const c = document.createElement('canvas'); c.width = 32; c.height = 28;
+  const c = document.createElement('canvas'); c.width = 32; c.height = 26;
   const x = c.getContext('2d');
-  x.fillStyle = '#3f6aa8'; x.fillRect(0, 0, 32, 28);                 // cadre
-  x.fillStyle = '#6f9fd8'; x.fillRect(1, 1, 30, 1); x.fillRect(1, 1, 1, 26);
-  x.fillStyle = '#f6f1e2'; x.fillRect(3, 3, 26, 22);                 // papier
-  x.fillStyle = '#e4dcc4'; x.fillRect(3, 23, 26, 2); x.fillRect(27, 3, 2, 22);
-  x.fillStyle = '#8a8070';
-  for (const [y0, l] of [[7, 20], [11, 18], [15, 20], [19, 12]]) x.fillRect(6, y0, l, 1);
-  x.fillStyle = '#c9d8ee'; x.fillRect(14, 4, 4, 2);                  // petit miroir dessiné en tête
+  x.fillStyle = '#4a2c14'; x.fillRect(0, 0, 32, 26);                 // cadre de bois sombre
+  x.fillStyle = '#7a4a24'; x.fillRect(1, 1, 30, 24);
+  x.fillStyle = '#4a2c14'; x.fillRect(2, 2, 28, 22);
+  x.fillStyle = '#fbf6e6'; x.fillRect(3, 3, 26, 20);                 // papier
+  x.fillStyle = '#e6dcc0'; x.fillRect(3, 21, 26, 2); x.fillRect(27, 3, 2, 20);
+  x.fillStyle = '#5a5248';
+  for (const [y0, l] of [[9, 20], [12, 18], [15, 20], [18, 12]]) x.fillRect(6, y0, l, 1);
+  x.fillStyle = '#9cc0ea'; x.fillRect(13, 4, 6, 3); x.fillStyle = '#ffffff'; x.fillRect(14, 4, 2, 1);   // petit miroir dessiné en tête
   const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
-  const W = 0.62, H = W * 28 / 32 * Math.tan(EL), haut = 1.25 * Math.tan(EL);
-  const geo = new THREE.PlaneGeometry(W, H); geo.translate(a.x + 0.5, haut * 0.55, a.y + 1.01);
+  const W = 0.86, H = W * 26 / 32 * Math.tan(EL), haut = 1.25 * Math.tan(EL);
+  const geo = new THREE.PlaneGeometry(W, H); geo.translate(a.x + 0.5, haut * 0.52, a.y + 1.01);
   const mat = new THREE.MeshBasicMaterial({ map: t }); mat.userData.own = true;
   view.root.add(new THREE.Mesh(geo, mat));
 }
