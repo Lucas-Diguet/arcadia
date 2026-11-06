@@ -168,7 +168,7 @@ export function dessinerZones(view, cases) {
 }
 
 /** grand miroir debout le long d'une ligne (salle du Reflet) : une vitre blanche deux fois plus haute que les murs, posée sur le bord
- *  nord de la rangée y, de x0 à x1, cadre bleu en haut et en bas ; null : efface */
+ *  nord de la rangée y, de x0 à x1, sans cadre ; null : efface */
 export function dessinerMiroir(view, M) {
   if (!M) { if (view.__miroir) { view.__miroirRoot?.remove(view.__miroir); view.__miroir.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); view.__miroir = null; view.__miroirRoot = null; } return; }
   if (!view.root) return;
@@ -181,10 +181,6 @@ export function dessinerMiroir(view, M) {
   };
   vitre(M.x0 + w / 2, 0, w, H, 0xeef6ff, 0.72);
   for (let x = M.x0 + 1.3; x < M.x1 - 0.5; x += 2.6) { vitre(x, H * 0.15, 0.16, H * 0.7, 0xffffff, 0.9, -0.35, 0.002); vitre(x + 0.35, H * 0.3, 0.07, H * 0.4, 0xffffff, 0.9, -0.35, 0.002); }
-  const C = 0x2f5f9e, e = 0.16;
-  vitre(M.x0 + w / 2, H - e, w, e, C, 1, 0, 0.004);                  // cadre du haut
-  vitre(M.x0 + w / 2, 0, w, e * 0.8, C, 1, 0, 0.004);                // cadre du bas
-  for (let x = M.x0; x <= M.x1 + 0.01; x += w / Math.max(1, Math.round(w / 4))) vitre(Math.min(Math.max(x, M.x0 + e / 2), M.x1 - e / 2), 0, e, H, C, 1, 0, 0.004);   // montants : un panneau tous les 4 pas
   view.root.add(g); view.__miroir = g; view.__miroirRoot = view.root;
 }
 
