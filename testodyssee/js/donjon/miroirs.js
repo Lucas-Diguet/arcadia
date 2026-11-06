@@ -239,7 +239,7 @@ export const Miroirs = {
     const g = this.game, p = g.player, m = g.mapObj, s = this.salleDe(d, 'lumiere');
     // plus aucune rencontre une fois le brasier allumé
     if (m !== this.carteDe(d, s) || (this.dm(d, s.id).feux || 0) >= 5) return;
-    if (m.get(p.x, p.y) !== T.CAVE || g.bv.alive || Math.random() > 0.08) return;
+    if (g.noEnc || m.get(p.x, p.y) !== T.CAVE || g.bv.alive || Math.random() > 0.08) return;
     const tot = d.rencontres.reduce((a, e) => a + e[3], 0); let r = Math.random() * tot, e = d.rencontres[0];
     for (const x of d.rencontres) { r -= x[3]; if (r <= 0) { e = x; break; } }
     const wild = createMon(e[0], e[1] + Math.floor(Math.random() * (e[2] - e[1] + 1)), { met: d.nom });
@@ -298,8 +298,8 @@ export const Miroirs = {
     if (!d) { dessinerMiroir(v, null); if (v.actors.has('reflet-joueur')) v.removeActor('reflet-joueur'); return; }
     const Z = this.zoneReflet(d), m = Z.m, l = Z.ligne;
     if (v.__miroirRoot !== v.root) {
-      const cases = []; for (let x = 0; x < m.w; x++) if (walkable(m.get(x, l)) || walkable(m.get(x, l - 1))) cases.push(x);
-      dessinerMiroir(v, { cases, y: l });
+      const xs = []; for (let x = 0; x < m.w; x++) if (walkable(m.get(x, l)) || walkable(m.get(x, l - 1))) xs.push(x);
+      if (xs.length) dessinerMiroir(v, { x0: xs[0], x1: xs[xs.length - 1] + 1, y: l });
     }
     const contre = p.y === l && (!p.move || p.move.fy === l);
     if (!contre) { if (v.actors.has('reflet-joueur')) v.removeActor('reflet-joueur'); return; }

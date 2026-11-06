@@ -198,12 +198,12 @@ de toutes les équipes du labo) :
    et les rencontres s'arrêtent. Un Pokémon Glace battu donne une Eau Fraîche, et éteint le brasier s'il n'a pas ses
    5 feux. Puis on tourne les miroirs sur pied et on pose les 3 miroirs de poche sur les bons socles (une seule
    solution, 5 miroirs à tourner) jusqu'à éclairer les deux soleils : la grande porte s'ouvre.
-5. **Salle du Reflet** (vue de plus haut, sol bleu pâle sous les murs blancs) : le grand miroir est une bande de verre blanc sur la ligne du
-   milieu (`dessinerMiroir`), purement visuelle ; collé à lui, le joueur y voit son reflet (son personnage, retourné, à
+5. **Salle du Reflet** (vue de plus haut, sol bleu pâle sous les murs blancs) : le grand miroir est une vitre blanche debout, de la hauteur des
+   murs, sur la ligne du milieu (`dessinerMiroir`), purement visuelle ; collé à lui, le joueur y voit son reflet (son personnage, retourné, à
    demi transparent). Copycat refait chaque pas en miroir (gauche et droite pareil, haut et bas
    inversés), chacun de son côté de la ligne du milieu, dans un grand labyrinthe (65 pas au mieux). Arrivé à côté de
-   lui, on affronte sans un mot une copie soignée de toute sa propre équipe. Le menu (ou la plaque près de l'entrée) ramène au
-   début de la salle.
+   lui, on affronte sans un mot une copie soignée de toute sa propre équipe. Le menu (ou la plaque sur le mur juste en face de
+   l'entrée) ramène au début de la salle.
 
 Récompenses : un Bouchon d'Or (IV au maximum, pour renforcer l'équipe) et un Éclat de Miroir (pour un futur donjon).
 `tools/test-testodyssee.mjs` vérifie l'enchaînement des salles, qu'on ne reste jamais coincé sur la glace (quels que
@@ -359,6 +359,10 @@ pendant de Surchauffe et de Tempête Verte). Dans le labo, Éruption, Giclédo e
 PV du lanceur (150 × PV / PV max), comme dans les jeux.
 
 ### Le mode test
+
+Options du menu, gardées dans le navigateur, partout dans le labo : SAUVAGES : NON coupe les Pokémon sauvages (herbes,
+grottes, eau, et les rencontres des donjons : brasier, grottes de la Pyramide, galeries de la Mine) ; TRAVERSER LES MURS
+laisse marcher sur toute case de la carte.
 
 Menu MODE TEST (ou `?test` dans l'adresse) : les dalles s'ouvrent avec un seul joueur, toutes les portes des voies
 s'ouvrent, ALLER À UNE SALLE mène dans n'importe quelle salle du donjon, chaque combat propose d'être passé (compté

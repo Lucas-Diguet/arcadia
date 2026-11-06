@@ -1,7 +1,7 @@
 // testodyssee/js/jeu.js — le jeu d'Odyssée, en version labo : rien n'est sauvegardé (la vraie partie d'Odyssée
 // n'est jamais touchée) et le menu propose de changer de lieu.
 import { Game } from '../../odyssee/js/game.js';
-import { T } from '../../odyssee/js/world/tiles.js';
+import { T, DIRS, walkable } from '../../odyssee/js/world/tiles.js';
 import { partyScreen, dexScreen, mapScreen, optionsScreen } from '../../odyssee/js/ui/screens.js';
 import { ILE } from './ile/modele.js';
 import { RoutesVictoire } from './rv/jeu.js';
@@ -9,17 +9,33 @@ import { equipeOrigine } from './rv/routes.js';
 import { pasCascade } from './cascade.js';
 
 const CLE_TEST = 'testodyssee-mode-test';
+const CLE_RENCONTRES = 'testodyssee-sans-rencontres', CLE_MURS = 'testodyssee-traverser-murs';
+const lire = (k) => { try { return localStorage.getItem(k) === '1'; } catch (e) { return false; } };
+const garder = (k, v) => { try { localStorage.setItem(k, v ? '1' : '0'); } catch (e) {} };
 
 export class TestGame extends Game {
   save() { return true; }
 
   /** mode test : on entre seul partout (dalles, portes des voies) et on peut passer les combats */
   get modeTest() { if (this._modeTest == null) { try { this._modeTest = localStorage.getItem(CLE_TEST) === '1' || new URLSearchParams(location.search).has('test'); } catch (e) { this._modeTest = false; } } return this._modeTest; }
+  /** options du menu, gardées dans ce navigateur : sans Pokémon sauvages (lu par Odyssée et les donjons du labo), traverser les murs */
+  get noEnc() { return this._noEnc ??= lire(CLE_RENCONTRES); }
+  set noEnc(v) { this._noEnc = !!v; garder(CLE_RENCONTRES, v); }
+  get traverseMurs() { return this._murs ??= lire(CLE_MURS); }
+  set traverseMurs(v) { this._murs = !!v; garder(CLE_MURS, v); }
   set modeTest(v) { this._modeTest = !!v; try { localStorage.setItem(CLE_TEST, v ? '1' : '0'); } catch (e) {} this.donjons?.majPanneau(); }
 
   // le labo ajoute ses propres règles de déplacement (glace, reflet) : voir donjon/miroirs.js
   tryStep(d) {
     const D = this.donjons, p = this.player;
+    // option « traverser les murs » : un pas normal vers toute case de la carte, même un mur
+    if (this.traverseMurs && !p.move && !p.surf) {
+      const m = this.mapObj, [dx, dy] = DIRS[d], tx = p.x + dx, ty = p.y + dy;
+      if (m.in(tx, ty) && (!walkable(m.get(tx, ty)) || m.height(tx, ty) !== m.height(p.x, p.y))) {
+        p.dir = d; p.move = { fx: p.x, fy: p.y, tx, ty, t: 0, dur: this.autoRun || this.input.isDown('run') ? this.runDur(false) : 0.2 }; p.walking = true;
+        return;
+      }
+    }
     if (D?.pasSpecial(d) || D?.pousser(d)) return;
     // Routes Victoire : hauteurs, cases fermées d'un côté, rochers qui tombent dans les trous
     if (pasCascade(this, d)) return;
@@ -76,7 +92,7 @@ export class TestGame extends Game {
     if (this.ile?.essai) opts.push(['ABANDONNER L\'ESSAI', 'abandon']);
     if (this.modeTest && this.donjons?.sallesDuDonjon().length > 1) opts.push(['ALLER À UNE SALLE', 'salle']);
     if (this.donjons?.dansLeReflet()) opts.push(['REVENIR AU DÉBUT DE LA SALLE', 'debut']);
-    opts.push(['CARTE', 'map'], ['CHANGER DE LIEU', 'lieu'], [this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON', 'test'], ['OPTIONS', 'opt'], ['FERMER', 'close']);
+    opts.push(['CARTE', 'map'], ['CHANGER DE LIEU', 'lieu'], [this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON', 'test'], [this.noEnc ? 'SAUVAGES : NON' : 'SAUVAGES : OUI', 'sauvages'], [this.traverseMurs ? 'TRAVERSER LES MURS : OUI' : 'TRAVERSER LES MURS : NON', 'murs'], ['OPTIONS', 'opt'], ['FERMER', 'close']);
     let idx = Math.min(this._menuIdx || 0, opts.length - 1);
     try {
       for (;;) {
@@ -95,6 +111,14 @@ export class TestGame extends Game {
         else if (k === 'test') {
           this.modeTest = !this.modeTest; opts[r][0] = this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON';
           await this.ui.say(this.modeTest ? 'Mode test activé : tu peux entrer seul partout, aller dans n\'importe quelle salle d\'un donjon et passer les combats.' : 'Mode test désactivé.');
+        }
+        else if (k === 'sauvages') {
+          this.noEnc = !this.noEnc; opts[r][0] = this.noEnc ? 'SAUVAGES : NON' : 'SAUVAGES : OUI';
+          await this.ui.say(this.noEnc ? 'Plus de Pokémon sauvages : tu peux marcher dans les herbes et les grottes sans être dérangé.' : 'Les Pokémon sauvages sont de retour.');
+        }
+        else if (k === 'murs') {
+          this.traverseMurs = !this.traverseMurs; opts[r][0] = this.traverseMurs ? 'TRAVERSER LES MURS : OUI' : 'TRAVERSER LES MURS : NON';
+          await this.ui.say(this.traverseMurs ? 'Tu peux traverser les murs.' : 'Les murs t\'arrêtent de nouveau.');
         }
         else if (k === 'salle') { if (await this.donjons.allerSalle()) break; }
         else if (k === 'quitter') { if (await this.donjons.quitter()) break; }

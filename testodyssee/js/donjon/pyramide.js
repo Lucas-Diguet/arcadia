@@ -156,7 +156,7 @@ export const Pyramide = {
   async apresPasPyramide() {
     const d = this.pyrIci(); if (!d) return;
     const g = this.game, p = g.player, m = g.mapObj, s = d.salles.find((q) => q.carte === m.id);
-    if (!s?.rencontres || m.get(p.x, p.y) !== T.CAVE || g.bv.alive || Math.random() > (s.taux || 0.03)) return;
+    if (g.noEnc || !s?.rencontres || m.get(p.x, p.y) !== T.CAVE || g.bv.alive || Math.random() > (s.taux || 0.03)) return;
     const tot = s.rencontres.reduce((a, x) => a + x[3], 0); let r = Math.random() * tot, e = s.rencontres[0];
     for (const x of s.rencontres) { r -= x[3]; if (r <= 0) { e = x; break; } }
     const wild = createMon(e[0], e[1] + Math.floor(Math.random() * (e[2] - e[1] + 1)), { met: d.nom });

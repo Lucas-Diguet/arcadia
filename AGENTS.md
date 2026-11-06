@@ -134,7 +134,7 @@ Ajouter `[skip changelog]` dans le message d'un commit purement technique pour q
   Rendu : les sprites sont dessinés à l'écran pixel pour pixel, ancrés à leurs pieds
   (shader `screenSprite` de `odyssee/js/render/world3d.js`), les bâtiments prennent la profondeur de leur façade.
 - TestOdyssée (`testodyssee/`, mode d'emploi dans `testodyssee/LISEZMOI.md`) : le labo d'Odyssée. On choisit un lieu (donjon du labo,
-  ville, route ou grotte d'Odyssée) et une équipe prête, et on y apparaît directement ; rien n'est sauvegardé. Il réutilise le moteur et
+  ville, route ou grotte d'Odyssée) et une équipe prête, et on y apparaît directement ; rien n'est sauvegardé. Menu du labo : mode test, Pokémon sauvages coupés (`noEnc`), traverser les murs (`traverseMurs`). Il réutilise le moteur et
   les images d'Odyssée sans les copier (`odyssee/js/art.js` charge les images pour les deux jeux). Les donjons se dessinent en texte
   (`testodyssee/js/donjons/`) ; l'état d'un donjon est partagé par le groupe et tenu par l'hôte du salon (`testodyssee/js/donjon/etat.js`,
   sans DOM). `node tools/test-testodyssee.mjs` vérifie les plans (tout est accessible portes ouvertes, rien portes fermées), les règles

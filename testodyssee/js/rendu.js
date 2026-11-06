@@ -1,7 +1,7 @@
 // testodyssee/js/rendu.js — ce que le labo ajoute au rendu d'Odyssée : donjons « clairs » (sol et murs blancs),
 // sol glacé, et faisceaux de lumière. Branché une fois au démarrage (navigateur seulement).
 import * as THREE from 'three';
-import { WorldView, HPX } from '../../odyssee/js/render/world3d.js';
+import { WorldView, HPX, EL } from '../../odyssee/js/render/world3d.js';
 import { Sol } from '../../odyssee/js/render/sol.js';
 import { T } from '../../odyssee/js/world/tiles.js';
 
@@ -147,23 +147,22 @@ export function dessinerZones(view, cases) {
   view.root.add(me); view.__zones = me; view.__zonesRoot = view.root;
 }
 
-/** grand miroir posé au sol le long d'une ligne (salle du Reflet) : une bande de verre blanc sur la rangée y - 1,
- *  bordée d'un trait bleu du côté du joueur ; null : efface */
+/** grand miroir debout le long d'une ligne (salle du Reflet) : une vitre blanche de la hauteur des murs, posée sur le bord
+ *  nord de la rangée y, de x0 à x1, cadre bleu en haut et en bas ; null : efface */
 export function dessinerMiroir(view, M) {
   if (!M) { if (view.__miroir) { view.__miroirRoot?.remove(view.__miroir); view.__miroir.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); view.__miroir = null; view.__miroirRoot = null; } return; }
   if (!view.root) return;
   dessinerMiroir(view, null);
-  const g = new THREE.Group(), H = 0.015, y = M.y;
-  const bande = (x0, x1, z0, z1, color, opacity, h) => {
-    const geo = new THREE.PlaneGeometry(x1 - x0, z1 - z0); geo.rotateX(-Math.PI / 2); geo.translate((x0 + x1) / 2, h, (z0 + z1) / 2);
-    const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
+  const g = new THREE.Group(), H = 1.25 * Math.tan(EL), z = M.y, w = M.x1 - M.x0;
+  const vitre = (cx, y0, larg, haut, color, opacity, rot = 0, dz = 0) => {
+    const geo = new THREE.PlaneGeometry(larg, haut); if (rot) geo.rotateZ(rot); geo.translate(cx, y0 + haut / 2, z + dz);
+    const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide }));
     me.renderOrder = 2; me.frustumCulled = false; g.add(me);
   };
-  for (const x of M.cases) {
-    bande(x, x + 1, y - 1, y, 0xffffff, 0.75, H);
-    bande(x + 0.15, x + 0.3, y - 0.95, y - 0.35, 0xc8dcf5, 0.8, H + 0.001);   // reflets en biais sur le verre
-    bande(x, x + 1, y - 0.06, y, 0x6f9fd8, 0.9, H + 0.002);                   // le bord du miroir
-  }
+  vitre(M.x0 + w / 2, 0, w, H, 0xffffff, 0.5);
+  for (let x = M.x0 + 1.3; x < M.x1 - 0.5; x += 3.1) { vitre(x, H * 0.2, 0.12, H * 0.6, 0xffffff, 0.6, -0.35, 0.002); vitre(x + 0.3, H * 0.3, 0.05, H * 0.4, 0xffffff, 0.6, -0.35, 0.002); }
+  vitre(M.x0 + w / 2, H - 0.08, w, 0.08, 0x6f9fd8, 0.95, 0, 0.004);   // cadre du haut
+  vitre(M.x0 + w / 2, 0, w, 0.06, 0x6f9fd8, 0.95, 0, 0.004);          // cadre du bas
   view.root.add(g); view.__miroir = g; view.__miroirRoot = view.root;
 }
 
