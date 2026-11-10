@@ -45,6 +45,9 @@ Pour lancer le site chez soi : `python3 -m http.server 8000` à la racine du dé
 
 ## Faire un donjon
 
+Dans les donjons (toute carte qui a un `donjon`), l'ambiance des grottes d'Odyssée (chauves-souris, cristaux qui scintillent,
+poussière, gouttes : `AmbianceGrotte` de `odyssee/js/vie.js`) est coupée par `TestGame` (`js/jeu.js`).
+
 Copier `js/donjons/crypte.js`, changer `id`, `carte` (commencer par `labo:`) et `nom`, puis ajouter le fichier à la
 liste de `js/donjons/index.js`.
 

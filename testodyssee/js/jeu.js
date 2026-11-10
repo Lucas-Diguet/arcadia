@@ -14,6 +14,12 @@ const lire = (k) => { try { return localStorage.getItem(k) === '1'; } catch (e) 
 const garder = (k, v) => { try { localStorage.setItem(k, v ? '1' : '0'); } catch (e) {} };
 
 export class TestGame extends Game {
+  constructor(...a) {
+    super(...a);
+    // pas d'ambiance de grotte d'Odyssée (chauves-souris, cristaux qui scintillent, poussière, gouttes) dans les donjons du labo
+    const v = this.vie, grotte = v.grotteAmbiance.bind(v);
+    v.grotteAmbiance = (on) => grotte(on && !this.mapObj?.donjon);
+  }
   save() { return true; }
 
   /** mode test : on entre seul partout (dalles, portes des voies) et on peut passer les combats */

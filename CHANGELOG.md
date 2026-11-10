@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 5.30 — 10 novembre 2026
+- **TestOdyssée** — Plus de chauves-souris, de cristaux qui scintillent ni de poussière par-dessus l'écran dans les donjons du labo. Les grottes d'Odyssée les gardent.
+
 ## 5.29 — 10 novembre 2026
 - **TestOdyssée** — Le labo reprend les nouveautés d'Arcadia jusqu'à la 5.28 (Odyssée, graphismes, Fief Maudit, Backrooms), sans rien perdre de ses donjons.
 - **TestOdyssée** — Deux nouveaux donjons, à faire à plusieurs (de 2 à 4).
