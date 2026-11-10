@@ -88,14 +88,14 @@ export const Mecaniques = {
     await ui.say([d.textes.cleDonnee, `${g.state.name} reçoit la ${p.cle} !\nElle est rangée dans le journal du donjon.`], { speaker: who });
   },
   /** mauvaise réponse : toute l'équipe tombe à la moitié de ses PV, puis à 1 PV, puis plus rien */
-  async penalite(d) {
+  async penalite(d, muet = false) {
     const g = this.game, run = this.etats[d.id].run;
     const E = (this.erreurs[d.id] && this.erreurs[d.id].run === run) ? this.erreurs[d.id] : (this.erreurs[d.id] = { run, n: 0 });
     E.n++;
-    if (E.n > 2) { await g.ui.say('Tes Pokémon ont déjà tout perdu... il ne leur reste qu\'un souffle.'); return; }
+    if (E.n > 2) { if (!muet) await g.ui.say('Tes Pokémon ont déjà tout perdu... il ne leur reste qu\'un souffle.'); return; }
     for (const m of g.state.party) { if (m.hp <= 0) continue; m.hp = E.n === 1 ? Math.min(m.hp, Math.ceil(m.stats[0] / 2)) : 1; }
     g.hud?.update(true);
-    await g.ui.say(E.n === 1 ? 'Une onde glacée traverse ton équipe : tes Pokémon perdent la moitié de leurs PV !' : 'Une seconde onde, plus forte : il ne reste qu\'1 PV à chacun de tes Pokémon !');
+    if (!muet) await g.ui.say(E.n === 1 ? 'Une onde glacée traverse ton équipe : tes Pokémon perdent la moitié de leurs PV !' : 'Une seconde onde, plus forte : il ne reste qu\'1 PV à chacun de tes Pokémon !');
   },
 
   /* ---------------- journal ---------------- */

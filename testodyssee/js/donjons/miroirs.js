@@ -6,9 +6,9 @@
 // Salle 1 bis : cinq miroirs à cadre de couleur, trois indices sur le panneau ; un mauvais miroir coûte un quart des PV.
 // Salle 2 : grande salle de glace, cinq petits miroirs ; trois sont des miroirs de poche (journal), deux sont des
 //           pièges qui renvoient une copie du premier Pokémon en forme de l'équipe.
-// Salle 3 : grande salle de glace ; objets et parchemins à garder, et un robot (CT Voile Miroir) difficile à atteindre.
 // Les salles sont des cartes séparées (on change de salle comme on entre dans un bâtiment).
-// Salle 4 : Pokémon sauvages de Feu (Feux Follets pour le brasier) et de Glace (Eau Fraîche, mais le brasier s'éteint).
+// Salle 4 : tant que le brasier est éteint, cinq Funécire et deux Sorbébé se promènent ; s'en approcher lance le combat.
+//           Funécire battu : un Feu Follet pour le brasier ; Sorbébé battu : une Eau Fraîche, mais le brasier s'éteint.
 //           Brasier allumé : deux faisceaux à guider jusqu'aux soleils avec les miroirs fixes et les miroirs de poche.
 // Salle 5 : grand labyrinthe, vu de plus haut ; Copycat refait tes pas en miroir ; une fois à côté de lui, il t'affronte avec une copie de ton équipe.
 import { GameMap, rng } from '../../../odyssee/js/world/mapgen.js';
@@ -58,12 +58,6 @@ export default {
     C: { type: 'miroirMural', decor: 'miroir_mur' },
     p: { type: 'miroirPoche', decor: 'miroir_poche' },
     q: { type: 'miroirPoche', decor: 'miroir_poche', piege: true },
-    u: { type: 'ramasser', objet: 'parchemin-miroirs-1' },
-    v: { type: 'ramasser', objet: 'hyper-potion', n: 2 },
-    w: { type: 'ramasser', objet: 'parchemin-miroirs-2' },
-    x: { type: 'ramasser', objet: 'elixir' },
-    y: { type: 'ramasser', objet: 'parchemin-miroirs-3' },
-    R: { type: 'robot', decor: 'robot' },
     F: { type: 'brasier', decor: 'brasier' },
     L: { type: 'soleil', decor: 'soleil' },
     f: { type: 'miroirFixe', decor: 'miroir_d', sens: '/' },
@@ -99,18 +93,14 @@ export default {
       '#####S#####',
       '#####D#####',
     ] },
-    // deux fois la taille de la Salle de l'Énigme ; le passage est derrière le miroir au cadre noir
+    // deux fois la surface de la Salle de l'Énigme, assez courte pour voir les cinq miroirs depuis le panneau ;
+    // le passage est derrière le miroir au cadre noir
     { id: 's1b', nom: 'Salle des Cinq Miroirs', type: 'enigme', porteObjet: 'O', penalite: 'quart', plan: [
       '#####################',
       '#############N#######',
       '####H##I##J##O##U####',
       '##.................##',
-      '##.................##',
-      '##.................##',
-      '##.................##',
-      '##.................##',
       '##........Q........##',
-      '##.................##',
       '##.................##',
       '##.................##',
       '##.................##',
@@ -156,44 +146,6 @@ export default {
       '##################.......#################',
       '##################.......#################',
       '##################.....c.#################',
-      '##################...S...#################',
-      '#####################D####################',
-    ] },
-    { id: 's3', nom: 'Grand Miroir Gelé', type: 'libre', plan: [
-      '#####################N####################',
-      '#ii.iXiiXXiiiiiiiiiiXiiiiiiiXiiiiii.iXXii#',
-      '#iiiiXiiiii.iXi.XiiiiiiiiXiiiiiiiiX.yiiiX#',
-      '#iiXiiiiiiiiiXXiiii.iiiiiiiiiiiiiiXiiiiii#',
-      '#iXiuXiXXiXiiiiXiiiiiii.iiiii..iiiiiiiiii#',
-      '#iiiiXiiiiiiiiiii.ii.i.iiiiiiiiiiiXiiiiii#',
-      '#ii.iiiiiiiiiiiXiiXiiiiXiiXiiiiiiiiiiiiii#',
-      '#iiXiXiiiiXiXiiiiiii.iiiiiiiiiiiiiiiiXiii#',
-      '#iiiiiiiiiiiXiiiiXiiiiiiiXiiiiiiiiiiiiiii#',
-      '#iiiiiiiiiiiiiiiiiiXiiXiiiiiiXXiiiiiiiiXi#',
-      '#iiiiiiiXiiiXiXiiiXiiviXiiiiXiXiiiiiiiiXi#',
-      '#iiiiiiiXiiiiiXiiiXiiiiiiiiiiiiiXii.iXXXi#',
-      '#XiiiiiiXXXiiiXiiiiiXXiiiiiiixiXiiiiiiiii#',
-      '#iiiiiiiiiiiiiXiiiXiiiiiiXiXiiiiiiiiXiiii#',
-      '#XiiiiXii.ii.XiiiiiiiiXii.iiiiiiiiiii.iiX#',
-      '#iiiiiiiii..iiiiiii.iiiiXiiXiiiiiiiiiiiii#',
-      '#iiiiiiiiiiXiiiXii.iiXiiiiiiXiiiiii.iiXii#',
-      '#iiiiiiiiiiiiiiiiiiiiiiX.iiXXXiiiiiiXiiii#',
-      '#ii.iiiXiiXiiiiiXRiiiiiiiiXiiiXiiiiiiXiii#',
-      '#iiiXiXiiiiXiiiiiXiiiiiiXiiiiiiiiiiiiiiii#',
-      '#XiiXiiiiiiXi.iiiiiiiiiXXiiiiXiiXXii.iiiX#',
-      '#iiiiiiiiiiiiiiiiiiXXXiiXiiiiiXi.iiiii.ii#',
-      '#XXiiiiiiiiiiiXiXiXiiXiXiiiiXiiiiXiiiiiii#',
-      '#iXXXiiiiiiXiiiiiiiiiiiiiiiiiiiiiiiiXiiii#',
-      '#iXiXXiiiXiXiiiiiiiiiiiiiXiiiii..iiiiiXiX#',
-      '#iiiXiXiiiiiiiiiiXiiiXXiXiiiiiXiiXiiiiiii#',
-      '#iiiiiiiiiiiiiiiXiXiiiXiiXiiiiiiXwiiXiiXi#',
-      '#XiiiiiiiiiXiiXXXiXiiiiXXiXiXiiiiiXiiiXXi#',
-      '#........................................#',
-      '#........................................#',
-      '#........................................#',
-      '##################.......#################',
-      '##################.......#################',
-      '##################.......#################',
       '##################...S...#################',
       '#####################D####################',
     ] },
@@ -272,16 +224,14 @@ export default {
       '« Je ne suis pas au bord. »',
       '« Aucun de mes voisins n\'a un cadre rouge. »',
       '« Mon cadre n\'a pas la couleur du feu. »',
-      'Touche le bon miroir. Un mauvais miroir se brise et blesse ton équipe.',
+      'Touche le bon miroir.',
     ] },
   },
   // rencontres de la Salle du Brasier : [espèce, niveau min, niveau max, poids]
-  rencontres: [[607, 30, 33, 60], [608, 32, 34, 10], [582, 30, 33, 15], [583, 32, 34, 10], [615, 31, 34, 5]],
+  // salle du brasier, tant qu'il n'est pas allumé : Pokémon qui se promènent (espèce, niveaux, combien dans la salle)
+  errants: [[607, 30, 33, 5], [582, 30, 33, 2]],
   feu: [607, 608], glace: [582, 583, 615],
-  robot: {
-    cls: 'Robot', nom: 'Réflecteur', bs: 'robot_combat',
-    equipe: [[122, 36, ['mirror-coat', 'psychic', 'light-screen', 'reflect']], [202, 36, ['mirror-coat', 'counter', 'safeguard', 'amnesia']], [350, 37, ['mirror-coat', 'hydro-pump', 'ice-beam', 'recover']]],
-  },
+
   textes: {
     porteCle: 'La porte est fermée. L\'ouvrir avec la Clé des Miroirs ?',
     porteFermee: 'La porte est fermée. Il faudrait la Clé des Miroirs.',
@@ -292,12 +242,10 @@ export default {
     secretFait: 'Le miroir n\'est plus là.',
     miroirMur: 'Un grand miroir. Ton reflet te regarde.\nToucher ce miroir ?',
     juste: ['Le miroir se trouble, puis s\'efface comme une brume...', 'Un passage s\'ouvre derrière lui !'],
-    faux: 'Le miroir se brise en mille éclats !',
+    faux: 'Le miroir se brise.',
     brise: 'Un miroir brisé. Il ne reflète plus rien.',
     poche: 'Un petit miroir de poche, encore intact.',
     piege: ['Le petit miroir se trouble... Ton reflet en sort !'],
-    robot: ['BIP. INTRUS DÉTECTÉ.', 'PROTOCOLE VOILE MIROIR ENCLENCHÉ.'],
-    robotBattu: 'BIP... SYSTÈME EN VEILLE. MERCI DE VOTRE VISITE.',
     brasier: [
       'Un grand brasier ancien. Il n\'a pas été allumé depuis bien longtemps.',
       'Une petite flamme vacille au fond du brasier.',

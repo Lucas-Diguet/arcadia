@@ -1,11 +1,11 @@
 // testodyssee/js/donjon/miroirs.js — mécaniques du donjon des miroirs, ajoutées à la classe Donjons (jeu.js) :
-// énigme aux miroirs muraux, sol glacé, miroirs de poche et miroirs piégés, robot, brasier et rencontres de la salle
-// du brasier, faisceaux de lumière et soleils, et Copycat qui refait nos pas en miroir.
+// énigme aux miroirs muraux, sol glacé, miroirs de poche et miroirs piégés, brasier et rencontres de la salle
+// du brasier (Pokémon qui se promènent), faisceaux de lumière et soleils, et Copycat qui refait nos pas en miroir.
 // Tout ce qui tient de l'état passe par l'action « maj » d'etat.js (donnees de chaque salle).
 import { createMon, healFull } from '../../../odyssee/js/core/mon.js';
 import { itemName } from '../../../odyssee/js/core/items.js';
 import { T, walkable, DIRS } from '../../../odyssee/js/world/tiles.js';
-import { loadImg } from '../../../odyssee/js/assets.js';
+import { loadImg, ASSETS } from '../../../odyssee/js/assets.js';
 import { el } from '../../../odyssee/js/ui/ui.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { glisser, faisceau, refleter, cle, cheminGlace, reponseJuste } from './casse-tetes.js';
@@ -14,7 +14,7 @@ import { IMAGES } from '../contenu.js';
 import { dessinerFaisceaux, dessinerMiroir } from '../rendu.js';
 
 const estMiroirs = (d) => d.salles.some((s) => s.type === 'reflet' || s.type === 'lumiere');
-const TYPES = new Set(['enigme', 'miroirMural', 'miroirSecret', 'miroirPoche', 'robot', 'brasier', 'soleil', 'miroirFixe', 'socle', 'plaque', 'pc']);
+const TYPES = new Set(['enigme', 'miroirMural', 'miroirSecret', 'miroirPoche', 'brasier', 'soleil', 'miroirFixe', 'socle', 'plaque', 'pc']);
 const idAttaque = (key) => Object.values(MOVES).find((m) => m.key === key).id;
 /** saisie d'une réponse au clavier ; null si on annule */
 function saisirTexte(ui, titre) {
@@ -33,6 +33,18 @@ function saisirTexte(ui, titre) {
     });
     inp.addEventListener('blur', () => setTimeout(() => inp.isConnected && inp.focus(), 10));
   });
+}
+/** l'image sans ses marges vides (les dessins de face ont de la place autour du Pokémon) : ses pieds touchent le sol */
+function recadrer(im) {
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+  const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+  const D = x.getImageData(0, 0, c.width, c.height).data;
+  let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+  for (let y = 0; y < c.height; y++) for (let i = 0; i < c.width; i++) if (D[(y * c.width + i) * 4 + 3] > 20) { x0 = Math.min(x0, i); x1 = Math.max(x1, i); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  if (x1 < 0) return im;
+  const r = document.createElement('canvas'); r.width = x1 - x0 + 1; r.height = y1 - y0 + 4;
+  r.getContext('2d').drawImage(c, x0, y0, r.width, y1 - y0 + 1, 0, 0, r.width, y1 - y0 + 1);
+  return r;
 }
 const copieSoignee = (party) => party.map((m) => { const c = JSON.parse(JSON.stringify(m)); healFull(c); delete c._ko; return c; });
 
@@ -109,7 +121,6 @@ export const Miroirs = {
       case 'miroirMural': return this.miroirMural(d, c);
       case 'miroirSecret': return this.miroirSecret(d, c);
       case 'miroirPoche': return this.miroirPoche(d, x, y, o.piege);
-      case 'robot': return this.robot(d);
       case 'brasier': return this.brasier(d);
       case 'soleil': { const D4 = this.dm(d, 's4'); return this.game.ui.say((D4.soleils || []).includes(cle(x, y)) ? d.textes.soleilOn : d.textes.soleil); }
       case 'miroirFixe': return this.miroirFixe(d, x, y);
@@ -144,7 +155,6 @@ export const Miroirs = {
     const g = this.game;
     for (const m of g.state.party) if (m.hp > 0) m.hp = Math.max(1, m.hp - Math.ceil(m.stats[0] / 4));
     g.hud?.update(true);
-    await g.ui.say('Une onde glacée traverse ton équipe : tes Pokémon perdent un quart de leurs PV !');
   },
   async miroirMural(d, c) {
     const g = this.game, ui = g.ui, o = d.objets[c], s1 = this.salleIci(d), D1 = this.dm(d, s1.id);
@@ -159,7 +169,7 @@ export const Miroirs = {
     g.sound.sfx('hitstrong'); g.view.shake = 0.3; await ui.flash(1, '#d0e8ff', 90);
     await this.maj(d, s1.id, { brises: [...(D1.brises || []), c] });
     await ui.say(d.textes.faux);
-    if (s1.penalite === 'quart') await this.penaliteQuart(); else await this.penalite(d);
+    if (s1.penalite === 'quart') await this.penaliteQuart(); else await this.penalite(d, true);
   },
   /** miroirs de poche gardés : ramassés moins ceux posés sur un socle */
   miroirsEnPoche(d) {
@@ -177,23 +187,12 @@ export const Miroirs = {
       return;
     }
     await ui.say(d.textes.piege);
-    const res = await this.combat({ cls: 'Miroir', nom: 'piégé', bs: 'miroir_piege' }, copieSoignee([g.state.party.find((m) => m.hp > 0) || g.state.party[0]]));
+    const res = await this.combat({ cls: 'Miroir', nom: 'piégé', bs: 'miroir_piege', copie: true }, copieSoignee([g.state.party.find((m) => m.hp > 0) || g.state.party[0]]));
     if (res !== 'win') { await this.defaite(d); return; }
     await this.maj(d, 's2', { pris: { ...(this.dm(d, 's2').pris || {}), [k]: 'piege' } });
     g.sound.sfx('hitstrong');
     await ui.say('Le miroir piégé vole en éclats.');
   },
-  async robot(d) {
-    const g = this.game, ui = g.ui, R = d.robot, D3 = this.dm(d, 's3');
-    if (D3.robot) { await ui.say(d.textes.robotBattu, { speaker: R.nom }); return; }
-    await ui.say(d.textes.robot, { speaker: R.nom });
-    const party = R.equipe.map(([sp, lvl, mv]) => createMon(sp, lvl, { moves: mv.map(idAttaque), iv: Array(6).fill(24), shiny: false }));
-    const res = await this.combat({ cls: R.cls, nom: R.nom, bs: R.bs }, party);
-    if (res !== 'win') { await this.defaite(d); return; }
-    await this.maj(d, 's3', { robot: true });
-    if (!g.state.bag['ct-voile-miroir']) { g.give('ct-voile-miroir'); g.sound.sfx('item'); await ui.say(`${g.state.name} reçoit la ${itemName('ct-voile-miroir')} !\nElle est rangée dans les Objets rares du Sac.`); }
-  },
-
   /* ---------------- salle du brasier ---------------- */
   async brasier(d) {
     const g = this.game, ui = g.ui, s = this.salleDe(d, 'lumiere'), D4 = this.dm(d, s.id);
@@ -277,25 +276,73 @@ export const Miroirs = {
     dessiner(v, this.calculLumiere(d).traits);
   },
 
-  /** après un pas dans la salle du brasier : rencontres de Feu (Feu Follet) et de Glace (Eau Fraîche, brasier éteint) */
-  async rencontreMiroirs(d) {
-    const g = this.game, p = g.player, m = g.mapObj, s = this.salleDe(d, 'lumiere');
-    // plus aucune rencontre une fois le brasier allumé
-    if (m !== this.carteDe(d, s) || (this.dm(d, s.id).feux || 0) >= 5) return;
-    if (g.noEnc || m.get(p.x, p.y) !== T.CAVE || g.bv.alive || Math.random() > 0.08) return;
-    const tot = d.rencontres.reduce((a, e) => a + e[3], 0); let r = Math.random() * tot, e = d.rencontres[0];
-    for (const x of d.rencontres) { r -= x[3]; if (r <= 0) { e = x; break; } }
-    const wild = createMon(e[0], e[1] + Math.floor(Math.random() * (e[2] - e[1] + 1)), { met: d.nom });
+  /**
+   * salle du brasier, tant qu'il n'est pas allumé : des Pokémon qui se promènent (errants : espèce, niveaux, combien ;
+   * toujours ce nombre dans la salle). S'approcher de l'un d'eux lance le combat ; il revient ailleurs un peu plus tard.
+   */
+  tickErrants(d, dt) {
+    const g = this.game, v = g.view, s = d && this.salleDe(d, 'lumiere'), m = g.mapObj, p = g.player;
+    const actif = s && m === this.carteDe(d, s) && (this.dm(d, s.id).feux || 0) < 5 && !g.noEnc;
+    const E = this.errants;
+    if (!actif) { if (E) { for (const e of E.liste) if (v.actors.has('errant:' + e.id)) v.removeActor('errant:' + e.id); this.errants = null; } return; }
+    if (!E || E.carte !== m.id || E.root !== v.root) {
+      if (E) for (const e of E.liste) if (v.actors.has('errant:' + e.id)) v.removeActor('errant:' + e.id);
+      this.errants = { carte: m.id, root: v.root, liste: [], n: 0, attente: [], pause: 1.5 };
+      for (const [sp, , , k] of d.errants) for (let i = 0; i < k; i++) this.errants.attente.push({ sp, t: 0 });
+    }
+    const R = this.errants, libre = (x, y) => m.get(x, y) === T.CAVE && !m.objects.has(x + ',' + y) && !m.npcs.some((n) => n.x === x && n.y === y)
+      && !(x === p.x && y === p.y) && !R.liste.some((e) => e.x === x && e.y === y);
+    if (g.bv.alive) return;
+    // ceux qui reviennent, loin du joueur
+    for (const a of [...R.attente]) {
+      if ((a.t -= dt) > 0) continue;
+      const cases = []; for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) if (libre(x, y) && Math.abs(x - p.x) + Math.abs(y - p.y) >= 6) cases.push([x, y]);
+      if (!cases.length) continue;
+      const [x, y] = cases[Math.floor(Math.random() * cases.length)];
+      R.liste.push({ id: ++R.n, sp: a.sp, x, y, fx: x, fy: y, u: 1, dur: 0.6, repos: 0.5 + Math.random() * 1.5 });
+      R.attente = R.attente.filter((q) => q !== a);
+      if (!this.imgErrant?.[a.sp]) { (this.imgErrant ||= {})[a.sp] = 'charge'; loadImg(ASSETS.front(a.sp)).then((im) => { this.imgErrant[a.sp] = recadrer(im); }); }
+    }
+    // ils se promènent
+    for (const e of R.liste) {
+      if (e.u < 1) { e.u = Math.min(1, e.u + dt / e.dur); continue; }
+      if ((e.repos -= dt) > 0) continue;
+      const pas = Object.values(DIRS).filter(([dx, dy]) => libre(e.x + dx, e.y + dy));
+      e.repos = 0.4 + Math.random() * 1.6;
+      if (!pas.length) continue;
+      const [dx, dy] = pas[Math.floor(Math.random() * pas.length)];
+      e.fx = e.x; e.fy = e.y; e.x += dx; e.y += dy; e.u = 0;
+    }
+    for (const e of R.liste) {
+      const im = this.imgErrant?.[e.sp]; if (!im || im === 'charge') continue;
+      const a = v.imageActor('errant:' + e.id, im, 0.6), u = e.u;
+      if (!a.petit) { a.petit = true; a.shadow.scale.set(0.5, 1, 0.6); }
+      v.place(a, e.fx + (e.x - e.fx) * u, e.fy + (e.y - e.fy) * u, u < 1 ? Math.abs(Math.sin(u * Math.PI)) * 0.15 : 0);
+    }
+    // on s'approche de l'un d'eux : combat
+    R.pause -= dt;
+    if (g.busy || p.move || R.pause > 0 || this.taches.length) return;
+    const e = R.liste.find((q) => q.u >= 1 && Math.abs(q.x - p.x) + Math.abs(q.y - p.y) <= 1);
+    if (!e) return;
+    R.liste = R.liste.filter((q) => q !== e); R.attente.push({ sp: e.sp, t: 5 });
+    if (v.actors.has('errant:' + e.id)) v.removeActor('errant:' + e.id);
+    R.pause = 2;
+    this.taches.push(() => this.combatErrant(d, e.sp));
+  },
+  /** combat contre un Pokémon de la salle du brasier : Feu (Feu Follet) ou Glace (Eau Fraîche, brasier éteint) */
+  async combatErrant(d, sp) {
+    const g = this.game, s = this.salleDe(d, 'lumiere'), [, a, b] = d.errants.find((q) => q[0] === sp);
+    const wild = createMon(sp, a + Math.floor(Math.random() * (b - a + 1)), { met: d.nom });
     g.busy = true;
     try {
       const res = await g.runBattle({ wild, noWhiteout: true });
       if (res === 'lose') { await this.defaite(d); return; }
       if (res !== 'win') return;
       const D4 = this.dm(d, s.id);
-      if (d.feu.includes(e[0])) {
+      if (d.feu.includes(sp)) {
         await this.maj(d, s.id, { tenus: (D4.tenus || 0) + 1 });
         g.sound.sfx('item'); await g.ui.say(d.textes.feuFollet);
-      } else if (d.glace.includes(e[0])) {
+      } else if (d.glace.includes(sp)) {
         g.give('eau-fraiche'); g.sound.sfx('item');
         await g.ui.say([d.textes.froid, d.textes.eauFraiche]);
         const n = D4.feux || 0;
@@ -366,7 +413,7 @@ export const Miroirs = {
     if (!this.refletActif(d) || R.x !== p.x + dx || R.y !== p.y + dy || R.move) return false;
     g.busy = true;
     try {
-      const res = await this.combat({ cls: 'Mime', nom: 'Copycat', bs: 'copycat_combat' }, copieSoignee(g.state.party));
+      const res = await this.combat({ cls: 'Mime', nom: 'Copycat', bs: 'copycat_combat', copie: true }, copieSoignee(g.state.party));
       if (res !== 'win') { await ui.say(d.textes.copycatGagne); this.placerReflet(d); await this.defaite(d); return true; }
       await ui.say(d.textes.copycatBattu, { speaker: 'Copycat' });
       await this.trophee(d);
@@ -462,10 +509,11 @@ export const Miroirs = {
     // la salle du reflet se voit de plus haut
     const vue = d && g.mapObj?.salle ? d.salles.find((s) => s.id === g.mapObj.salle)?.vue || 1 : 1;
     if (g.state && vue !== this.vueVoulue) { this.vueVoulue = vue; g.onVue?.(vue); }
+    if (!d && this.errants) this.tickErrants(null, dt);
     if (!d) { if (g.view.actors.has('copycat')) g.view.removeActor('copycat'); if (g.view.actors.has('reflet-joueur')) g.view.removeActor('reflet-joueur'); dessinerMiroir(g.view, null); return; }
     // indice du PC : tracé au sol tant qu'on est dans sa salle
     if (this.indice && g.mapObj.id === this.indice.carte && (!this.indice.dessine || g.view.__faisceauxRoot !== g.view.root)) { dessinerFaisceaux(g.view, this.indice.traits); this.indice.dessine = true; }
-    if (this.salleDe(d, 'lumiere')) this.dessinerLumiere(d);
+    if (this.salleDe(d, 'lumiere')) { this.dessinerLumiere(d); this.tickErrants(d, dt); }
     if (this.salleDe(d, 'reflet')) this.dessinerReflet(dt); else this.dessinerGlace(null);
   },
   /** pas pris en charge ici (glissade sur la glace, ligne du miroir) : renvoie true si le pas est traité */
@@ -490,7 +538,6 @@ export const Miroirs = {
   apresDepart(dir) { const d = this.miroirsIci(); if (d && this.salleDe(d, 'reflet')) this.refleterPas(d, dir); },
   occupe(x, y) { return this.occupeReflet(x, y); },
   async interagir() { const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.parlerReflet(d); },
-  async apresPas(mv) { const d = this.miroirsIci(); if (d && !mv?.glisse && this.salleDe(d, 'lumiere')) await this.rencontreMiroirs(d); },
   /** dans la salle du reflet : on peut revenir à l'entrée de la salle depuis le menu */
   dansLeReflet() { const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.refletActif(d); },
   async recommencerSalle() { const d = this.miroirsIci(); if (d) await this.recommencerReflet(d); },

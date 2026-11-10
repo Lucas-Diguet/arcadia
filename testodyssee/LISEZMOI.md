@@ -184,7 +184,7 @@ tout (`js/combat/raid.js`) ; l'écran de chaque joueur rejoue les tours (`js/com
 
 ### Le donjon des miroirs
 
-Seul, niveau 35, sept salles séparées. La porte s'ouvre avec la Clé des Miroirs (`cle-miroirs`, dans le Sac
+Seul, niveau 35, six salles séparées. La porte s'ouvre avec la Clé des Miroirs (`cle-miroirs`, dans le Sac
 de toutes les équipes du labo) :
 
 0. **Salle du Secret** (`s0`, même taille que l'Énigme) : un seul miroir (`miroirSecret`), qui pose une devinette
@@ -194,20 +194,23 @@ de toutes les équipes du labo) :
    (`reponseJuste` de `casse-tetes.js`, vérifié par les tests). Mauvaise réponse : pas de pénalité, le miroir reste.
 1. **Énigme** : le panneau au centre montre une horloge vue dans un miroir (3 h 40) et les trois réponses, avec une
    flèche vers leur miroir (`<-` gauche, `↑` milieu, `->` droite). Le bon miroir (gauche, 8 h 20) s'efface et
-   découvre le passage ; les deux autres se brisent et font tomber l'équipe à la moitié de ses PV.
+   découvre le passage ; les deux autres se brisent (« Le miroir se brise. ») et font tomber l'équipe à la moitié de ses PV.
 1 bis. **Salle des Cinq Miroirs** (`s1b`, au moins deux fois la surface de l'Énigme) : cinq miroirs au cadre de
    couleur, de gauche à droite jaune, rouge, bleu, noir, vert (`miroir_mur_<couleur>`, le miroir d'origine recoloré).
    Le panneau (`enigmes.couleurs`) donne trois indices : pas au bord, aucun voisin rouge, pas la couleur du feu. Seul
-   le noir convient (vérifié par les tests) et découvre le passage. Un mauvais miroir se brise et chaque Pokémon perd
-   un quart de ses PV, jamais K.O. (`penalite: 'quart'` de la salle).
+   le noir convient (vérifié par les tests) et découvre le passage. Un mauvais miroir se brise (« Le miroir se brise. »,
+   sans autre message) et chaque Pokémon perd un quart de ses PV, jamais K.O. (`penalite: 'quart'` de la salle). La salle
+   est assez courte pour voir les cinq miroirs depuis le panneau.
 2. **Galerie de Glace** (40 × 27 de glace) : à l'entrée, un plateau de 7 × 4 cases et trois rangées sans glace sous la
    zone glissante ; un PC d'aide sur le plateau (indice, salle simplifiée, solution). Cinq petits miroirs sur la glace. Trois sont des miroirs de poche (dans le
-   journal), deux sont piégés et envoient une copie du premier Pokémon encore debout de l'équipe.
-3. **Grand Miroir Gelé** (40 × 27 de glace, même entrée que la Galerie, sans PC) : objets et parchemins à garder, et le robot Réflecteur (M. Mime, Qulbutoké,
-   Milobellus, tous avec Voile Miroir), le plus loin à atteindre, qui donne la CT Voile Miroir.
-4. **Salle du Brasier** (huit rangées vides à l'entrée : le brasier est au centre) : rencontres à 60 % Funécire, 10 % Mélancolux, 15 % Sorbébé, 10 % Sorboul, 5 % Hexagel.
-   Chaque Pokémon Feu battu laisse un Feu Follet ; on les jette un par un (un texte par stade du brasier), 5 l'allument
-   et les rencontres s'arrêtent. Un Pokémon Glace battu donne une Eau Fraîche, et éteint le brasier s'il n'a pas ses
+   journal), deux sont piégés et envoient une copie du premier Pokémon encore debout de l'équipe. Les copies (miroirs
+   piégés, Copycat) gardent l'objet de l'original : pas de gemme ajoutée, Méga seulement si l'original tient la sienne
+   (`copie: true` du combat).
+4. **Salle du Brasier** (huit rangées vides à l'entrée : le brasier est au centre) : pas de rencontres au hasard ; tant
+   que le brasier est éteint, cinq Funécire et deux Sorbébé se promènent dans la salle (`errants`, images de face
+   dessinées dans le décor), toujours ce nombre : s'approcher de l'un d'eux lance le combat, et il revient ailleurs
+   quelques secondes plus tard, loin du joueur. Chaque Funécire battu laisse un Feu Follet ; on les jette un par un (un
+   texte par stade du brasier), 5 l'allument et les Pokémon disparaissent. Un Pokémon Glace battu donne une Eau Fraîche, et éteint le brasier s'il n'a pas ses
    5 feux. Puis on tourne les miroirs sur pied et on pose les 3 miroirs de poche sur les bons socles (une seule
    solution, 5 miroirs à tourner) jusqu'à éclairer les deux soleils : la grande porte s'ouvre.
 5. **Salle du Reflet** (vue de plus haut, sol bleu pâle sous les murs blancs) : le grand miroir est une vitre blanche debout, deux fois plus haute
@@ -408,7 +411,7 @@ Seul en mode test, les vagues sont à la taille d'un joueur.
 ### Le mode test
 
 Options du menu, gardées dans le navigateur, partout dans le labo : SAUVAGES : NON coupe les Pokémon sauvages (herbes,
-grottes, eau, et les rencontres des donjons : brasier, grottes de la Pyramide, galeries de la Mine) ; TRAVERSER LES MURS
+grottes, eau, et les rencontres des donjons : Pokémon qui se promènent au brasier, grottes de la Pyramide, galeries de la Mine) ; TRAVERSER LES MURS
 laisse marcher sur toute case de la carte.
 
 Menu MODE TEST (ou `?test` dans l'adresse) : les dalles s'ouvrent avec un seul joueur, toutes les portes des voies

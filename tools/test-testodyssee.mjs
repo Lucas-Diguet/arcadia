@@ -132,7 +132,7 @@ for (const d of DONJONS) {
     ok(m.reach(...P.depart)[P.suivante[1] * m.w + P.suivante[0]], 'miroirs : salle 1 bis, le bon miroir ouvre le passage');
   }
   // salles de glace : grandes, la sortie et chaque objet accessibles quels que soient ceux déjà pris, jamais coincé
-  for (const [id, lettres, mini] of [['s2', ['p', 'q'], 8], ['s3', ['u', 'v', 'w', 'x', 'y'], 8]]) {
+  for (const [id, lettres, mini] of [['s2', ['p', 'q'], 8]]) {
     const m = carte(id), P = m.donjon.plan, N = P.suivante, S = P.depart;
     ok(P.sol.length >= 4 * 250, `miroirs : ${id} est une grande salle (${P.sol.length} cases)`);
     const cases = lettres.flatMap((c) => P.objets[c]), fixes = (P.objets.R || []);
