@@ -370,6 +370,41 @@ Dans `contenu.js` (`ATTAQUES`) : Jaillissève (Plante, le pendant d'Éruption et
 pendant de Surchauffe et de Tempête Verte). Dans le labo, Éruption, Giclédo et Jaillissève perdent de la force avec les
 PV du lanceur (150 × PV / PV max), comme dans les jeux.
 
+### Fonderie aux Plaques
+
+De 2 à 4 joueurs, niveau 60, équipe « fin ». Des plaques de pression (`type: 'plaque'`, `groupes`) lèvent les grilles
+(`type: 'grille'`, `groupe`) de leur couleur tant qu'un joueur est dessus ; les groupes sont dans `plaques` du donjon
+(`couleur`, `requis` : plaques à tenir en même temps, `garde` : reste levé une fois enclenché). L'hôte regarde quatre fois
+par seconde où sont les joueurs et range les groupes ouverts dans les données de la salle (`ouvertes`, `gardes`) ; une
+grille ne se referme jamais sur un joueur. Règles sans écran : `js/donjon/plaques.js` ; les tests vérifient que chaque
+salle à plaques se traverse à deux et pas seul (`traversable`).
+1. **Vestiaire** : dalles (au moins 2 joueurs).
+2. **Le Relais** : chacun tient la grille de l'autre, à tour de rôle.
+3. **La Balance** : la plaque jaune demande deux joueurs à la fois et son treuil reste levé ; deux dresseurs, puis un relais.
+4. **La Chaîne** : les plaques du milieu lèvent deux grilles, on avance à saute-mouton.
+5. **Le Creuset** : le chemin se sépare, chaque côté tient la grille de l'autre ; deux dresseurs.
+6. **Salle des Moules** : dalles dans quatre recoins, chacun dans un moule.
+7. **Haut-Fourneau** : Vulcain, Maître de Forge, et son Heatran, en combat à blocs.
+
+Mode test : une plaque suffit et tout ce qui s'ouvre reste ouvert, pour traverser seul.
+
+### Bastion du Cristal
+
+De 2 à 4 joueurs, niveau 60. Deux salles `defense` : on touche le cristal (`type: 'cristal'`), et les pillards
+(`ennemis` du donjon : éclaireurs rapides, rôdeurs, colosses lents qui frappent fort) arrivent par vagues (`vagues` de la
+salle, nombres par joueur présent) par les entrées (`type: 'entree'`) et marchent vers le cristal par le plus court
+chemin. Un pillard qui passe à côté d'un joueur libre l'engage : il s'arrête et le combat se joue chez ce joueur ; battu,
+il disparaît, sinon il repart et le joueur revient à l'entrée de la cour, soigné. Arrivé au cristal, il le frappe
+(`degats`). Le cristal à zéro : tout recommence à la première vague. L'hôte fait avancer la défense toutes les
+demi-secondes et l'envoie à tous (`djDef`), les issues des combats lui reviennent (`djDefA`). Règles sans écran :
+`js/donjon/defense.js`, vérifiées par les tests (sans défenseur le cristal tombe, bien gardé il tient). Une infirmière
+(`type: 'soin'`) soigne, entre deux vagues seulement dans les cours.
+1. **Poste de garde** : dalles. 2. **Les Remparts** : deux pillards. 3. **La Cour du Cristal** : trois vagues, six entrées.
+4. **L'Infirmerie**. 5. **La Tour de Guet** : trois guetteurs. 6. **Le Grand Siège** : trois vagues, huit entrées, des
+colosses. 7. **Salle du Trône** : le capitaine Grenat et son Tyranocif, en combat à blocs.
+
+Seul en mode test, les vagues sont à la taille d'un joueur.
+
 ### Le mode test
 
 Options du menu, gardées dans le navigateur, partout dans le labo : SAUVAGES : NON coupe les Pokémon sauvages (herbes,

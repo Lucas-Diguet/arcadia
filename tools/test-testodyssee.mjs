@@ -26,6 +26,8 @@ const { construire: construireIle, nouvelleIle } = ILE_M;
 import { EQUIPES } from '../testodyssee/js/equipes.js';
 import { walkable, T } from '../odyssee/js/world/tiles.js';
 import { ronde, vueGarde, sansEtreVu } from '../testodyssee/js/donjons/tombeau-gardes.js';
+import { lirePlaques, grillesOuvertes, traversable } from '../testodyssee/js/donjon/plaques.js';
+import { preparerDefense, nouvelleDefense, demarrerDefense, pasDefense, issueDefense } from '../testodyssee/js/donjon/defense.js';
 import { cle, explorerGlace, faisceau, resoudreReflet, cheminGlace, reponseJuste } from '../testodyssee/js/donjon/casse-tetes.js';
 
 installerContenu();
@@ -1132,6 +1134,64 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   // plusieurs chemins mènent au sommet : en retirant n'importe quel lien, il reste atteignable
   const atteint = (sauf) => { const vus = new Set([0]), f = [0]; while (f.length) { const a = f.pop(); for (const [k, [x, y, , c]] of MONT_LIENS.entries()) { if (k === sauf) continue; const b = x === a ? y : y === a ? x : null; if (b != null && !vus.has(b)) { vus.add(b); f.push(b); } } } return vus.has(9); };
   ok(MONT_LIENS.every((_, k) => atteint(k)), 'mont : plusieurs chemins mènent au sommet');
+}
+
+// Fonderie aux Plaques : chaque salle à plaques se traverse à deux, pas seul ; en mode test, seul
+{
+  const d = DONJONS.find((q) => q.id === 'fonderie'), C = construireSalles(d);
+  d.salles.forEach((s, i) => {
+    const m = C[i], P = m.donjon.plan, S = lirePlaques(d, P);
+    if (!S.grilles.length) return;
+    passageSuivant(m, true);
+    const pnj = new Set((s.pnj || []).flatMap((c) => P.objets[c] || P.pnj?.[c] || []).map(([x, y]) => x + ',' + y));
+    const libre = (x, y) => (walkable(m.get(x, y)) || S.grilles.some((q) => q.x === x && q.y === y)) && !pnj.has(x + ',' + y) && !(m.npcs || []).some((n) => n.x === x && n.y === y);
+    ok(traversable(d.plaques, S, libre, P.depart, P.suivante, 2), `fonderie : ${s.nom}, on la traverse à deux`);
+    ok(!traversable(d.plaques, S, libre, P.depart, P.suivante, 1), `fonderie : ${s.nom}, personne n'y passe seul`);
+    ok(S.grilles.every((q) => d.plaques[q.groupe]) && S.plaques.every((p) => p.groupes.every((g) => d.plaques[g])), `fonderie : ${s.nom}, chaque plaque et chaque grille a sa couleur`);
+    // mode test : une plaque suffit et reste enclenchée
+    const O = grillesOuvertes(d.plaques, S, new Set([S.plaques[0].x + ',' + S.plaques[0].y]), { test: true });
+    ok(O.gardes.length >= 1, `fonderie : ${s.nom}, en mode test une plaque reste enclenchée`);
+  });
+  const S = { plaques: [{ x: 1, y: 1, groupes: ['jaune'] }, { x: 2, y: 1, groupes: ['jaune'] }], grilles: [{ x: 5, y: 5, groupe: 'jaune' }] };
+  ok(!grillesOuvertes(d.plaques, S, new Set(['1,1'])).gardes.length && grillesOuvertes(d.plaques, S, new Set(['1,1', '2,1'])).gardes.join() === 'jaune', 'fonderie : la balance demande deux joueurs, puis reste levée');
+  ok(grillesOuvertes(d.plaques, { plaques: [{ x: 1, y: 1, groupes: ['rouge'] }], grilles: [{ x: 3, y: 3, groupe: 'rouge' }] }, new Set(['3,3']), { avant: ['rouge'] }).ouvertes.join() === 'rouge', 'fonderie : une grille ne se referme pas sur un joueur');
+  ok(d.joueurs.mode === 'entre' && d.joueurs.min === 2, 'fonderie : de 2 à 4 joueurs');
+}
+// Bastion du Cristal : chaque entrée mène au cristal ; sans défenseur le cristal tombe, bien gardé il tient
+{
+  const d = DONJONS.find((q) => q.id === 'cristal'), C = construireSalles(d);
+  d.salles.forEach((s, i) => {
+    if (s.type !== 'defense') return;
+    const m = C[i], P = m.donjon.plan;
+    const cr = P.objets.K, en = P.objets.e;
+    const soins = new Set((P.objets.I || []).map(([x, y]) => x + ',' + y));
+    const Dc = preparerDefense(m.w, m.h, (x, y) => walkable(m.get(x, y)) && !soins.has(x + ',' + y), cr, en);
+    ok(en.length >= 4 && en.every(([x, y]) => Dc.dist[y * m.w + x] > 0), `cristal : ${s.nom}, ${en.length} entrées, toutes mènent au cristal`);
+    ok(Object.keys(Object.assign({}, ...s.vagues)).every((t) => d.ennemis[t]), `cristal : ${s.nom}, des pillards connus`);
+    let r = 7; const hasard = () => ((r = (r * 16807) % 2147483647) / 2147483647);
+    // personne : les pillards frappent le cristal jusqu'à ce qu'il tombe
+    const D = nouvelleDefense(s); demarrerDefense(D, s, 2);
+    let fin = null;
+    for (let t = 0; t < 4000 && !fin; t++) for (const [e] of pasDefense(D, Dc, s, d.ennemis, [], hasard)) if (e === 'perdu' || e === 'gagne') fin = e;
+    ok(fin === 'perdu' && D.cristal === 0, `cristal : ${s.nom}, sans défenseur le cristal tombe`);
+    // deux défenseurs collés au cristal qui gagnent tous leurs combats : il tient les vagues
+    const E = nouvelleDefense(s); demarrerDefense(E, s, 2);
+    const [cx, cy] = cr[0], gardes = [{ id: 'a', x: cx - 1, y: cy }, { id: 'b', x: cx + 1, y: cy }];
+    fin = null; let combats = 0;
+    for (let t = 0; t < 8000 && !fin; t++) {
+      for (const [e, id] of pasDefense(E, Dc, s, d.ennemis, gardes, hasard)) {
+        if (e === 'engage') { combats++; for (const [f] of issueDefense(E, s, id, true)) if (f === 'gagne') fin = f; }
+        if (e === 'gagne' || e === 'perdu') fin = e;
+      }
+    }
+    ok(fin === 'gagne' && E.vague === s.vagues.length && combats > 0, `cristal : ${s.nom}, gardé, il tient les ${s.vagues.length} vagues (${combats} combats, cristal ${E.cristal}/${E.max})`);
+    // un pillard battu disparaît ; perdu, il repart
+    const F = nouvelleDefense(s); demarrerDefense(F, s, 1); F.etat = 'vague'; F.ennemis = [{ id: 1, t: 'eclaireur', x: en[0][0], y: en[0][1], engage: 'a' }]; F.file = [];
+    issueDefense(F, s, 1, false);
+    ok(F.ennemis.length === 1 && !F.ennemis[0].engage, `cristal : ${s.nom}, un pillard qui gagne reprend sa marche`);
+  });
+  for (const T of Object.values(d.ennemis)) ok(T.equipes.every((eq) => eq.every(([sp]) => SPECIES[sp])), `cristal : pillards ${T.nom}, des Pokémon connus`);
+  ok(d.joueurs.mode === 'entre' && d.joueurs.min === 2, 'cristal : de 2 à 4 joueurs');
 }
 
 console.log(fails ? `${fails} échec(s) sur ${checks} vérifications` : `TestOdyssée : ${checks} vérifications, tout est bon.`);

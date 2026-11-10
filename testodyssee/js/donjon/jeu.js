@@ -19,6 +19,8 @@ import { Mine } from './mine.js';
 import { Train } from './train.js';
 import { Temple } from './temple.js';
 import { Tombeau } from './tombeau.js';
+import { Fonderie } from './fonderie.js';
+import { Cristal } from './cristal.js';
 import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 
@@ -41,7 +43,7 @@ export class Donjons {
       for (const c of cartes) game.world.maps[c.id] = c;
       const dehors = relierExterieur(d, m);
       if (dehors) game.world.maps[dehors.id] = dehors;
-      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); }
+      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); this.poserObjetsFonderie(d, c); this.poserObjetsCristal(d, c); }
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -111,6 +113,7 @@ export class Donjons {
     this.appliquerTrain(d);
     this.appliquerTemple(d);
     this.appliquerTombeau(d);
+    this.appliquerFonderie(d);
     if (ici) g.refreshNpcs();
     const vu = this.vus[id];
     // premier état connu : ce qui est déjà fait ne rejoue pas de scène ; nouvelle descente : tout se rejoue
@@ -205,6 +208,8 @@ export class Donjons {
     if (m.t === 'djRaid' && String(from) === String(this.H.info.hostId)) { this.recevoirRaid(m); return; }
     if (m.t === 'djPyr' && String(from) === String(this.H.info.hostId)) { this.recevoirPyr(m); return; }
     if (m.t === 'djTemple' && String(from) === String(this.H.info.hostId)) { this.recevoirTemple(m); return; }
+    if (m.t === 'djDefA' && this.hote) { this.actionDef(String(from), m); return; }
+    if (m.t === 'djDef' && String(from) === String(this.H.info.hostId)) { this.recevoirDef(m); return; }
     if (m.t === 'djR') { const f = this.attentes.get(m.rid); if (f) { this.attentes.delete(m.rid); f({ ok: !!m.ok, why: m.why }); } return; }
     if (m.t === 'djE' && !this.hote && String(from) === String(this.H.info.hostId) && this.defs.has(m.id) && !this.defs.get(m.id).solo && m.e) {
       const cur = this.etats[m.id];
@@ -291,7 +296,7 @@ export class Donjons {
     }
     if (this.hote) {
       this.dallesT = (this.dallesT || 0) - dt;
-      if (this.dallesT <= 0) { this.dallesT = 0.25; for (const d of this.defs.values()) { this.verifierDalles(d); this.verifierRaid(d); } }
+      if (this.dallesT <= 0) { this.dallesT = 0.25; for (const d of this.defs.values()) { this.verifierDalles(d); this.verifierRaid(d); this.verifierPlaques(d); } }
     }
     this.tickMiroirs(dt);
     this.tickVoies(dt);
@@ -300,6 +305,8 @@ export class Donjons {
     this.tickTrain(dt);
     this.tickTemple(dt);
     this.tickTombeau(dt);
+    this.tickFonderie(dt);
+    this.tickCristal(dt);
     this.panT = (this.panT || 0) - dt;
     if (g.state && g.mapObj !== this.carteVue) {
       const avant = this.carteVue && [...this.defs.values()].find((q) => this.estDans(q, this.carteVue.id));
@@ -360,6 +367,8 @@ export class Donjons {
       if (this.texteTrain(d, s)) txt = this.texteTrain(d, s);
       if (this.texteTemple(d, s)) txt = this.texteTemple(d, s);
       if (this.texteTombeau(d, s)) txt = this.texteTombeau(d, s);
+      if (this.texteFonderie(d, s)) txt = this.texteFonderie(d, s);
+      if (this.texteCristal(d, s)) txt = this.texteCristal(d, s);
       if (s.type === 'voies' && !voie) { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       if (s.type === 'libre') { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
@@ -446,4 +455,4 @@ export class Donjons {
   }
 }
 
-Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau);
+Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau, Fonderie, Cristal);

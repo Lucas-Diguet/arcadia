@@ -167,6 +167,32 @@ export function dessinerZones(view, cases) {
   view.root.add(me); view.__zones = me; view.__zonesRoot = view.root;
 }
 
+/** plaques de pression (Fonderie) : carrés de couleur au sol, plus vifs sous un joueur ; une plaque de deux groupes a
+ *  un carré intérieur de la seconde couleur. Grilles : un voyant de leur couleur sur la face, allumé quand elle est
+ *  levée. Liste vide : efface */
+export function dessinerPlaques(view, liste) {
+  if (view.__plaques) { view.__plaquesRoot?.remove(view.__plaques); view.__plaques.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); view.__plaques = null; view.__plaquesRoot = null; }
+  if (!liste.length || !view.root) return;
+  const g = new THREE.Group(), H = 0.025, haut = 1.25 * Math.tan(EL);
+  const quad = (x0, z0, t, color, opacity, h) => {
+    const geo = new THREE.PlaneGeometry(t, t); geo.rotateX(-Math.PI / 2); geo.translate(x0 + 0.5, h, z0 + 0.5);
+    const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
+    me.renderOrder = 3; me.frustumCulled = false; g.add(me);
+  };
+  for (const q of liste) {
+    if (q.grille) {
+      const geo = new THREE.PlaneGeometry(0.34, 0.34 * Math.tan(EL)); geo.translate(q.x + 0.5, haut * 0.82, q.y + 1.02);
+      const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: q.couleurs[0], transparent: true, opacity: q.on ? 1 : 0.4, depthWrite: false }));
+      me.renderOrder = 3; me.frustumCulled = false; g.add(me);
+      continue;
+    }
+    quad(q.x, q.y, 0.86, 0x1c1c22, 0.7, H);
+    quad(q.x, q.y, 0.72, q.couleurs[0], q.on ? 0.95 : 0.5, H + 0.002);
+    if (q.couleurs[1] != null) quad(q.x, q.y, 0.34, q.couleurs[1], q.on ? 0.95 : 0.55, H + 0.004);
+  }
+  view.root.add(g); view.__plaques = g; view.__plaquesRoot = view.root;
+}
+
 /** grand miroir debout le long d'une ligne (salle du Reflet) : une vitre blanche deux fois plus haute que les murs, posée sur le bord
  *  nord de la rangée y, de x0 à x1, sans cadre ; null : efface */
 export function dessinerMiroir(view, M) {
