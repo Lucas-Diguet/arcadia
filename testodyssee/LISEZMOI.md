@@ -43,6 +43,13 @@ testodyssee/
 
 Pour lancer le site chez soi : `python3 -m http.server 8000` à la racine du dépôt, puis `http://localhost:8000/testodyssee/`.
 
+### Le site du fork
+
+Sur le fork de Lucas, chaque push sur `feat/testodyssee` publie un site léger (le Hub, Odyssée et le labo, sans les
+autres jeux) : `.github/workflows/site-labo.yml`, qui assemble le site avec `tools/site-labo.sh`. Réglage du fork :
+Settings → Pages → Source : « GitHub Actions ». Ce fichier d'action ne tourne que sur le fork : à ne pas envoyer
+dans le dépôt d'Amiel.
+
 ## Faire un donjon
 
 Dans les donjons (toute carte qui a un `donjon`), l'ambiance des grottes d'Odyssée (chauves-souris, cristaux qui scintillent,

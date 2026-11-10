@@ -1,0 +1,39 @@
+# Mise en ligne du fork de Lucas (lucas-diguet.github.io/arcadia) : à chaque push sur feat/testodyssee, un site léger
+# (le Hub, Odyssée et TestOdyssée, sans les autres jeux : tools/site-labo.sh) est publié sur GitHub Pages, avec
+# 30 minutes de délai au lieu de 10. Ne tourne que sur le fork de Lucas, jamais sur le dépôt d'Amiel.
+# Réglage nécessaire une fois : Settings → Pages → Source : « GitHub Actions ».
+name: Site du labo
+
+on:
+  push:
+    branches: [feat/testodyssee]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: site-labo
+  cancel-in-progress: true
+
+jobs:
+  publier:
+    if: github.repository == 'Lucas-Diguet/arcadia'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: github-pages
+      url: ${{ steps.mise-en-ligne.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assembler le site léger
+        run: bash tools/site-labo.sh _site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: mise-en-ligne
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 1800000
