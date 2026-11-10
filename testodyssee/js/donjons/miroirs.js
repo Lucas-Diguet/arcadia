@@ -110,7 +110,7 @@ export default {
     ] },
     { id: 's2', nom: 'Galerie de Glace', type: 'libre',
       // PC d'aide à l'entrée : indice (chemin vers le prochain miroir de poche), salle simplifiée, solution
-      aide: { indice: true, simplifier: [[20, 13, 'X'], [35, 5, '.'], [20, 14, 'X'], [18, 25, 'X'], [18, 5, 'X'], [21, 24, 'X']], resoudre: true },
+      aide: { simplifier: [[20, 13, 'X'], [35, 5, '.'], [20, 14, 'X'], [18, 25, 'X'], [18, 5, 'X'], [21, 24, 'X']] },
       plan: [
       '#####################N####################',
       '#iXXiiiXXiiiiiiiiiiiiiiXiXiiXiXiXiiiiXiii#',

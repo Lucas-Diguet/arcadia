@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 5.31 — 10 novembre 2026
+- **TestOdyssée** — Donjon des Miroirs : dans la Galerie de Glace, le PC d'aide ne propose plus que de simplifier la salle. Plus d'indice ni de solution toute faite.
+
 ## 5.30 — 10 novembre 2026
 - **TestOdyssée** — Plus de chauves-souris, de cristaux qui scintillent ni de poussière par-dessus l'écran dans les donjons du labo. Les grottes d'Odyssée les gardent.
 

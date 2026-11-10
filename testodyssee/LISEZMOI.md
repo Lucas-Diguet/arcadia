@@ -205,7 +205,7 @@ de toutes les équipes du labo) :
    sans autre message) et chaque Pokémon perd un quart de ses PV, jamais K.O. (`penalite: 'quart'` de la salle). La salle
    est assez courte pour voir les cinq miroirs depuis le panneau.
 2. **Galerie de Glace** (40 × 27 de glace) : à l'entrée, un plateau de 7 × 4 cases et trois rangées sans glace sous la
-   zone glissante ; un PC d'aide sur le plateau (indice, salle simplifiée, solution). Cinq petits miroirs sur la glace. Trois sont des miroirs de poche (dans le
+   zone glissante ; un PC d'aide sur le plateau, qui ne propose que de simplifier la salle. Cinq petits miroirs sur la glace. Trois sont des miroirs de poche (dans le
    journal), deux sont piégés et envoient une copie du premier Pokémon encore debout de l'équipe. Les copies (miroirs
    piégés, Copycat) gardent l'objet de l'original : pas de gemme ajoutée, Méga seulement si l'original tient la sienne
    (`copie: true` du combat).
