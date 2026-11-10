@@ -169,6 +169,22 @@ window.HUB_GAMES = [
     cover: 'convoy/img/affiche.jpg', // affiche 960 × 540 : vraie image du jeu, grand titre et bandeau
   },
   {
+    id: 'fief',
+    title: 'Fief Maudit',
+    tag: 'Survie médiévale en coop, jusqu\'à 6',
+    desc: 'Les derniers habitants d\'un village en ruine. Le jour, abats les arbres et rentre le bois ; la nuit, garde les braseros allumés pendant que les morts sortent de la brume. Relevez les maisons, la forge, le moulin et la chapelle, gardez des vivres, tenez dix nuits, dont deux sièges du chevalier noir, puis descendez dans la crypte abattre le Roi-Squelette.',
+    url: 'fief/',
+    minPlayers: 1, maxPlayers: 6,
+    accent: '#e08a3a',
+    icon: '🪓', score: 'Nuits tenues et squelettes abattus',
+    settings: [
+      { key: 'mode', label: 'Mode', options: [['expedition', 'Expédition (10 nuits)'], ['sansfin', 'Sans fin']], def: 'expedition' },
+      { key: 'diff', label: 'Difficulté', options: [['paisible', 'Paisible'], ['normale', 'Normale'], ['peste', 'Peste noire']], def: 'normale' },
+      { key: 'bots', label: 'Équipiers IA', options: [[0, 'Aucun'], [1, '1 chevalier'], [2, '2 chevaliers']], def: 1 },
+    ],
+    cover: 'fief/img/affiche.jpg', // affiche 960 × 540 : vraie image du jeu, grand titre et bandeau
+  },
+  {
     id: 'golf',
     title: 'Birdie Party',
     tag: 'Golf 3D entre potes',
@@ -207,6 +223,7 @@ window.HUB_GAMES = [
     desc: 'Une grande aventure Pokémon en fausse 3D, comme sur DS : 8 arènes, la Team Éclipse, Lugia Obscur, le Conseil 4 et la Ligue. Chacun mène son aventure, sauvegardée en ligne sur son compte, et on se croise dans la région pour échanger et se défier.',
     url: 'odyssee/',
     minPlayers: 1, maxPlayers: 6,
+    big: true, // « Gros jeux » : un jeu beaucoup plus complet, rangé à part à l'accueil et dans le salon
     accent: '#5a88c8',
     cover: 'odyssee/img/affiche.jpg', // affiche 960 × 540 : vraie image du jeu, grand titre et bandeau
   },
@@ -305,25 +322,29 @@ window.HUB_GAMES = [
     id: 'backrooms',
     title: 'The Backrooms',
     tag: 'Survie & Horreur',
-    desc: "Seul ou à plusieurs, échappe-toi des Backrooms : 5 cassettes VHS sur les deux étages du Level 0 pour ouvrir le bon ascenseur, puis 3 fusibles pour relancer le monte-charge de l'entrepôt du Level 1, avant que l'entité ne vous rattrape.",
+    // volontairement vague : ce qu'on y trouve se découvre en jouant
+    desc: 'Seul ou à plusieurs, perds-toi dans un endroit étrange et immense… et trouve comment en sortir.',
     url: 'backrooms/',
     minPlayers: 1, maxPlayers: 6, maxWithBots: 6,
+    big: true, // « Gros jeux » : un jeu beaucoup plus complet, rangé à part à l'accueil et dans le salon
     accent: '#eab308',
     icon: '🚪', score: 'Cassettes trouvées',
     settings: [
       { key: 'difficulty', label: 'Difficulté de l\'entité', options: [['normal', 'Normale'], ['hard', 'Rapide & Agressive'], ['peaceful', 'Exploration (Sans monstre)']], def: 'normal' },
       { key: 'monsters', label: 'Monstres', options: [['normal', 'Normal'], ['vip', '⭐ VIP mode', { vip: true }]], def: 'normal' },
+      { key: 'map', label: 'Carte', options: [['random', 'Au hasard'], ['daily', '🗓️ Carte du jour (la même pour tous)']], def: 'random' },
     ],
-    cover: 'backrooms/img/affiche.jpg?v=2', // affiche 960 × 540 : vraie image du jeu, grand titre et bandeau caméscope
+    cover: 'backrooms/img/affiche.jpg?v=3', // affiche 960 × 540 : le Level 0 du jeu, grand titre et bandeau caméscope
   },
 ];
 
 /* Fiche de présentation de chaque jeu : catégorie, durée d'une partie, commandes et astuces.
    Affichée sur l'écran de chargement commun, dans le menu Arcadia en jeu et pour les filtres de l'accueil. */
 window.HUB_GAME_INFO = {
-  backrooms: { genre: 'action', time: '10–20 min',
-    keys: [['ZQSD / Flèches', 'Se déplacer'], ['Souris', 'Regarder autour de soi'], ['Maj (Shift)', 'Courir (Endurance limitée)'], ['1', 'Allumer / Éteindre la lampe torche'], ['2 3 puis E', 'Choisir une case, utiliser son objet'], ['F', 'Ramasser (échange si l\'inventaire est plein)'], ['T', 'Siffler (trop, et l\'entité arrive)'], ['Échap', 'Pause'], ['⚙ Réglages', 'Mode Sans souris : les flèches tournent la vue'], ['🎮 Manette', 'Stick gauche : bouger · stick droit : regarder · A : ramasser · X : utiliser · Y : lampe · RB : objet · B : siffler · LB : courir']],
-    tips: ['Écoute attentivement : le bourdonnement strident de l\'entité devient de plus en plus fort quand elle s\'approche.', "Casse sa ligne de vue : derrière quelques murs, l'entité finit par te perdre.", 'Suis les barres de SIGNAL du caméscope pour trouver les cassettes (Level 0) ou les fusibles (Level 1), puis l\'ascenseur.', "L'ascenseur part quand tout le monde est dedans : plus vous êtes à l'abri, plus l'entité s'acharne sur ceux qui restent.", "Le Level 0 a deux étages : un faux pas dans un trou t'envoie en bas, les escaliers font remonter.", "Il y a un ascenseur par étage, mais un seul est le vrai : l'autre se change en mur quand les cassettes sont trouvées.", 'Au Level 1, garde des piles : les coupures de courant te laissent seul avec ta lampe.', "Au bout d'une rangée d'étagères, l'entité peut t'attendre en silence.", "L'eau d'amande rend tout ton souffle : garde-la dans ton inventaire pour une poursuite.", 'Ta lampe vide sa pile : éteins-la dans les zones éclairées et ramasse les piles dans le noir.'] },
+  backrooms: { genre: 'action', time: 'Plusieurs heures', // un niveau après l'autre : il y en a pour des heures
+    keys: [['ZQSD / Flèches', 'Se déplacer'], ['Souris', 'Regarder autour de soi'], ['Maj (Shift)', 'Courir (bruyant, et ça donne soif)'], ['1', 'Allumer / Éteindre la lampe torche'], ['2 3 puis E', 'Choisir une case, utiliser son objet'], ['F', 'Ramasser, actionner, se cacher (échange si l\'inventaire est plein)'], ['T', 'Siffler (trop, et l\'entité arrive)'], ['C (maintenu)', "S'accroupir : plus lent, mais silencieux"], ['Échap', 'Pause'], ['⚙ Réglages', 'Mode Sans souris : les flèches tournent la vue'], ['🎮 Manette', 'Stick gauche : bouger · stick droit : regarder · A : ramasser · X : utiliser · Y : lampe · RB : objet · B : siffler · LB : courir · Menu : pause']],
+    // astuces sans rien dévoiler de ce qui attend plus loin : la surprise fait partie du jeu
+    tips: ['Écoute attentivement : un bourdonnement qui enfle n\'annonce rien de bon.', "Casse sa ligne de vue : derrière quelques murs, ce qui te suit finit par te perdre.", 'Suis les barres de SIGNAL du caméscope : elles mènent à ce que tu cherches.', 'Ta lampe vide sa pile : éteins-la dans les zones éclairées et ramasse les piles que tu croises.', 'Courir s\'entend de loin et donne soif : garde un œil sur ta réserve d\'eau.', 'Accroupi, tu avances lentement, mais sans un bruit.', 'Siffle pour retrouver tes potes, mais pas trop : tu n\'es pas le seul à entendre.', 'Restez groupés : ici, on se perd très vite.'] },
   dogfight: { genre: 'action', time: '5–10 min',
     keys: [['Souris', 'Viser, l\'avion suit'], ['ZQSD / flèches', 'Piloter soi-même'], ['Espace / clic', 'Canon'], ['E / clic droit', 'Missile'], ['F', 'Leurres'], ['Maj', 'Postcombustion'], ['C', 'Aérofrein'], ['🎮 Manette', 'Sticks pour piloter, gâchettes pour tirer']],
     tips: ['Place le réticule blanc sur le cercle vert : c\'est là que les balles rencontrent la cible.', 'Monter et serrer les virages coûte de la vitesse : garde de l\'énergie.', 'Un nuage te cache des missiles et des bots.', 'En Domination, vole bas : au-dessus du plafond de la zone, tu ne captures rien.', 'En Escorte, le transport est fragile face à plusieurs attaquants : reste près de lui.'] },
@@ -348,6 +369,9 @@ window.HUB_GAME_INFO = {
   kart: { genre: 'course', time: '10–20 min',
     keys: [['Flèches / ZQSD', 'Conduire'], ['Maj en tournant', 'Drift (mini-turbo)'], ['E', 'Utiliser l\'objet'], ['↓ + E', 'Lancer vers l\'arrière'], ['🎮 Manette', 'Stick pour conduire, gâchettes pour accélérer et freiner']],
     tips: ['Alterne Q et D pendant un drift : le mini-turbo charge deux fois plus vite.', 'Colle-toi derrière un kart pour profiter de l\'aspiration.', 'Une figure en sautant donne un petit turbo à l\'atterrissage.'] },
+  fief: { genre: 'action', time: '10–20 min',
+    keys: [['ZQSD + souris', 'Se déplacer, tourner la caméra'], ['Clic', 'Coup de hache'], ['E', 'Ramasser, ranger, charger un brasero · tenir pour relever'], ['F', 'Capacité du métier'], ['Espace · Ctrl', 'Sauter · marcher'], ['Molette', 'Zoom'], ['Échap', 'Pause'], ['🎮 Manette', 'Stick gauche : bouger · stick droit : caméra · RT : hache · X : utiliser · Y : capacité · A : sauter']],
+    tips: ['Un bûcheron abat un arbre en trois coups de hache.', 'Chaque arbre donne deux bûches : on n\'en porte qu\'une à la fois.', 'Charge les braseros avant la nuit : un squelette tombé dans leur lumière ne se relève pas.', 'Le guerrier pare de face avec son bouclier : prends-le de côté ou de dos.', 'E devant l\'entrepôt reprend une bûche du stock pour un brasero.', 'Tiens E près d\'un équipier à terre pour le relever.', 'Les chênes donnent des poutres : prends un bout avec E, un équipier prend l\'autre.', 'Le prêtre soigne tous ceux qui restent près de lui : groupez-vous la nuit.', 'F lance la capacité de ton métier : la fusée de la chasseuse éclaire assez pour que les morts restent à terre.', 'Dans la crypte, les deux leviers se tiennent ensemble : il faut être deux.', 'Quand le Roi souffle les torches, rallume-les avec E : leur lumière soigne.', 'Les lueurs dorées dans les bois sont des coffres : bois, vivres, huile ou élixir, mais des morts dorment autour.', 'On porte trois bûches à la fois : E près d\'une autre pour l\'empiler.', 'Prêts avant l\'heure ? Sonnez la cloche du feu de camp pour faire tomber la nuit.'] },
   convoy: { genre: 'action', time: '15–30 min',
     keys: [['ZQSD', 'Se déplacer'], ['E', 'Interagir'], ['Souris', 'Viser · tirer'], ['🎮 Manette', 'Stick : se déplacer · X / RT : interagir, tirer']],
     tips: ['Le convoi ralentit en gare : profitez-en pour réparer.', 'Surveillez la pression de la chaudière.'] },

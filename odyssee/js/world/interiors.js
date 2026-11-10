@@ -44,9 +44,11 @@ export function houseInterior(id, name, o = {}) {
   furn(m, 'books', 1, 2); furn(m, 'tv', 3, 2); furn(m, 'plant', o.kitchen ? 1 : w - 2, o.kitchen ? (o.h || 8) - 2 : 2);
   furn(m, 'table', 4, 4); if (o.bed) furn(m, 'bed', w - 2, 4);
   // la chambre du joueur : une armoire pour changer de tenue
-  if (o.bed && o.kitchen) m.object(5, 2, { use: (api) => api.game.frigo() });   // le frigo : son aimant d'agence immobilière
-  if (o.bed) { furn(m, 'armoire', w - 2, 2); m.object(w - 2, 2, { use: (api) => api.game.apparence({ armoire: true }) }); furn(m, 'pc', 2, 2); m.object(2, 2, { type: 'pc' }); }
-  if (o.kitchen) { furn(m, 'fridge', 5, 2); furn(m, 'kitchen', 6, 2); }
+  if (o.bed && o.kitchen) m.object(4, 2, { use: (api) => api.game.frigo() });   // le frigo : son aimant d'agence immobilière
+  // l'armoire est large : avec une cuisine (frigo et évier décalés d'une case), juste à droite de l'évier, sinon au fond à droite
+  const [ax, ay] = o.bed && o.kitchen ? [6, 2] : [w - 2, 2];
+  if (o.bed) { furn(m, 'armoire', ax, ay); m.object(ax, ay, { use: (api) => api.game.apparence({ armoire: true }) }); furn(m, 'pc', 2, 2); m.object(2, 2, { type: 'pc' }); }
+  if (o.kitchen) { furn(m, 'fridge', o.bed ? 4 : 5, 2); furn(m, 'kitchen', o.bed ? 5 : 6, 2); }
   else furn(m, w > 9 ? 'clock' : 'painting', 5, 2);
   if (o.extraBooks) furn(m, 'books', 6, 2);
   if (w > 9) { furn(m, 'sofa', 7, 5); m.set(8, 5, T.BLOCK); furn(m, 'boxes', 1, 6); }
@@ -140,19 +142,19 @@ export function caveMap(id, w, h, seed, entries, o = {}) {
   return m;
 }
 
-/* ---------------- Tour de la Grue (Île de la Grue) ---------------- */
+/* ---------------- Tour Dorée (Forêt des Torii ; autrefois Tour de la Grue) ---------------- */
 // Étages reliés par des escaliers (cases d'escalier = téléporteurs). L'escalier qui monte est en haut à droite,
 // celui qui descend en haut à gauche ; on arrive juste en dessous.
 export const TOWER_UP = { x: 11, y: 2 }, TOWER_DOWN = { x: 1, y: 2 };
 export function towerFloor(id, name, o = {}) {
-  const m = room(id, 13, 12, { floor: o.roof ? 'league' : 'wood', music: 'tower', wall: o.roof ? 'wall_league' : 'wall_in', name, battleBg: 'indoor' });
+  const m = room(id, 13, 12, { floor: o.roof ? 'temple' : 'wood', music: 'tower', wall: o.roof ? 'wall_league' : 'wall_in', name, battleBg: 'indoor' });
   if (!o.ground) m.set(m.exitX, m.exitY, T.FLOOR);   // seul le rez-de-chaussée a une porte
   if (o.up) { m.set(TOWER_UP.x, TOWER_UP.y, T.CAVEDOOR); }
   if (o.down) { m.set(TOWER_DOWN.x, TOWER_DOWN.y, T.CAVEDOOR); }
   if (o.roof) {
-    // le toit : un autel au centre, des lanternes aux angles
-    furn(m, 'gymstatue', 4, 4); furn(m, 'gymstatue', 8, 4);
-    for (const [x, y] of [[2, 9], [10, 9], [2, 5], [10, 5]]) furn(m, 'lamp', x, y);
+    // le toit : dalles dorées, deux gardiens de pierre au fond, des braseros aux angles (Ho-Oh se pose au milieu)
+    furn(m, 'statue_dragon', 4, 4); furn(m, 'statue_dragon', 8, 4);
+    for (const [x, y] of [[2, 9], [10, 9], [2, 5], [10, 5]]) furn(m, 'brasero', x, y);
   } else {
     // piliers de bois et vases rituels
     for (const [x, y] of [[3, 4], [9, 4], [3, 8], [9, 8]]) furn(m, 'statue', x, y);

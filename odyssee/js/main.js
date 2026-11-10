@@ -5,6 +5,8 @@ import { WorldView } from './render/world3d.js';
 import { setArt } from './render/textures.js';
 import { buildWorld } from './world/region.js';
 import { Input } from './input.js';
+import { brancherManette } from './manette.js';
+import { brancherTactile } from './tactile.js';
 import { Sound } from './audio.js';
 import { UI, el, esc, wait } from './ui/ui.js';
 import { optionsScreen, loadCodeScreen } from './ui/screens.js';
@@ -18,6 +20,9 @@ import { loadArt } from './art.js';
 import { R, ORIGINALES } from './data/remplacants.js';
 
 const H = window.HubBridge;
+// étapes du démarrage, en millisecondes depuis l'ouverture de la page (lues par tools/odyssee-parcours.mjs)
+const BOOT = window.__odyBoot = { module: Math.round(performance.now()) };
+const etape = (k) => { BOOT[k] = Math.round(performance.now()); };
 const canvas = document.getElementById('gl'), uiRoot = document.getElementById('ui'), loading = document.getElementById('loading');
 
 function fatal(e) {
@@ -25,17 +30,38 @@ function fatal(e) {
   loading.style.display = 'flex'; loading.innerHTML = `<div>Oups, le jeu a rencontré un problème.<br><small>${esc(e && e.message ? e.message : e)}</small></div>`;
   if (H && H.logCrash) H.logCrash('CRASH_JS_ERROR', 'Odyssée : ' + (e && e.message ? e.message : e), { stack: e && e.stack });
 }
-addEventListener('error', (e) => fatal(e.error || e.message));
-addEventListener('unhandledrejection', (e) => fatal(e.reason));
+// une fois le jeu affiché, une erreur isolée (un script de PNJ, une image, une promesse oubliée) ne cache plus l'écran :
+// elle est notée (console, journal du Hub) et la partie continue ; l'écran d'erreur reste pour le démarrage, ou si
+// chaque image échoue pendant 3 s (la partie ne peut plus avancer)
+let enJeu = false;
+const signales = new Set();
+function incident(e) {
+  if (!enJeu) { fatal(e); return; }
+  console.error('[odyssée] incident', e);
+  const msg = e && e.message ? e.message : String(e);
+  if (H && H.logCrash && !signales.has(msg) && signales.size < 20) { signales.add(msg); H.logCrash('CRASH_JS_ERROR', 'Odyssée (en jeu) : ' + msg, { stack: e && e.stack }); }
+}
+addEventListener('error', (e) => incident(e.error || e.message));
+addEventListener('unhandledrejection', (e) => incident(e.reason));
 
 async function boot() {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, stencil: true, powerPreference: 'high-performance' });   // stencil : ombres au sol sans double couche (render/ombres.js)
   renderer.setPixelRatio(1); renderer.outputColorSpace = THREE.SRGBColorSpace;
   const input = new Input(), sound = new Sound(), ui = new UI(uiRoot, input, sound);
+  brancherManette(input); brancherTactile(input);   // manette et commandes tactiles : les mêmes touches que le clavier
+  // la construction de la carte occupe le processeur plusieurs secondes d'un seul tenant : les images se téléchargent
+  // pendant ce temps (loadArt les retrouve ensuite dans le cache du navigateur), et l'écran de chargement est affiché avant
+  const prechauffe = await loadArt(true);
+  await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+  etape('ecran');
   const world = buildWorld();
+  etape('carte');
   const art = await loadArt();
-  setArt({ kits: art.kits, sols: art.sols, sol32: art.sol32, hgss: art.hgss, relief: art.relief });
-  const view = new WorldView(renderer, art.chars, { sprites: art.sprites, dens: art.dens, suiveurs: art.suiveurs });
+  prechauffe.length = 0;
+  etape('images');
+  setArt({ kits: art.kits, sols: art.sols, sol32: art.sol32, hgss: art.hgss, relief: art.relief, pack: art.pack });
+  const view = new WorldView(renderer, art.chars, { sprites: art.sprites, dens: art.dens, suiveurs: art.suiveurs, batiments: art.batiments });
+  etape('vue');
   const game = new Game({ view, ui, input, sound, world });
   // sauvegarde en ligne (compte du Hub) : chaque sauvegarde part aussi sur le serveur, regroupée
   const cloud = game.cloud = new Cloud();
@@ -63,21 +89,23 @@ async function boot() {
   addEventListener('keydown', unlock); addEventListener('pointerdown', unlock);
   ui.helpButton();
 
-  let mode = 'title', last = performance.now();
+  let mode = 'title', last = performance.now(), enPanne = 0;
   const loop = (now) => {
+    requestAnimationFrame(loop);   // d'abord : une erreur dans l'image ne doit pas arrêter le jeu
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    if (mode === 'game') game.tick(dt);
-    requestAnimationFrame(loop);
+    if (mode !== 'game') return;
+    try { game.tick(dt); enPanne = 0; } catch (e) { if (!enPanne) incident(e); if (++enPanne === 180) fatal(e); }
   };
   view.setMap(world.maps.monde); view.setTimeOfDay(new Date().getHours() + new Date().getMinutes() / 60);
   loading.style.display = 'none';
+  etape('pret'); enJeu = true;
   requestAnimationFrame(loop);
   ui.fade(false, 500);
   if (H && H.embedded) H.signalReady();
   // outil de test : démarrer directement une partie depuis la console
   window.__ody.play = async (state) => { document.querySelector('.title-scr')?.remove(); input.handlers.length = 0; ui.closeDialog(); mode = 'game'; await game.start(state); };
 
-  // version test (odyssee/test/) : on choisit un lieu et une équipe, et on y apparaît ; rien n'est sauvegardé
+
   /* ---------------- écran titre ---------------- */
   for (;;) {
     sound.play('title');
@@ -94,11 +122,19 @@ async function boot() {
     const newer = remote && (!info || (remote.time || 0) > (info.time || 0) + 5);
     const has = !!info || !!remote;
     const opts = (has ? ['Continuer'] : []).concat(['Nouvelle partie'], cloud.on ? ['Sauvegarde en ligne'] : [], ['Charger un code', 'Options'], H && H.embedded ? ['Retour au salon'] : []);
-    const card = info ? el('div', 'box save-info', `<b>${esc(info.name)}</b><br>Badges : ${info.badges.filter(Boolean).length} · Pokédex : ${info.dex.caught.length}<br>Temps : ${Math.floor(info.time / 3600)}:${String(Math.floor(info.time / 60) % 60).padStart(2, '0')}`) : null;
+    const leadMon = info?.party?.[0];
+    const card = info ? el('div', 'box save-info', `
+      ${leadMon ? `<div class="save-lead-preview"><img class="save-lead-ico" src="${ASSETS.icon(leadMon.sp)}" alt="" onerror="this.src='${ASSETS.front(leadMon.sp)}'"><span class="save-lead-lvl">N.${leadMon.lvl || 5}</span></div>` : ''}
+      <div class="save-details">
+        <div class="save-name">${esc(info.name)}</div>
+        <div class="save-stats">Badges : <b>${info.badges?.filter(Boolean).length || 0}</b> · Pokédex : <b>${info.dex?.caught?.length || 0}</b></div>
+        <div class="save-time">Temps : ${Math.floor((info.time || 0) / 3600)}:${String(Math.floor((info.time || 0) / 60) % 60).padStart(2, '0')}</div>
+      </div>
+    `) : null;
     if (card) title.appendChild(card);
     const r = await ui.list({ items: opts.map((label) => ({ label })), cls: 'title-menu', cancel: null, parent: title });
     const pick = opts[r];
-    if (pick === 'Options') { stopSea(); title.remove(); await optionsScreen(game); continue; }
+    if (pick === 'Options') { stopSea(); title.remove(); const r = await optionsScreen(game); if (r && r.reload) { location.reload(); return; } continue; }
     if (pick === 'Retour au salon') { H.exit(); stopSea(); title.remove(); continue; }
     if (pick === 'Sauvegarde en ligne') { stopSea(); title.remove(); await onlineScreen(ui, cloud, info); continue; }
     if (pick === 'Charger un code') {
@@ -419,7 +455,7 @@ async function intro(game, ui, sound) {
   ui.say('Mais parle-moi un peu de toi... Qui es-tu ?', { speaker: 'Prof. Saule', keep: true, noWaitLast: true });
   let gender = await chooseGenderCard(ui, input, sound, s);
 
-  // l'apparence : casquette ou bonnet, haut, bas, chaussures, sac, couleurs (si le modèle de base est dessiné)
+  // la tenue : le dresseur par défaut, aux couleurs choisies (casquette ou serre-tête, haut, bas, chaussures, sacoche)
   let tenue = null;
   if (game.view.baseDe?.(gender)) {
     chap.textContent = 'TA TENUE DE DRESSEUR';

@@ -1,4 +1,4 @@
-# Arcadia — Dogfight 3D, Duo Drift, DavidSimulator, Bastion Clash, Tête de Calcul, Fil Rouge, Outbreak, Cyber Kart GP, Convoy Storm, Birdie Party, Mini-Golf Party, Island Rush, Mollo !, Site Noir, Mystère Mystère et The Backrooms
+# Arcadia — Dogfight 3D, Duo Drift, DavidSimulator, Bastion Clash, Tête de Calcul, Fil Rouge, Outbreak, Cyber Kart GP, Convoy Storm, Birdie Party, Mini-Golf Party, Island Rush, Mollo !, Site Noir, Mystère Mystère, The Backrooms et Fief Maudit
 
 Des jeux en ligne entre potes, directement dans le navigateur, sans rien installer. On crée un salon,
 on partage le code, et l'hôte choisit le jeu. Le salon reste ouvert d'un jeu à l'autre.
@@ -180,6 +180,18 @@ Le labo d'Odyssée : on choisit un lieu et une équipe prête, et on y apparaît
 - **Crypte des Murmures** : un premier donjon à faire en groupe. Le gardien ouvre la crypte, chaque esprit ne se combat que par un joueur à la fois, la Salle des Dalles demande tout le groupe en même temps, et Ossarion a des PV partagés
 - **Donjon de Didier** : trois Adeptes de l'X gardent les clés de l'ascenseur et posent chacun une question sur les grecs (delta, gamma, vega). Une erreur coûte des PV à toute l'équipe. En haut, le Spectre de Pierre Chartier se combat à trois contre un, avec une barre de vie en trois blocs
 - Faire un donjon (il se dessine en texte) : [testodyssee/LISEZMOI.md](testodyssee/LISEZMOI.md)
+
+## Fief Maudit
+Survie médiévale en coopération, en 3D (`fief/`). Les derniers habitants d'un village en ruine le relèvent le jour et le défendent la nuit
+contre les morts sortis de la crypte du château. Conception et étapes : [docs/FIEF-MAUDIT.md](docs/FIEF-MAUDIT.md).
+
+- **Déjà jouable** : la vallée (village en ruine, entrepôt, feu de camp, rivière, château sur sa colline, forêt), le bûcheron et sa hache, les arbres qui tombent, les bûches à ramasser, porter et ranger à l'entrepôt, un petit tutoriel
+- **La nuit** : cycle jour / crépuscule / nuit / aube, brume qui épouse le sol et s'ouvre autour des six braseros et du feu de camp, squelettes (soldats et guerriers à bouclier) qui sortent du sol côté château et se relèvent s'ils tombent dans la brume, joueur à terre qu'on relève en tenant E, coéquipiers IA (chevaliers), défaite et nuit à rejouer
+- **À plusieurs** : une seule vallée pour tout le salon (l'hôte fait foi, les invités prédisent leur déplacement, relais d'hôte), cinq métiers, poutres portées à deux ; banc d'essai sans relais : `tools/fief-duo.html`
+- **La boucle complète** : chantiers (maisons, forge, moulin, chapelle) payés avec le bois et les poutres de l'entrepôt, faim et baies, froid la nuit, expédition de dix nuits avec sièges du chevalier noir (nuits 5 et 10), mode sans fin, trois difficultés, sauvegarde à chaque aube
+- **La crypte** : après dix nuits, deux leviers à tenir ensemble, un couloir de brume, le Roi-Squelette en trois phases ; écran de fin et classement du salon
+- **Finitions** : une capacité par métier (F), musique synthétisée, panneau Réglages (son, qualité, souris), écran d'accueil, manette et tactile
+- Modèles : Medieval Village MegaKit de Quaternius, personnages et squelettes de KayKit (CC0), dans `fief/models/` ; arbres et ciel de Birdie Party
 
 ## Mystère Mystère, The Backrooms
 

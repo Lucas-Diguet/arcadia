@@ -1,5 +1,5 @@
 // The Backrooms - Pathfinding A* / BFS pour l'entité et champ de vision
-import { CELL_SIZE, outsidePillar } from './map.js';
+import { CELL_SIZE, cellsOnSeg, segHitsPillar } from './map.js';
 
 export function findPath(map, startX, startZ, targetX, targetZ) {
   const sgx = Math.floor(startX / CELL_SIZE);
@@ -59,7 +59,9 @@ export function findPath(map, startX, startZ, targetX, targetZ) {
       const nz = cur.z + dirs[i].dz;
       if (nx >= 0 && nx < W && nz >= 0 && nz < H) {
         const nK = key(nx, nz);
-        if (!visited[nK] && !map.isWall(nx, nz)) {
+        // map.canStep (Poolrooms) : d'une salle à l'autre, seulement par une porte
+        // (une case coupée en biais se traverse le long de son couloir en diagonale)
+        if (!visited[nK] && (!map.isWall(nx, nz) || (map.crossable && map.crossable(nx, nz))) && (!map.canStep || map.canStep(cur.x, cur.z, nx, nz))) {
           visited[nK] = 1;
           cameFrom[nK] = curK;
           queue.push({ x: nx, z: nz });
@@ -96,6 +98,8 @@ export function hasLineOfSight(map, x1, z1, x2, z2) {
   const dist = Math.hypot(dx, dz);
   if (dist < 0.1) return true;
 
+  // Poolrooms : les cloisons minces entre les salles cachent aussi
+  if (map.lightBlocked && map.lightBlocked(x1, z1, x2, z2)) return false;
   const steps = Math.ceil(dist / (CELL_SIZE * 0.3));
   for (let i = 1; i < steps; i++) {
     const t = i / steps;
@@ -104,10 +108,20 @@ export function hasLineOfSight(map, x1, z1, x2, z2) {
     const gx = Math.floor(px / CELL_SIZE);
     const gz = Math.floor(pz / CELL_SIZE);
     if (map.isWall(gx, gz)) {
-      // un pilier fin ne cache que ce qui est derrière lui, pas toute sa case
-      const p = map.pillarAt && map.pillarAt(gx, gz);
-      if (!p || !outsidePillar(p, px, pz)) return false;
+      // une grille à barreaux ne cache rien
+      if (map.seeThrough && map.seeThrough(gx, gz)) continue;
+      // un pilier fin ou une cloison ne cache que ce qui est derrière lui, pas toute sa case : testé exactement
+      // plus bas (une cloison de 12 cm passerait entre deux échantillons)
+      if (map.pillarAt && map.pillarAt(gx, gz)) continue;
+      return false;
     }
+  }
+  if (map.pillarAt) {
+    const hit = cellsOnSeg(x1, z1, x2, z2, (gx, gz) => {
+      const p = map.pillarAt(gx, gz);
+      return !!p && segHitsPillar(p, x1, z1, x2, z2);
+    });
+    if (hit) return false;
   }
   return true;
 }

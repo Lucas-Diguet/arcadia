@@ -48,8 +48,8 @@ async function boot() {
   // décor du labo, dessiné comme le décor du tileset (16 pixels par case)
   Object.assign(art.sprites, await loadAll(Object.fromEntries(DECOR)));
   for (const [k] of DECOR) art.dens[k] = 1;
-  setArt({ kits: art.kits, sols: art.sols, sol32: art.sol32, hgss: art.hgss, relief: art.relief });
-  const view = new WorldView(renderer, art.chars, { sprites: art.sprites, dens: art.dens, suiveurs: art.suiveurs });
+  setArt({ kits: art.kits, sols: art.sols, sol32: art.sol32, hgss: art.hgss, relief: art.relief, pack: art.pack });
+  const view = new WorldView(renderer, art.chars, { sprites: art.sprites, dens: art.dens, suiveurs: art.suiveurs, batiments: art.batiments });
   const game = new TestGame({ view, ui, input, sound, world });
   const donjons = game.donjons = new Donjons(game, DONJONS, H);
   game.ile = new Ile(game);

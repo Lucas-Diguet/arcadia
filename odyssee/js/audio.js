@@ -1056,6 +1056,12 @@ export class Sound {
     // « moderne » : instruments doux, batterie et réverbération ; « retro » : les ondes 8 bits d'origine
     this.style = 'moderne';
     try { const st = localStorage.getItem('odyssee-son'); if (st === 'retro' || st === 'moderne') this.style = st; } catch (e) {}
+    // onglet caché, application en arrière-plan : le son s'arrête et reprend au retour (le temps de l'audio s'arrête
+    // aussi, la musique repart là où elle en était)
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => {
+      if (!this.ctx || this.offline || !this.ctx.suspend) return;
+      if (document.hidden) this.ctx.suspend().catch(() => {}); else this.ctx.resume().catch(() => {});
+    });
   }
   setStyle(st) { this.style = st === 'retro' ? 'retro' : 'moderne'; try { localStorage.setItem('odyssee-son', this.style); } catch (e) {} const cur = this.current; this.current = null; if (cur) this.play(cur); }
   init(offline) {
@@ -1094,7 +1100,7 @@ export class Sound {
   tone(type, f, t, dur, vol, bus, o = {}) {
     const c = this.ctx; const g = c.createGain();
     let src;
-    if (type === 'noise') { src = c.createBufferSource(); src.buffer = this.noise; const bp = c.createBiquadFilter(); bp.type = o.filter || 'highpass'; bp.frequency.value = f; src.connect(bp); bp.connect(g); }
+    if (type === 'noise') { src = c.createBufferSource(); src.buffer = this.noise; src.loop = dur > 0.45; const bp = c.createBiquadFilter(); bp.type = o.filter || 'highpass'; bp.frequency.value = f; src.connect(bp); bp.connect(g); }
     else { src = c.createOscillator(); if (this.waves[type]) src.setPeriodicWave(this.waves[type]); else src.type = type; src.frequency.setValueAtTime(f, t); if (o.slide) src.frequency.exponentialRampToValueAtTime(Math.max(20, o.slide), t + dur); src.connect(g); }
     const a = o.attack ?? 0.005, rel = o.release ?? 0.05;
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a);
@@ -1171,6 +1177,9 @@ export class Sound {
     const tick = () => {
       if (!st.alive) return;
       const now = this.ctx.currentTime;
+      // le minuteur a pris du retard (page occupée, onglet en arrière-plan) : on saute les pas manqués au lieu de les
+      // jouer tous d'un coup
+      if (!this.offline && st.t < now - 0.3) { const k = Math.ceil((now - st.t) / stepDur); st.step += k; st.t += k * stepDur; }
       while (st.t < now + (this.offline || 0.25)) {
         const s = song.loopStart != null && st.step >= song.steps ? song.loopStart + (st.step - song.loopStart) % (song.steps - song.loopStart) : st.step % song.steps;
         song.tracks.forEach((tr, i) => {
@@ -1208,6 +1217,13 @@ export class Sound {
     const P = (f, dt, d, v = 0.12, ty = 'pulse25', o) => (this.style === 'retro' ? this.tone(ty, f, t + dt, d, v, B, o) : this.voice(SFXV[ty] || ty, f, t + dt, Math.max(d, 0.06), v * 1.1, B, o));
     const n = (m) => freq(midiOf(m));
     switch (k) {
+      case 'goutte': P(n('E7'), 0, 0.05, 0.025, 'sine', { slide: n('A6') }); break;
+      case 'chauves': for (let i = 0; i < 7; i++) this.tone('noise', 2400 + i * 200, t + i * 0.05, 0.035, 0.03, B, { filter: 'bandpass' }); break;
+      case 'oiseau': { const b = 2200 + Math.random() * 1400; for (let i = 0; i < 2 + Math.floor(Math.random() * 3); i++) P(b * (1 + (i % 2) * 0.18), i * 0.11, 0.07, 0.02, 'sine', { slide: b * 1.35 }); break; }
+      case 'grillon': for (let i = 0; i < 6; i++) P(4200, i * 0.045, 0.025, 0.012, 'sine'); break;
+      case 'vague': this.tone('noise', 500, t, 1.8, 0.035, B, { filter: 'lowpass', attack: 0.7, release: 1.0 }); break;
+      case 'vent': this.tone('noise', 800, t, 2.4, 0.025, B, { filter: 'bandpass', attack: 0.9, release: 1.2 }); break;
+      case 'mouette': P(1500, 0, 0.18, 0.02, 'triangle', { slide: 1100 }); P(1600, 0.25, 0.14, 0.018, 'triangle', { slide: 1150 }); break;
       case 'blip': P(n('A5'), 0, 0.045, 0.07, 'pulse50'); break;
       case 'select': P(n('E5'), 0, 0.05, 0.08); P(n('A5'), 0.05, 0.07, 0.08); break;
       case 'cancel': P(n('A4'), 0, 0.05, 0.07); P(n('E4'), 0.05, 0.06, 0.07); break;
