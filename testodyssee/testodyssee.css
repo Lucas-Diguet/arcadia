@@ -77,3 +77,5 @@
 /* Temple des Éléments : le Pokémon d'une Poké Ball de la table */
 .starter-pic .temple-nom { text-align: center; font-weight: 700; font-size: calc(var(--px) * 5); }
 .starter-pic .temple-nom small { display: block; font-weight: 400; font-size: calc(var(--px) * 3.6); opacity: .8; }
+/* combat : les boutons du bandeau (attaques, Méga, Retour) se cliquent à la souris (#ui laisse passer les clics par défaut) */
+.battle .bcmd, .battle .bcmd * { pointer-events: auto; }

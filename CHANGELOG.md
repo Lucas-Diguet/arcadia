@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 5.35 — 11 novembre 2026
+- **TestOdyssée** — En combat, les boutons se cliquent enfin à la souris : les attaques, la Méga-Évolution et Retour.
+
 ## 5.34 — 11 novembre 2026
 - **TestOdyssée** — Les dresseurs sérieux du labo jouent beaucoup mieux.
   - Ils calculent leurs dégâts en tenant compte des talents : plus de Séisme sur un Pokémon à Lévitation.
