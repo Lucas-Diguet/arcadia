@@ -1,7 +1,8 @@
 // testodyssee/js/champions.js — les 23 champions de fin de jeu, dans l'ordre des arènes (18 types), puis le Conseil 4
 // et le Maître de la Ligue. Tous au niveau 100, IV à 31. Ceux qui n'ont pas encore d'équipe ne se combattent pas.
 // Une équipe : [espèce, objet, talent, nature, PV/Atq/Déf/AtqSpé/DéfSpé/Vit (EV), attaques, options { pc, shiny }].
-// pc : Puissance Cachée fixée, sans tenir compte des IV ({ t: type, p: puissance }).
+// pc : Puissance Cachée fixée, sans tenir compte des IV ({ t: type, p: puissance }) ; role : 'climat' (pose la météo,
+// l'IA le garde en vie et le renvoie quand la météo s'arrête).
 import { createMon, refreshStats, NATURES } from '../../odyssee/js/core/mon.js';
 import { MOVES } from '../../odyssee/js/data/moves.js';
 
@@ -15,6 +16,7 @@ export function monChampion(s, ot = '') {
   const m = createMon(s.sp, 100, { iv: Array(6).fill(31), nat: nature(s.nat), moves: s.moves.map(attaque), item: s.item, ability: s.ability, shiny: !!s.shiny, ot, met: 'Place des Champions' });
   m.ev = s.ev.slice(); refreshStats(m); m.hp = m.stats[0];
   if (s.pc) m.pc = { ...s.pc };
+  if (s.role) m.role = s.role;   // rôle dans l'équipe, lu par l'IA (combat/ia.js) : 'climat' = pose la météo
   return m;
 }
 export const equipeChampion = (c, ot) => c.equipe.map((s) => monChampion(s, ot));
@@ -29,7 +31,7 @@ const COMBAT = [
 ];
 const TENEBRES = [
   P(625, 'life-orb', 'defiant', 'Rigide', EV(0, 252, 4, 0, 0, 252), ['swords-dance', 'sucker-punch', 'iron-head', 'low-kick']),
-  P(248, 'choice-band', 'sand-stream', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['pursuit', 'stone-edge', 'crunch', 'earthquake']),
+  P(248, 'choice-band', 'sand-stream', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['pursuit', 'stone-edge', 'crunch', 'earthquake'], { role: 'climat' }),
   P(461, 'focus-sash', 'pressure', 'Jovial', EV(0, 252, 4, 0, 0, 252), ['swords-dance', 'knock-off', 'icicle-crash', 'ice-shard']),
   P(635, 'choice-specs', 'levitate', 'Timide', EV(0, 0, 0, 252, 4, 252), ['u-turn', 'draco-meteor', 'flamethrower', 'earth-power']),
   P(630, 'leftovers', 'overcoat', 'Malin', EV(252, 0, 252, 0, 4, 0), ['foul-play', 'toxic', 'whirlwind', 'roost']),
@@ -49,12 +51,12 @@ const SPECTRE = [
   P(478, 'focus-sash', 'cursed-body', 'Timide', EV(0, 0, 0, 252, 4, 252), ['ice-beam', 'shadow-ball', 'will-o-wisp', 'destiny-bond']),
   P(623, 'life-orb', 'no-guard', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['dynamic-punch', 'earthquake', 'shadow-punch', 'stone-edge']),
   P(593, 'leftovers', 'water-absorb', 'Assuré', EV(252, 0, 252, 0, 4, 0), ['scald', 'hex', 'will-o-wisp', 'recover']),
-  P(354, 'banettite', 'prankster', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['shadow-claw', 'gunk-shot', 'destiny-bond', 'shadow-sneak']),
+  P(354, 'banettite', 'cursed-body', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['shadow-claw', 'gunk-shot', 'destiny-bond', 'shadow-sneak']),
 ];
 const SOL = [
   P(34, 'choice-scarf', 'sheer-force', 'Timide', EV(0, 0, 0, 252, 4, 252), ['ice-beam', 'thunderbolt', 'flamethrower', 'sludge-wave']),
   P(530, 'choice-band', 'sand-rush', 'Jovial', EV(0, 252, 0, 0, 4, 252), ['earthquake', 'iron-head', 'rock-slide', 'rapid-spin']),
-  P(450, 'eject-button', 'sand-stream', 'Malin', EV(252, 0, 252, 0, 4, 0), ['stealth-rock', 'slack-off', 'whirlwind', 'earthquake']),
+  P(450, 'eject-button', 'sand-stream', 'Malin', EV(252, 0, 252, 0, 4, 0), ['stealth-rock', 'slack-off', 'whirlwind', 'earthquake'], { role: 'climat' }),
   P(445, 'rocky-helmet', 'rough-skin', 'Jovial', EV(0, 252, 0, 0, 4, 252), ['earthquake', 'stone-edge', 'fire-fang', 'swords-dance']),
   P(537, 'choice-specs', 'water-absorb', 'Modeste', EV(116, 0, 0, 252, 0, 140), ['hydro-pump', 'hidden-power', 'grass-knot', 'sludge-wave'], { pc: { t: 'electric', p: 60 } }),
   P(208, 'steelixite', 'sturdy', 'Rigide', EV(252, 252, 0, 0, 4, 0), ['heavy-slam', 'curse', 'earthquake', 'stone-edge']),
@@ -69,23 +71,23 @@ const FEE = [
 ];
 const ACIER = [
   P(598, 'leftovers', 'iron-barbs', 'Relax', EV(252, 4, 252, 0, 0, 0), ['leech-seed', 'protect', 'gyro-ball', 'power-whip']),
-  P(376, 'metagrossite', 'tough-claws', 'Jovial', EV(4, 252, 0, 0, 0, 252), ['bullet-punch', 'earthquake', 'zen-headbutt', 'meteor-mash']),
+  P(376, 'metagrossite', 'clear-body', 'Jovial', EV(4, 252, 0, 0, 0, 252), ['bullet-punch', 'earthquake', 'zen-headbutt', 'meteor-mash']),
   P(227, 'rocky-helmet', 'sturdy', 'Malin', EV(252, 0, 232, 0, 0, 24), ['brave-bird', 'stealth-rock', 'roost', 'tailwind']),
   P(681, 'weakness-policy', 'stance-change', 'Rigide', EV(252, 252, 0, 0, 4, 0), ['kings-shield', 'swords-dance', 'sacred-sword', 'shadow-sneak']),
   P(212, 'choice-band', 'technician', 'Rigide', EV(248, 252, 0, 0, 8, 0), ['bullet-punch', 'u-turn', 'iron-head', 'knock-off']),
   P(462, 'choice-scarf', 'sturdy', 'Modeste', EV(248, 0, 0, 252, 8, 0), ['thunderbolt', 'flash-cannon', 'hidden-power', 'volt-switch'], { pc: { t: 'ice', p: 60 } }),
 ];
 const DRAGON = [
-  P(6, 'charizardite-x', 'tough-claws', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['dragon-dance', 'flare-blitz', 'outrage', 'earthquake']),
-  P(149, 'life-orb', 'multiscale', 'Rigide', EV(0, 252, 0, 0, 4, 252), ['dragon-dance', 'outrage', 'extreme-speed', 'roost']),
+  P(6, 'charizardite-x', 'blaze', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['dragon-dance', 'flare-blitz', 'outrage', 'earthquake']),
+  P(149, 'leftovers', 'multiscale', 'Rigide', EV(0, 252, 0, 0, 4, 252), ['dragon-dance', 'outrage', 'extreme-speed', 'roost']),
   P(373, 'choice-scarf', 'moxie', 'Naïf', EV(0, 252, 0, 4, 0, 252), ['outrage', 'earthquake', 'iron-tail', 'fire-blast']),
   P(635, 'leftovers', 'levitate', 'Timide', EV(0, 0, 0, 252, 4, 252), ['roost', 'nasty-plot', 'dark-pulse', 'earth-power']),
   P(715, 'choice-specs', 'infiltrator', 'Timide', EV(0, 0, 0, 252, 4, 252), ['u-turn', 'draco-meteor', 'boomburst', 'flamethrower']),
   P(706, 'assault-vest', 'gooey', 'Modeste', EV(248, 0, 0, 252, 8, 0), ['draco-meteor', 'sludge-wave', 'thunderbolt', 'flamethrower']),
 ];
 const EAU = [
-  P(279, 'damp-rock', 'drizzle', 'Assuré', EV(252, 0, 0, 0, 252, 0), ['u-turn', 'scald', 'roost', 'hydro-pump']),
-  P(260, 'swampertite', 'swift-swim', 'Jovial', EV(0, 252, 0, 0, 0, 252), ['waterfall', 'earthquake', 'ice-punch', 'superpower']),
+  P(279, 'damp-rock', 'drizzle', 'Assuré', EV(252, 0, 0, 0, 252, 0), ['u-turn', 'scald', 'roost', 'hydro-pump'], { role: 'climat' }),
+  P(260, 'swampertite', 'torrent', 'Jovial', EV(0, 252, 0, 0, 0, 252), ['waterfall', 'earthquake', 'ice-punch', 'superpower']),
   P(230, 'choice-specs', 'swift-swim', 'Modeste', EV(0, 0, 0, 252, 0, 252), ['hydro-pump', 'surf', 'draco-meteor', 'ice-beam']),
   P(658, 'expert-belt', 'protean', 'Pressé', EV(0, 0, 0, 252, 0, 252), ['ice-beam', 'grass-knot', 'u-turn', 'gunk-shot']),
   P(594, 'leftovers', 'regenerator', 'Assuré', EV(40, 0, 216, 0, 252, 0), ['scald', 'toxic', 'wish', 'protect']),

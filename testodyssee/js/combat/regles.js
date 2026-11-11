@@ -92,6 +92,8 @@ export function installerRegles() {
   Object.assign(B, {
     start() { for (const s of this.sides) for (const m of s.party) m._obj0 = m.item || null; return orig.start.call(this); },
 
+    /** Pokémon que l'adversaire envoie en plein tour (Demi-Tour, Bouton Fuite) : le meilleur pour l'IA sérieuse */
+    remplacant() { const c = this.sides[1].trainer?.ai === 'smart' && this.choisirEnvoi?.(true); return c && c.idx >= 0 ? c.idx : banc(this, 1); },
     /** pourquoi ce Pokémon ne peut pas choisir cette attaque (ou null) */
     interdit(i, id) {
       const mv = MOVES[id], v = this.sides[i].v, m = this.act(i); if (!mv || id === 165) return null;
@@ -174,7 +176,7 @@ export function installerRegles() {
         return mv.pr + ((id === 'prankster' && mv.c === 'status') || (id === 'gale-wings' && mv.t === 'flying') ? 1 : 0);
       };
       movers.sort((p, q) => prio(q) - prio(p) || this.stat(q.i, 5) - this.stat(p.i, 5) || this.tie(p, q));
-      movers.forEach((x, n) => { x.first = n === 0 && movers.length === 2; });
+      movers.forEach((x, n) => { x.first = n === 0 && movers.length === 2; x.actif = this.sides[x.i].active; });
       if (this.jouerSuite(movers)) return;
       if (this.state !== 'over') this.endOfTurn();
     },
@@ -184,6 +186,8 @@ export function installerRegles() {
         const x = movers[n];
         if (this.state === 'over') return true;
         if (isFainted(this.act(x.i))) continue;
+        // le Pokémon qui avait choisi cette action est parti en plein tour (Bouton Fuite, Demi-Tour) : son remplaçant n'agit pas
+        if (x.actif != null && this.sides[x.i].active !== x.actif) continue;
         if (x.a.type === 'recharge') { this.say(`${this.Nm(x.i)} doit se recharger !`); this.sides[x.i].v.recharge = false; continue; }
         this.useMove(x.i, x.a, x.first); this._agi?.add(x.i);
         // Demi-Tour qui met K.O. : le joueur change d'abord, l'adversaire remplace son Pokémon ensuite
@@ -261,12 +265,12 @@ export function installerRegles() {
       // Bouton Fuite : le Pokémon touché laisse sa place
       if (vivant && T.item === 'eject-button' && banc(this, d) >= 0 && !isFainted(m)) {
         this.say(`Le Bouton Fuite de ${this.nm(d)} s'active !`); (this._perdus ||= []).push([T, T.item]); T.item = null;
-        if (d === 1) this.doSwitch(1, banc(this, 1), false); else this._pivotJoueur = true;
+        if (d === 1) this.doSwitch(1, this.remplacant(), false); else this._pivotJoueur = true;
         return;
       }
       // Demi-Tour, Change Éclair : le lanceur revient et un autre prend sa place
       if (PIVOTS.has(mv.key) && !isFainted(m) && banc(this, i) >= 0) {
-        if (i === 1) this.doSwitch(1, banc(this, 1), false); else this._pivotJoueur = true;
+        if (i === 1) this.doSwitch(1, this.remplacant(), false); else this._pivotJoueur = true;
       }
     },
 
@@ -319,6 +323,15 @@ export function installerRegles() {
         }
         case 'prelevement': v.lien = true; this.say(`${this.Nm(i)} veut entraîner son adversaire avec lui !`); return true;
         case 'atterrissage': if (SPECIES[m.sp].t.includes('flying')) v.atterri = true; return false;
+        case 'whirlwind': case 'roar': {
+          if (this.wild || !simple(this)) break;
+          const c = renvoi() ? i : d, l = this.sides[c].party.map((q, n) => (n !== this.sides[c].active && q.hp > 0 ? n : -1)).filter((n) => n >= 0);
+          if (!l.length) return echec();
+          this.say(`${this.Nm(c)} est emporté au loin !`);
+          this._impose = true;
+          try { this.doSwitch(c, l[this.r(l.length)], true); } finally { this._impose = false; }
+          return true;
+        }
         case 'tour-rapide':
           if (this.sides[i].roc || v.seed || v.trap) { this.sides[i].roc = false; v.seed = false; v.trap = 0; this.say(`${this.Nm(i)} se libère de ce qui l'entoure !`); }
           return false;

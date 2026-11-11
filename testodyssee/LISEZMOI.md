@@ -403,6 +403,17 @@ Les formes de combat (Protéen, Forme Assaut) sont des espèces cachées (`forme
 Méga : l'image reste celle de l'espèce (`visuel`). Les changements de Pokémon en plein tour ne jouent que dans le combat
 ordinaire (pas dans les duels entre joueurs ni les combats à plusieurs). Tests : `tools/test-testodyssee.mjs`.
 
+### L'IA des dresseurs sérieux
+
+`js/combat/ia.js`, branché par `installerContenu` : tout dresseur du labo marqué `ai: 'smart'` (champions, dresseurs
+des donjons et des arènes, champions d'Odyssée joués dans le labo). Elle ne sait de l'équipe du joueur que ce qu'elle
+a vu (types, attaques lancées, talents montrés ou seuls possibles pour l'espèce) et suppose une attaque de 90 de chaque
+type d'en face. Chaque tour, avec les calculs du moteur (talents, objets, météo, crans, immunités) : elle achève si
+elle peut, change de Pokémon, se protège ou lance Prélèvem. Destin quand elle va tomber, pose pièges, statuts et boosts
+seulement sans danger, protège son poseur de météo et le renvoie quand la météo s'arrête (`role: 'climat'` dans les
+équipes de `champions.js`, ou un talent de météo). Pas de prédiction des changements du joueur. Après un K.O. ou un
+Demi-Tour, elle envoie le meilleur Pokémon contre celui d'en face. Cyclone et Hurlement chassent un Pokémon de dresseur.
+
 ### La Place des Champions
 
 `js/donjons/champions.js`, équipes dans `js/champions.js`. Les 23 champions alignés dans l'ordre : les 18 champions

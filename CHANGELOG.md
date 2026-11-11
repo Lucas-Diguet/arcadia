@@ -1,5 +1,15 @@
 # Journal des versions — Arcadia
 
+## 5.34 — 11 novembre 2026
+- **TestOdyssée** — Les dresseurs sérieux du labo jouent beaucoup mieux.
+  - Ils calculent leurs dégâts en tenant compte des talents : plus de Séisme sur un Pokémon à Lévitation.
+  - Ils regardent ce que ton Pokémon peut leur faire : pas de Danse Lames face à un Pokémon qui les met K.O., ils changent de Pokémon ou se protègent quand ils vont tomber.
+  - Ils ne connaissent de ton équipe que ce qu'ils ont vu pendant le combat.
+  - Ils gardent leur poseur de météo en vie et le renvoient quand la pluie ou le sable s'arrête.
+  - Après un K.O., ils envoient le meilleur Pokémon contre le tien, pas le suivant de la liste.
+- **TestOdyssée** — Place des Champions : Dracaufeu, Laggron, Métalosse et Branette n'ont leur talent Méga qu'après leur Méga-Évolution. Dracolosse tient des Restes.
+- **TestOdyssée** — Un Pokémon renvoyé par un Bouton Fuite ne laisse plus son remplaçant jouer son attaque dans le même tour. Cyclone et Hurlement chassent maintenant un Pokémon de dresseur.
+
 ## 5.33 — 11 novembre 2026
 - **TestOdyssée** — Demi-Tour qui met K.O. : tu choisis d'abord ton remplaçant, puis l'adversaire envoie son Pokémon suivant, comme dans les jeux.
 

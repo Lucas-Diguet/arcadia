@@ -1373,10 +1373,29 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   // Demi-Tour du joueur : il choisit qui le remplace, le tour continue
   { const a = mk(212, ['u-turn']), a2 = mk(143, ['splash']), d = mk(143, ['tackle']); const b = combat([a, a2], [d]); const ev = b.playerAction({ type: 'move', idx: 0 }); ok(b.state === 'switch' && ev.some((e) => e.t === 'switch-prompt'), 'combat du labo : Demi-Tour demande le remplaçant'); b.playerSwitch(1); ok(b.state === 'choose' && b.sides[0].active === 1, 'combat du labo : le remplaçant entre et le tour finit'); }
   // Demi-Tour qui met K.O. : le joueur change d'abord, puis l'adversaire envoie le suivant
-  { const a = mk(212, ['u-turn']), a2 = mk(143, ['splash']), d = mk(143, ['splash']), d2 = mk(143, ['splash']); d.hp = 1; const b = combat([a, a2], [d, d2]);
+  { const a = mk(212, ['u-turn']), a2 = mk(143, ['splash']), d = mk(143, ['splash']), d2 = mk(143, ['splash']); d.hp = 1; const b = combat([a, a2], [d, d2], { tr: { ai: 'normal' } });
     const ev = b.playerAction({ type: 'move', idx: 0 }); ok(b.state === 'switch' && b.sides[1].active === 0 && !ev.some((e) => e.t === 'send' && e.side === 1), 'combat du labo : Demi-Tour qui met K.O. : l\'adversaire attend que le joueur ait changé');
     const ev2 = b.playerSwitch(1), i0 = ev2.findIndex((e) => e.t === 'send' && e.side === 0), i1 = ev2.findIndex((e) => e.t === 'send' && e.side === 1);
     ok(b.state === 'choose' && i0 >= 0 && i1 > i0 && b.sides[1].active === 1, 'combat du labo : Demi-Tour qui met K.O. : le joueur change, puis l\'adversaire envoie le suivant'); }
+  // Bouton Fuite en plein tour : le remplaçant ne joue pas l'attaque prévue par celui qui est parti
+  { const a = mk(635, ['dark-pulse']), d = mk(450, ['stealth-rock'], { item: 'eject-button' }), d2 = mk(445, ['earthquake']); const b = combat([a], [d, d2]);
+    const ev = b.playerAction({ type: 'move', idx: 0 }); ok(b.sides[1].active === 1 && !b.sides[0].roc && !ev.some((e) => /Piège de Roc/.test(e.text || '')), 'combat du labo : après un Bouton Fuite, le remplaçant ne joue pas le coup de celui qui est parti'); }
+  // l'IA : pas de Séisme sur un Pokémon à Lévitation, pas de boost face à un Pokémon qui la met K.O.
+  { const moi = equipeChampion(CHAMPIONS.find((c) => c.type === 'Ténèbres')), lui = equipeChampion(CHAMPIONS.find((c) => c.type === 'Sol'));
+    moi.unshift(moi.splice(3, 1)[0]); lui.unshift(lui.splice(3, 1)[0]);
+    const b = combat(moi, lui); b.sides[0].v.st[3] = 2; const r = b.foeChoose(), mv = r.type === 'move' && MOVES[r.id];
+    ok(r.type === 'switch' || (mv && !['earthquake', 'swords-dance'].includes(mv.key)), 'IA : Carchacrok ne lance ni Séisme ni Danse Lames contre Trioxhydre à +2'); }
+  // l'IA : des combats entiers entre équipes de champions, sans erreur
+  { let fin = 0, n = 0;
+    for (const A of ['Combat', 'Vol', 'Spectre', 'Fée']) for (const Bt of ['Sol', 'Eau', 'Acier']) {
+      const b = combat(equipeChampion(CHAMPIONS.find((c) => c.type === A)), equipeChampion(CHAMPIONS.find((c) => c.type === Bt)), { seed: n + 3, tr: { mega: true } }); n++;
+      for (let t = 0; t < 300 && b.state !== 'over'; t++) {
+        if (b.state === 'switch') { b.playerSwitch(b.sides[0].party.findIndex((m, i) => m.hp > 0 && i !== b.sides[0].active)); continue; }
+        const u = b.usableMoves(0); b.playerAction({ type: 'move', idx: u[t % Math.max(1, u.length)] ?? 0 });
+      }
+      if (b.state === 'over') fin++;
+    }
+    ok(fin === n, `IA : ${n} combats entiers entre équipes de champions vont jusqu'au bout`); }
   // Demi-Tour de l'adversaire : il change tout seul
   { const a = mk(143, ['splash']), d = mk(212, ['u-turn']), d2 = mk(143, ['splash']); const b = combat([a], [d, d2]); b.playerAction({ type: 'move', idx: 0 }); ok(b.sides[1].active === 1, 'combat du labo : l\'adversaire change après son Demi-Tour'); }
   // Piège de Roc : blesse en arrivant

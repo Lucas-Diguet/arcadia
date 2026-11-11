@@ -6,6 +6,7 @@ import { MOVES } from '../../odyssee/js/data/moves.js';
 import { especesTemple } from './formes.js';
 import { Battle } from '../../odyssee/js/core/battle.js';
 import { installerRegles } from './combat/regles.js';
+import { installerIA } from './combat/ia.js';
 
 const IMG = new URL('../img/', import.meta.url).href;
 // (les images ne servent qu'au navigateur)
@@ -167,6 +168,7 @@ let fait = false;
 export function installerContenu(ASSETS) {
   if (fait) return; fait = true;
   installerRegles();
+  installerIA();
   Object.assign(ESPECES, especesTemple());
   for (const [id, s] of Object.entries(ESPECES)) SPECIES[id] = s;
   for (const [k, o] of Object.entries(OBJETS)) ITEMS[k] = o;
