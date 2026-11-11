@@ -497,7 +497,7 @@ for (const d of DONJONS) {
 
 /* ---------------- panneau d'entrée (standard de tous les donjons) ---------------- */
 ok(texteJoueurs({ joueurs: { mode: 'solo' } }) === 'Donjon solo' && texteJoueurs({ joueurs: { mode: 'exact', n: 4 } }) === 'Donjon à 4 joueurs' && /solo ou en groupe \(3 joueurs recommandés\)/.test(texteJoueurs({ joueurs: { mode: 'groupe', n: 3 } })), 'panneau : les trois façons de dire le nombre de joueurs');
-for (const d of DONJONS) {
+for (const d of DONJONS.filter((q) => !q.arene)) {
   ok(d.entree && d.joueurs && ['solo', 'groupe', 'exact', 'entre'].includes(d.joueurs.mode), `${d.id} : phrase et nombre de joueurs du panneau d'entrée`);
   const m = d.plan ? construireCarte(d) : construireSalles(d)[0], dehors = relierExterieur(d, m);
   const [px, py] = dehors ? m.donjon.exterieur.porte : [0, 0];
@@ -747,7 +747,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   ok(t0.length === 2 && M.debloques(ile, st).includes('pyramide'), 'île : les trophées viennent des badges et des donjons finis');
   M.poser(ile, { a: 'tr:pyramide', x: 22, y: 20 });
   ok(M.trophePlace(ile, 'pyramide') === 'ile' && !M.posable(ile, { a: 'tr:pyramide', x: 24, y: 20 }).ok, 'île : un trophée posé ne se pose pas deux fois');
-  ok(DONJONS.every((d) => M.TROPHEES.some((t) => t.donjon === d.id)) && M.TROPHEES.every((t) => SPECIES[t.sp]), 'île : une statue pour chaque donjon du labo');
+  ok(DONJONS.filter((d) => !d.arene).every((d) => M.TROPHEES.some((t) => t.donjon === d.id)) && M.TROPHEES.every((t) => SPECIES[t.sp]), 'île : une statue pour chaque donjon du labo');
   ok(M.CATALOGUE.every((a) => a.t != null || a.p || a.s || a.b || a.tr || a.piege || a.statue || a.garde), 'île : chaque article du catalogue sait se poser');
   // déplacer un bâtiment fixe : il ne bloque plus sa place pendant qu'on le porte
   const d2 = M.nouvelleIle('Déplacer'); d2.cache = 'mairie';
@@ -1192,6 +1192,209 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   });
   for (const T of Object.values(d.ennemis)) ok(T.equipes.every((eq) => eq.every(([sp]) => SPECIES[sp])), `cristal : pillards ${T.nom}, des Pokémon connus`);
   ok(d.joueurs.mode === 'entre' && d.joueurs.min === 2, 'cristal : de 2 à 4 joueurs');
+}
+
+/* ---------------- arènes du labo (Insecte, Poison) : chaque salle se résout ---------------- */
+{
+  const AR = await import('../testodyssee/js/donjon/arene-regles.js');
+  const ins = DONJONS.find((d) => d.id === 'arene-insecte'), poi = DONJONS.find((d) => d.id === 'arene-poison');
+  const D4 = Object.entries(AR.DIRS);
+  const salleDe = (d, id) => { const cartes = construireSalles(d); const i = d.salles.findIndex((s) => s.id === id); return { s: d.salles[i], m: cartes[i], P: cartes[i].donjon.plan }; };
+  const objetA = (d, P) => { const M = new Map(); for (const [c, l] of Object.entries(P.objets)) for (const [x, y] of l) M.set(AR.cle(x, y), { c, o: d.objets[c] }); return M; };
+  const pnjA = (P) => { const M = new Map(); for (const [k, [[x, y]]] of Object.entries(P.pnj)) M.set(AR.cle(x, y), k); return M; };
+  /** recherche en largeur générique : etat0, voisins(etat) → [etat], but(etat), clef(etat) */
+  const chercher = (e0, voisins, but, clef, max = 400000) => {
+    const vus = new Map([[clef(e0), 0]]); let file = [e0], n = 0;
+    while (file.length && vus.size < max) { n++; const suite = []; for (const e of file) for (const f of voisins(e)) { const k = clef(f); if (vus.has(k)) continue; vus.set(k, n); if (but(f)) return { pas: n, vus: vus.size }; suite.push(f); } file = suite; }
+    return { pas: -1, vus: vus.size };
+  };
+
+  // 1. la Fourmilière
+  {
+    const { s, m, P } = salleDe(ins, 'i1'), O = objetA(ins, P), cols = AR.colonnes(ins, P), [nx, ny] = P.suivante;
+    ok(Object.keys(cols).sort().join() === 'b,j,r,v', 'arène Insecte : quatre colonnes de fourmis dans la Fourmilière');
+    const cocon0 = [...O].find(([, q]) => q.o.type === 'cocon')[0]; let dansPuits = false;
+    const mur = (x, y, e) => { const c = AR.cle(x, y), q = O.get(c); if (!m.in(x, y)) return true; if (e.eff.includes(c)) return true; if (q && !q.o.sol) return true; return !walkable(m.get(x, y)) && m.get(x, y) !== T.BOULDER; };
+    const puits = (c, e) => O.get(c)?.o.type === 'puits' && !e.combles;
+    const voisins = (e) => {
+      const out = [];
+      for (const [, [dx, dy]] of D4) {
+        const tx = e.x + dx, ty = e.y + dy, c = AR.cle(tx, ty);
+        if (c === e.cocon) {
+          const bx = tx + dx, by = ty + dy, b = AR.cle(bx, by);
+          if (mur(bx, by, e) || O.get(b)?.o.type === 'fourmis') continue;
+          out.push(puits(b, e) ? { ...e, cocon: null, combles: true } : { ...e, cocon: b });
+          continue;
+        }
+        if (mur(tx, ty, e) || puits(c, e)) continue;
+        let f = { ...e, x: tx, y: ty, eff: O.get(AR.cle(e.x, e.y))?.o.type === 'eboulis' ? [...e.eff, AR.cle(e.x, e.y)].sort() : e.eff };
+        for (let k = 0; k < 60 && O.get(AR.cle(f.x, f.y))?.o.type === 'fourmis'; k++) {
+          const q = O.get(AR.cle(f.x, f.y)), [ax, ay] = AR.DIRS[AR.sensFourmi(cols, { inverses: f.inv }, q.c, f.x, f.y)];
+          if (mur(f.x + ax, f.y + ay, f) || AR.cle(f.x + ax, f.y + ay) === f.cocon) break;
+          f = { ...f, x: f.x + ax, y: f.y + ay };
+          if (puits(AR.cle(f.x, f.y), f)) dansPuits = true;
+        }
+        out.push(f);
+      }
+      for (const [, [dx, dy]] of D4) { const q = O.get(AR.cle(e.x + dx, e.y + dy)); if (q?.o.type === 'pot') { const t = { inverses: e.inv }; AR.presserPot(t, q.o); out.push({ ...e, inv: t.inverses }); } }
+      return out;
+    };
+    const e0 = { x: P.depart[0], y: P.depart[1], inv: [...s.inverses].sort(), cocon: cocon0, combles: false, eff: [] };
+    const clef = (e) => [e.x, e.y, e.inv.join(''), e.cocon, e.combles, e.eff.join(';')].join('|');
+    const r = chercher(e0, voisins, (e) => e.x === nx && e.y === ny + 1, clef);
+    if (process.env.GESTES) console.log(`arène Insecte : la Fourmilière se résout, en ${r.pas} gestes au moins (${r.vus} états)`); ok(r.pas >= 20, `arène Insecte : la Fourmilière se résout, en ${r.pas} gestes au moins (${r.vus} états)`);
+    ok(!dansPuits, 'arène Insecte : une colonne de fourmis ne dépose jamais dans un puits');
+    // sans le pot jaune (gardé derrière le puits), pas de sortie
+    const sansCocon = chercher({ ...e0, cocon: null }, voisins, (e) => e.x === nx && e.y === ny + 1, clef);
+    ok(sansCocon.pas < 0, 'arène Insecte : sans boucher le puits avec le cocon, on ne sort pas de la Fourmilière');
+  }
+
+  // 2. la Grande Toile
+  {
+    const { m, P } = salleDe(ins, 'i2'), O = objetA(ins, P), [nx, ny] = P.suivante;
+    const sorte = (x, y, e) => { const q = O.get(AR.cle(x, y)); if (!m.in(x, y)) return 'mur'; if (q && !q.o.sol) return 'mur'; if (!walkable(m.get(x, y))) return 'mur'; return AR.sorteToile(q?.o, e) || 'fil'; };
+    const voisins = (e) => {
+      const out = [], et = { leviers: { L: e.L, M: e.M } };
+      for (const [, [dx, dy]] of D4) {
+        let x = e.x + dx, y = e.y + dy, k = sorte(x, y, et);
+        if (k === 'mur' || k === 'vide') continue;
+        while (k === 'rosee') { const nk = sorte(x + dx, y + dy, et); if (nk === 'mur') break; x += dx; y += dy; k = nk; }
+        if (k === 'vide') continue;   // chute
+        if (k === 'traction' && !(x === e.x + dx && y === e.y + dy && false)) { const q = O.get(AR.cle(x, y)), [[tx, ty]] = P.objets[q.o.vers]; if (sorte(e.x + dx, e.y + dy, et) === 'traction') { x = tx; y = ty; } }
+        out.push({ ...e, x, y });
+      }
+      for (const [, [dx, dy]] of D4) { const q = O.get(AR.cle(e.x + dx, e.y + dy)); if (q?.o.type === 'levier') out.push({ ...e, [q.o.id]: 1 - e[q.o.id] }); }
+      return out;
+    };
+    const e0 = { x: P.depart[0], y: P.depart[1], L: 0, M: 0 }, clef = (e) => [e.x, e.y, e.L, e.M].join('|');
+    const r = chercher(e0, voisins, (e) => e.x === nx && e.y === ny + 1, clef);
+    if (process.env.GESTES) console.log(`arène Insecte : la Grande Toile se résout, en ${r.pas} gestes au moins`); ok(r.pas >= 15, `arène Insecte : la Grande Toile se résout, en ${r.pas} gestes au moins`);
+    const sansM = chercher(e0, (e) => voisins(e).filter((f) => f.M === 0), (e) => e.x === nx && e.y === ny + 1, clef);
+    ok(sansM.pas < 0, 'arène Insecte : sans le levier bleu, la rosée ne mène pas à la sortie');
+    // l'araignée : reliée au départ tant que le levier rouge n'a pas bougé, enfermée dans son coin ensuite
+    const [[ax, ay]] = P.objets.A;
+    const atteint = (L) => { const et = { leviers: { L, M: 0 } }, vus = new Set([AR.cle(ax, ay)]), f = [[ax, ay]];
+      while (f.length) { const [x, y] = f.pop(); for (const [, [dx, dy]] of D4) { const k = sorte(x + dx, y + dy, et), c = AR.cle(x + dx, y + dy); if (vus.has(c) || !['fil', 'noeud'].includes(k) || P.pnj && Object.values(P.pnj).some(([[a, b]]) => a === x + dx && b === y + dy)) continue; vus.add(c); f.push([x + dx, y + dy]); } }
+      return vus.has(AR.cle(...P.depart)); };
+    ok(atteint(0) && !atteint(1), 'arène Insecte : le levier rouge enferme l\'araignée dans son coin de toile');
+    { const c1 = salleDe(ins, ins.chute.salle), [n1x, n1y] = c1.P.suivante, vu = c1.m.reach(ins.chute.x, ins.chute.y);
+      ok(walkable(c1.m.get(ins.chute.x, ins.chute.y)) && vu[(n1y + 1) * c1.m.w + n1x], 'arène Insecte : on retombe de la toile dans la Fourmilière, tout près de la sortie'); }
+  }
+
+  // 3. la Mue
+  {
+    const { s, m, P } = salleDe(ins, 'i3'), O = objetA(ins, P), cols = AR.colonnes(ins, P), PN = pnjA(P), [[cx, cy]] = [P.pnj.X[0]];
+    const fleurs = [...O].filter(([, q]) => q.o.type === 'fleur').map(([c]) => c), chrys = [...O].filter(([, q]) => q.o.type === 'chrysalide').map(([c]) => c);
+    ok(chrys.length === 3, 'arène Insecte : trois chrysalides dans la Mue');
+    const etat = (e) => ({ jour: e.jour, fleurs: Object.fromEntries(fleurs.map((c, i) => [c, (e.f >> i) & 1])), eclos: chrys.filter((c, i) => (e.ec >> i) & 1) });
+    const bloque = (e) => (x, y) => { const c = AR.cle(x, y), q = O.get(c); if (!m.in(x, y)) return true; if (q?.o.type === 'papillons') return e.jour; if (q?.o.type === 'haie') return e.ec !== 7; if (q?.o.type === 'chrysalide') return !(e.ec >> chrys.indexOf(c) & 1); if (q && !q.o.sol) return true; return !walkable(m.get(x, y)); };
+    const eclore = (e) => { for (let k = 0; k < 5; k++) { const L = AR.lumiere(ins, P, etat(e), bloque(e)); let ec = e.ec; chrys.forEach((c, i) => { if (L.touchees.has(c)) ec |= 1 << i; }); if (ec === e.ec) break; e = { ...e, ec }; } return e; };
+    const passe = (e, x, y) => { const c = AR.cle(x, y), q = O.get(c); if (!m.in(x, y) || PN.has(c)) return false; if (q?.o.type === 'puits') return false; if (q?.o.type === 'papillons') return !e.jour; if (q?.o.type === 'chrysalide') return e.ec >> chrys.indexOf(c) & 1; if (q?.o.type === 'haie') return e.ec === 7; if (q && !q.o.sol) return false; return walkable(m.get(x, y)); };
+    const voisins = (e) => {
+      const out = [];
+      for (const [, [dx, dy]] of D4) {
+        if (!passe(e, e.x + dx, e.y + dy)) continue;
+        let f = { ...e, x: e.x + dx, y: e.y + dy };
+        for (let k = 0; k < 60 && O.get(AR.cle(f.x, f.y))?.o.type === 'fourmis'; k++) {
+          const q = O.get(AR.cle(f.x, f.y)), [ax, ay] = AR.DIRS[AR.sensFourmi(cols, { inverses: s.inverses }, q.c, f.x, f.y)];
+          if (!passe(f, f.x + ax, f.y + ay)) break; f = { ...f, x: f.x + ax, y: f.y + ay };
+        }
+        out.push(f);
+      }
+      for (const [, [dx, dy]] of D4) {
+        const c = AR.cle(e.x + dx, e.y + dy), q = O.get(c);
+        if (q?.o.type === 'fleur') out.push(eclore({ ...e, f: e.f ^ (1 << fleurs.indexOf(c)) }));
+        if (q?.o.type === 'jour') out.push(eclore({ ...e, jour: !e.jour }));
+      }
+      return out;
+    };
+    const e0 = eclore({ x: P.depart[0], y: P.depart[1], jour: true, f: 0, ec: 0 }), clef = (e) => [e.x, e.y, +e.jour, e.f, e.ec].join('|');
+    ok(e0.ec === 0, 'arène Insecte : aucune chrysalide n\'éclot toute seule');
+    const auChampion = (e) => e.ec === 7 && Math.abs(e.x - cx) + Math.abs(e.y - cy) === 1;
+    const r = chercher(e0, voisins, auChampion, clef);
+    if (process.env.GESTES) console.log(`arène Insecte : la Mue se résout, en ${r.pas} gestes au moins`); ok(r.pas >= 25, `arène Insecte : la Mue se résout, en ${r.pas} gestes au moins`);
+    ok(chercher(e0, (e) => voisins(e).filter((f) => f.jour), auChampion, clef).pas < 0, 'arène Insecte : la Mue demande la nuit');
+    ok(chercher(e0, (e) => voisins(e).filter((f) => f.jour === e.jour || !f.jour), auChampion, clef).pas >= 0 && chercher({ ...e0, jour: false }, (e) => voisins(e).filter((f) => !f.jour), auChampion, clef).pas < 0, 'arène Insecte : la Mue demande aussi le jour');
+  }
+
+  // le sas : la seule suite qui respecte les trois indices du panneau
+  {
+    const C = ['violet', 'vert', 'jaune', 'rose'], perm = (l) => (l.length < 2 ? [l] : l.flatMap((x, i) => perm([...l.slice(0, i), ...l.slice(i + 1)]).map((r) => [x, ...r])));
+    const bonnes = perm(C).filter((o) => o.indexOf('jaune') !== 0 && o.indexOf('jaune') !== 3 && o.indexOf('vert') === o.indexOf('violet') + 1 && o.indexOf('rose') !== 0);
+    ok(bonnes.length === 1 && bonnes[0].join() === poi.sas.join(), 'arène Poison : les indices du sas mènent à une seule suite, celle de la porte');
+    const e = AR.etatInitial({}); const rs = [...poi.sas].map((c) => AR.douche(e, c, poi.sas));
+    ok(rs.join() === 'suite,suite,suite,bon' && AR.douche(AR.etatInitial({}), 'rose', poi.sas) === 'suite', 'arène Poison : la bonne suite ouvre le sas');
+    const f = AR.etatInitial({}); ['vert', 'violet', 'jaune', 'rose'].forEach((c) => AR.douche(f, c, poi.sas));
+    ok(f.suite.length === 0, 'arène Poison : une mauvaise suite remet le sas à zéro');
+  }
+
+  // le marais : une jauge de 12, il faut les vannes
+  {
+    const { m, P } = salleDe(poi, 'p2'), O = objetA(poi, P), PN = pnjA(P), [[cx, cy]] = [P.pnj.X[0]];
+    const vannes = ['K', 'L', 'M'];
+    const sorte = (x, y, e) => { const c = AR.cle(x, y), q = O.get(c); if (!m.in(x, y) || PN.has(c)) return null; if (q && !q.o.sol) return null; if (!walkable(m.get(x, y))) return null; return AR.sorteMarais(q?.o, { vannes: Object.fromEntries(vannes.map((v, i) => [v, !!((e.v >> i) & 1)])) }) || 'pierre'; };
+    const voisins = (e, vanneOk = true) => {
+      const out = [];
+      for (const [, [dx, dy]] of D4) {
+        const x = e.x + dx, y = e.y + dy, k = sorte(x, y, e); if (!k) continue;
+        const s2 = k === 'lys' ? AR.SOUFFLE : e.s - AR.cout(k);
+        if (s2 <= 0) continue;
+        out.push({ ...e, x, y, s: s2 });
+      }
+      if (vanneOk) for (const [, [dx, dy]] of D4) { const q = O.get(AR.cle(e.x + dx, e.y + dy)); if (q?.o.type === 'vanne') out.push({ ...e, v: e.v ^ (1 << vannes.indexOf(q.o.id)) }); }
+      return out;
+    };
+    const e0 = { x: P.depart[0], y: P.depart[1], s: AR.SOUFFLE, v: 0 }, clef = (e) => [e.x, e.y, e.s, e.v].join('|');
+    const but = (e) => Math.abs(e.x - cx) + Math.abs(e.y - cy) === 1;
+    const r = chercher(e0, voisins, but, clef);
+    if (process.env.GESTES) console.log(`arène Poison : le marais se traverse avec 12 de souffle, en ${r.pas} gestes au moins`); ok(r.pas >= 40, `arène Poison : le marais se traverse avec 12 de souffle, en ${r.pas} gestes au moins`);
+    ok(chercher(e0, (e) => voisins(e, false), but, clef).pas < 0, 'arène Poison : sans toucher aux vannes, on n\'atteint pas la championne');
+    ok(AR.cout('vase') === 1 && AR.cout('profonde') === 2 && AR.cout('bulles', { crache: true }) === 3 && AR.cout('pierre', { toxique: true }) === 2 && AR.cout('lys') === 0, 'arène Poison : ce que coûte chaque case du marais');
+  }
+}
+
+/* ---------------- règles de combat du labo ---------------- */
+{
+  const { CHAMPIONS, equipeChampion } = await import('../testodyssee/js/champions.js');
+  const R = (seed = 7) => { let s = seed; return () => ((s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff); };
+  const mk = (sp, moves, o = {}) => { const m = createMon(sp, 100, { iv: Array(6).fill(31), nat: 12, moves: moves.map((k) => Object.values(MOVES).find((q) => q.key === k).id), shiny: false, ...o }); return m; };
+  const combat = (moi, lui, o = {}) => { const b = new BattleT({ rng: R(o.seed), player: { name: 'Test', party: moi }, foe: { name: 'Champion', party: lui, trainer: { cls: 'Champion', name: 'Test', items: {}, ai: 'smart', ...o.tr } } }); b.start(); return b; };
+  const id = (k) => Object.values(MOVES).find((q) => q.key === k)?.id;
+  ok(['stealth-rock', 'taunt', 'knock-off', 'u-turn', 'sludge-wave', 'substitute', 'heavy-slam', 'rapid-spin', 'grass-knot', 'curse', 'wish', 'aromatherapy', 'sucker-punch', 'roost', 'dazzling-gleam', 'gyro-ball', 'tailwind', 'kings-shield', 'draco-meteor', 'surf', 'pursuit', 'destiny-bond'].every(id), 'combat du labo : les attaques ajoutées existent');
+  ok(['assault-vest', 'eject-button', 'weakness-policy', 'light-clay', 'toxic-orb', 'damp-rock', 'expert-belt'].every((k) => ITEMS[k]?.name), 'combat du labo : les objets ajoutés existent');
+  ok(CHAMPIONS.length === 23 && CHAMPIONS.filter((c) => c.equipe).length === 9 && CHAMPIONS.map((c) => c.rang).join() === Array.from({ length: 23 }, (_, i) => i + 1).join(), 'Place des Champions : 23 champions dans l\'ordre, 9 équipes prêtes');
+  ok(CHAMPIONS[1].type === 'Poison' && CHAMPIONS[2].type === 'Normal' && CHAMPIONS[17].type === 'Eau', 'Place des Champions : Poison 2e, Normal 3e, Eau 18e');
+  for (const c of CHAMPIONS.filter((q) => q.equipe)) {
+    const t = equipeChampion(c);
+    ok(t.length === 6 && t.every((m) => m.lvl === 100 && m.iv.every((v) => v === 31) && m.moves.length === 4 && m.item && m.ability), `Place des Champions : ${c.type}, six Pokémon niveau 100, IV 31, quatre attaques, objet et talent`);
+  }
+  // Sabotage : objet tombé, plus fort, rendu après le combat
+  { const a = mk(461, ['knock-off']), d = mk(143, ['splash'], { item: 'leftovers' }); const b = combat([a], [d]); b.playerAction({ type: 'move', idx: 0 }); ok(d.item === null, 'combat du labo : Sabotage fait tomber l\'objet'); b.end('win'); ok(d.item === 'leftovers', 'combat du labo : l\'objet revient après le combat'); }
+  // Demi-Tour du joueur : il choisit qui le remplace, le tour continue
+  { const a = mk(212, ['u-turn']), a2 = mk(143, ['splash']), d = mk(143, ['tackle']); const b = combat([a, a2], [d]); const ev = b.playerAction({ type: 'move', idx: 0 }); ok(b.state === 'switch' && ev.some((e) => e.t === 'switch-prompt'), 'combat du labo : Demi-Tour demande le remplaçant'); b.playerSwitch(1); ok(b.state === 'choose' && b.sides[0].active === 1, 'combat du labo : le remplaçant entre et le tour finit'); }
+  // Demi-Tour de l'adversaire : il change tout seul
+  { const a = mk(143, ['splash']), d = mk(212, ['u-turn']), d2 = mk(143, ['splash']); const b = combat([a], [d, d2]); b.playerAction({ type: 'move', idx: 0 }); ok(b.sides[1].active === 1, 'combat du labo : l\'adversaire change après son Demi-Tour'); }
+  // Piège de Roc : blesse en arrivant
+  { const a = mk(143, ['splash']), a2 = mk(6, ['splash']), d = mk(392, ['stealth-rock']); const b = combat([a, a2], [d]); b.playerAction({ type: 'move', idx: 0 }); b.playerAction({ type: 'switch', idx: 1 }); ok(a2.hp === a2.stats[0] - Math.floor(a2.stats[0] * 4 / 8), 'combat du labo : Piège de Roc blesse Dracaufeu de moitié en arrivant'); }
+  // Clonage : le clone encaisse
+  { const a = mk(143, ['tackle']), d = mk(701, ['substitute']); const b = combat([a], [d]); const ev = b.playerAction({ type: 'move', idx: 0 }); ok(d.hp === d.stats[0] - Math.floor(d.stats[0] / 4) && ev.some((e) => /Le clone encaisse/.test(e.text || '')), 'combat du labo : le clone encaisse le coup à la place du Pokémon'); }
+  // Coup Bas : échoue contre une attaque de statut
+  { const a = mk(143, ['splash']), d = mk(625, ['sucker-punch']); const b = combat([a], [d]); const ev = b.playerAction({ type: 'move', idx: 0 }); ok(a.hp === a.stats[0] && ev.some((e) => e.text === 'Mais cela échoue !'), 'combat du labo : Coup Bas échoue si l\'autre n\'attaque pas'); }
+  // objet Choix : une seule attaque
+  { const a = mk(445, ['earthquake', 'stone-edge'], { item: 'choice-band' }), d = mk(143, ['splash']); const b = combat([a], [d]); b.playerAction({ type: 'move', idx: 0 }); const ev = b.playerAction({ type: 'move', idx: 1 }); ok(ev.length === 1 && /objet Choix|Bandeau Choix/.test(ev[0].text), 'combat du labo : un objet Choix bloque sur la première attaque'); }
+  // Puissance Cachée fixée
+  { const a = mk(537, ['hidden-power']); a.pc = { t: 'electric', p: 60 }; const b = combat([a], [mk(130, ['splash'])]); ok(b.moveType(0, MOVES[id('hidden-power')]) === 'electric' && b.movePower(0, 1, MOVES[id('hidden-power')]) === 60, 'combat du labo : Puissance Cachée prend le type et la puissance donnés'); }
+  // Protéen et Déclic Tactique
+  { const a = mk(658, ['ice-beam'], { ability: 'protean' }), d = mk(143, ['splash']); const b = combat([a], [d]); b.playerAction({ type: 'move', idx: 0 }); ok(SPECIES[a.sp].t.join() === 'ice', 'combat du labo : Protéen change le type'); b.end('win'); ok(a.sp === 658, 'combat du labo : Amphinobi reprend sa forme après le combat'); }
+  { const a = mk(143, ['splash']), d = mk(681, ['sacred-sword'], { ability: 'stance-change' }); const b = combat([a], [d]); const atk = d.stats[1]; b.playerAction({ type: 'move', idx: 0 }); ok(d.stats[1] > atk && SPECIES[d.sp].visuel === 681, 'combat du labo : Exagide passe en Forme Assaut pour attaquer'); }
+  // Orbe Toxique et Soin Poison
+  { const a = mk(143, ['splash']), d = mk(472, ['protect'], { ability: 'poison-heal', item: 'toxic-orb' }); const b = combat([a], [d]); b.playerAction({ type: 'move', idx: 0 }); ok(d.status === 'tox', 'combat du labo : l\'Orbe Toxique empoisonne à la fin du tour'); }
+  // Prélèvement Destin
+  { const a = mk(445, ['earthquake']), d = mk(478, ['destiny-bond']); d.hp = 1; const b = combat([a], [d, mk(143, ['splash'])]); b.playerAction({ type: 'move', idx: 0 }); ok(isFainted(a), 'combat du labo : Prélèvem. Destin emporte celui qui met K.O.'); }
+  // Peau Féérique
+  { const a = mk(700, ['hyper-voice'], { ability: 'pixilate' }), b = combat([a], [mk(149, ['splash'])]); ok(b.moveType(0, MOVES[id('hyper-voice')]) === 'fairy', 'combat du labo : Peau Féérique rend Mégaphone de type Fée'); }
+  // Vulné-Assurance
+  { const a = mk(392, ['flamethrower']), d = mk(681, ['splash'], { item: 'weakness-policy' }); const b = combat([a], [d]); b.playerAction({ type: 'move', idx: 0 }); ok(isFainted(d) || b.sides[1].v.st[1] === 2, 'combat du labo : Vulné-Assurance monte l\'Attaque'); }
 }
 
 console.log(fails ? `${fails} échec(s) sur ${checks} vérifications` : `TestOdyssée : ${checks} vérifications, tout est bon.`);

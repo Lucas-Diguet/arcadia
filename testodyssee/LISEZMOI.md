@@ -383,6 +383,58 @@ Dans `contenu.js` (`ATTAQUES`) : Jaillissève (Plante, le pendant d'Éruption et
 pendant de Surchauffe et de Tempête Verte). Dans le labo, Éruption, Giclédo et Jaillissève perdent de la force avec les
 PV du lanceur (150 × PV / PV max), comme dans les jeux.
 
+### Règles de combat du labo
+
+`js/combat/regles.js`, branché par `installerContenu` : le moteur de combat d'Odyssée n'est pas modifié, le labo
+enveloppe ses méthodes (seule la page du labo charge ce fichier). Ce qui s'ajoute :
+
+- attaques : Piège de Roc, Provoc, Sabotage (fait tomber l'objet, rendu après le combat), Demi-Tour (et Change Éclair :
+  le joueur choisit qui entre, puis le tour continue ; l'adversaire change tout seul), Cradovague, Clonage, Tacle Lourd,
+  Tour Rapide, Nœud Herbe, Malédiction, Vœu, Aromathérapie, Coup Bas, Atterrissage, Éclat Magique, Gyroballe,
+  Vent Arrière, Bouclier Royal, Draco Météore, Surf, Poursuite, Prélèvem. Destin, et les effets d'Acrobatie, Choc Psy
+  et Lame Sainte ;
+- talents : Peau Féérique, Protéen, Déclic Tactique (Forme Assaut d'Exagide), Délestage, Griffe Dure, Corps Maudit,
+  Infiltration, Cœur Noble, Miroir Magik ; une Méga prend le talent de sa forme Méga même si la forme de base en a un donné ;
+- objets : Veste de Combat, Bouton Fuite, Vulné-Assurance, Lumargile, Orbe Toxique, Roche Humide, Ceinture Pro, et le
+  verrou des objets Choix ;
+- Puissance Cachée fixée : `m.pc = { t: 'electric', p: 60 }` donne le type et la puissance sans tenir compte des IV.
+
+Les formes de combat (Protéen, Forme Assaut) sont des espèces cachées (`forme` de `regles.js`, n° 40000 et plus), comme les
+Méga : l'image reste celle de l'espèce (`visuel`). Les changements de Pokémon en plein tour ne jouent que dans le combat
+ordinaire (pas dans les duels entre joueurs ni les combats à plusieurs). Tests : `tools/test-testodyssee.mjs`.
+
+### La Place des Champions
+
+`js/donjons/champions.js`, équipes dans `js/champions.js`. Les 23 champions alignés dans l'ordre : les 18 champions
+d'arène (Insecte, Poison, Normal, Plante, Roche, Glace, Électrik, Psy, Combat, Ténèbres, Vol, Spectre, Feu, Sol, Fée,
+Acier, Dragon, Eau), le Conseil 4 et le Maître. On parle à un champion pour l'affronter : tout le monde au niveau 100,
+IV à 31, soin complet sans message après le combat (objets tenus compris). Un champion sans équipe (`equipe: null`)
+dit que son équipe n'est pas prête. L'organisatrice prête l'équipe « fin de jeu » au niveau 100 (`fin100` de
+`equipes.js`) ou celle d'un champion. Une équipe : `P(espèce, objet, talent, nature, EV, attaques, { pc, shiny })`.
+
+### Les arènes (prototypes)
+
+Arènes solo, sans transition entre les salles : `js/donjons/arene-insecte.js` et `js/donjons/arene-poison.js`. Règles
+sans écran dans `js/donjon/arene-regles.js`, partie dans `js/donjon/arenes.js`. Les cases spéciales sont des objets du
+plan (`type`) ; l'état de chaque salle est dans `state.arenes[carte]`, les cases changées dans `state.tiles` ; en
+entrant dans l'arène depuis ailleurs, tout reprend comme au début. Le sol de chaque case est dessiné par `m.solArene`
+(tuiles de `rendu.js`, ou une tuile d'Odyssée comme `dec_fosse`).
+
+- Arène Insecte, « La Canopée » : la Fourmilière (colonnes de fourmis : flèches d'Odyssée, sens normal depuis le bout
+  le plus haut, `inverses` de la salle ; pots de phéromones qui inversent deux colonnes ; cocon à pousser dans un puits ;
+  galerie qui s'effondre derrière soi ; PC de remise), la Grande Toile (fils au-dessus du vide, rosée qui glisse, nœuds
+  collants, deux leviers, fils de traction, l'araignée qui avance d'une case à chaque pas et ramène au bord de la toile ;
+  une chute renvoie dans la Fourmilière, `chute`), la Mue (le soleil le jour, les lucioles la nuit, fleurs-miroirs,
+  papillons posés le jour, trois chrysalides, puis la haie de Hector s'ouvre).
+- Arène Poison : le Sas de décontamination (quatre douches dans l'ordre de `sas`, trois indices sur le panneau), le
+  Marais toxique (jauge de souffle de 12 en haut de l'écran ; vase 1, vase profonde 2 et plus lente, bulles qui crachent 3,
+  traînée de Grotadmorv +2, lys qui remplissent ; trois vannes qui vident une zone et en remplissent une autre ; jauge
+  vide : retour au dernier lys).
+
+Les tests résolvent chaque salle (recherche en largeur sur tout l'état : position, pots, cocon, galerie ; leviers ;
+jour, fleurs et chrysalides ; souffle et vannes) et vérifient qu'on ne passe pas sans la mécanique de la salle. Les
+champions et leurs équipes d'arène sont ceux d'Odyssée en attendant les vraies.
+
 ### Fonderie aux Plaques
 
 De 2 à 4 joueurs, niveau 60, équipe « fin ». Des plaques de pression (`type: 'plaque'`, `groupes`) lèvent les grilles

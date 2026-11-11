@@ -35,7 +35,7 @@ function saisirTexte(ui, titre) {
   });
 }
 /** l'image sans ses marges vides (les dessins de face ont de la place autour du Pokémon) : ses pieds touchent le sol */
-function recadrer(im) {
+export function recadrer(im) {
   const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
   const x = c.getContext('2d'); x.drawImage(im, 0, 0);
   const D = x.getImageData(0, 0, c.width, c.height).data;
@@ -518,6 +518,7 @@ export const Miroirs = {
   },
   /** pas pris en charge ici (glissade sur la glace, ligne du miroir) : renvoie true si le pas est traité */
   pasSpecial(dir) {
+    if (this.pasArene?.(dir)) return true;
     const d = this.miroirsIci(); if (!d) return false;
     const g = this.game, p = g.player, m = g.mapObj, [dx, dy] = DIRS[dir];
     if (this.barriereReflet(d, p.x + dx, p.y + dy)) {
@@ -535,9 +536,9 @@ export const Miroirs = {
     g.sound.sfx('ledge');
     return true;
   },
-  apresDepart(dir) { const d = this.miroirsIci(); if (d && this.salleDe(d, 'reflet')) this.refleterPas(d, dir); },
-  occupe(x, y) { return this.occupeReflet(x, y); },
-  async interagir() { const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.parlerReflet(d); },
+  apresDepart(dir, depart) { this.apresDepartArene?.(dir, depart); const d = this.miroirsIci(); if (d && this.salleDe(d, 'reflet')) this.refleterPas(d, dir); },
+  occupe(x, y) { return this.occupeReflet(x, y) || !!this.occupeArene?.(x, y); },
+  async interagir() { if (await this.interagirArene?.()) return true; const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.parlerReflet(d); },
   /** dans la salle du reflet : on peut revenir à l'entrée de la salle depuis le menu */
   dansLeReflet() { const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.refletActif(d); },
   async recommencerSalle() { const d = this.miroirsIci(); if (d) await this.recommencerReflet(d); },

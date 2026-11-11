@@ -5,6 +5,7 @@ import { ITEMS } from '../../odyssee/js/core/items.js';
 import { MOVES } from '../../odyssee/js/data/moves.js';
 import { especesTemple } from './formes.js';
 import { Battle } from '../../odyssee/js/core/battle.js';
+import { installerRegles } from './combat/regles.js';
 
 const IMG = new URL('../img/', import.meta.url).href;
 // (les images ne servent qu'au navigateur)
@@ -165,6 +166,7 @@ let fait = false;
 /** ajoute espèces et objets aux tables d'Odyssée ; avec ASSETS (navigateur), branche aussi leurs images */
 export function installerContenu(ASSETS) {
   if (fait) return; fait = true;
+  installerRegles();
   Object.assign(ESPECES, especesTemple());
   for (const [id, s] of Object.entries(ESPECES)) SPECIES[id] = s;
   for (const [k, o] of Object.entries(OBJETS)) ITEMS[k] = o;
@@ -190,6 +192,8 @@ export function installerContenu(ASSETS) {
     return lancer.call(this, item);
   };
   if (!ASSETS) return;
+  // formes de combat du labo (Protéen, Forme Assaut d'Exagide) : l'image de l'espèce d'origine
+  for (const k of ['front', 'back', 'icon', 'cry']) { const f = ASSETS[k]; ASSETS[k] = (id, ...r) => f(SPECIES[id]?.visuel || id, ...r); }
   const front = ASSETS.front, item = ASSETS.item, cry = ASSETS.cry;
   // une image pour tout (img en .png), ou trois : face, dos, icône (img-f, img-b, img-i)
   const image = (id, c) => (ESPECES[id].img.endsWith('.png') ? IMG + ESPECES[id].img : `${IMG}${ESPECES[id].img}-${c}.png`);

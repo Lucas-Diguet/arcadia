@@ -27,7 +27,16 @@ export const EQUIPES = [
     pokemon: [[149, 60], [248, 60], [131, 60], [212, 60], [94, 60], [154, 60]],
     sac: { 'hyper-potion': 10, 'max-potion': 10, 'full-restore': 5, revive: 10, 'full-heal': 10, 'ultra-ball': 20, 'escape-rope': 5, 'max-repel': 5 },
   },
+  {
+    // l'équipe « fin de jeu » au niveau 100, IV à 31 (Place des Champions)
+    id: 'fin100', nom: 'Fin de jeu, niveau 100', note: 'niv. 100, 8 badges',
+    badges: 8, argent: 50000, iv: 31,
+    pokemon: [[149, 100], [248, 100], [131, 100], [212, 100], [94, 100], [154, 100]],
+    sac: { 'max-potion': 10, 'full-restore': 5, revive: 10, 'full-heal': 10, 'ultra-ball': 20, 'escape-rope': 5, 'mega-ring': 1 },
+  },
 ];
+/** une équipe du labo, toute neuve (l'organisatrice de la Place des Champions la redonne) */
+export const equipeLabo = (id, ot) => { const E = EQUIPES.find((q) => q.id === id); return E.pokemon.map(([sp, lvl]) => createMon(sp, lvl, { ot, met: 'TestOdyssée', shiny: false, ...(E.iv ? { iv: Array(6).fill(E.iv) } : {}) })); };
 
 const CS = ['cs-coupe', 'cs-surf', 'cs-eclate', 'cs-vol', 'cs-flash', 'cs-force', 'cs-cascade'];
 // drapeaux d'histoire levés d'office : pas de rival ni de scène d'introduction qui coupe un test
@@ -37,7 +46,7 @@ const DEJA_VU = ['intro', 'metProf', 'dex', 'rival1', 'rival2', 'rival3', 'rival
 export function partieTest(game, { nom, genre, equipe, lieu }) {
   const st = game.newState(nom, genre);
   const E = EQUIPES.find((q) => q.id === equipe) || EQUIPES[0];
-  st.party = E.pokemon.map(([sp, lvl]) => createMon(sp, lvl, { ot: nom, met: 'TestOdyssée', shiny: false }));
+  st.party = equipeLabo(E.id, nom);
   st.badges = Array.from({ length: 8 }, (_, i) => i < E.badges);
   st.money = E.argent;
   st.bag = { ...E.sac, 'town-map': 1 };

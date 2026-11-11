@@ -60,13 +60,15 @@ export class TestGame extends Game {
     if (o.trainer?.rv && o.party) equipeOrigine(o.trainer.team, o.party);
     if (this.modeTest && await this.ui.yesNo('Mode test : passer ce combat (compté comme gagné) ?')) return 'win';
     const m = this.mapObj;
-    if (m?.style !== 'clair') return super.runBattle(o);
-    const avant = [m.floor, m.battleBg]; m.floor = 'clair'; m.battleBg = 'league';
+    if (m?.style !== 'clair' && !m?.fondCombat) return super.runBattle(o);
+    const avant = [m.floor, m.battleBg]; m.floor = 'clair'; m.battleBg = m.fondCombat || 'league';
     try { return await super.runBattle(o); } finally { [m.floor, m.battleBg] = avant; }
   }
   /** l'île privée se reconstruit à partir de la donnée du joueur quand on y arrive */
   setMap(id) {
     this.ile?.surCarte(id);
+    // arènes du labo : la carte suit l'état de la salle (sens des fourmis, fils, fleurs…) avant d'être dessinée
+    if (this.state) this.donjons?.syncArene?.(this.world.maps[id]);
     if (this.ile && this.state && (id === ILE || id?.startsWith(ILE + ':')) && (!this.world.maps[id] || this.ile.pour !== this.ile.cle || !this.ile.dedans())) this.ile.preparer();
     return super.setMap(id);
   }
@@ -79,7 +81,7 @@ export class TestGame extends Game {
     if (!lead || (this.state.repel > 0 && lead.lvl >= lvl)) return;
     return super.wildBattle([[e[0], lvl, lvl, 1]], { ...o, fixed: true });
   }
-  setTile(x, y, v) { super.setTile(x, y, v); if (v === T.BOULDER) { this.rv?.rocherPose(x, y); this.donjons?.rocherTemple?.(x, y); } }
+  setTile(x, y, v) { super.setTile(x, y, v); if (v === T.BOULDER) { this.rv?.rocherPose(x, y); this.donjons?.rocherTemple?.(x, y); this.donjons?.rocherArene?.(x, y); } }
   warp(to, sfx) { (this.rv ||= new RoutesVictoire(this)).arrivee(to); this.donjons?.remiseTemple?.(to); return super.warp(to, sfx); }
   /** dans les donjons du labo, les capacités de terrain servent sans attendre les badges */
   canField(k) { return this.donjons?.dansUnDonjon?.() && k !== 'vol' ? this.hasField(k) : super.canField(k); }

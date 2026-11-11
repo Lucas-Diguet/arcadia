@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 5.32 — 11 novembre 2026
+- **TestOdyssée** — Nouvelle Place des Champions : les 23 champions alignés dans l'ordre des arènes, puis le Conseil 4 et le Maître. On parle à un champion pour l'affronter, tout le monde au niveau 100, et on est soigné après chaque combat. L'organisatrice prête l'équipe « fin de jeu » au niveau 100 ou celle d'un champion. Neuf équipes sont prêtes (Combat, Ténèbres, Vol, Spectre, Sol, Fée, Acier, Dragon, Eau).
+- **TestOdyssée** — Les combats du labo connaissent de nouvelles attaques, de nouveaux talents et de nouveaux objets.
+  - Piège de Roc, Provoc, Sabotage, Demi-Tour, Clonage, Coup Bas, Poursuite, Atterrissage, Bouclier Royal, Prélèvem. Destin, Draco Météore, Vœu, Vent Arrière, et d'autres.
+  - Peau Féérique, Protéen, Déclic Tactique (Exagide change de forme), Délestage, Griffe Dure, Corps Maudit, Cœur Noble.
+  - Veste de Combat, Bouton Fuite, Vulné-Assurance, Lumargile, Orbe Toxique, Roche Humide, Ceinture Pro ; un objet Choix bloque sur la première attaque.
+- **TestOdyssée** — Prototype de l'Arène Insecte, en trois salles : la Fourmilière (des colonnes de fourmis qu'on retourne avec des pots de phéromones), la Grande Toile (rosée qui glisse, leviers, et une araignée qui suit chacun de tes pas) et la Mue (le jour, la nuit, des fleurs-miroirs pour faire éclore les chrysalides).
+- **TestOdyssée** — Prototype de l'Arène Poison : un sas à quatre douches à prendre dans le bon ordre, puis un grand marais où chaque pas dans la vase coûte du souffle. Les lys le rendent, trois vannes changent le marais, et Grotadmorv laisse une traînée toxique.
+
 ## 5.31 — 10 novembre 2026
 - **TestOdyssée** — Donjon des Miroirs : dans la Galerie de Glace, le PC d'aide ne propose plus que de simplifier la salle. Plus d'indice ni de solution toute faite.
 

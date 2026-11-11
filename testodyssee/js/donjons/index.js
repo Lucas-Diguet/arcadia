@@ -11,5 +11,8 @@ import temple from './temple.js';
 import tombeau from './tombeau.js';
 import fonderie from './fonderie.js';
 import cristal from './cristal.js';
+import champions from './champions.js';
+import areneInsecte from './arene-insecte.js';
+import arenePoison from './arene-poison.js';
 
-export const DONJONS = [crypte, didier, miroirs, voies, pyramide, mine, train, temple, tombeau, fonderie, cristal];
+export const DONJONS = [crypte, didier, miroirs, voies, pyramide, mine, train, temple, tombeau, fonderie, cristal, champions, areneInsecte, arenePoison];
