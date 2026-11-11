@@ -1372,6 +1372,11 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   { const a = mk(461, ['knock-off']), d = mk(143, ['splash'], { item: 'leftovers' }); const b = combat([a], [d]); b.playerAction({ type: 'move', idx: 0 }); ok(d.item === null, 'combat du labo : Sabotage fait tomber l\'objet'); b.end('win'); ok(d.item === 'leftovers', 'combat du labo : l\'objet revient après le combat'); }
   // Demi-Tour du joueur : il choisit qui le remplace, le tour continue
   { const a = mk(212, ['u-turn']), a2 = mk(143, ['splash']), d = mk(143, ['tackle']); const b = combat([a, a2], [d]); const ev = b.playerAction({ type: 'move', idx: 0 }); ok(b.state === 'switch' && ev.some((e) => e.t === 'switch-prompt'), 'combat du labo : Demi-Tour demande le remplaçant'); b.playerSwitch(1); ok(b.state === 'choose' && b.sides[0].active === 1, 'combat du labo : le remplaçant entre et le tour finit'); }
+  // Demi-Tour qui met K.O. : le joueur change d'abord, puis l'adversaire envoie le suivant
+  { const a = mk(212, ['u-turn']), a2 = mk(143, ['splash']), d = mk(143, ['splash']), d2 = mk(143, ['splash']); d.hp = 1; const b = combat([a, a2], [d, d2]);
+    const ev = b.playerAction({ type: 'move', idx: 0 }); ok(b.state === 'switch' && b.sides[1].active === 0 && !ev.some((e) => e.t === 'send' && e.side === 1), 'combat du labo : Demi-Tour qui met K.O. : l\'adversaire attend que le joueur ait changé');
+    const ev2 = b.playerSwitch(1), i0 = ev2.findIndex((e) => e.t === 'send' && e.side === 0), i1 = ev2.findIndex((e) => e.t === 'send' && e.side === 1);
+    ok(b.state === 'choose' && i0 >= 0 && i1 > i0 && b.sides[1].active === 1, 'combat du labo : Demi-Tour qui met K.O. : le joueur change, puis l\'adversaire envoie le suivant'); }
   // Demi-Tour de l'adversaire : il change tout seul
   { const a = mk(143, ['splash']), d = mk(212, ['u-turn']), d2 = mk(143, ['splash']); const b = combat([a], [d, d2]); b.playerAction({ type: 'move', idx: 0 }); ok(b.sides[1].active === 1, 'combat du labo : l\'adversaire change après son Demi-Tour'); }
   // Piège de Roc : blesse en arrivant

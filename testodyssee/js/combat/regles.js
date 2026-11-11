@@ -186,12 +186,15 @@ export function installerRegles() {
         if (isFainted(this.act(x.i))) continue;
         if (x.a.type === 'recharge') { this.say(`${this.Nm(x.i)} doit se recharger !`); this.sides[x.i].v.recharge = false; continue; }
         this.useMove(x.i, x.a, x.first); this._agi?.add(x.i);
-        const stop = this.checkFaints();
+        // Demi-Tour qui met K.O. : le joueur change d'abord, l'adversaire remplace son Pokémon ensuite
+        this._retenir = this._pivotJoueur && !isFainted(this.me) && banc(this, 0) >= 0;
+        let stop;
+        try { stop = this.checkFaints(); } finally { this._retenir = false; }
         if (this.state === 'over') return true;
         if (this._pivotJoueur) {
           this._pivotJoueur = false;
           if (!isFainted(this.me) && banc(this, 0) >= 0) {
-            this._suite = stop ? [] : movers.slice(n + 1); this._pivot = true;
+            this._suite = stop || this._remplacant != null ? [] : movers.slice(n + 1); this._pivot = true;
             this.state = 'switch'; this.ev.push({ t: 'switch-prompt' });
             return true;
           }
@@ -209,6 +212,7 @@ export function installerRegles() {
       if (this.state !== 'switch') return [];
       this.ev = []; this._pivot = false;
       this.doSwitch(0, idx, false);
+      if (this._remplacant != null) { const k = this._remplacant; this._remplacant = null; this.doSwitch(1, k, true); }
       this.state = 'choose';
       if (this._koRoc) { this._koRoc = false; this.checkFaints(); }
       const suite = this._suite || []; this._suite = null;
@@ -401,6 +405,7 @@ export function installerRegles() {
     },
 
     doSwitch(i, idx, afterFaint, trigger = true) {
+      if (this._retenir && i === 1 && afterFaint) { this._remplacant = idx; return; }
       const out = this.act(i);
       if (out) formeDeBase(out);
       orig.doSwitch.call(this, i, idx, afterFaint, trigger);

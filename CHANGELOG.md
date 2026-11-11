@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 5.33 — 11 novembre 2026
+- **TestOdyssée** — Demi-Tour qui met K.O. : tu choisis d'abord ton remplaçant, puis l'adversaire envoie son Pokémon suivant, comme dans les jeux.
+
 ## 5.32 — 11 novembre 2026
 - **TestOdyssée** — Nouvelle Place des Champions : les 23 champions alignés dans l'ordre des arènes, puis le Conseil 4 et le Maître. On parle à un champion pour l'affronter, tout le monde au niveau 100, et on est soigné après chaque combat. L'organisatrice prête l'équipe « fin de jeu » au niveau 100 ou celle d'un champion. Neuf équipes sont prêtes (Combat, Ténèbres, Vol, Spectre, Sol, Fée, Acier, Dragon, Eau).
 - **TestOdyssée** — Les combats du labo connaissent de nouvelles attaques, de nouveaux talents et de nouveaux objets.
