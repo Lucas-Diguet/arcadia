@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 5.36 — 11 novembre 2026
+- **TestOdyssée** — Le Résumé d'un Pokémon montre son objet tenu, sous son talent.
+- **TestOdyssée** — En combat, la touche M arme la Méga-Évolution aussi sur un clavier AZERTY (Tab marche toujours).
+- **TestOdyssée** — Place des Champions : l'Amphinobi de la championne Eau lance Hydrocanon à la place de Nœud Herbe.
+
 ## 5.35 — 11 novembre 2026
 - **TestOdyssée** — En combat, les boutons se cliquent enfin à la souris : les attaques, la Méga-Évolution et Retour.
 

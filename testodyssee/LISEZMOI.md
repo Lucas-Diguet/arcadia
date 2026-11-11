@@ -403,6 +403,12 @@ Les formes de combat (Protéen, Forme Assaut) sont des espèces cachées (`forme
 Méga : l'image reste celle de l'espèce (`visuel`). Les changements de Pokémon en plein tour ne jouent que dans le combat
 ordinaire (pas dans les duels entre joueurs ni les combats à plusieurs). Tests : `tools/test-testodyssee.mjs`.
 
+### Ajouts à l'interface
+
+`js/resume.js` : l'objet tenu dans le Résumé d'un Pokémon (ligne ajoutée sous le talent, sans toucher à l'écran
+d'Odyssée), et la lettre M pour armer la Méga-Évolution quelle que soit la disposition du clavier (Odyssée lit la
+touche physique, celle d'un clavier QWERTY). Dans `testodyssee.css`, les boutons du bandeau de combat se cliquent.
+
 ### L'IA des dresseurs sérieux
 
 `js/combat/ia.js`, branché par `installerContenu` : tout dresseur du labo marqué `ai: 'smart'` (champions, dresseurs

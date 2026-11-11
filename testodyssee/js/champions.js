@@ -89,7 +89,7 @@ const EAU = [
   P(279, 'damp-rock', 'drizzle', 'Assuré', EV(252, 0, 0, 0, 252, 0), ['u-turn', 'scald', 'roost', 'hydro-pump'], { role: 'climat' }),
   P(260, 'swampertite', 'torrent', 'Jovial', EV(0, 252, 0, 0, 0, 252), ['waterfall', 'earthquake', 'ice-punch', 'superpower']),
   P(230, 'choice-specs', 'swift-swim', 'Modeste', EV(0, 0, 0, 252, 0, 252), ['hydro-pump', 'surf', 'draco-meteor', 'ice-beam']),
-  P(658, 'expert-belt', 'protean', 'Pressé', EV(0, 0, 0, 252, 0, 252), ['ice-beam', 'grass-knot', 'u-turn', 'gunk-shot']),
+  P(658, 'expert-belt', 'protean', 'Pressé', EV(0, 0, 0, 252, 0, 252), ['ice-beam', 'hydro-pump', 'u-turn', 'gunk-shot']),
   P(594, 'leftovers', 'regenerator', 'Assuré', EV(40, 0, 216, 0, 252, 0), ['scald', 'toxic', 'wish', 'protect']),
   P(184, 'choice-band', 'huge-power', 'Rigide', EV(0, 252, 0, 0, 0, 252), ['waterfall', 'play-rough', 'aqua-jet', 'superpower']),
 ];

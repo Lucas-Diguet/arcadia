@@ -18,6 +18,7 @@ import { Ile } from './ile/jeu.js';
 import { installerContenu, DECOR } from './contenu.js';
 import { brancherObjets } from './objets.js';
 import { brancherRendu } from './rendu.js';
+import { brancherResume } from './resume.js';
 import { ASSETS, loadAll } from '../../odyssee/js/assets.js';
 
 installerContenu(ASSETS);
@@ -51,6 +52,7 @@ async function boot() {
   setArt({ kits: art.kits, sols: art.sols, sol32: art.sol32, hgss: art.hgss, relief: art.relief, pack: art.pack });
   const view = new WorldView(renderer, art.chars, { sprites: art.sprites, dens: art.dens, suiveurs: art.suiveurs, batiments: art.batiments });
   const game = new TestGame({ view, ui, input, sound, world });
+  brancherResume(game, ASSETS);
   const donjons = game.donjons = new Donjons(game, DONJONS, H);
   game.ile = new Ile(game);
   const lieux = listerLieux(world, DONJONS);
