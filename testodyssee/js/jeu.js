@@ -84,7 +84,9 @@ export class TestGame extends Game {
   setTile(x, y, v) { super.setTile(x, y, v); if (v === T.BOULDER) { this.rv?.rocherPose(x, y); this.donjons?.rocherTemple?.(x, y); this.donjons?.rocherArene?.(x, y); } }
   warp(to, sfx) { (this.rv ||= new RoutesVictoire(this)).arrivee(to); this.donjons?.remiseTemple?.(to); return super.warp(to, sfx); }
   /** dans les donjons du labo, les capacités de terrain servent sans attendre les badges */
-  canField(k) { return this.donjons?.dansUnDonjon?.() && k !== 'vol' ? this.hasField(k) : super.canField(k); }
+  /** le Talisman des Éléments (Temple des Éléments) : Coupe, Force, Éclate-Roc et Surf, sans CS ni badge */
+  hasField(k) { return (['coupe', 'force', 'eclate', 'surf'].includes(k) && !!this.state?.bag?.['talisman-elements']) || super.hasField(k); }
+  canField(k) { if (k !== 'vol' && ['coupe', 'force', 'eclate', 'surf'].includes(k) && this.state?.bag?.['talisman-elements']) return true; return this.donjons?.dansUnDonjon?.() && k !== 'vol' ? this.hasField(k) : super.canField(k); }
   rvApprendre(cle) { return (this.rv ||= new RoutesVictoire(this)).apprendre(cle); }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
   async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }

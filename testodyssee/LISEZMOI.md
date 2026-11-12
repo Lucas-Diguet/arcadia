@@ -350,7 +350,12 @@ lettre]` ramène devant cette porte par sa sortie `D`.
   après sa défaite (`reste` : ce qu'il dit alors). Chacun choisit (`choixStarter`) ; quand tous les présents ont choisi,
   l'hôte attribue les choix uniques et départage deux joueurs qui veulent la même par un duel entre joueurs, Pokémon
   soignés (`resoudreStarters`, `starterDuelFin` : le perdant repose sa Poké Ball et ne peut plus la reprendre). À trois
-  sur la même, le gagnant affronte le troisième.
+  sur la même, le gagnant affronte le troisième. Dans la Salle des Dalles, un moine (`talisman` : `talismanTemple`)
+  donne à chacun le Talisman des Éléments (`TALISMAN`, rangé dans les Objets rares) : tant qu'on l'a, Coupe, Force,
+  Éclate-Roc et Surf marchent sans CS ni badge (`hasField`, `canField` de `js/jeu.js`), parce qu'Odyssée ne les donne
+  pas si tôt. Le Gardien le reprend juste après sa défaite, et on le perd en sortant du temple (`tickTalisman`). Une
+  fois la récompense prise, parler au Gardien ramène au Grand Hall (`retour` du PNJ, `resteGardien`), à trois comme en
+  solo.
 - En solo : les mêmes neuf salles, reliées entre elles (voir plus bas), un téléporteur dans la Salle des Clés ramène aux
   trois portes ; le Gardien a six Pokémon (Nidoqueen et Nidoking 60, Ronflex 63, Simiabraz, Torterra et Pingoléon 65 à
   trois blocs chacun) ; derrière lui, trois CT à usage unique, dont on ne prend qu'une (`cts`, `ctsChoix` : `fin` pour
@@ -364,23 +369,31 @@ Blocs de vie : un Pokémon de dresseur avec `blocs: n` a sa barre découpée en 
 tomber plus d'un (`combat/regles.js`, affichage dans `resume.js`). Équipe d'un PNJ : `[espèce, niveau, { blocs,
 attend }]` pour un combat de groupe, `[espèce, niveau, objet, attaques, talent, { blocs }]` pour un combat ordinaire.
 
-Chaque chemin a trois grandes salles (60 × 44 cases, `F1`… `P3` dans `js/donjons/temple-chemins.js`), dessinées par
+Le Feu et la Plante ont trois grandes salles (60 × 44 cases), l'Eau quatre (80 × 60, puis la Mer Intérieure, 56 × 46),
+`F1`… `P3` et `E1`… `E4` dans `js/donjons/temple-chemins.js`, dessinées par
 `python3 tools/temple-chemins.py [graine]` (ne pas modifier le fichier à la main), les mêmes à trois et en solo :
 - Feu : une grotte de lave. Deux barrières `+` et `-` coupent le chemin ; chacune se voit avant son interrupteur (`*`,
   `^`), posé à moins de dix pas. Le rocher `B` qui va dessus est loin : il faut le pousser avec Force sur un long
   trajet à virages (l'outil cherche le trajet à rebours depuis l'interrupteur et garde un départ à 12 poussées au
-  moins). Rochers fissurés `m` (Éclate-Roc), lacs de lave et ponts `=`.
-- Eau : un labyrinthe de douze bassins. Des rivières (`<` `>` `(` `)` : courant vers la gauche, la droite, le haut, le
+  moins). Rochers fissurés `m` (Éclate-Roc), lacs de lave et ponts `=`. Dans la troisième salle, la clé est au bout
+  d'un tunnel loin de la sortie, derrière une troisième barrière `s` et son interrupteur `i`, avec son propre rocher.
+- Eau : un labyrinthe de vingt bassins (8 à 12 rivières à prendre au moins). Des rivières (`<` `>` `(` `)` : courant vers la gauche, la droite, le haut, le
   bas) emportent le surfeur d'un bassin à l'autre, dans un seul sens (`courant`, chevrons dessinés par
   `dessinerCourants`) ; beaucoup ramènent en arrière. L'outil garde le labyrinthe le plus long où aucun bassin n'est un
-  piège : de partout, la sortie reste atteignable.
+  piège : de partout, la sortie reste atteignable. La quatrième salle, la Mer Intérieure, est une grande étendue d'eau
+  (`E` : eau à remous, `dessinerRemous`), avec la terre de l'entrée en bas, celle de la sortie en haut d'un côté et un
+  îlot de 3 × 3 au centre, où est la clé. Des courants d'une case de large, qui tournent plusieurs fois, relient de
+  petites anses d'eau calme : il faut prendre les bons dans l'ordre pour atteindre l'îlot (4 courants au moins), puis
+  la sortie (3 au moins) ; des leurres ramènent en arrière, et un courant ramène de la sortie au départ.
 - Plante : un labyrinthe de haies (8 × 6 cellules). Trois passages du chemin sont fermés par des ronces (`t` `d` `g`) ;
   chacune vient d'un arbuste (`r` `y` `q`) aux fleurs de la même couleur, placé tout près derrière la haie (on le voit
   à l'écran depuis les ronces) mais qu'on n'atteint que par un détour. Couper l'arbuste fait tomber ses ronces
-  (`couperArbuste`, `syncVegetal`).
+  (`couperArbuste`, `syncVegetal`). Dans chaque salle, 5 à 10 vieux petits arbres `C` (Coupe) barrent des passages.
+  Dans la troisième salle, la clé est dans le cul-de-sac le plus loin de la sortie, derrière des ronces bleues `n` dont
+  l'arbuste `v` demande un grand détour. L'outil vérifie qu'on peut couper les arbustes dans l'ordre.
 Dans chaque salle, deux recoins : `x` dans la première zone (avant le premier obstacle), `z` dans la dernière. À trois,
 ce sont des culs-de-sac vides. Objets : `I` Rappel Max, `J` Guérison, `O` Super Bonbon, `P` PP Plus, `V` trois Hyper
-Balls ; `K` la clé (troisième salle). En revenant dans une salle, les rochers reprennent leur place (`remiseTemple`) ;
+Balls ; `K` la clé (dernière salle du chemin). En revenant dans une salle, les rochers reprennent leur place (`remiseTemple`) ;
 barrières abaissées et arbustes coupés le restent. Une sortie `D` sous l'arrivée ramène à la salle d'avant. Chaque
 salle a sa roche (`biome`) et ses Pokémon sauvages (`SAUVAGES_TEMPLE` : niveaux 20 à 28 à trois, 50 à 58 en solo). Pas
 de dresseurs dans les chemins pour l'instant.
@@ -397,7 +410,7 @@ pas arrivé derrière elles (`TS:porte:<chemin>`). Chaque salle du solo peut avo
 - verrous : les ronces géantes du Jardin Abandonné brûlent avec la Braise, le torrent de la Grotte des Courants se
   boit avec la Graine, le mur de flammes des Gradins de Lave s'éteint avec l'eau de la Source.
 L'ordre : Plante 1, Eau 1 et 2, Feu 1 et 2 (Braise, Jarre), retour à la Plante 1, Plante 2 (Graine) et 3 (clé), Eau 2
-et 3 (clé, eau), Feu 2 et 3 (clé), Salle des Clés. Tout est gardé dans les drapeaux `TS:…` de la partie, remis à zéro
+à 4 (eau, clé), Feu 2 et 3 (clé), Salle des Clés. Tout est gardé dans les drapeaux `TS:…` de la partie, remis à zéro
 quand on marche sur la dalle d'or (`resetSolo`, `syncSolo`). Les tests résolvent chaque salle (rochers, rivières,
 ronces) et jouent le solo en abrégé : on finit, et pas sans la Braise, la Graine, la jarre ou l'eau.
 

@@ -5,7 +5,7 @@
 // L'avancée passe par les actions d'etat.js (« maj », « choixStarter », « starterDuelFin ») : l'hôte fait autorité.
 import { T, walkable } from '../../../odyssee/js/world/tiles.js';
 import { fermer, ouvrir } from './plan.js';
-import { dessinerCourants } from '../rendu.js';
+import { dessinerCourants, dessinerRemous } from '../rendu.js';
 import { ASSETS } from '../../../odyssee/js/assets.js';
 import { el, esc } from '../../../odyssee/js/ui/ui.js';
 import { SPECIES } from '../../../odyssee/js/data/species.js';
@@ -20,6 +20,7 @@ const cle = (x, y) => x + ',' + y;
 const estTemple = (d) => d.id === 'temple';
 const TYPES = new Set(['grandePorte', 'porteSolo', 'porteCles', 'starter', 'ct', 'porteHall', 'arbuste', 'ronces']);
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+export const TALISMAN = 'talisman-elements';
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
 // le solo : objets du Sac, décors des passages et des verrous
 const SAC = { braise: 'braise-eternelle', graine: 'graine-geante', jarre: 'jarre-vide', eau: 'jarre-pleine' };
@@ -41,7 +42,7 @@ export const Temple = {
       const o = d.objets[c];
       for (const [x, y] of l) {
         if (o.cascade) { (m.cascades ||= new Set()).add(cle(x, y)); m.deco.push({ k: 'cascade', x, y }); }
-        if (o.type === 'tuile') m.set(x, y, T[o.t]);
+        if (o.type === 'tuile') { m.set(x, y, T[o.t]); if (o.t === 'WHIRL') (m.remous ||= []).push([x, y]); }
         if (o.type === 'courant') { m.set(x, y, T.WATER); (m.courants ||= new Map()).set(cle(x, y), o.dir); }
         if (TYPES.has(o.type)) m.object(x, y, { use: () => this.objetTemple(d, m, c, x, y) });
       }
@@ -243,6 +244,41 @@ export const Temple = {
     if (n >= d.badgesSolo) { await ui.say(`${d.badgesSolo} badges... Tu es digne de l'épreuve. Entre, et que les éléments te soient cléments.`, sp); return this.versSalle(d, 'eo'); }
     await ui.say(['Halte. Derrière cette porte, l\'épreuve ne pardonne pas.', `Reviens me voir quand tu auras ${d.badgesSolo} badges.`], sp);
     if (await ui.yesNo(`Labo : tu as ${n} badge${n > 1 ? 's' : ''}. Entrer quand même pour tester le temple en solo ?`)) return this.versSalle(d, 'eo');
+  },
+
+  /* ---------------- le Talisman des Éléments (temple à trois) ---------------- */
+  /** le moine de la Salle des Dalles prête le talisman : Coupe, Force, Éclate-Roc et Surf, sans CS ni badge */
+  async talismanTemple() {
+    const g = this.game, ui = g.ui, sp = { speaker: 'Moine' };
+    if (g.state.bag[TALISMAN]) { await ui.say(['Garde bien le Talisman des Éléments.', 'Ses trois pierres tranchent les arbustes, poussent les rochers, brisent la roche et portent sur l\'eau.'], sp); return; }
+    await ui.say(['Les chemins du temple ne s\'ouvrent pas à mains nues.', 'Prends ce Talisman des Éléments. Grâce à lui, tes Pokémon pourront couper les arbustes, pousser les rochers, briser la roche fissurée et surfer, même sans les CS ni les badges.', 'Tu me le rendras... enfin, tu le rendras au Gardien, quand tu l\'auras vaincu.'], sp);
+    g.give(TALISMAN, 1); g.sound.sfx('item');
+    await ui.say(`${g.state.name} reçoit le Talisman des Éléments !`);
+  },
+  /** le talisman se rend au Gardien après sa défaite, et se perd si l'on quitte le temple */
+  tickTalisman(d) {
+    const g = this.game, st = g.state; if (!st?.bag?.[TALISMAN] || this.talismanRendu || g.busy) return;
+    const id = g.mapObj?.id || '', dehors = id !== d.carte && !id.startsWith(d.carte + ':');
+    const g5 = d.salles.find((q) => q.table === 'starters'), ici = g.mapObj?.id === g5.carte;
+    if (dehors) { delete st.bag[TALISMAN]; g.ui.toast?.('Le Talisman des Éléments retourne au temple.', 2200); return; }
+    if (ici && this.vaincu(d, 'M')) {
+      this.talismanRendu = true;
+      this.taches.push(async () => {
+        try { delete st.bag[TALISMAN]; g.sound.sfx('item'); await g.ui.say(['Le Gardien tend la main.', `${st.name} rend le Talisman des Éléments.`], { speaker: 'Gardien des Éléments' }); }
+        finally { this.talismanRendu = false; }
+      });
+    }
+  },
+  /** le Gardien battu : il invite à choisir sur la table ; une fois la récompense prise, il ramène au Grand Hall */
+  async resteGardien(d, k) {
+    const g = this.game, ui = g.ui, p = d.pnj[k], sp = { speaker: `${p.cls} ${p.nom}`.trim() };
+    const s = d.salles.find((q) => q.pnj?.includes(k)), D = this.dt(d, s.id);
+    const pris = s.table === 'starters' ? (D.attrib || {})[this.moi] != null : !!D[`ct:${this.moi}`];
+    if (!pris) { await ui.say(p.reste, sp); return; }
+    await ui.say(p.retour, sp);
+    const h = g.world.maps[d.salles[0].carte], [x, y] = h.donjon.plan.depart;
+    g.sound.sfx('heal');
+    await g.warp({ map: h.id, x, y: y - 1, dir: 'up' }, 'exit');
   },
 
   /* ---------------- chemin de l'Eau : les rivières ---------------- */
@@ -457,9 +493,11 @@ export const Temple = {
   tickTemple(dt) {
     const g = this.game, d = this.defs.get('temple'); if (!d) return;
     if (this.hote) { this.templeT = (this.templeT || 0) - dt; if (this.templeT <= 0) { this.templeT = 0.5; this.verifierStarters(d); } }
-    // les rivières du chemin de l'Eau
+    // les rivières du chemin de l'Eau, et les eaux tumultueuses de la Mer Intérieure
     const mc = g.state && g.mapObj?.courants ? g.mapObj : null;
     if (mc || g.view.__courants) dessinerCourants(g.view, mc, performance.now());
+    if ((mc?.remous || g.view.__remous)) dessinerRemous(g.view, mc?.remous ? mc : null, performance.now());
+    this.tickTalisman(d);
     // la grande porte se referme derrière celui qui l'a passée
     if (this.grandeOuverte && g.mapObj?.id !== this.grandeOuverte) { const m = g.world.maps[this.grandeOuverte]; if (m) this.grandePorte(d, m, false); }
   },

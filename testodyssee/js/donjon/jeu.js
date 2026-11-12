@@ -84,7 +84,7 @@ export class Donjons {
           if (sr) return !e.salles[sr.id].faite;
           return p.boss || p.raid ? !e.fini : !battu(e, d, k);
         },
-        talk: async () => (p.reste && this.vaincu(d, k) ? this.game.ui.say(p.reste, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.moine ? this.moineTemple(d) : p.champion ? this.champion(d, k) : p.organisatrice ? this.organisatrice(d) : p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.arbitre ? this.arbitre(d, k) : p.duo ? this.duo(d, k) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid || p.groupe ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
+        talk: async () => (p.reste && this.vaincu(d, k) ? this.resteGardien(d, k) : p.talisman ? this.talismanTemple(d) : p.moine ? this.moineTemple(d) : p.champion ? this.champion(d, k) : p.organisatrice ? this.organisatrice(d) : p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.arbitre ? this.arbitre(d, k) : p.duo ? this.duo(d, k) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid || p.groupe ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
       });
     }
   }

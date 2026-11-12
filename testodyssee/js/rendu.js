@@ -346,3 +346,34 @@ export function dessinerCourants(view, m, t) {
   const ph = Math.floor(t / 200) % 3;
   view.__courants.children.forEach((c, i) => { c.visible = i === ph; });
 }
+
+/** les eaux tumultueuses (tourbillons infranchissables) de la Mer Intérieure : des remous qui tournent par-dessus
+ * l'eau (m absent : efface) */
+export function dessinerRemous(view, m, t) {
+  if (view.__remous && (view.__remousRoot !== view.root || view.__remousMap !== m)) {
+    view.__remousRoot?.remove(view.__remous); view.__remous.traverse((o) => { o.geometry?.dispose(); o.material?.map?.dispose(); o.material?.dispose(); }); view.__remous = null;
+  }
+  if (!m?.remous || !view.root) return;
+  if (!view.__remous) {
+    const G = new THREE.Group();
+    for (let ph = 0; ph < 2; ph++) {
+      // une texture de remous : des arcs d'écume blanche sur un bleu sombre
+      const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d');
+      x.fillStyle = 'rgba(10,40,90,0.55)'; x.fillRect(0, 0, 32, 32);
+      x.strokeStyle = 'rgba(220,240,255,0.85)'; x.lineWidth = 2;
+      for (const [cx, cy, r0] of [[9, 10, 5], [24, 22, 6], [22, 6, 3], [7, 26, 3]]) { x.beginPath(); x.arc(cx, cy, r0, ph * 1.6, ph * 1.6 + 3.6); x.stroke(); }
+      const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+      const pos = [], uv = [];
+      for (const [px, py] of m.remous) {
+        pos.push(px, 0.04, py, px + 1, 0.04, py, px + 1, 0.04, py + 1, px, 0.04, py, px + 1, 0.04, py + 1, px, 0.04, py + 1);
+        uv.push(0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0);
+      }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+      me.renderOrder = 4; me.frustumCulled = false; G.add(me);
+    }
+    view.root.add(G); view.__remous = G; view.__remousRoot = view.root; view.__remousMap = m;
+  }
+  const ph = Math.floor(t / 450) % 2;
+  view.__remous.children.forEach((c, i) => { c.visible = i === ph; });
+}

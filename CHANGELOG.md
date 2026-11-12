@@ -1,5 +1,15 @@
 # Journal des versions — Arcadia
 
+## 5.38 — 12 novembre 2026
+- **TestOdyssée** — Temple à trois : dans la Salle des Dalles, un moine donne à chacun le Talisman des Éléments. Avec lui, Coupe, Force, Éclate-Roc et Surf marchent sans CS ni badge. Le Gardien le reprend après sa défaite, et on le perd en quittant le temple.
+- **TestOdyssée** — Temple : les clés sont plus loin de la sortie et mieux gardées.
+  - Feu : au bout d'un tunnel, derrière une troisième barrière avec son interrupteur et son rocher.
+  - Plante : dans le cul-de-sac le plus éloigné, derrière des ronces bleues dont l'arbuste demande un grand détour.
+  - Eau : sur l'îlot d'une nouvelle salle.
+- **TestOdyssée** — Temple, chemin de la Plante : de vieux petits arbres à couper barrent des passages dans chaque salle.
+- **TestOdyssée** — Temple, chemin de l'Eau : des salles plus grandes, avec vingt bassins et plus de rivières à prendre. Une quatrième salle, la Mer Intérieure : une grande étendue d'eau, un îlot au centre avec la clé, et des courants qui tournent. Il faut prendre les bons dans l'ordre pour atteindre l'îlot, puis la sortie ; d'autres ramènent en arrière.
+- **TestOdyssée** — Temple : une fois la récompense prise, parler au Gardien vous ramène au Grand Hall.
+
 ## 5.37 — 12 novembre 2026
 - **TestOdyssée** — Temple des Éléments : un Grand Hall à l'entrée. Des dresseurs s'y préparent, un vieil homme explique les deux épreuves, et deux portes y mènent.
   - À gauche, la Salle des Dalles et le temple à trois.

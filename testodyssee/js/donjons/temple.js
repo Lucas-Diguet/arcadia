@@ -21,7 +21,7 @@
 import { GameMap, rng } from '../../../odyssee/js/world/mapgen.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 import { TEMPLE } from '../formes.js';
-import { F1, F2, F3, E1, E2, E3, P1, P2, P3 } from './temple-chemins.js';
+import { F1, F2, F3, E1, E2, E3, E4, P1, P2, P3 } from './temple-chemins.js';
 
 const CHEMINS = { f: 'Feu', e: 'Eau', p: 'Plante' };
 
@@ -42,7 +42,7 @@ function exterieur() {
 // chemins : x et z sont deux recoins (rien à trois, des passages et des objets en solo) ; une sortie D sous l'arrivée
 // ramène à la salle d'avant
 const retour = (plan) => { const i = plan[plan.length - 1].indexOf('S'); return [...plan, '#'.repeat(i) + 'D' + '#'.repeat(plan[0].length - i - 1)]; };
-const [F1r, F2r, F3r, E1r, E2r, E3r, P1r, P2r, P3r] = [F1, F2, F3, E1, E2, E3, P1, P2, P3].map(retour);
+const [F1r, F2r, F3r, E1r, E2r, E3r, E4r, P1r, P2r, P3r] = [F1, F2, F3, E1, E2, E3, E4, P1, P2, P3].map(retour);
 
 // le Grand Hall : deux portes en haut (e : la Salle des Dalles, p : le temple en solo, gardé par le moine @),
 // le vieil homme ! près de l'entrée, des dresseurs qui se préparent
@@ -153,11 +153,16 @@ export default {
     '^': { type: 'bouton', sol: true, decor: 'interrupteur', ouvre: '-' },
     '+': { type: 'tuile', sol: true, t: 'BARRIER_R' },
     '-': { type: 'tuile', sol: true, t: 'BARRIER_R' },
+    // la clé de la 3e salle du Feu : derrière une troisième barrière (s), ouverte par son interrupteur (i)
+    i: { type: 'bouton', sol: true, decor: 'interrupteur', ouvre: 's' },
+    s: { type: 'tuile', sol: true, t: 'BARRIER_R' },
     // Eau : les rivières emportent le surfeur dans leur sens
     '<': { type: 'courant', sol: true, dir: 'left' },
     '>': { type: 'courant', sol: true, dir: 'right' },
     '(': { type: 'courant', sol: true, dir: 'up' },
     ')': { type: 'courant', sol: true, dir: 'down' },
+    // la 4e salle de l'Eau : des eaux tumultueuses, infranchissables
+    E: { type: 'tuile', sol: true, t: 'WHIRL' },
     // Plante : arbres, broussailles, herbes, fleurs, lianes ; un arbuste coupé fait tomber les ronces de sa couleur
     Y: { type: 'tuile', sol: true, t: 'TREE' },
     u: { type: 'tuile', sol: true, t: 'BUSH' },
@@ -167,9 +172,12 @@ export default {
     r: { type: 'arbuste', decor: 'arbuste_rouge', couleur: 'rouges', ouvre: 't' },
     y: { type: 'arbuste', decor: 'arbuste_jaune', couleur: 'jaunes', ouvre: 'd' },
     q: { type: 'arbuste', decor: 'arbuste_violet', couleur: 'violettes', ouvre: 'g' },
+    v: { type: 'arbuste', decor: 'arbuste_bleu', couleur: 'bleues', ouvre: 'n' },
+    C: { type: 'tuile', sol: true, t: 'CUT' },
     t: { type: 'ronces', decor: 'ronces_rouge', couleur: 'rouges' },
     d: { type: 'ronces', decor: 'ronces_jaune', couleur: 'jaunes' },
     g: { type: 'ronces', decor: 'ronces_violet', couleur: 'violettes' },
+    n: { type: 'ronces', decor: 'ronces_bleu', couleur: 'bleues' },
     // deux recoins par salle : rien à trois ; en solo, ce que dit `recoins` de la salle
     x: { type: 'recoin', sol: true },
     z: { type: 'recoin', sol: true },
@@ -199,6 +207,8 @@ export default {
         'Prépare-toi bien. Le feu, l\'eau et la plante ne pardonnent rien.'],
     },
     '@': { id: 'moine', sprite: 'pretre', dir: 'down', cls: '', nom: 'Moine', toujours: true, moine: true },
+    // le moine de la Salle des Dalles : il prête le Talisman des Éléments (Coupe, Force, Éclate-Roc, Surf)
+    '|': { id: 'moine-dalles', sprite: 'pretre', dir: 'right', cls: '', nom: 'Moine', toujours: true, talisman: true },
     $: H('hall-1', 'gamin', 'right', 'Gamin', 'Tom', ['On attend notre troisième équipier. Il est toujours en retard !', 'Moi, je prends la porte du Feu. J\'ai un Pokémon Eau, ça va être du gâteau.']),
     ':': H('hall-2', 'fillette', 'left', 'Fillette', 'Zoé', ['Il paraît qu\'au bout du chemin de l\'Eau, les rivières te ramènent au départ si tu te trompes.', 'Il faut bien regarder dans quel sens va le courant avant de se lancer.']),
     ';': H('hall-3', 'montagnard', 'down', 'Montagnard', 'Hervé', ['Dans le chemin du Feu, les barrières ne s\'ouvrent qu\'avec un rocher posé sur leur interrupteur.', 'Et le rocher n\'est jamais à côté ! J\'ai poussé pendant une heure.']),
@@ -211,6 +221,8 @@ export default {
       avant: ['Le feu, l\'eau et la plante vous ont menés jusqu\'ici.', 'Montrez-moi que vous savez les vaincre ensemble !'],
       apres: 'Vous avez dompté les trois éléments. La table est à vous : que chacun choisisse son compagnon.',
       reste: 'Félicitations pour avoir triomphé de cette épreuve. Vous pouvez à présent choisir une récompense sur la table derrière moi.',
+      // une fois la récompense prise
+      retour: 'Les éléments vous ont reconnus. Je vous ramène au Grand Hall.',
       // les trois singes ensemble ; Tauros n'arrive que quand ils sont tous K.O., avec cinq blocs de vie
       equipe: [...SINGES, [128, 45, { blocs: 5, attend: true }]],
     },
@@ -219,6 +231,7 @@ export default {
       defi: 'Seul, tu as traversé les trois éléments. Voyons si tu peux les vaincre tous à la fois !',
       perd: 'Tu les maîtrises tous. Ce qui est sur la table t\'appartient.',
       reste: 'Félicitations pour avoir triomphé de cette épreuve. Tu peux à présent choisir une récompense sur la table derrière moi.',
+      retour: 'Les éléments t\'ont reconnu. Je te ramène au Grand Hall.',
       // [espèce, niveau, objet, attaques, talent, { blocs }]
       equipe: [
         [31, 60, null, NIDO, 'sheer-force'],
@@ -240,7 +253,7 @@ export default {
       '#.............#',
       '#...o..o..o...#',
       '#.............#',
-      '#.............#',
+      '#|............#',
       '#######S#######',
       '#######D#######',
     ] },
@@ -251,11 +264,12 @@ export default {
     { id: 'gf3', nom: 'Cratère', type: 'libre', branche: 'groupe', voie: 'f', biome: 'magma', sauvages: 'f', cle: 'f', apres: ['gf2'], suivante: 'g4', plan: F3r },
     { id: 'ge1', nom: 'Bassin Profond', type: 'libre', branche: 'groupe', voie: 'e', biome: 'mer', sauvages: 'e', apres: ['g2'], plan: E1r },
     { id: 'ge2', nom: 'Grotte des Courants', type: 'libre', branche: 'groupe', voie: 'e', biome: 'mer', sauvages: 'e', apres: ['ge1'], plan: E2r },
-    { id: 'ge3', nom: 'Source', type: 'libre', branche: 'groupe', voie: 'e', biome: 'mer', sauvages: 'e', cle: 'e', apres: ['ge2'], suivante: 'g4', plan: E3r },
+    { id: 'ge3', nom: 'Source', type: 'libre', branche: 'groupe', voie: 'e', biome: 'mer', sauvages: 'e', apres: ['ge2'], plan: E3r },
+    { id: 'ge4', nom: 'Mer Intérieure', type: 'libre', branche: 'groupe', voie: 'e', biome: 'mer', sauvages: 'e', cle: 'e', apres: ['ge3'], suivante: 'g4', plan: E4r },
     { id: 'gp1', nom: 'Jardin Abandonné', type: 'libre', branche: 'groupe', voie: 'p', biome: 'terre', sauvages: 'p', apres: ['g2'], plan: P1r },
     { id: 'gp2', nom: 'Jungle Profonde', type: 'libre', branche: 'groupe', voie: 'p', biome: 'terre', sauvages: 'p', apres: ['gp1'], plan: P2r },
     { id: 'gp3', nom: 'Cœur de la Jungle', type: 'libre', branche: 'groupe', voie: 'p', biome: 'terre', sauvages: 'p', cle: 'p', apres: ['gp2'], suivante: 'g4', plan: P3r },
-    { id: 'g4', nom: 'Salle des Clés', type: 'libre', branche: 'groupe', ouvertPar: 'porte', apres: ['gf3', 'ge3', 'gp3'], plan: CLES(false) },
+    { id: 'g4', nom: 'Salle des Clés', type: 'libre', branche: 'groupe', ouvertPar: 'porte', apres: ['gf3', 'ge4', 'gp3'], plan: CLES(false) },
     { id: 'g5', nom: 'Salle du Gardien', type: 'groupe', branche: 'groupe', pnj: ['M'], apres: ['g4'], suivante: null, table: 'starters', plan: GARDIEN('#....[abc]....#', 'M') },
     // en solo : la dalle d'or, puis les mêmes salles reliées entre elles
     { id: 'eo', nom: 'Salle de la Dalle d\'Or', type: 'libre', suivante: null, retour: ['h0', 'p'], plan: [
@@ -282,8 +296,9 @@ export default {
     { id: 'se2', nom: 'Grotte des Courants', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', sauvages: 'es', suivante: 'se3', plan: E2r,
       verrou: { type: 'torrent', objet: 'graine' },
       recoins: { z: { type: 'passage', genre: 'lave', vers: ['sf1', 'x'] } } },
-    { id: 'se3', nom: 'Source', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', sauvages: 'es', cle: 'e', suivante: 's4', plan: E3r,
+    { id: 'se3', nom: 'Source', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', sauvages: 'es', suivante: 'se4', plan: E3r,
       recoins: { x: { type: 'passage', genre: 'eau', lien: 'bassin', maitre: true, vers: ['sp3', 'x'] }, z: { type: 'source' } } },
+    { id: 'se4', nom: 'Mer Intérieure', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', sauvages: 'es', cle: 'e', suivante: 's4', plan: E4r },
     { id: 'sf1', nom: 'Pentes du Volcan', type: 'libre', branche: 'solo', chemin: 'f', biome: 'magma', sauvages: 'fs', suivante: 'sf2', retour: ['s2', 'R'], plan: F1r,
       recoins: { x: { type: 'passage', genre: 'lave', vers: ['se2', 'z'] }, z: { type: 'objet', objet: 'braise' } } },
     { id: 'sf2', nom: 'Gradins de Lave', type: 'libre', branche: 'solo', chemin: 'f', biome: 'magma', sauvages: 'fs', suivante: 'sf3', plan: F2r,
