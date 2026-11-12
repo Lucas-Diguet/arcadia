@@ -1,5 +1,20 @@
 # Journal des versions — Arcadia
 
+## 5.37 — 12 novembre 2026
+- **TestOdyssée** — Temple des Éléments : un Grand Hall à l'entrée. Des dresseurs s'y préparent, un vieil homme explique les deux épreuves, et deux portes y mènent.
+  - À gauche, la Salle des Dalles et le temple à trois.
+  - À droite, un moine ne laisse passer que les dresseurs à 10 badges, vers la dalle d'or et le temple en solo. La dalle d'or ne demande plus de Pokémon niveau 40.
+- **TestOdyssée** — Temple à trois : les trois chemins sont refaits.
+  - Feu : on voit la barrière avant son interrupteur, et le rocher à poser dessus est loin. Il faut le pousser sur un long trajet, avec des virages.
+  - Eau : un labyrinthe de bassins et de rivières. Le courant t'emporte dans un seul sens, et beaucoup de rivières ramènent en arrière.
+  - Plante : un labyrinthe de haies. Des ronces ferment le passage ; elles tombent quand on coupe l'arbuste aux fleurs de la même couleur, visible tout près mais qu'il faut contourner pour atteindre.
+  - On peut revenir à la salle d'avant.
+- **TestOdyssée** — Temple à trois, le Gardien : ses trois singes sont niveau 30, et il n'envoie son dernier Pokémon, un Tauros niveau 45 à cinq blocs de vie, que quand les trois sont K.O. Il reste dans la salle après sa défaite et vous invite à choisir sur la table.
+- **TestOdyssée** — Temple à trois : la porte de la Salle des Clés ne s'ouvre qu'avec les trois clés, et le passage derrière elle s'affiche bien une fois ouverte.
+- **TestOdyssée** — Temple en solo : les trois chemins se mêlent. On entre par la Plante ; un point d'eau, un tunnel de lave et une liane font passer d'un chemin à l'autre, et ce qu'on trouve dans l'un ouvre la route dans l'autre (une braise, une graine, une jarre à remplir à la Source).
+- **TestOdyssée** — Temple en solo, le Gardien : Nidoqueen, Nidoking, Ronflex, puis Simiabraz, Torterra et Pingoléon, trois blocs de vie chacun.
+- **TestOdyssée** — Arènes Insecte et Poison : les pots de phéromones, les leviers, les fleurs-miroirs et les vannes changent bien le décor sous tes yeux.
+
 ## 5.36 — 11 novembre 2026
 - **TestOdyssée** — Le Résumé d'un Pokémon montre son objet tenu, sous son talent.
 - **TestOdyssée** — En combat, la touche M arme la Méga-Évolution aussi sur un clavier AZERTY (Tab marche toujours).

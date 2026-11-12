@@ -1,5 +1,5 @@
 // testodyssee/js/resume.js — petits ajouts du labo à l'interface d'Odyssée, sans toucher à ses fichiers :
-// l'objet tenu dans le Résumé d'un Pokémon, et la touche M (quelle que soit la disposition du clavier) pour armer la
+// l'objet tenu dans le Résumé d'un Pokémon, la barre de vie à blocs en combat, et la touche M (quelle que soit la disposition du clavier) pour armer la
 // Méga-Évolution dans le menu des attaques.
 import { SPECIES } from '../../odyssee/js/data/species.js';
 import { getAbility } from '../../odyssee/js/data/abilities.js';
@@ -30,6 +30,22 @@ export function brancherResume(game, ASSETS) {
   };
   let prevu = false;
   new MutationObserver(() => { if (prevu) return; prevu = true; requestAnimationFrame(() => { prevu = false; maj(); }); }).observe(document.body, { childList: true, subtree: true });
+
+  // barre de vie à blocs (m.blocs, combat/regles.js) : la barre de l'adversaire est découpée, des pastilles comptent les blocs
+  setInterval(() => {
+    const hud = document.querySelector('.battle .bhud.foe'); if (!hud) return;
+    const b = game.bv?.battle, foe = b && (b.foe || b.sides?.[1]?.party?.[b.sides[1].active]), n = foe?.blocs > 1 ? foe.blocs : 0;
+    const bar = hud.querySelector('.bh-hp i'); let cpt = hud.querySelector('.raid-blocs.labo');
+    if (!n || !bar) { cpt?.remove(); hud.querySelectorAll('.raid-sep.labo').forEach((q) => q.remove()); return; }
+    if (hud.querySelectorAll('.raid-sep.labo').length !== n - 1) {
+      hud.querySelectorAll('.raid-sep.labo').forEach((q) => q.remove());
+      for (let k = 1; k < n; k++) { const s = document.createElement('span'); s.className = 'raid-sep labo'; s.style.left = (k * 100 / n) + '%'; bar.appendChild(s); }
+    }
+    if (!cpt) { cpt = document.createElement('div'); cpt.className = 'raid-blocs labo'; hud.appendChild(cpt); }
+    const M = foe.stats[0]; let r = 0; while (r < n && foe.hp > Math.round(r * M / n)) r++;
+    const html = Array.from({ length: n }, (_, k) => `<b class="${k < r ? 'on' : ''}"></b>`).join('');
+    if (cpt.innerHTML !== html) cpt.innerHTML = html;
+  }, 150);
 
   // M arme la Méga-Évolution : Odyssée lit la touche physique (le M d'un clavier QWERTY), on accepte aussi la lettre M
   // d'un clavier AZERTY ou autre

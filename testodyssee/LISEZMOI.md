@@ -332,40 +332,74 @@ la locomotive ; au terminus sans victoire, tout le monde se retrouve sur le quai
 
 ### Le Temple des Éléments
 
-`js/donjons/temple.js` (salles), `js/donjon/temple.js` (mécaniques), à faire deux fois avec les mêmes salles. Salle des
-Dalles commune : trois joueurs sur les trois dalles ouvrent la petite porte (le temple à trois, niveaux 20 à 30) ; un
-joueur qui a un Pokémon au niveau 40 sur la dalle d'or ouvre la grande porte pour lui seul (`grandePorte`, refermée
-dès qu'il l'a passée : le temple en solo, niveaux 50 à 60). Chaque salle a sa `branche` (`groupe` ou `solo`) ; l'encadré
-ne montre que celles de la branche où l'on est.
+`js/donjons/temple.js` (salles), `js/donjon/temple.js` (mécaniques) : deux donjons derrière un même hall.
+
+Le Grand Hall (`h0`) : des dresseurs qui se préparent (ils parlent, on ne les combat pas), un vieil homme qui explique
+le temple, et deux portes (`porteHall`). À gauche, la Salle des Dalles (`e1`) : trois joueurs sur les trois dalles
+ouvrent la petite porte, le temple à trois (niveaux 20 à 30). À droite, le moine (`moineTemple`) ne laisse passer qu'avec
+10 badges (`badgesSolo` ; dans le labo, il propose de passer quand même pour tester) : la Salle de la Dalle d'Or (`eo`)
+et sa grande porte (`grandePorte`, refermée derrière soi), le temple en solo (niveaux 50 à 65). Chaque salle a sa
+`branche` (`groupe` ou `solo`) ; l'encadré ne montre que celles de la branche où l'on est. Une salle `retour: [salle,
+lettre]` ramène devant cette porte par sa sortie `D`.
 
 - À trois : Salle des Trois Portes (`voies`, une personne par porte), un chemin par joueur, une clé au bout
   (`cle:<joueur>` dans la salle du chemin), Salle des Clés (porte aux trois gemmes, `ins:f`, `ins:e`, `ins:p`, puis
-  `porte`), Gardien à trois contre trois (salle `groupe`), et la table : trois Poké Balls. Chacun choisit
-  (`choixStarter`) ; quand tous les présents ont choisi, l'hôte attribue les choix uniques et départage deux joueurs
-  qui veulent la même par un duel entre joueurs, Pokémon soignés (`resoudreStarters`, `starterDuelFin` : le perdant
-  repose sa Poké Ball et ne peut plus la reprendre). À trois sur la même, le gagnant affronte le troisième.
-- En solo : mêmes salles, portes sans limite (`porteSolo`), un téléporteur dans la Salle des Clés ramène aux trois
-  portes ; derrière le Gardien, trois CT à usage unique, dont on ne prend qu'une (`cts`, `ctsChoix` : `fin` pour
+  `porte` : il faut les trois clés, même en mode test, où la porte propose de retourner prendre un autre chemin),
+  Gardien à trois contre trois (salle `groupe` : ses trois singes niveau 30, puis Tauros niveau 45 à cinq blocs de vie,
+  marqué `attend` : il n'entre que quand les trois singes sont K.O.), et la table : trois Poké Balls. Le Gardien reste
+  après sa défaite (`reste` : ce qu'il dit alors). Chacun choisit (`choixStarter`) ; quand tous les présents ont choisi,
+  l'hôte attribue les choix uniques et départage deux joueurs qui veulent la même par un duel entre joueurs, Pokémon
+  soignés (`resoudreStarters`, `starterDuelFin` : le perdant repose sa Poké Ball et ne peut plus la reprendre). À trois
+  sur la même, le gagnant affronte le troisième.
+- En solo : les mêmes neuf salles, reliées entre elles (voir plus bas), un téléporteur dans la Salle des Clés ramène aux
+  trois portes ; le Gardien a six Pokémon (Nidoqueen et Nidoking 60, Ronflex 63, Simiabraz, Torterra et Pingoléon 65 à
+  trois blocs chacun) ; derrière lui, trois CT à usage unique, dont on ne prend qu'une (`cts`, `ctsChoix` : `fin` pour
   Éruption, Giclédo et Jaillissève ; `tot`, si le donjon arrive plus tôt dans le jeu, pour Surchauffe, Lame de Fond et
   Tempête Verte). Chacune ne s'apprend qu'à un starter du même type que l'attaque (`STARTERS` de `contenu.js` : ceux
   des jeux officiels, des formes du Temple avec leur nouveau type, et d'Odyssée, avec toute leur lignée), même s'il ne
   l'apprend pas d'habitude. Ces attaques, un Pokémon qui ne les apprend pas par niveau ne les apprend qu'avec cette CT
   (`refusCt` : toute autre CT les lui refuse).
-- En solo, les chemins ne sont pour l'instant que des couloirs à leur élément (lave, eau, herbes hautes : objets `tuile`).
 
-À trois, chaque chemin a trois grandes salles (60 × 44 cases, `F1`… `P3` dans `js/donjons/temple-chemins.js`), dessinées
-par `python3 tools/temple-chemins.py [graine]` (ne pas modifier le fichier à la main) : des cavités reliées par des
-galeries qui tournent, des boucles et des culs-de-sac avec un objet au fond, la sortie loin de l'arrivée. Le chemin
-principal est coupé par des obstacles, et le générateur vérifie que la sortie n'est pas atteignable sans eux :
-- Feu : un bouton (`*` ou `^`) sur lequel pousser un rocher `B` avec Force, qui abaisse les barrières `+` ou `-`
-  (`rocherTemple`), et un rocher fissuré `m` (Éclate-Roc). Lacs de lave traversés par des ponts `=`, coulées, roches.
-- Eau : des cascades `|` à remonter en surfant (Cascade) vers les cavités du haut, et des boutons.
-- Plante : de petits arbres `C` à couper, dans une jungle d'arbres `Y`, de broussailles `u`, d'herbes `h` et `"`, de
-  fleurs `f` et de lianes `w`.
-Objets : `I` Rappel Max, `J` Guérison, `O` Super Bonbon, `P` PP Plus, `V` trois Hyper Balls ; `K` la clé (troisième salle).
-En revenant dans une salle, rochers, pierres et arbres reprennent leur place (`remiseTemple`) : rien n'y reste coincé ;
-les barrières déjà abaissées le restent. Chaque salle a sa roche (`biome` : `magma`, `mer`, `terre`) et ses Pokémon
-sauvages (`SAUVAGES_TEMPLE`, niveaux 20 à 28). La capacité Cascade du labo (`js/cascade.js`) remonte les cascades en surfant.
+Blocs de vie : un Pokémon de dresseur avec `blocs: n` a sa barre découpée en n blocs, et un coup n'en fait jamais
+tomber plus d'un (`combat/regles.js`, affichage dans `resume.js`). Équipe d'un PNJ : `[espèce, niveau, { blocs,
+attend }]` pour un combat de groupe, `[espèce, niveau, objet, attaques, talent, { blocs }]` pour un combat ordinaire.
+
+Chaque chemin a trois grandes salles (60 × 44 cases, `F1`… `P3` dans `js/donjons/temple-chemins.js`), dessinées par
+`python3 tools/temple-chemins.py [graine]` (ne pas modifier le fichier à la main), les mêmes à trois et en solo :
+- Feu : une grotte de lave. Deux barrières `+` et `-` coupent le chemin ; chacune se voit avant son interrupteur (`*`,
+  `^`), posé à moins de dix pas. Le rocher `B` qui va dessus est loin : il faut le pousser avec Force sur un long
+  trajet à virages (l'outil cherche le trajet à rebours depuis l'interrupteur et garde un départ à 12 poussées au
+  moins). Rochers fissurés `m` (Éclate-Roc), lacs de lave et ponts `=`.
+- Eau : un labyrinthe de douze bassins. Des rivières (`<` `>` `(` `)` : courant vers la gauche, la droite, le haut, le
+  bas) emportent le surfeur d'un bassin à l'autre, dans un seul sens (`courant`, chevrons dessinés par
+  `dessinerCourants`) ; beaucoup ramènent en arrière. L'outil garde le labyrinthe le plus long où aucun bassin n'est un
+  piège : de partout, la sortie reste atteignable.
+- Plante : un labyrinthe de haies (8 × 6 cellules). Trois passages du chemin sont fermés par des ronces (`t` `d` `g`) ;
+  chacune vient d'un arbuste (`r` `y` `q`) aux fleurs de la même couleur, placé tout près derrière la haie (on le voit
+  à l'écran depuis les ronces) mais qu'on n'atteint que par un détour. Couper l'arbuste fait tomber ses ronces
+  (`couperArbuste`, `syncVegetal`).
+Dans chaque salle, deux recoins : `x` dans la première zone (avant le premier obstacle), `z` dans la dernière. À trois,
+ce sont des culs-de-sac vides. Objets : `I` Rappel Max, `J` Guérison, `O` Super Bonbon, `P` PP Plus, `V` trois Hyper
+Balls ; `K` la clé (troisième salle). En revenant dans une salle, les rochers reprennent leur place (`remiseTemple`) ;
+barrières abaissées et arbustes coupés le restent. Une sortie `D` sous l'arrivée ramène à la salle d'avant. Chaque
+salle a sa roche (`biome`) et ses Pokémon sauvages (`SAUVAGES_TEMPLE` : niveaux 20 à 28 à trois, 50 à 58 en solo). Pas
+de dresseurs dans les chemins pour l'instant.
+
+Le solo, chemins mêlés. On n'entre que par la Plante : les portes du Feu et de l'Eau sont scellées tant qu'on n'est
+pas arrivé derrière elles (`TS:porte:<chemin>`). Chaque salle du solo peut avoir un `verrou` devant sa sortie et des
+`recoins` :
+- passages (`type: 'passage'`, `genre` eau, lave ou liane, `vers: [salle, recoin]`) : le point d'eau du Jardin Abandonné
+  mène au Bassin Profond, le tunnel de lave de la Grotte des Courants aux Pentes du Volcan ; la liane du Cœur de la
+  Jungle descend aux Gradins de Lave et le bassin de la Source remonte au Cœur de la Jungle, deux raccourcis qui ne
+  s'ouvrent que d'un côté (`lien`, `maitre`) ;
+- objets (`type: 'objet'`, `tresors`) : la Braise Éternelle (Pentes du Volcan), la Jarre Vide (Gradins de Lave), la
+  Graine Géante (Jungle Profonde) ; la Source (`type: 'source'`) remplit la jarre ;
+- verrous : les ronces géantes du Jardin Abandonné brûlent avec la Braise, le torrent de la Grotte des Courants se
+  boit avec la Graine, le mur de flammes des Gradins de Lave s'éteint avec l'eau de la Source.
+L'ordre : Plante 1, Eau 1 et 2, Feu 1 et 2 (Braise, Jarre), retour à la Plante 1, Plante 2 (Graine) et 3 (clé), Eau 2
+et 3 (clé, eau), Feu 2 et 3 (clé), Salle des Clés. Tout est gardé dans les drapeaux `TS:…` de la partie, remis à zéro
+quand on marche sur la dalle d'or (`resetSolo`, `syncSolo`). Les tests résolvent chaque salle (rochers, rivières,
+ronces) et jouent le solo en abrégé : on finit, et pas sans la Braise, la Graine, la jarre ou l'eau.
 
 ### Les formes du Temple
 

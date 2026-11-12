@@ -282,7 +282,7 @@ export const Mecaniques = {
     const cle = `${d.id}|${salle.id}`, infos = { cls: p.cls, nom: p.nom, bs: p.bs || p.sprite };
     if (salle.type === 'groupe') {
       // combat de groupe : tous les joueurs présents contre autant de Pokémon du dresseur en jeu à la fois
-      const reserve = p.equipe.map(([sp, lvl]) => createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false }));
+      const reserve = p.equipe.map(([sp, lvl, extra]) => Object.assign(createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false }), extra || {}));
       const combat = new Groupe({ joueurs, dresseur: infos, reserve, places: p.places || (seulTest ? joueurs[0].places : joueurs.length) });
       this.raids[cle] = { raid: combat, ids: joueurs.map((j) => j.id), boss: infos, d: d.id, salle: salle.id, pnj: k };
       this.traiter(d.id, this.moi, { a: 'raid', salle: salle.id, etape: 'debut' });

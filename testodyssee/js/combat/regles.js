@@ -366,6 +366,17 @@ export function installerRegles() {
         if (v.clone <= 0) { v.clone = 0; this.say(`Le clone de ${this.nm(i)} disparaît !`); }
         return 0;
       }
+      // barre de vie à blocs (m.blocs) : un coup ne fait jamais tomber plus d'un bloc
+      const m = this.act(i);
+      if (delta < 0 && m?.blocs > 1 && m.hp > 0) {
+        const M = m.stats[0], n = m.blocs, seuil = (k) => Math.round(k * M / n);
+        let k = 1; while (k < n && m.hp > seuil(k)) k++;
+        const bas = seuil(k - 1);
+        if (m.hp + delta < bas) delta = bas - m.hp;
+        const r = orig.hp.call(this, i, delta, cause);
+        if (bas > 0 && m.hp <= bas) this.say(`Un bloc de vie de ${this.nm(i)} se brise ! Il lui en reste ${k - 1}.`);
+        return r;
+      }
       return orig.hp.call(this, i, delta, cause);
     },
     stat(i, k, crit, atkSide, ignore) {

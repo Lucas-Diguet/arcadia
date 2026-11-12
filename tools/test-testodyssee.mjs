@@ -782,43 +782,166 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
 {
   const d = DONJONS.find((q) => q.id === 'temple');
   const cartes = construireSalles(d), par = Object.fromEntries(d.salles.map((s, i) => [s.id, cartes[i]]));
-  // les couloirs du solo : lave, eau, herbes hautes, posés à leur place
-  for (const [id, t] of [['sf', T.LAVA], ['se', T.WATER], ['sp', T.TALL]]) {
-    const m = par[id], P = m.donjon.plan;
-    for (const [c, l] of Object.entries(P.objets)) if (d.objets[c].type === 'tuile') for (const [x, y] of l) m.set(x, y, T[d.objets[c].t]);
-    const vu = m.reach(...P.depart), [nx, ny] = P.suivante, [kx, ky] = P.objets.K[0];
-    ok(vu[(ny + 1) * m.w + nx] && vu[ky * m.w + kx] && Object.values(P.objets).flat().some(([x, y]) => m.get(x, y) === t), `temple : ${id} mène de l'entrée à la clé et à la sortie`);
-  }
-  ok(par.e1.donjon.plan.dalles.length === 3 && par.e1.donjon.plan.objets.X?.length === 1 && par.e1.donjon.plan.objets.G?.length === 3 && d.salles[0].requis === 3, 'temple : trois dalles pour la petite porte, une dalle d\'or et une grande porte');
-  ok(par.g2.donjon.versSuivante == null && ['f', 'e', 'p'].every((c) => par[`g${c}1`].donjon.versSuivante?.map === par[`g${c}2`].id && par[`g${c}2`].donjon.versSuivante?.map === par[`g${c}3`].id && par[`g${c}3`].donjon.versSuivante?.map === par.g4.id) && par.sf.donjon.versSuivante?.map === par.s4.id && par.g4.donjon.versSuivante?.map === par.g5.id && par.s4.donjon.versSuivante?.map === par.s5.id, 'temple : les chemins se rejoignent à la Salle des Clés, puis le Gardien');
-  // chemins à trois : trois grandes salles par élément, avec de vrais casse-têtes (Éclate-Roc, Force et boutons, Surf, Cascade, Coupe)
+  // le hall, ses deux portes, les salles des dalles
   {
-    const MURS = new Set(['#', 'L', 'Y', 'u', '%', '&', 'B']);
+    const Ph = par.h0.donjon.plan;
+    ok(d.salles[0].id === 'h0' && Ph.objets.e?.length === 1 && Ph.objets.p?.length === 1 && Ph.pnj['!'] && Ph.pnj['@'] && Object.keys(Ph.pnj).length >= 9 && par.h0.w >= 30, 'temple : un grand hall, le vieil homme, le moine, des dresseurs et deux portes');
+    const [px, py] = Ph.objets.p[0], [[mx, my]] = Ph.pnj['@'];
+    ok(mx === px && my === py + 1 && d.objets.p.moine && d.badgesSolo === 10 && d.pnj['@'].moine, 'temple : le moine garde la porte du solo et demande 10 badges');
+    ok(d.pnj['!'].dit.length >= 4 && d.pnj['!'].dit.some((t) => /trois/.test(t)) && d.pnj['!'].dit.some((t) => /dix badges/.test(t)), 'temple : le vieil homme explique les deux épreuves');
+    ok(par.e1.donjon.plan.dalles.length === 3 && !par.e1.donjon.plan.objets.X && d.salles.find((s) => s.id === 'e1').requis === 3 && par.eo.donjon.plan.objets.X?.length === 1 && par.eo.donjon.plan.objets.G?.length === 3, 'temple : trois dalles d\'un côté, la dalle d\'or et la grande porte de l\'autre');
+    ok(d.salles.find((s) => s.id === 'e1').retour.join() === 'h0,e' && d.salles.find((s) => s.id === 'eo').retour.join() === 'h0,p' && par.e1.donjon.versSuivante?.map === par.g2.id, 'temple : les deux salles ramènent au hall');
+  }
+  ok(par.g2.donjon.versSuivante == null && ['f', 'e', 'p'].every((c) => ['g', 's'].every((b) => par[`${b}${c}1`].donjon.versSuivante?.map === par[`${b}${c}2`].id && par[`${b}${c}2`].donjon.versSuivante?.map === par[`${b}${c}3`].id && par[`${b}${c}3`].donjon.versSuivante?.map === par[`${b}4`].id)) && par.g4.donjon.versSuivante?.map === par.g5.id && par.s4.donjon.versSuivante?.map === par.s5.id, 'temple : les chemins se rejoignent à la Salle des Clés, puis le Gardien');
+  ok(['f', 'e', 'p'].every((c) => ['g', 's'].every((b) => [2, 3].every((n) => par[`${b}${c}${n}`].warpAt(...par[`${b}${c}${n}`].donjon.plan.sortie)?.map === par[`${b}${c}${n - 1}`].id))), 'temple : dans un chemin, on peut revenir à la salle d\'avant');
+  // les chemins : trois grandes salles par élément, chacune avec sa mécanique (les mêmes plans à trois et en solo)
+  {
+    const D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], K = (x, y) => x + ',' + y;
+    const lire = (s) => { const P = s.plan, at = (x, y) => P[y]?.[x] ?? '#'; const ou = (chs) => { const l = []; P.forEach((r, y) => [...r].forEach((ch, x) => { if (chs.includes(ch)) l.push([x, y]); })); return l; }; return { P, at, ou, S: ou('S')[0], N: ou('N')[0] }; };
+    const flot = (dep, passe) => { const vus = new Set([K(...dep)]), f = [dep]; while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of D4) { const t = [x + dx, y + dy]; if (!vus.has(K(...t)) && passe(t[0], t[1], x, y)) { vus.add(K(...t)); f.push(t); } } } return vus; };
+    const pres = (vus, [x, y]) => vus.has(K(x, y)) || D4.some(([dx, dy]) => vus.has(K(x + dx, y + dy)));
     for (const c of ['f', 'e', 'p']) for (const n of [1, 2, 3]) {
-      const s = d.salles.find((q) => q.id === `g${c}${n}`), P = s.plan, at = (x, y) => P[y]?.[x] ?? '#';
-      let dep; P.forEach((r, y) => { const x = r.indexOf('S'); if (x >= 0) dep = [x, y]; });
-      const parcours = (ferme) => {
-        const vus = new Set([dep.join()]), file = [dep];
-        while (file.length) {
-          const [x, y] = file.pop();
-          for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
-            const tx = x + dx, ty = y + dy, ch = at(tx, ty);
-            if (MURS.has(ch) || ferme.has(ch) || ((ch === '|' || at(x, y) === '|') && dx)) continue;
-            if (!vus.has(`${tx},${ty}`)) { vus.add(`${tx},${ty}`); file.push([tx, ty]); }
+      const s = d.salles.find((q) => q.id === `g${c}${n}`), { P, at, ou, S, N } = lire(s);
+      ok(P.length >= 44 && P[0].length === 60 && d.salles.find((q) => q.id === `s${c}${n}`).plan === s.plan && ou('x').length === 1 && ou('z').length === 1 && ou('IJOPV').length >= 4, `temple : ${s.id} (${s.nom}) est grande, sert aussi en solo, avec ses objets et ses deux recoins`);
+      ok((n === 3) === !!s.cle && (n !== 3 || ou('K').length === 1) && s.biome && s.voie === c, `temple : ${s.id} a sa roche, et la clé est dans la troisième salle`);
+      let zA, zB;
+      if (c === 'f') {
+        // Feu : à pied, barrières fermées ; chaque interrupteur a son rocher, loin, qu'on amène en 12 poussées au moins
+        const SOLJ = '.=*^xzSN', SOLR = '.=*^';
+        const marche = (dep, mur, g = at) => flot(dep, (x, y) => SOLJ.includes(g(x, y)) && !mur.has(K(x, y)));
+        const poussees = (but, roc) => {
+          const g = (x, y) => (x === roc[0] && y === roc[1] ? '.' : at(x, y));
+          const cout = new Map(), file = [[], []], e = (b, k) => K(...b) + '|' + k;
+          D4.forEach(([dx, dy], k) => { if (SOLJ.includes(g(but[0] + dx, but[1] + dy))) { cout.set(e(but, k), 0); file[0].push([but, k]); } });
+          const faits = new Set(); let niveau = 0;
+          while (file[0].length || file[1].length) {
+            if (!file[0].length) { file[0] = file[1]; file[1] = []; niveau++; }
+            const [b, k] = file[0].pop(), id = e(b, k); if (faits.has(id) || cout.get(id) !== niveau) continue; faits.add(id);
+            const [dx, dy] = D4[k], j = [b[0] + dx, b[1] + dy], zone = marche(j, new Set([K(...b)]), g);
+            D4.forEach(([ax, ay], k2) => { if (k2 !== k && zone.has(K(b[0] + ax, b[1] + ay)) && !(cout.get(e(b, k2)) <= niveau)) { cout.set(e(b, k2), niveau); file[0].push([b, k2]); } });
+            const j2 = [j[0] + dx, j[1] + dy];
+            if (SOLR.includes(g(...j)) && SOLJ.includes(g(...j2)) && !(cout.get(e(j, k)) <= niveau + 1)) { cout.set(e(j, k), niveau + 1); file[1].push([j, k]); }
+          }
+          return cout;
+        };
+        const paires = [['*', '+'], ['^', '-']].filter(([b]) => ou(b).length);
+        ok(paires.length === 2 && ou('B').length === 2 && ou('m').length >= 1, `temple : ${s.id} a deux barrières, deux interrupteurs, deux rochers et des rochers fissurés`);
+        zA = marche(S, new Set()); zB = marche([N[0], N[1] + 1], new Set());
+        ok(!zA.has(K(N[0], N[1] + 1)), `temple : ${s.id} ne se traverse pas barrières fermées`);
+        for (const [b, bar] of paires) {
+          const [but] = ou(b), [porte] = ou(bar);
+          // la barrière se voit avant l'interrupteur : à moins de dix pas l'un de l'autre, du même côté
+          const cote = D4.map(([dx, dy]) => [porte[0] + dx, porte[1] + dy]).filter((t) => SOLJ.includes(at(...t))).map((t) => marche(t, new Set())).find((z) => z.has(K(...but)));
+          const pas = (() => { const dist = new Map(), f = []; for (const [dx, dy] of D4) { const t = [porte[0] + dx, porte[1] + dy]; if (cote?.has(K(...t))) { dist.set(K(...t), 1); f.push(t); } } for (let i = 0; i < f.length; i++) { const [x, y] = f[i]; for (const [dx, dy] of D4) { const t = [x + dx, y + dy]; if (cote.has(K(...t)) && !dist.has(K(...t))) { dist.set(K(...t), dist.get(K(x, y)) + 1); f.push(t); } } } return dist.get(K(...but)); })();
+          ok(cote && pas <= 9, `temple : dans ${s.id}, l'interrupteur ${b} est tout près de sa barrière (${pas} pas)`);
+          // le rocher de ce côté-là, et le nombre de poussées
+          const roc = ou('B').find((r) => pres(cote, r));
+          const cout = roc && poussees(but, roc), acces = roc && marche([...cote].map((q) => q.split(',').map(Number)).find((q) => !(q[0] === roc[0] && q[1] === roc[1])), new Set([K(...roc)]));
+          const possibles = roc ? D4.map(([dx, dy], k) => (acces.has(K(roc[0] + dx, roc[1] + dy)) ? cout.get(K(...roc) + '|' + k) : undefined)).filter((v) => v != null) : [];
+          const mini = Math.min(...possibles);
+          ok(possibles.length && mini >= 12, `temple : dans ${s.id}, le rocher s'amène sur l'interrupteur ${b}, en ${mini} poussées au moins`);
+        }
+      } else if (c === 'e') {
+        // Eau : à pied sur la terre, emporté par le courant sur l'eau
+        const EAU = '~<>()', TERRE = '.SNKxz', DIR = { '<': [-1, 0], '>': [1, 0], '(': [0, -1], ')': [0, 1] };
+        const pas = ([x, y]) => { const out = []; for (const [dx, dy] of D4) { let n = [x + dx, y + dy]; const ch = at(...n); if (TERRE.includes(ch)) { out.push(n); continue; } if (!EAU.includes(ch)) continue; for (let k = 0; k < 400 && DIR[at(...n)]; k++) { const [ax, ay] = DIR[at(...n)], m = [n[0] + ax, n[1] + ay]; if (!EAU.includes(at(...m))) break; n = m; } out.push(n); } return out; };
+        const vus = new Map([[K(...S), S]]), arcs = new Map(), f = [S];
+        while (f.length) { const q = f.pop(), l = pas(q); arcs.set(K(...q), l); for (const t of l) if (!vus.has(K(...t))) { vus.set(K(...t), t); f.push(t); } }
+        const inv = new Map(); for (const [a, l] of arcs) for (const t of l) { if (!inv.has(K(...t))) inv.set(K(...t), []); inv.get(K(...t)).push(a); }
+        const bons = new Set([K(...N)]), g = [K(...N)]; while (g.length) for (const a of inv.get(g.pop()) || []) if (!bons.has(a)) { bons.add(a); g.push(a); }
+        const sec = flot(S, (x, y) => TERRE.includes(at(x, y)) || at(x, y) === '~');
+        ok(vus.has(K(...N)) && ou('IJOPVKxz').every((b) => pres(vus, b)) && ou('<>()').length >= 40, `temple : ${s.id} est un labyrinthe de rivières, la sortie et tous les objets s'y atteignent`);
+        ok([...vus.keys()].every((q) => bons.has(q)), `temple : dans ${s.id}, aucune rivière ne mène à un piège (de partout, la sortie reste atteignable)`);
+        ok(!sec.has(K(...N)), `temple : ${s.id} ne se traverse pas sans se laisser porter par les rivières`);
+        zA = flot(S, (x, y) => TERRE.includes(at(x, y))); zB = flot(N, (x, y) => TERRE.includes(at(x, y)));
+      } else {
+        // Plante : les ronces tombent quand on coupe l'arbuste de leur couleur
+        const MURS = '#Yu', ARB = 'ryq', RON = 'tdg';
+        const marche = (ouverts, dep = S) => flot(dep, (x, y) => { const ch = at(x, y); return !MURS.includes(ch) && !'IJOPV'.includes(ch) && !((ARB + RON).includes(ch) && !ouverts.includes(ch)); });
+        let ouverts = '', bon = ou('r').length === 1 && ou('y').length === 1 && ou('q').length === 1 && [...RON].every((q) => ou(q).length === 4);
+        for (let k = 0; k < 3 && bon; k++) {
+          const v = marche(ouverts), [arb] = ou(ARB[k]), ronces = ou(RON[k]);
+          bon = !v.has(K(...N)) && pres(v, arb) && !v.has(K(...arb)) && ronces.some((q) => pres(v, q))
+            && ronces.every(([x, y]) => Math.abs(x - arb[0]) <= 7 && Math.abs(y - arb[1]) <= 5);
+          ouverts += ARB[k] + RON[k];
+        }
+        ok(bon, `temple : dans ${s.id}, trois ronces ferment le chemin ; chacune se voit avec son arbuste, tout près, et tombe quand on le coupe`);
+        ok(marche(ouverts).has(K(...N)) && ou('IJOPVKxz').every((b) => pres(marche(ouverts), b)), `temple : ${s.id}, ronces tombées, mène à la sortie et à tous ses objets`);
+        // l'arbuste n'est pas à côté : il faut un détour
+        const detours = [0, 1, 2].map((k) => {
+          const [arb] = ou(ARB[k]), v = marche(ARB.slice(0, k) + RON.slice(0, k)), dist = new Map(), f = [];
+          for (const [x, y] of ou(RON[k])) for (const [dx, dy] of D4) { const t = [x + dx, y + dy]; if (v.has(K(...t)) && !dist.has(K(...t))) { dist.set(K(...t), 0); f.push(t); } }
+          for (let i = 0; i < f.length; i++) { const [x, y] = f[i]; for (const [dx, dy] of D4) { const t = [x + dx, y + dy]; if (v.has(K(...t)) && !dist.has(K(...t))) { dist.set(K(...t), dist.get(K(x, y)) + 1); f.push(t); } } }
+          return Math.min(...D4.map(([dx, dy]) => dist.get(K(arb[0] + dx, arb[1] + dy)) ?? Infinity));
+        });
+        ok(detours.every((n) => n >= 20 && n < Infinity), `temple : dans ${s.id}, il faut un détour pour atteindre chaque arbuste (${detours.join(', ')} pas)`);
+        zA = marche(''); zB = marche('', [N[0], N[1] + 1]);
+      }
+      // recoins : x dans la première zone de la salle, z dans la dernière
+      ok(pres(zA, ou('x')[0]) && pres(zB, ou('z')[0]), `temple : dans ${s.id}, le recoin x est au début et le recoin z à la fin`);
+    }
+  }
+  // le solo : les trois chemins se mêlent
+  {
+    const solo = d.salles.filter((s) => s.branche === 'solo' && s.chemin), par2 = Object.fromEntries(solo.map((s) => [s.id, s]));
+    ok(solo.length === 9 && solo.every((s) => Object.values(s.recoins || {}).every((R) => R.type !== 'passage' || (par2[R.vers[0]]?.recoins?.[R.vers[1]]?.vers?.join() === `${s.id},${Object.keys(s.recoins).find((c) => s.recoins[c] === R)}` && par2[R.vers[0]].chemin !== s.chemin))), 'temple en solo : chaque passage relie deux chemins différents, dans les deux sens');
+    ok(['p', 'e', 'f'].every((c) => solo.some((s) => s.chemin === c && s.verrou)) && Object.keys(d.tresors).every((k) => ITEMS[d.tresors[k].objet]?.key) && ITEMS['jarre-pleine']?.key, 'temple en solo : un verrou par chemin, et les objets qui les ouvrent');
+    // parcours abstrait : chaque salle a un début (a) et une fin (b). prudent : on ne compte que ce qui est sûr (une
+    // salle se traverse du début à la fin ; à l'envers seulement si on l'a déjà traversée, jamais contre les rivières).
+    // large : tout ce qui pourrait se faire. Sans un des trois objets, même le parcours large ne finit pas.
+    const jouer = (sans, large) => {
+      const lieux = new Set(['s2']), a = new Set(), liens = new Set(), verrous = new Set(), cles = new Set();
+      const zone = (s, c) => s.id + (c === 'x' ? ':a' : ':b');
+      for (let tour = 0; tour < 60; tour++) {
+        const n0 = lieux.size + a.size + liens.size + verrous.size + cles.size;
+        if (lieux.has('s2')) { lieux.add('sp1:a'); for (const c of ['f', 'e']) if (lieux.has(`s${c}1:a`)) lieux.add(`s${c}1:a`); }
+        for (const s of solo) {
+          const A = s.id + ':a', B = s.id + ':b', n = +s.id[2], suiv = par2[s.id.slice(0, 2) + (n + 1)];
+          if (lieux.has(A)) { lieux.add(B); if (n === 1) lieux.add('s2'); else lieux.add(s.id.slice(0, 2) + (n - 1) + ':b'); }
+          if (lieux.has(B) && (large || (s.chemin !== 'e' && lieux.has(A)))) lieux.add(A);
+          if (lieux.has(B)) {
+            if (s.cle) { cles.add(s.cle); lieux.add('s2'); }
+            if (s.verrou && a.has(s.verrou.objet)) verrous.add(s.id);
+            if (suiv && (!s.verrou || verrous.has(s.id))) lieux.add(suiv.id + ':a');
+          }
+          for (const [c, R] of Object.entries(s.recoins || {})) {
+            if (!lieux.has(zone(s, c))) continue;
+            if (R.type === 'objet' && R.objet !== sans) a.add(R.objet);
+            if (R.type === 'source' && a.has('jarre') && sans !== 'eau') a.add('eau');
+            if (R.type === 'passage') { if (R.lien && R.maitre) liens.add(R.lien); if (!R.lien || liens.has(R.lien)) lieux.add(zone(par2[R.vers[0]], R.vers[1])); }
           }
         }
-        return vus;
-      };
-      const ou = (chs) => { const l = []; P.forEach((r, y) => [...r].forEach((ch, x) => { if (chs.includes(ch)) l.push(`${x},${y}`); })); return l; };
-      const vus = parcours(new Set()), [N] = ou('N');
-      const portes = { f: '+-m', e: '+-|', p: 'C' }[c];
-      const objets = ou('IJOPVK');
-      ok(P.length >= 40 && P[0].length >= 56 && vus.has(N) && objets.every((b) => vus.has(b)) && ou('*^').every((b) => vus.has(b)), `temple : ${s.id} (${s.nom}) est grande et tout s'y atteint`);
-      ok(!parcours(new Set(portes)).has(N) && objets.length >= 4, `temple : ${s.id} ne se traverse pas sans ses capacités, et cache ses objets`);
-      // chaque bouton a son rocher en ligne, poussable jusqu'à lui
-      ok(ou('*^').every((b) => { const [x, y] = b.split(',').map(Number); return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + 3 * dx, y + 3 * dy) === 'B' && vus.has(`${x + 4 * dx},${y + 4 * dy}`)); }), `temple : dans ${s.id}, chaque bouton a son rocher à pousser`);
-      ok((n === 3) === !!s.cle && (n !== 3 || ou('K').length === 1) && s.biome && s.voie === c, `temple : ${s.id} a sa roche, et la clé est dans la troisième salle`);
-    }
+        if (lieux.size + a.size + liens.size + verrous.size + cles.size === n0) break;
+      }
+      return { fini: cles.size === 3, lieux, a };
+    };
+    const tout = jouer(null, false);
+    ok(tout.fini && solo.every((s) => tout.lieux.has(s.id + ':a') && tout.lieux.has(s.id + ':b')), 'temple en solo : en ne comptant que ce qui est sûr, on trouve les trois clés et on passe par les neuf salles');
+    ok(['braise', 'graine', 'jarre', 'eau'].every((k) => !jouer(k, true).fini), 'temple en solo : sans la Braise, la Graine, la jarre ou l\'eau de la Source, on ne finit pas');
+    const debut = jouer('braise', true);
+    ok(!debut.lieux.has('sp2:a') && debut.lieux.has('se1:a') && debut.lieux.has('sf2:b') && !debut.lieux.has('sp3:b') && !debut.lieux.has('se3:a'), 'temple en solo : on entre par la Plante, on passe par l\'Eau puis le Feu avant de pouvoir avancer dans la Plante');
+    ok(d.objets.R.chemin === 'f' && d.objets.U.chemin === 'e' && ['sp1', 'se1', 'sf1'].every((id) => par2[id].retour[0] === 's2'), 'temple en solo : les premières salles ramènent à la Salle des Trois Portes');
+  }
+  // les Gardiens
+  {
+    const M = d.pnj.M, Z = d.pnj.Z;
+    ok(M.equipe.length === 4 && M.equipe.slice(0, 3).every(([sp, n]) => [512, 514, 516].includes(sp) && n === 30) && M.equipe[3][0] === 128 && M.equipe[3][1] === 45 && M.equipe[3][2].blocs === 5 && M.equipe[3][2].attend && M.reste, 'temple : le Gardien à trois a ses trois singes niveau 30, puis Tauros niveau 45 à cinq blocs, et il reste après sa défaite');
+    ok(Z.equipe.map((q) => q[0] + ':' + q[1]).join() === '31:60,34:60,143:63,392:65,389:65,395:65' && Z.equipe.slice(3).every((q) => q[5]?.blocs === 3) && Z.equipe.slice(0, 2).every((q) => q[4] === 'sheer-force') && Z.equipe[2][4] === 'thick-fat' && Z.equipe.map((q) => q[2]).slice(3).join() === 'charcoal,miracle-seed,mystic-water' && Z.equipe.every((q) => q[3].length === 4 && q[3].every((k) => Object.values(MOVES).some((x) => x.key === k))) && Z.reste, 'temple : le Gardien du solo a ses six Pokémon, leurs objets, leurs attaques, et trois blocs pour les trois derniers');
+    // Tauros n'entre que quand les trois singes sont K.O.
+    const { Groupe } = await import('../testodyssee/js/combat/groupe.js');
+    const mk = (sp, n, x) => Object.assign(createMon(sp, n, { shiny: false }), x || {});
+    const g = new Groupe({ joueurs: [1, 2, 3].map((id) => ({ id, nom: 'J' + id, party: [mk(149, 100), mk(149, 100)] })), dresseur: { cls: 'Gardien', nom: 'T' }, reserve: M.equipe.map(([sp, n, x]) => mk(sp, n, x)) });
+    g.start();
+    const enJeu = () => g.places.map((_, k) => g.adverse(k)?.sp).filter(Boolean);
+    g.reserve[0].hp = 0; g.bilan();
+    const un = enJeu().join();
+    g.reserve[1].hp = 0; g.bilan(); g.reserve[2].hp = 0; g.bilan();
+    ok(un === '514,516' && enJeu().join() === '128' && g.state !== 'over', 'temple : Tauros n\'entre pas tant qu\'un singe tient debout ; il entre quand ils sont tous K.O.');
+    // cinq blocs : un coup ne fait tomber qu'un bloc
+    const t = mk(128, 45, { blocs: 5 }), b = new BattleT({ player: { name: 'T', party: [mk(149, 100)] }, foe: { name: 'G', party: [t], trainer: { cls: 'G', name: 'T', items: {}, ai: 'smart' } } });
+    b.start(); const M0 = t.stats[0]; b.hp(1, -9999);
+    const un2 = t.hp; b.hp(1, -9999);
+    ok(un2 === Math.round(4 * M0 / 5) && t.hp === Math.round(3 * M0 / 5) && [1, 2, 3].every(() => { b.hp(1, -9999); return true; }) && t.hp === 0, 'temple : un coup ne fait jamais tomber plus d\'un bloc de vie');
   }
   ok(par.s4.donjon.plan.objets.T && !par.g4.donjon.plan.objets.T && par.g5.donjon.plan.objets.a && par.s5.donjon.plan.objets.j && par.s5.donjon.plan.objets.l && !par.s5.donjon.plan.objets.a, 'temple : téléporteur en solo seulement ; trois Poké Balls à trois, trois CT en solo');
   // la table à trois

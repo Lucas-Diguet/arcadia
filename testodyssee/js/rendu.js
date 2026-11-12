@@ -318,3 +318,31 @@ export function dessinerCases(view, liste) {
   }
   view.root.add(g); view.__cases = g; view.__casesRoot = view.root;
 }
+
+/** les rivières du chemin de l'Eau : des chevrons blancs qui défilent dans le sens du courant (m absent : efface) */
+export function dessinerCourants(view, m, t) {
+  if (view.__courants && (view.__courantsRoot !== view.root || view.__courantsMap !== m)) {
+    view.__courantsRoot?.remove(view.__courants); view.__courants.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); view.__courants = null;
+  }
+  if (!m?.courants || !view.root) return;
+  if (!view.__courants) {
+    const G = new THREE.Group(), V = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+    for (let ph = 0; ph < 3; ph++) {
+      const pos = [];
+      for (const [k, dir] of m.courants) {
+        const [x, y] = k.split(',').map(Number), [dx, dz] = V[dir], px = -dz, pz = dx, o = (ph - 1) * 0.3;
+        const cx = x + 0.5 + dx * o, cz = y + 0.5 + dz * o;
+        const P = (a, b) => [cx + dx * a + px * b, 0.045, cz + dz * a + pz * b];
+        // un chevron : deux bandes
+        pos.push(...P(0.16, 0), ...P(-0.1, 0.26), ...P(-0.2, 0.26), ...P(0.16, 0), ...P(-0.2, 0.26), ...P(0.04, 0));
+        pos.push(...P(0.16, 0), ...P(-0.2, -0.26), ...P(-0.1, -0.26), ...P(0.16, 0), ...P(0.04, 0), ...P(-0.2, -0.26));
+      }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xe8f8ff, transparent: true, opacity: 0.75, depthWrite: false, side: THREE.DoubleSide }));
+      me.renderOrder = 4; me.frustumCulled = false; G.add(me);
+    }
+    view.root.add(G); view.__courants = G; view.__courantsRoot = view.root; view.__courantsMap = m;
+  }
+  const ph = Math.floor(t / 200) % 3;
+  view.__courants.children.forEach((c, i) => { c.visible = i === ph; });
+}

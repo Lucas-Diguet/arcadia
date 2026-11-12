@@ -4,7 +4,8 @@
 //
 // Comme le combat contre un boss (raid.js) : un combat d'Odyssée à deux camps par joueur. Le camp adverse de chaque
 // joueur est l'emplacement qu'il vise, qu'on branche juste avant d'agir ; chaque emplacement adverse vise un
-// joueur tiré au sort. Quand un Pokémon adverse est K.O., le suivant de la réserve prend sa place.
+// joueur tiré au sort. Quand un Pokémon adverse est K.O., le suivant de la réserve prend sa place (un Pokémon marqué
+// `attend` n'entre que quand tous les autres sont K.O. ; `blocs` : barre de vie à blocs, combat/regles.js).
 import { Battle } from '../../../odyssee/js/core/battle.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { monName, isFainted } from '../../../odyssee/js/core/mon.js';
@@ -214,6 +215,9 @@ export class Groupe {
       if (!m || !isFainted(m) || s.vide) return;
       // le suivant de la réserve qui n'est pas déjà en jeu
       if (this.envoyes < this.reserve.length) {
+        // un Pokémon gardé pour la fin (attend) n'entre que quand tous les autres sont K.O.
+        const suiv = this.reserve[this.envoyes];
+        if (suiv.attend && this.reserve.some((q) => q !== suiv && !isFainted(q))) return;
         s.active = this.envoyes++; s.v = new Battle({ player: { name: '', party: [m] }, foe: { name: '', party: [m], trainer: this.dresseur } }).sides[1].v;
         this.ev.push({ t: 'send', side: 1, idx: s.active, place: k });
         this.say(`${this.dresseur.name} ${this.pluriel ? 'envoient' : 'envoie'} ${monName(this.reserve[s.active])} !`);
@@ -239,7 +243,7 @@ export class Groupe {
   photo() {
     return {
       turn: this.turn, state: this.state, result: this.result,
-      adverses: this.places.map((s, k) => { const m = this.adverse(k); return m ? { place: k, idx: s.active, sp: m.sp, lvl: m.lvl, hp: m.hp, max: m.stats[0], status: m.status || null } : { place: k, vide: true }; }),
+      adverses: this.places.map((s, k) => { const m = this.adverse(k); return m ? { place: k, idx: s.active, sp: m.sp, lvl: m.lvl, hp: m.hp, max: m.stats[0], status: m.status || null, blocs: m.blocs || 0 } : { place: k, vide: true }; }),
       reste: this.reserve.filter((m) => !isFainted(m)).length,
       joueurs: this.joueurs.map((j) => ({ id: j.id, pid: j.pid, k: j.k, nom: j.nom, etat: j.etat, active: this.manche(j.id).sides[0].active, forced: this.manche(j.id).forcedAction(0) ? 1 : 0,
         party: j.party.map((q) => ({ sp: q.sp, lvl: q.lvl, hp: q.hp, max: q.stats[0], status: q.status || null, moves: q.moves.map((x) => ({ id: x.id, pp: x.pp })) })) })),

@@ -11,6 +11,7 @@ import { itemName } from '../../../odyssee/js/core/items.js';
 import { megaFormOf } from '../../../odyssee/js/core/mega.js';
 import { el, esc } from '../../../odyssee/js/ui/ui.js';
 import { nouvelEtat, appliquer, battu, prisPar, requisSalle } from './etat.js';
+import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { construireCarte, construireSalles, relierExterieur, fermer, ouvrir, decorPorte, passageSuivant } from './plan.js';
 import { Mecaniques } from './mecaniques.js';
 import { Miroirs } from './miroirs.js';
@@ -78,15 +79,18 @@ export class Donjons {
         id: `${d.id}:${p.id}`, x, y, dir: p.dir || 'down', sprite: p.sprite, move: 'static',
         when: () => {
           const e = this.etats[d.id], sr = p.raid && d.salles.find((s) => s.type === 'raid' && s.pnj?.includes(k));
-          if (p.gardien || p.quiz || p.toujours) return true;
+          if (p.gardien || p.quiz || p.toujours || p.reste) return true;
           if (!this.presentPyr(d, p)) return false;
           if (sr) return !e.salles[sr.id].faite;
           return p.boss || p.raid ? !e.fini : !battu(e, d, k);
         },
-        talk: async () => (p.champion ? this.champion(d, k) : p.organisatrice ? this.organisatrice(d) : p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.arbitre ? this.arbitre(d, k) : p.duo ? this.duo(d, k) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid || p.groupe ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
+        talk: async () => (p.reste && this.vaincu(d, k) ? this.game.ui.say(p.reste, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.moine ? this.moineTemple(d) : p.champion ? this.champion(d, k) : p.organisatrice ? this.organisatrice(d) : p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.arbitre ? this.arbitre(d, k) : p.duo ? this.duo(d, k) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid || p.groupe ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
       });
     }
   }
+
+  /** un PNJ qui reste après sa défaite (p.reste) : est-il battu ? */
+  vaincu(d, k) { const e = this.etats[d.id], s = d.salles.find((q) => q.pnj?.includes(k)); return battu(e, d, k) || !!(s && s.type !== 'libre' && e.salles[s.id].faite); }
 
   /** portes et PNJ suivent l'état ; joue les petites scènes quand une salle se termine */
   appliquerEtat(id) {
@@ -414,7 +418,8 @@ export class Donjons {
       await ui.say(r.why === 'occupe' ? `${this.nomDe(prisPar(this.etats[d.id], d, k))} vient de l'engager !` : r.why === 'reseau' ? 'L\'hôte du salon ne répond pas...' : 'Il n\'y a plus personne à combattre ici.');
       return;
     }
-    const party = p.equipe.map(([sp, lvl, item, moves, ability]) => createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false, item: item || null, moves, ability }));
+    const idm = (q) => (typeof q === 'string' ? Object.values(MOVES).find((x) => x.key === q)?.id : q);
+    const party = p.equipe.map(([sp, lvl, item, moves, ability, extra]) => Object.assign(createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false, item: item || null, moves: moves?.map(idm), ability }), extra || {}));
     const res = await this.combat(p, party);
     if (res === 'win') await this.demande(d.id, { a: 'gagne', pnj: k });
     else { await this.demande(d.id, { a: 'lacher', pnj: k }); await this.defaite(d); }

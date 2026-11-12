@@ -215,7 +215,7 @@ export class GroupeMiroir extends CombatMiroir {
       let m = this.sides[1].party[a.place];
       if (a.vide) { if (m) m.hp = 0; continue; }
       if (!m || m.sp !== a.sp || m.lvl !== a.lvl) m = this.sides[1].party[a.place] = createMon(a.sp, a.lvl, { shiny: false });
-      m.stats[0] = a.max; m.hp = a.hp; m.status = a.status;
+      m.stats[0] = a.max; m.hp = a.hp; m.status = a.status; m.blocs = a.blocs || 0;
     }
     // la cible est tombée : on vise un autre adversaire encore debout
     if (p.adverses[this.cible]?.vide) { const autre = p.adverses.find((a) => !a.vide); if (autre) { this.cible = autre.place; this.changeCible = true; } }

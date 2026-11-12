@@ -75,7 +75,7 @@ export const Arenes = {
     for (const q of A.T.sas || []) bloc(q.x, q.y, 'grille_marais', !e.sasOuvert);
     for (const q of A.T.douche || []) sol(q.x, q.y, 'douche_' + q.o.couleur);
     if (s.marais) for (const [x, y] of A.P.sol) { const so = sorteMarais(A.parCase.get(cle(x, y)), e); if (so) sol(x, y, SOL_MARAIS[so]); }
-    if (g.mapObj === m && g.view.map === m) for (const c of chg) {
+    if (g.mapObj === m) for (const c of chg) {
       const [x, y] = c.split(',').map(Number), dd = m.deco.find((q) => q.x === x && q.y === y);
       if (dd) g.view.decoAt.set(c, dd); else g.view.decoAt.delete(c);
       g.view.rebuildAt(x, y);
