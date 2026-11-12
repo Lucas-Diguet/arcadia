@@ -20,7 +20,7 @@
 #          (r y q) de la même couleur, qu'on voit tout près derrière la haie mais qu'on n'atteint que par un détour.
 #          Couper l'arbuste fait tomber ses ronces. De petits arbres (C) à couper barrent aussi des passages. Dans la
 #          3e salle, la clé est dans un cul-de-sac loin de la sortie, derrière des ronces bleues (n) et leur arbuste (v).
-# Partout : # roche, . sol, S arrivée, N sortie, K clé (3e salle), I J O P V objets, x et z deux recoins (x dans la
+# Partout : # roche, . sol, S arrivée, N sortie, K clé (dernière salle), I objets (2 dans la 1re salle, 3 ensuite), x et z deux recoins (x dans la
 #          première zone de la salle, z dans la dernière) : rien à trois, des passages et des objets en solo.
 import random, sys, os
 from collections import deque
@@ -429,7 +429,15 @@ class Eau:
                                     if ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1 + r.uniform(-0.2, 0.12) and 2 <= x < W - 2 and 3 <= y < H - 3})
         aretes = [(j * NC + i, j * NC + i + 1) for j in range(NR) for i in range(NC - 1)] + [(j * NC + i, (j + 1) * NC + i) for j in range(NR - 1) for i in range(NC)]
         self.dep = (NR - 1) * NC + r.randrange(NC)
-        self.fin = r.choice([i for i in range(NC) if abs(i - (self.dep - (NR - 1) * NC)) >= 2])
+        # la sortie : un bassin du bord (haut, gauche ou droite), loin du départ ; elle s'ouvre dans le mur de ce côté
+        di, dj = self.dep % NC, NR - 1
+        # jamais dans un coin du haut ni au milieu du haut : à gauche dans la 1re salle, en haut dans la 2e, à droite dans la 3e
+        cote_voulu = {1: 'gauche', 2: 'haut', 3: 'droite'}[self.n]
+        bords = [(i + j * NC, cote) for j in range(NR - 1) for i in range(NC) for cote in (cote_voulu,)
+                 if (cote == 'haut' and j == 0 and i in (1, NC - 2)) or (cote == 'gauche' and i == 0 and j >= 1) or (cote == 'droite' and i == NC - 1 and j >= 1)]
+        bords = [(b, c) for b, c in bords if abs(b % NC - di) + abs(b // NC - dj) >= 2]
+        if not bords: raise Echec('sortie trop près du départ')
+        self.fin, self.cote = r.choice(bords)
         # le sens des rivières : cherché au hasard, on garde le labyrinthe le plus long sans piège
         meilleur = None
         for _ in range(6000):
@@ -495,10 +503,20 @@ class Eau:
         for y in range(cy + 2, H - 1): self.g[y][cx] = '.'; self.g[y][cx + 1] = '.'
         self.S = (cx, H - 1); self.g[H - 1][cx] = 'S'
         fx, fy = self.cs[self.fin][:2]
-        for x, y in self.bassin[self.fin]:
-            if y <= fy - 2 and self.at(x, y) == '~' and (x, y) not in self.reserve: self.g[y][x] = '.'
-        for y in range(2, fy - 1): self.g[y][fx] = '.'
-        self.N = (fx, 1); self.g[1][fx] = 'N'
+        if self.cote == 'haut':
+            for x, y in self.bassin[self.fin]:
+                if y <= fy - 2 and self.at(x, y) == '~' and (x, y) not in self.reserve: self.g[y][x] = '.'
+            for y in range(2, fy - 1): self.g[y][fx] = '.'
+            self.N = (fx, 1); self.g[1][fx] = 'N'
+        else:
+            # une rive du côté du mur, et un couloir jusqu'à la sortie, percée dans le mur
+            g_ = self.cote == 'gauche'
+            for x, y in self.bassin[self.fin]:
+                if (x <= fx - 3 if g_ else x >= fx + 3) and self.at(x, y) == '~' and (x, y) not in self.reserve: self.g[y][x] = '.'
+            xs = range(1, fx - 2) if g_ else range(fx + 3, W - 1)
+            for x in xs:
+                if self.g[fy][x] not in '.~': self.g[fy][x] = '.'
+            self.N = (0 if g_ else W - 1, fy); self.g[fy][self.N[0]] = 'N'
         self.importants = []
         # recoins sur les rives
         for lettre, i, col in (('x', self.dep, cx), ('z', self.fin, fx)):
@@ -601,7 +619,7 @@ class Eau:
 # Fondmer : la 4e salle de l'Eau
 # =====================================================================================================================
 class Fondmer:
-    TAILLE = (56, 46)
+    TAILLE = (72, 56)
     def __init__(self, n, seed):
         self.n, self.r = n, random.Random(seed)
         self.g = [['#'] * W for _ in range(H)]
@@ -615,7 +633,7 @@ class Fondmer:
     def faire(self):
         r = self.r
         # la terre : l'entrée en bas, la sortie en haut d'un côté, l'îlot au centre ; une anse d'eau calme devant chacune
-        cx = W // 2 + r.randint(-6, 6)
+        cx = W // 2 + r.randint(-8, 8)
         terre = self.rect(cx - 3, H - 4, cx + 3, H - 2, '.')
         self.S = (cx, H - 1); self.g[H - 1][cx] = 'S'
         anses = {'E': self.rect(cx - 4, H - 6, cx + 4, H - 5, '~')}
@@ -628,47 +646,37 @@ class Fondmer:
         terre |= self.rect(ix - 1, iy - 1, ix + 1, iy + 1, '.')
         anses['I'] -= terre
         self.g[iy][ix] = 'K'; self.cle = (ix, iy)
-        # le graphe des courants : le bon chemin (4 courants jusqu'à l'îlot, 3 jusqu'à la sortie) et des leurres
-        noms = ['p1', 'p2', 'p3', 'q1', 'q2', 'd1', 'd2', 'd3', 'd4', 'd5']
-        # depuis l'anse de la sortie, un courant ramène au départ : qui y arrive sans la clé peut recommencer
-        bons = [('E', 'p1'), ('p1', 'p2'), ('p2', 'p3'), ('p3', 'I'), ('I', 'q1'), ('q1', 'q2'), ('q2', 'X'), ('X', 'E')]
-        retours = r.sample(['E', 'E', 'p1', 'p2'], 4)
-        leurres = [('E', 'd1'), ('d1', retours[0]), ('p1', 'd2'), ('d2', retours[1]), ('p2', 'd3'), ('d3', retours[2]),
-                   ('p3', 'd4'), ('d4', retours[3]), ('q1', 'd5'), ('d5', 'I'), ('q2', r.choice(['d5', 'I'])), ('I', r.choice(['d4', 'd3']))]
-        # les petites anses, bien écartées
+        # de petites anses partout, bien écartées
         pris = set()
         for c in [q for a in anses.values() for q in a] + list(terre):
             pris |= {(c[0] + dx, c[1] + dy) for dx in range(-5, 6) for dy in range(-5, 6)}
-        # le bon chemin fait un zigzag qui monte (p1 loin de la sortie, p2 près, p3 loin, l'îlot, q1 loin, q2 près) ; le
-        # couloir le long du mur côté sortie reste libre pour le courant qui ramène au départ
-        gauche = fx < W // 2
-        U = lambda u0, u1: (u0, u1) if gauche else (W - 1 - u1, W - 1 - u0)
-        boites = {'p1': (U(W - 15, W - 7), (H - 15, H - 11)), 'p2': (U(12, 20), (H // 2 + 3, H - 15)),
-                  'p3': (U(W - 15, W - 7), (H // 2 - 1, H // 2 + 3)), 'q1': (U(W - 15, W - 7), (8, H // 2 - 8)),
-                  'q2': (U(12, 20), (7, 12))}
-        for nom in noms:
-            for _ in range(300):
+        for k in range(40):
+            if len(anses) >= 3 + 18: break
+            for _ in range(200):
                 w, h = r.choice([(3, 2), (2, 3), (3, 3)])
-                if nom in boites:
-                    (x0, x1), (y0, y1) = boites[nom]
-                    x, y = r.randint(x0, max(x0, x1 - w + 1)), r.randint(y0, max(y0, y1 - h + 1))
-                else:
-                    (x0, x1) = U(11, W - 4 - w)
-                    x, y = r.randint(max(3, x0), min(W - 4 - w, x1)), r.randint(7, H - 9 - h)
+                x, y = r.randint(3, W - 4 - w), r.randint(7, H - 9 - h)
                 cases = {(x + a, y + b) for a in range(w) for b in range(h)}
                 if cases & pris: continue
-                anses[nom] = self.rect(x, y, x + w - 1, y + h - 1, '~')
+                anses['a%d' % k] = self.rect(x, y, x + w - 1, y + h - 1, '~')
                 pris |= {(c[0] + dx, c[1] + dy) for c in cases for dx in range(-4, 5) for dy in range(-4, 5)}
                 break
-            else: raise Echec('pas de place pour les anses')
+        if len(anses) < 3 + 14: raise Echec('pas de place pour les anses')
         self.anses = anses
-        eau = set().union(*anses.values())
+        self.eau = set().union(*anses.values())
         self.libre = lambda c: self.at(*c) == 'E'
-        bord = lambda c: any(t in eau or self.at(*t) in '.SNK' for t in voisins(*c))
-        self.eau = eau
         bord = lambda c: any(t in self.eau or self.at(*t) in '.SNK' for t in voisins(*c))
-        self.courants = []
-        self.occupe = set()
+        self.courants, self.occupe = [], set()
+        centre = {k: (sum(x for x, _ in v) / len(v), sum(y for _, y in v) / len(v)) for k, v in anses.items()}
+        # le graphe des courants : on en trace au hasard entre anses voisines, sans jamais rendre l'îlot ou la sortie
+        # trop proches (6 courants au moins jusqu'à l'îlot, 5 de l'îlot à la sortie) ; chaque anse en a deux ou trois
+        G = {k: set() for k in anses}
+        def dist(a, b):
+            d, f = {a: 0}, deque([a])
+            while f:
+                u = f.popleft()
+                for v in G[u]:
+                    if v not in d: d[v] = d[u] + 1; f.append(v)
+            return d.get(b, 99)
         def poser(a, b):
             chemin = self.tracer(anses[a], anses[b], self.eau, self.occupe, bord)
             if not chemin: return False
@@ -679,35 +687,68 @@ class Fondmer:
                 n = chemin[k + 1] if k + 1 < len(chemin) else dest
                 self.g[c[1]][c[0]] = FLECHE[(n[0] - c[0], n[1] - c[1])]
             return True
-        # le bon chemin (obligatoire) et des leurres (une anse et ses deux courants, ou rien), dans un ordre tiré au
-        # hasard : on garde le premier essai où tout le bon chemin passe avec au moins trois leurres
-        paires = [(leurres[k], leurres[k + 1]) for k in range(0, 10, 2)]
-        depart = ([row[:] for row in self.g], dict(anses))
-        meilleur = None
-        for essai in range(24):
-            self.g, anses = [row[:] for row in depart[0]], dict(depart[1]); self.anses = anses
-            self.eau = set().union(*anses.values()); self.occupe = set(); self.courants = []
-            # le retour par le couloir d'abord, puis le bon chemin, puis les leurres dans un ordre tiré au hasard
-            items = [('bon', bons[-1])] + [('bon', e) for e in bons[:-1]] + r.sample([('leurre', p) for p in paires], len(paires))
-            poses, rate = 0, False
-            for genre, e in items:
-                if genre == 'bon':
-                    if not poser(*e): rate = True; break
-                    continue
-                e1, e2 = e
-                sauve = ([row[:] for row in self.g], set(self.occupe), list(self.courants))
-                if poser(*e1) and any(poser(e2[0], b) for b in [e2[1]] + [q for q in ('E', 'p1', 'p2') if q != e2[1]]): poses += 1; continue
-                self.g, self.occupe, self.courants = sauve
-                for x, y in anses[e1[1]]: self.g[y][x] = 'E'
-                del anses[e1[1]]; self.eau = set().union(*anses.values())
-            if rate: continue
-            for e in leurres[10:]:
-                if e[0] in anses and e[1] in anses:
-                    sauve = ([row[:] for row in self.g], set(self.occupe), list(self.courants))
-                    if not poser(*e): self.g, self.occupe, self.courants = sauve
-            if poses >= 2: break
-        else: raise Echec('pas assez de leurres')
-        self.poses = poses
+        loin = lambda a, b: abs(centre[a][0] - centre[b][0]) + abs(centre[a][1] - centre[b][1])
+        def essayer(a, b):
+            if b in G[a] or a == b or b == 'E' and a != 'X': return False
+            G[a].add(b)
+            if dist('E', 'I') < 6 or dist('I', 'X') < 5 or not poser(a, b): G[a].discard(b); return False
+            return True
+        def atteint(a):
+            d, f = {a}, deque([a])
+            while f:
+                u = f.popleft()
+                for v in G[u]:
+                    if v not in d: d.add(v); f.append(v)
+            return d
+        def pousser(depuis, but, mini, assez):
+            """on étend ce qu'on atteint depuis `depuis`, vers des anses proches, jusqu'à toucher `but` (pas trop tôt)"""
+            for _ in range(60):
+                A = atteint(depuis)
+                if but in A and len(A) >= assez: return True
+                cands = [(a, b) for a in sorted(A) for b in anses if b not in A and b not in ('E', 'X' if but != 'X' else '') and 6 <= loin(a, b) <= 26
+                         and (b != but or dist(depuis, a) >= mini - 1) and (b != 'I' or but == 'I')]
+                r.shuffle(cands); cands.sort(key=lambda q: loin(*q) + r.random() * 8)
+                if not any(essayer(a, b) for a, b in cands[:25]): return but in A
+            return but in atteint(depuis)
+        if not pousser('E', 'I', 6, 0): raise Echec('îlot hors d\'atteinte')
+        if not pousser('I', 'X', 5, 0): raise Echec('sortie hors d\'atteinte')
+        # personne ne reste coincé, et presque partout il y a deux courants ou plus à choisir
+        for tour in range(3):
+            A = atteint('E')
+            for u in sorted(sorted(A), key=lambda q: len(G[q])):
+                bons = [v for v in anses if v != u and 'I' in atteint(v) and 'X' in atteint(v) and 6 <= loin(u, v) <= 28]
+                coince = dist(u, 'I') == 99 or dist(u, 'X') == 99
+                if not coince and len(G[u]) >= 2 + (tour == 2): continue
+                r.shuffle(bons); bons.sort(key=lambda v: loin(u, v) + r.random() * 10)
+                for v in bons[:10]:
+                    if essayer(u, v): break
+        # une anse qui reste un piège disparaît, avec les courants qui y mènent
+        def effacer(k):
+            for x, y in anses[k]: self.g[y][x] = 'E'
+            for q in [q for q in self.courants if k in q[:2]]:
+                for x, y in q[2]: self.g[y][x] = 'E'
+                self.courants.remove(q); G[q[0]].discard(q[1])
+            del anses[k]; del G[k]
+            for v in G.values(): v.discard(k)
+            self.eau = set().union(*anses.values())
+        for _ in range(20):
+            A = atteint('E')
+            pieges = [u for u in sorted(A) if u not in ('E', 'I', 'X') and (dist(u, 'I') == 99 or dist(u, 'X') == 99)]
+            if not pieges: break
+            for u in pieges: effacer(u)
+        self.G = G
+        # personne ne reste coincé : de toute anse atteinte, on peut encore gagner l'îlot et la sortie
+        vus = set(); f = deque(['E']); vus.add('E')
+        while f:
+            u = f.popleft()
+            for v in G[u]:
+                if v not in vus: vus.add(v); f.append(v)
+        if 'I' not in vus or 'X' not in vus: raise Echec('îlot ou sortie hors d\'atteinte')
+        if any(dist(u, 'I') == 99 or dist(u, 'X') == 99 for u in vus): raise Echec('piège')
+        if sum(len(G[u]) >= 2 for u in vus) < len(vus) * 0.5: raise Echec('trop peu de choix')
+        # les anses que rien n'atteint redeviennent des eaux tumultueuses (avec leurs courants)
+        for k in [k for k in anses if k not in vus]: effacer(k)
+        self.poses = sum(len(G[u]) for u in vus)
         self.verifier()
         return self
     def dist_anses(self, e):
@@ -801,7 +842,7 @@ class Fondmer:
                     if n not in cout or cout[n] > cout[c] + w: cout[n] = cout[c] + w; (f.append if w else f.appendleft)(n)
             return cout.get(b, 99)
         self.vers_ile, self.vers_sortie = courants(self.S, cle), courants(cle, self.N)
-        if self.vers_ile < 4 or self.vers_sortie < 3: raise Echec('trop direct')
+        if self.vers_ile < 6 or self.vers_sortie < 5: raise Echec('trop direct')
 
 # =====================================================================================================================
 # Plante
@@ -1057,12 +1098,98 @@ class Plante:
         if self.N not in self.marche(ouverts) or not self.tout_atteint() or not self.ordre_ok(): raise Echec('décousu')
 
 # =====================================================================================================================
+# =====================================================================================================================
+# Après coup : interrupteurs écartés du passage, objets de la salle, places des dresseurs (le dessin ne change pas)
+# =====================================================================================================================
+NB_OBJETS = {1: 2, 2: 3, 3: 3, 4: 0}
+DIRS4 = {(0, 1): 'down', (0, -1): 'up', (1, 0): 'right', (-1, 0): 'left'}
+
+def sain(s):
+    """la salle se résout toujours (dresseurs posés comme des murs)"""
+    try:
+        if isinstance(s, Feu): return s.garder() and s.verifier_puzzles()
+        if isinstance(s, Plante): return s.tout_atteint() and s.ordre_ok()
+        s.verifier(); return True
+    except Echec:
+        return False
+
+def ecarter_interrupteurs(s):
+    """un rocher posé sur un interrupteur ne doit pas boucher le passage : on déplace l'interrupteur d'une ou deux cases"""
+    passe = set('.=*^ixzSNK+-sm') | set(OBJETS)
+    def tout(bloque):
+        v, f = {s.S}, deque([s.S])
+        while f:
+            c = f.popleft()
+            for t in voisins(*c):
+                if t not in v and t not in bloque and s.at(*t) in passe: v.add(t); f.append(t)
+        return v
+    for k, (b, but, cout) in enumerate(list(s.puzzles)):
+        ref = tout(set())
+        if len(tout({but})) >= len(ref) - 1: continue
+        lettre = s.at(*but)
+        proches = sorted({(but[0] + dx, but[1] + dy) for dx in range(-2, 3) for dy in range(-2, 3)} - {but}, key=lambda t: abs(t[0] - but[0]) + abs(t[1] - but[1]))
+        for t in proches:
+            if s.at(*t) != '.' or len(tout({t})) < len(ref) - 1: continue
+            s.g[but[1]][but[0]] = '.'; s.g[t[1]][t[0]] = lettre
+            s.puzzles[k] = (b, t, cout)
+            if sain(s): break
+            s.g[t[1]][t[0]] = '.'; s.g[but[1]][but[0]] = lettre; s.puzzles[k] = (b, but, cout)
+
+def peupler(s, el, n, seed):
+    r = random.Random(seed * 7919 + 13)
+    if el == 'F': ecarter_interrupteurs(s)
+    # les objets : 2 dans la première salle, 3 dans les autres (aux places d'objets déjà prévues), aucun en Mer Intérieure
+    places = [(x, y) for y in range(H) for x in range(W) if s.g[y][x] in OBJETS]
+    r.shuffle(places)
+    for i, (x, y) in enumerate(places): s.g[y][x] = 'I' if i < NB_OBJETS[n] else '.'
+    s.dresseurs = []
+    if n == 4: return
+    # les dresseurs : 5 ou 6, loin les uns des autres, jamais là où ils gêneraient
+    pres = lambda c, ch: any(s.at(c[0] + dx, c[1] + dy) in ch for dx in (-1, 0, 1) for dy in (-1, 0, 1))
+    sol = '.'
+    if el == 'E':
+        cands = [(x, y) for y in range(3, H - 3) for x in range(2, W - 2) if
+                 (s.g[y][x] == '~' and (x, y) not in s.reserve and all(s.at(x + dx, y + dy) == '~' for dx in (-1, 0, 1) for dy in (-1, 0, 1)))
+                 or (s.g[y][x] == '.' and sum(s.at(*t) == '.' for t in voisins(x, y)) >= 3 and not pres((x, y), 'SNxzI<>()'))]
+    else:
+        fixe = getattr(s, 'fixe', set())
+        cands = [(x, y) for y in range(3, H - 3) for x in range(2, W - 2) if s.g[y][x] == '.' and (x, y) not in fixe
+                 and sum(s.at(*t) == '.' for t in voisins(x, y)) >= 2 and not pres((x, y), 'SNxzIK*^i+-sB' + ARBUSTES + RONCES + 'C')]
+    r.shuffle(cands)
+    voulu = r.choice((5, 6))
+    def passe(eau_max):
+        for c in cands:
+            if len(s.dresseurs) >= voulu: return
+            if c in [(d[0], d[1]) for d in s.dresseurs]: continue
+            if s.g[c[1]][c[0]] == '~' and sum(d[3] == 'eau' for d in s.dresseurs) >= eau_max: continue
+            essayer(c)
+    def essayer(c):
+        if any(abs(c[0] - d[0]) + abs(c[1] - d[1]) < 9 for d in s.dresseurs): return
+        if c[1] > H - 8: return
+        avant = s.g[c[1]][c[0]]
+        s.g[c[1]][c[0]] = '#'
+        if not sain(s): s.g[c[1]][c[0]] = avant; return
+        s.g[c[1]][c[0]] = avant
+        # il regarde vers une case libre
+        dirs = [d for d in DIRS4 if s.at(c[0] + d[0], c[1] + d[1]) == avant]
+        s.dresseurs.append((c[0], c[1], DIRS4[r.choice(dirs)] if dirs else 'down', 'eau' if avant == '~' else 'terre'))
+    # dans l'Eau : trois nageurs au plus sur l'eau, les autres sur les rives (s'il y a la place)
+    passe(3); passe(9)
+    if len(s.dresseurs) < 5: raise Echec('pas de place pour les dresseurs')
+    # posés tous ensemble, ils ne bloquent rien non plus
+    for x, y, _, _ in s.dresseurs: s.g[y][x] = '#'
+    ok = sain(s)
+    for x, y, _, k in s.dresseurs: s.g[y][x] = '~' if k == 'eau' else '.'
+    if not ok: raise Echec('dresseurs gênants')
+
 def generer(cls, n, seed):
     global W, H
     W, H = getattr(cls, 'TAILLE', (60, 44))
     for essai in range(400):
         try:
-            return cls(n, seed * 1000 + essai).faire()
+            o = cls(n, seed * 1000 + essai).faire()
+            peupler(o, {Feu: 'F', Eau: 'E', Fondmer: 'E', Plante: 'P'}[cls], n, seed * 1000 + essai)
+            return o
         except Echec:
             continue
     raise SystemExit(f'pas de salle pour {cls.__name__}{n}')
@@ -1071,6 +1198,7 @@ def main():
     seed = int(sys.argv[1]) if len(sys.argv) > 1 else 7
     out = ['// Généré par tools/temple-chemins.py (graine %d) : les grandes salles des chemins du Temple des Éléments.' % seed,
            '// Un plan par salle (Feu et Plante : 60 × 44 ; Eau : 80 × 60, et 50 × 40 pour la 4e) ; on peut le retoucher à la main (relancer l\'outil l\'écrase).', '']
+    dres = {}
     for el, cls, nums in (('F', Feu, (1, 2, 3)), ('E', Eau, (1, 2, 3)), ('E', Fondmer, (4,)), ('P', Plante, (1, 2, 3))):
         for n in nums:
             s = generer(cls, n, seed * 10 + 'FEP'.index(el) * 3 + n)
@@ -1078,9 +1206,14 @@ def main():
             out.append(f'export const {el}{n} = [')
             out += ["  '" + ''.join(r).replace('\\', '\\\\').replace("'", "\\'") + "'," for r in s.g]
             out.append('];')
+            dres[f'{el}{n}'] = s.dresseurs
             info = {'F': lambda: 'poussées %s' % [c for _, _, c in s.puzzles], 'E': lambda: ('courants vers l\'îlot %d, vers la sortie %d' % (s.vers_ile, s.vers_sortie)) if n == 4 else 'rivières à prendre %d, bassins %d' % (s.rivieres, len(s.d)),
-                    'P': lambda: 'détours %s, petits arbres %d' % ([g[4] for g in s.gates], sum(r.count('C') for r in s.g))}[el]()
+                    'P': lambda: 'détours %s, petits arbres %d' % ([g[4] for g in s.gates], sum(r.count('C') for r in s.g))}[el]() + ', dresseurs %d' % len(s.dresseurs)
             print(f'{el}{n}', info)
+    out.append('// les dresseurs de chaque salle : [x, y, regard, terre ou eau] (sur le plan, sans le bord)')
+    out.append('export const DRESSEURS = {')
+    out += ['  %s: [%s],' % (k, ', '.join("[%d, %d, '%s', '%s']" % d for d in v)) for k, v in dres.items()]
+    out.append('};')
     open(SORTIE, 'w').write('\n'.join(out) + '\n')
     print('écrit', SORTIE)
 

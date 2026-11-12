@@ -185,6 +185,9 @@ combat, même si le boss se soigne ; `soinBlocs: 2` : son attaque de soin rend d
 `journal` liste les sous-quêtes du donjon (une par salle à suivre), affichées dans le menu JOURNAL avec les objets de
 quête du joueur (les clés). Tout ce qui est dans le journal reste dans le donjon.
 
+L'encadré du donjon (en bas à droite) se cache et revient avec la touche N ou son petit bouton (`journalCache`, gardé
+dans le navigateur pour tous les donjons) ; caché, il n'en reste qu'un onglet « Journal (N) ».
+
 ### Le combat à plusieurs
 
 Chaque joueur a un Pokémon en jeu ; le boss agit une fois par tour contre un joueur tiré au sort. Ses PV sont
@@ -335,7 +338,8 @@ la locomotive ; au terminus sans victoire, tout le monde se retrouve sur le quai
 `js/donjons/temple.js` (salles), `js/donjon/temple.js` (mécaniques) : deux donjons derrière un même hall.
 
 Le Grand Hall (`h0`) : des dresseurs qui se préparent (ils parlent, on ne les combat pas), un vieil homme qui explique
-le temple, et deux portes (`porteHall`). À gauche, la Salle des Dalles (`e1`) : trois joueurs sur les trois dalles
+le temple, au centre les statues de Tortank, Dracaufeu et Florizarre en triangle (`statue`, dessinées par
+`dessinerStatues` de `voies.js`), et deux portes (`porteHall`). À gauche, la Salle des Dalles (`e1`) : trois joueurs sur les trois dalles
 ouvrent la petite porte, le temple à trois (niveaux 20 à 30). À droite, le moine (`moineTemple`) ne laisse passer qu'avec
 10 badges (`badgesSolo` ; dans le labo, il propose de passer quand même pour tester) : la Salle de la Dalle d'Or (`eo`)
 et sa grande porte (`grandePorte`, refermée derrière soi), le temple en solo (niveaux 50 à 65). Chaque salle a sa
@@ -351,12 +355,15 @@ lettre]` ramène devant cette porte par sa sortie `D`.
   l'hôte attribue les choix uniques et départage deux joueurs qui veulent la même par un duel entre joueurs, Pokémon
   soignés (`resoudreStarters`, `starterDuelFin` : le perdant repose sa Poké Ball et ne peut plus la reprendre). À trois
   sur la même, le gagnant affronte le troisième. Dans la Salle des Dalles, un moine (`talisman` : `talismanTemple`)
-  donne à chacun le Talisman des Éléments (`TALISMAN`, rangé dans les Objets rares) : tant qu'on l'a, Coupe, Force,
+  donne à chacun le Talisman des Éléments (`TALISMAN`, rangé dans les Objets rares) et un Sac de Quête : le sac du
+  joueur reste au moine (`st.sacNormal`), on n'a plus que ce qu'on trouve dans le temple, et on le reprend en sortant
+  (le sac de quête et ce qu'il contient sont perdus). Tant qu'on a le Talisman, Coupe, Force,
   Éclate-Roc et Surf marchent sans CS ni badge (`hasField`, `canField` de `js/jeu.js`), parce qu'Odyssée ne les donne
   pas si tôt. Le Gardien le reprend juste après sa défaite, et on le perd en sortant du temple (`tickTalisman`). Une
   fois la récompense prise, parler au Gardien ramène au Grand Hall (`retour` du PNJ, `resteGardien`), à trois comme en
   solo.
-- En solo : les mêmes neuf salles, reliées entre elles (voir plus bas), un téléporteur dans la Salle des Clés ramène aux
+- En solo : les mêmes salles, reliées entre elles (voir plus bas), la Carte du Temple (`carteTemple`) donnée sur la
+  dalle d'or, un téléporteur dans la Salle des Clés ramène aux
   trois portes ; le Gardien a six Pokémon (Nidoqueen et Nidoking 60, Ronflex 63, Simiabraz, Torterra et Pingoléon 65 à
   trois blocs chacun) ; derrière lui, trois CT à usage unique, dont on ne prend qu'une (`cts`, `ctsChoix` : `fin` pour
   Éruption, Giclédo et Jaillissève ; `tot`, si le donjon arrive plus tôt dans le jeu, pour Surchauffe, Lame de Fond et
@@ -369,7 +376,7 @@ Blocs de vie : un Pokémon de dresseur avec `blocs: n` a sa barre découpée en 
 tomber plus d'un (`combat/regles.js`, affichage dans `resume.js`). Équipe d'un PNJ : `[espèce, niveau, { blocs,
 attend }]` pour un combat de groupe, `[espèce, niveau, objet, attaques, talent, { blocs }]` pour un combat ordinaire.
 
-Le Feu et la Plante ont trois grandes salles (60 × 44 cases), l'Eau quatre (80 × 60, puis la Mer Intérieure, 56 × 46),
+Le Feu et la Plante ont trois grandes salles (60 × 44 cases), l'Eau quatre (80 × 60, puis la Mer Intérieure, 72 × 56),
 `F1`… `P3` et `E1`… `E4` dans `js/donjons/temple-chemins.js`, dessinées par
 `python3 tools/temple-chemins.py [graine]` (ne pas modifier le fichier à la main), les mêmes à trois et en solo :
 - Feu : une grotte de lave. Deux barrières `+` et `-` coupent le chemin ; chacune se voit avant son interrupteur (`*`,
@@ -377,14 +384,18 @@ Le Feu et la Plante ont trois grandes salles (60 × 44 cases), l'Eau quatre (80 
   trajet à virages (l'outil cherche le trajet à rebours depuis l'interrupteur et garde un départ à 12 poussées au
   moins). Rochers fissurés `m` (Éclate-Roc), lacs de lave et ponts `=`. Dans la troisième salle, la clé est au bout
   d'un tunnel loin de la sortie, derrière une troisième barrière `s` et son interrupteur `i`, avec son propre rocher.
-- Eau : un labyrinthe de vingt bassins (8 à 12 rivières à prendre au moins). Des rivières (`<` `>` `(` `)` : courant vers la gauche, la droite, le haut, le
+  Un interrupteur où le rocher posé boucherait le passage est décalé d'une ou deux cases (`ecarter_interrupteurs`).
+- Eau : un labyrinthe de vingt bassins (8 à 12 rivières à prendre au moins). La sortie n'est jamais dans un coin du haut
+  ni au milieu du haut : sur le mur de gauche dans la première salle, en haut (entre le coin et le milieu) dans la
+  deuxième, sur le mur de droite dans la troisième. Des rivières (`<` `>` `(` `)` : courant vers la gauche, la droite, le haut, le
   bas) emportent le surfeur d'un bassin à l'autre, dans un seul sens (`courant`, chevrons dessinés par
   `dessinerCourants`) ; beaucoup ramènent en arrière. L'outil garde le labyrinthe le plus long où aucun bassin n'est un
   piège : de partout, la sortie reste atteignable. La quatrième salle, la Mer Intérieure, est une grande étendue d'eau
   (`E` : eau à remous, `dessinerRemous`), avec la terre de l'entrée en bas, celle de la sortie en haut d'un côté et un
   îlot de 3 × 3 au centre, où est la clé. Des courants d'une case de large, qui tournent plusieurs fois, relient de
-  petites anses d'eau calme : il faut prendre les bons dans l'ordre pour atteindre l'îlot (4 courants au moins), puis
-  la sortie (3 au moins) ; des leurres ramènent en arrière, et un courant ramène de la sortie au départ.
+  petites anses d'eau calme. De presque chaque anse en partent deux ou trois : plusieurs routes mènent à l'îlot (6
+  courants au moins), puis à la sortie (5 au moins), et de partout on peut encore les rejoindre. Ni objet ni dresseur :
+  seulement un dresseur épuisé à l'entrée (`epuise`).
 - Plante : un labyrinthe de haies (8 × 6 cellules). Trois passages du chemin sont fermés par des ronces (`t` `d` `g`) ;
   chacune vient d'un arbuste (`r` `y` `q`) aux fleurs de la même couleur, placé tout près derrière la haie (on le voit
   à l'écran depuis les ronces) mais qu'on n'atteint que par un détour. Couper l'arbuste fait tomber ses ronces
@@ -392,27 +403,39 @@ Le Feu et la Plante ont trois grandes salles (60 × 44 cases), l'Eau quatre (80 
   Dans la troisième salle, la clé est dans le cul-de-sac le plus loin de la sortie, derrière des ronces bleues `n` dont
   l'arbuste `v` demande un grand détour. L'outil vérifie qu'on peut couper les arbustes dans l'ordre.
 Dans chaque salle, deux recoins : `x` dans la première zone (avant le premier obstacle), `z` dans la dernière. À trois,
-ce sont des culs-de-sac vides. Objets : `I` Rappel Max, `J` Guérison, `O` Super Bonbon, `P` PP Plus, `V` trois Hyper
-Balls ; `K` la clé (dernière salle du chemin). En revenant dans une salle, les rochers reprennent leur place (`remiseTemple`) ;
+ce sont des culs-de-sac vides. Objets `I` (`OBJETS_SALLES`, les mêmes dans les trois chemins) : Total Soin et Baie
+Fraive dans la première salle, Huile, Potion et Baie Oran dans la deuxième, Potion, Baie Prun et Baie Sitrus dans la
+troisième. `K` la clé (dernière salle du chemin). En revenant dans une salle, les rochers reprennent leur place (`remiseTemple`) ;
 barrières abaissées et arbustes coupés le restent. Une sortie `D` sous l'arrivée ramène à la salle d'avant. Chaque
-salle a sa roche (`biome`) et ses Pokémon sauvages (`SAUVAGES_TEMPLE` : niveaux 20 à 28 à trois, 50 à 58 en solo). Pas
-de dresseurs dans les chemins pour l'instant.
+salle a sa roche (`biome`), pas de Pokémon sauvages.
 
-Le solo, chemins mêlés. On n'entre que par la Plante : les portes du Feu et de l'Eau sont scellées tant qu'on n'est
-pas arrivé derrière elles (`TS:porte:<chemin>`). Chaque salle du solo peut avoir un `verrou` devant sa sortie et des
-`recoins` :
-- passages (`type: 'passage'`, `genre` eau, lave ou liane, `vers: [salle, recoin]`) : le point d'eau du Jardin Abandonné
-  mène au Bassin Profond, le tunnel de lave de la Grotte des Courants aux Pentes du Volcan ; la liane du Cœur de la
-  Jungle descend aux Gradins de Lave et le bassin de la Source remonte au Cœur de la Jungle, deux raccourcis qui ne
-  s'ouvrent que d'un côté (`lien`, `maitre`) ;
-- objets (`type: 'objet'`, `tresors`) : la Braise Éternelle (Pentes du Volcan), la Jarre Vide (Gradins de Lave), la
-  Graine Géante (Jungle Profonde) ; la Source (`type: 'source'`) remplit la jarre ;
-- verrous : les ronces géantes du Jardin Abandonné brûlent avec la Braise, le torrent de la Grotte des Courants se
-  boit avec la Graine, le mur de flammes des Gradins de Lave s'éteint avec l'eau de la Source.
-L'ordre : Plante 1, Eau 1 et 2, Feu 1 et 2 (Braise, Jarre), retour à la Plante 1, Plante 2 (Graine) et 3 (clé), Eau 2
-à 4 (eau, clé), Feu 2 et 3 (clé), Salle des Clés. Tout est gardé dans les drapeaux `TS:…` de la partie, remis à zéro
-quand on marche sur la dalle d'or (`resetSolo`, `syncSolo`). Les tests résolvent chaque salle (rochers, rivières,
-ronces) et jouent le solo en abrégé : on finit, et pas sans la Braise, la Graine, la jarre ou l'eau.
+Dresseurs des chemins : 5 ou 6 par salle (places dans `DRESSEURS` de `temple-chemins.js`, posées par l'outil là où
+elles ne gênent rien), de vrais dresseurs d'Odyssée (`trainer`, regard de 4 cases) qui tournent la tête de temps en
+temps (`tickDresseurs`) et viennent défier. Classes et répliques dans `DRESSEURS_TEMPLE` : plus de la moitié aiment
+l'élément du chemin (montagnards au Feu, marins et pêcheurs à l'Eau, scouts à la Plante), les autres sont venus tenter
+l'épreuve ; nageurs sur l'eau (`nage`, sprites `img/temple/nageurs.png` posés dans deux rangées libres de la planche,
+`spritesTemple` ; ils voient loin sur l'eau : `regardNageurs`). 1 à 3 Pokémon (`POKEMON_TEMPLE` : niveaux 20 à 25 à
+trois, 55 à 60 en solo ; au Feu, 30 % de Roche). Vaincu, un dresseur donne deux objets différents, tirés au hasard
+(`BUTIN_TEMPLE`, `butinTemple`) ; battu, on se réveille à l'entrée de la salle (`perduTemple`). Ils reviennent à chaque
+nouvelle épreuve (`remiseDresseurs`).
+
+Le solo, chemins mêlés. Les trois portes sont ouvertes. Les premières salles (Jardin Abandonné, Bassin Profond, Pentes
+du Volcan) ont des grottes (`ç`, `bouches`) creusées au bord du plan par `creuserBouches` : trois passages secrets, chacun
+dans les deux sens, sur le mur qui fait face à l'autre chemin (la Plante est à droite, l'Eau au milieu, le Feu à
+gauche), au bout d'un petit bras qu'on atteint dès l'entrée de la salle. Plante et Eau : eau claire, on y entre en
+surfant ; Eau et Feu : eau sombre, roche volcanique, en surfant ; Plante et Feu : un tunnel. Autour de chaque grotte, un
+peu du décor de l'autre chemin. Une salle qui s'y prête mieux à l'envers est retournée (`miroir`, ses dresseurs aussi).
+Les sorties des premières et deuxièmes salles ont un `verrou` qui demande ce qu'on trouve au fond (recoin `z`) de la
+salle de même rang d'un autre chemin (`tresors`) :
+- premières salles : la Braise Éternelle (Feu) brûle les ronces géantes de la Plante, la Graine Géante (Plante) boit
+  le torrent de l'Eau, la Fiole d'Eau Pure (Eau) éteint le mur de flammes du Feu ;
+- deuxièmes salles : la Pierre Ardente (Feu) fait fondre le mur de glace de l'Eau, la Rosée Éternelle (Eau) rend vie
+  à l'arbre mort de la Plante, la Corde de Liane (Plante) fait franchir le gouffre du Feu.
+On avance dans les trois chemins à la fois, dans l'ordre qu'on veut. La Carte du Temple (`carte-temple`, dans le Sac)
+montre les salles en trois colonnes avec les sorties et les passages secrets, puis le squelette de chaque salle (sol,
+eau, entrée, sortie, grottes, pas de clé ni d'obstacle). Tout est gardé dans les drapeaux `TS:…` de la partie, remis à
+zéro quand on marche sur la dalle d'or (`resetSolo`, `syncSolo`). Les tests résolvent chaque salle (rochers, rivières,
+ronces) et jouent le solo en abrégé : on finit, et pas sans un seul des six objets.
 
 ### Les formes du Temple
 

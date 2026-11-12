@@ -1,0 +1,5 @@
+Images du Temple des Éléments (TestOdyssée).
+- nageurs.png : tirés des personnages d'Odyssée (enfant, fillette ; sprites de HeartGold / SoulSilver), têtes posées sur
+  l'eau par un petit script.
+- baie_fraive.png : sprite de la Baie Fraive (rawst-berry) de PokeAPI/sprites.
+- le reste (grottes, verrous, trésors, sac, carte, arbustes, ronces, portes…) : dessiné pour le labo.

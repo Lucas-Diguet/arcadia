@@ -12,7 +12,7 @@ import { battu } from './etat.js';
 const cle = (x, y) => x + ',' + y;
 const estVoies = (d) => d.salles.some((s) => s.type === 'voies');
 const TYPES = new Set(['voie', 'menteur', 'parchemin', 'coffre', 'porteCode', 'levier', 'statue']);
-const NOMS_STATUES = { 480: 'Créhelf', 481: 'Créfollet', 482: 'Créfadet' };
+const NOMS_STATUES = { 480: 'Créhelf', 481: 'Créfollet', 482: 'Créfadet', 3: 'Florizarre', 6: 'Dracaufeu', 9: 'Tortank' };
 
 /** saisie d'un code (chiffres) ; null si on annule */
 function saisirCode(ui, titre, n) {

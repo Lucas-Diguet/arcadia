@@ -1,6 +1,8 @@
 // tools/test-testodyssee.mjs — TestOdyssée : plans des donjons et règles partagées du groupe.
 // node tools/test-testodyssee.mjs
 import { DONJONS } from '../testodyssee/js/donjons/index.js';
+import { DRESSEURS } from '../testodyssee/js/donjons/temple-chemins.js';
+import { OBJETS_SALLES, DRESSEURS_TEMPLE, POKEMON_TEMPLE, BUTIN_TEMPLE } from '../testodyssee/js/donjons/temple.js';
 import { construireCarte, construireSalles, passageSuivant, lirePlan, regionDe, ouvrir, aCote, relierExterieur, texteJoueurs } from '../testodyssee/js/donjon/plan.js';
 import { installerContenu, STARTERS, refusCt, OBJETS } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
@@ -802,7 +804,11 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
     const pres = (vus, [x, y]) => vus.has(K(x, y)) || D4.some(([dx, dy]) => vus.has(K(x + dx, y + dy)));
     for (const c of ['f', 'e', 'p']) for (const n of [1, 2, 3]) {
       const s = d.salles.find((q) => q.id === `g${c}${n}`), { P, at, ou, S, N } = lire(s);
-      ok((c === 'e' ? P.length === 61 && P[0].length === 80 : P.length === 45 && P[0].length === 60) && d.salles.find((q) => q.id === `s${c}${n}`).plan === s.plan && ou('x').length === 1 && ou('z').length === 1 && ou('IJOPV').length >= 4, `temple : ${s.id} (${s.nom}) est grande, sert aussi en solo, avec ses objets et ses deux recoins`);
+      const so = d.salles.find((q) => q.id === `s${c}${n}`), memePlan = n === 1 ? so.plan.length === P.length && so.plan[0].length === P[0].length : so.plan === s.plan;
+      ok((c === 'e' ? P.length === 61 && P[0].length === 80 : P.length === 45 && P[0].length === 60) && memePlan && ou('x').length === 1 && ou('z').length === 1 && ou('I').length === (n === 1 ? 2 : 3) && !ou('JOPV').length && OBJETS_SALLES[n].length === ou('I').length, `temple : ${s.id} (${s.nom}) est grande, sert aussi en solo, avec ${ou('I').length} objets et ses deux recoins`);
+      // ses dresseurs : 5 ou 6, sur le sol (ou sur l'eau, pour les nageurs), loin les uns des autres
+      const dr = DRESSEURS[`${c.toUpperCase()}${n}`];
+      ok(dr.length >= 5 && dr.length <= 6 && dr.every(([x, y, dir, ou2]) => (ou2 === 'eau' ? at(x, y) === '~' : at(x, y) === '.') && ['up', 'down', 'left', 'right'].includes(dir)) && dr.every((a, i) => dr.every((b, j) => i === j || Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) >= 9)) && (c !== 'e' || dr.some((q) => q[3] === 'eau')), `temple : ${s.id} a ${dr.length} dresseurs${c === 'e' ? ', dont des nageurs sur l\'eau' : ''}`);
       ok((n === 3 && c !== 'e') === !!s.cle && (n !== 3 || c === 'e' || ou('K').length === 1) && (c !== 'e' || !ou('K').length) && s.biome && s.voie === c, `temple : ${s.id} a sa roche, et la clé est dans la troisième salle`);
       let zA, zB;
       if (c === 'f') {
@@ -903,56 +909,91 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
     const courants = (a, b) => { const c = new Map([[K(...a), 0]]), q = [a]; for (let i = 0; i < q.length; i++) for (const [n, w] of pas(q[i])) { const v = c.get(K(...q[i])) + w; if (!c.has(K(...n)) || c.get(K(...n)) > v) { c.set(K(...n), v); q.push(n); } } return c.get(K(...b)); };
     // l'îlot : 3 × 3 cases de terre au centre, entouré d'eau
     const ile = ou('.').filter(([x, y]) => Math.abs(x - cle[0]) <= 1 && Math.abs(y - cle[1]) <= 1);
-    ok(P.length === 47 && P[0].length === 56 && ile.length === 8 && Math.abs(cle[0] - P[0].length / 2) <= 4 && Math.abs(cle[1] - P.length / 2) <= 4 && ou('E').length > 1000, 'temple : la Mer Intérieure, une grande étendue d\'eau avec un îlot de 3 × 3 cases au centre');
+    ok(P.length === 57 && P[0].length === 72 && ile.length === 8 && Math.abs(cle[0] - P[0].length / 2) <= 4 && Math.abs(cle[1] - P.length / 2) <= 4 && ou('E').length > 1000, 'temple : la Mer Intérieure, une grande étendue d\'eau avec un îlot de 3 × 3 cases au centre');
     ok(ou('<>()').every(([x, y]) => D4.filter(([dx, dy]) => '<>()'.includes(at(x + dx, y + dy))).length <= 2) && ou('<>()').length >= 300, 'temple : ses courants n\'ont qu\'une case de large');
     ok(graphe.has(K(...cle)) && graphe.has(K(...N)) && f.every((q) => vc.has(K(...q)) && vn.has(K(...q))), 'temple : de partout dans la Mer Intérieure, on peut encore rejoindre l\'îlot et la sortie');
     const a = courants(S, cle), b = courants(cle, N);
-    ok(a >= 4 && b >= 3, `temple : il faut prendre ${a} courants dans le bon ordre pour l'îlot, puis ${b} pour la sortie`);
+    // plusieurs courants partent de presque chaque anse : il faut choisir
+    // chaque anse (eau calme d'un seul tenant) : combien de courants en partent ?
+    const anses = [], vu = new Set();
+    for (const [x0, y0] of ou('~')) {
+      if (vu.has(K(x0, y0))) continue;
+      const A = [[x0, y0]]; vu.add(K(x0, y0));
+      for (let i = 0; i < A.length; i++) for (const [dx, dy] of D4) { const t = [A[i][0] + dx, A[i][1] + dy]; if (at(...t) === '~' && !vu.has(K(...t))) { vu.add(K(...t)); A.push(t); } }
+      anses.push(new Set(A.flatMap(([x, y]) => pas([x, y]).filter(([, w]) => w).map(([n]) => K(...n)))).size);
+    }
+    const choix = anses.filter((k) => k >= 2).length;
+    ok(a >= 6 && b >= 5 && choix >= 8 && !ou('I').length && !DRESSEURS.E4.length, `temple : il faut prendre ${a} courants dans le bon ordre pour l'îlot, puis ${b} pour la sortie, avec des choix partout ; ni objet ni dresseur`);
     ok(d.salles.find((q) => q.id === 'se4').plan === P && d.salles.find((q) => q.id === 'se4').cle === 'e' && s.cle === 'e', 'temple : la clé de l\'Eau est sur l\'îlot, à trois comme en solo');
   }
   // le Talisman des Éléments, et le Gardien qui ramène au hall
   ok(par.e1.donjon.plan.pnj['|'] && d.pnj['|'].talisman && ITEMS['talisman-elements']?.key && !par.eo.donjon.plan.pnj['|'], 'temple : le moine de la Salle des Dalles prête le Talisman des Éléments (pas dans le solo)');
   ok(d.pnj.M.retour && d.pnj.Z.retour, 'temple : les Gardiens ramènent au Grand Hall une fois la récompense prise');
+  // les dresseurs des chemins : leurs Pokémon sont du type du chemin, ce qu'ils donnent fait 100 %
+  {
+    const T_ = { f: ['fire'], roche: ['rock'], e: ['water'], p: ['grass', 'bug'] };
+    ok(Object.entries(POKEMON_TEMPLE).every(([k, P]) => [...P.trois, ...P.solo].every((sp) => SPECIES[sp]?.t.some((t) => T_[k].includes(t)))), 'temple : les dresseurs du Feu ont des Pokémon Feu ou Roche, ceux de l\'Eau des Pokémon Eau, ceux de la Plante des Pokémon Plante ou Insecte');
+    ok(BUTIN_TEMPLE.reduce((a, [, p]) => a + p, 0) === 100 && BUTIN_TEMPLE.every(([k]) => ITEMS[k]) && Object.values(OBJETS_SALLES).flat().every((k) => ITEMS[k]), 'temple : le butin des dresseurs et les objets des salles existent, et les chances font 100 %');
+    ok(['f', 'e', 'p'].every((c) => { const D = DRESSEURS_TEMPLE[c], n = D.theme.length + D.autres.length; return n >= 6 && D.theme.length >= 3 && [...D.theme, ...D.autres, ...(D.nage || [])].every((q) => q.intro && q.lose && q.after); }) && DRESSEURS_TEMPLE.e.nage.length >= 3, 'temple : assez de dresseurs pour chaque salle, montagnards, marins et nageurs, scouts en tête');
+    ok(d.objets['`'].sp === 9 && d.objets['{'].sp === 6 && d.objets['}'].sp === 3 && par.h0.donjon.plan.objets['`']?.length === 1, 'temple : les statues de Tortank, Dracaufeu et Florizarre au centre du hall');
+    ok(ITEMS['sac-quete']?.key && ITEMS['rawst-berry']?.cure, 'temple : le Sac de Quête du moine, et la Baie Fraive');
+  }
   // le solo : les trois chemins se mêlent
   {
-    const solo = d.salles.filter((s) => s.branche === 'solo' && s.chemin), par2 = Object.fromEntries(solo.map((s) => [s.id, s]));
-    ok(solo.length === 10 && solo.every((s) => Object.values(s.recoins || {}).every((R) => R.type !== 'passage' || (par2[R.vers[0]]?.recoins?.[R.vers[1]]?.vers?.join() === `${s.id},${Object.keys(s.recoins).find((c) => s.recoins[c] === R)}` && par2[R.vers[0]].chemin !== s.chemin))), 'temple en solo : chaque passage relie deux chemins différents, dans les deux sens');
-    ok(['p', 'e', 'f'].every((c) => solo.some((s) => s.chemin === c && s.verrou)) && Object.keys(d.tresors).every((k) => ITEMS[d.tresors[k].objet]?.key) && ITEMS['jarre-pleine']?.key, 'temple en solo : un verrou par chemin, et les objets qui les ouvrent');
-    // parcours abstrait : chaque salle a un début (a) et une fin (b). prudent : on ne compte que ce qui est sûr (une
-    // salle se traverse du début à la fin ; à l'envers seulement si on l'a déjà traversée, jamais contre les rivières).
-    // large : tout ce qui pourrait se faire. Sans un des trois objets, même le parcours large ne finit pas.
-    const jouer = (sans, large) => {
-      const lieux = new Set(['s2']), a = new Set(), liens = new Set(), verrous = new Set(), cles = new Set();
-      const zone = (s, c) => s.id + (c === 'x' ? ':a' : ':b');
+    const solo = d.salles.filter((s) => s.branche === 'solo' && s.chemin), par2 = Object.fromEntries(solo.map((s) => [s.id, s])), D4c = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    // les passages secrets : trois, entre les premières salles, chacun dans les deux sens, sur le mur qui fait face à
+    // l'autre chemin ; on y arrive dès l'entrée de la salle, sans rien résoudre
+    const bouches = solo.flatMap((s) => (s.bouches || []).map((B, i) => ({ s, B, i })));
+    ok(bouches.length === 6 && bouches.every(({ s, B, i }) => { const s2 = par2[B.vers[0]]; return s2.chemin !== s.chemin && s2.bouches[B.vers[1]].vers.join() === `${s.id},${i}` && s2.bouches[B.vers[1]].genre === B.genre && s.plan[B.y][B.x] === 'ç'; })
+      && ['eau', 'sombre', 'tunnel'].every((g) => bouches.filter(({ B }) => B.genre === g).length === 2), 'temple en solo : trois passages secrets (Plante et Eau, Eau et Feu, Plante et Feu), dans les deux sens');
+    const cote = { p: { e: 0, f: 0 }, e: { p: 1, f: 0 }, f: { e: 1, p: 1 } };
+    ok(bouches.every(({ s, B }) => (B.x === 0 ? 0 : 1) === cote[s.chemin][par2[B.vers[0]].chemin]), 'temple en solo : chaque grotte est sur le mur qui fait face à l\'autre chemin');
+    ok(bouches.every(({ s, B }) => {
+      const P = s.plan, at = (x, y) => P[y]?.[x] ?? '#', sy = P.findIndex((r) => r.includes('S')), S = [P[sy].indexOf('S'), sy];
+      const dx = B.x === 0 ? 1 : -1, devant = [B.x + dx, B.y], TERRE = '.SNxzI"fh=', EAU = '~';
+      const v = new Set([S.join()]), f = [S];
+      const DV = { '<': [-1, 0], '>': [1, 0], '(': [0, -1], ')': [0, 1] };
+      while (f.length) {
+        const [x, y] = f.pop();
+        for (const [ax, ay] of D4c) {
+          let t = [x + ax, y + ay];
+          if (!(TERRE + EAU).includes(at(...t)) && !DV[at(...t)]) continue;
+          for (let k = 0; k < 400 && DV[at(...t)]; k++) { const [ux, uy] = DV[at(...t)], u = [t[0] + ux, t[1] + uy]; if (!'~<>()'.includes(at(...u))) break; t = u; }
+          if (!v.has(t.join())) { v.add(t.join()); f.push(t); }
+        }
+      }
+      return v.has(devant.join()) && (B.genre === 'tunnel' ? at(...devant) === '.' : at(...devant) === '~');
+    }), 'temple en solo : on atteint chaque grotte dès l\'entrée de la salle, à pied ou en surfant');
+    ok(['p', 'e', 'f'].every((c) => [1, 2].every((n) => par2[`s${c}${n}`].verrou && par2[`s${c}${n}`].recoins?.z?.type === 'objet')) && Object.keys(d.tresors).every((k) => ITEMS[d.tresors[k].objet]?.key) && ITEMS['carte-temple']?.key, 'temple en solo : un verrou au bout des premières et deuxièmes salles, et les objets qui les ouvrent');
+    ok(solo.every((s) => !s.verrou || par2[solo.find((q) => q.recoins?.z?.objet === s.verrou.objet).id].chemin !== s.chemin && solo.find((q) => q.recoins?.z?.objet === s.verrou.objet).id[2] === s.id[2]), 'temple en solo : un verrou demande ce qu\'on trouve dans la salle de même rang d\'un autre chemin');
+    // parcours abstrait : chaque salle a un début (a) et une fin (b) ; les trois portes sont ouvertes
+    const jouer = (sans) => {
+      const lieux = new Set(['s2']), a = new Set(), verrous = new Set(), cles = new Set();
       for (let tour = 0; tour < 60; tour++) {
-        const n0 = lieux.size + a.size + liens.size + verrous.size + cles.size;
-        if (lieux.has('s2')) { lieux.add('sp1:a'); for (const c of ['f', 'e']) if (lieux.has(`s${c}1:a`)) lieux.add(`s${c}1:a`); }
+        const n0 = lieux.size + a.size + verrous.size + cles.size;
+        if (lieux.has('s2')) for (const c of ['p', 'e', 'f']) lieux.add(`s${c}1:a`);
         for (const s of solo) {
           const A = s.id + ':a', B = s.id + ':b', n = +s.id[2], suiv = par2[s.id.slice(0, 2) + (n + 1)];
-          if (lieux.has(A)) { lieux.add(B); if (n === 1) lieux.add('s2'); else lieux.add(s.id.slice(0, 2) + (n - 1) + ':b'); }
-          if (lieux.has(B) && (large || (s.chemin !== 'e' && lieux.has(A)))) lieux.add(A);
+          if (lieux.has(A)) { lieux.add(B); if (n === 1) lieux.add('s2'); }
+          for (const Bo of s.bouches || []) if (lieux.has(A)) lieux.add(Bo.vers[0] + ':a');
           if (lieux.has(B)) {
-            if (s.cle) { cles.add(s.cle); lieux.add('s2'); }
+            if (s.cle) cles.add(s.cle);
+            const z = s.recoins?.z; if (z?.type === 'objet' && z.objet !== sans) a.add(z.objet);
             if (s.verrou && a.has(s.verrou.objet)) verrous.add(s.id);
             if (suiv && (!s.verrou || verrous.has(s.id))) lieux.add(suiv.id + ':a');
           }
-          for (const [c, R] of Object.entries(s.recoins || {})) {
-            if (!lieux.has(zone(s, c))) continue;
-            if (R.type === 'objet' && R.objet !== sans) a.add(R.objet);
-            if (R.type === 'source' && a.has('jarre') && sans !== 'eau') a.add('eau');
-            if (R.type === 'passage') { if (R.lien && R.maitre) liens.add(R.lien); if (!R.lien || liens.has(R.lien)) lieux.add(zone(par2[R.vers[0]], R.vers[1])); }
-          }
         }
-        if (lieux.size + a.size + liens.size + verrous.size + cles.size === n0) break;
+        if (lieux.size + a.size + verrous.size + cles.size === n0) break;
       }
       return { fini: cles.size === 3, lieux, a };
     };
-    const tout = jouer(null, false);
-    ok(tout.fini && solo.every((s) => tout.lieux.has(s.id + ':a') && tout.lieux.has(s.id + ':b')), 'temple en solo : en ne comptant que ce qui est sûr, on trouve les trois clés et on passe par les neuf salles');
-    ok(['braise', 'graine', 'jarre', 'eau'].every((k) => !jouer(k, true).fini), 'temple en solo : sans la Braise, la Graine, la jarre ou l\'eau de la Source, on ne finit pas');
-    const debut = jouer('braise', true);
-    ok(!debut.lieux.has('sp2:a') && debut.lieux.has('se1:a') && debut.lieux.has('sf2:b') && !debut.lieux.has('sp3:b') && !debut.lieux.has('se3:a'), 'temple en solo : on entre par la Plante, on passe par l\'Eau puis le Feu avant de pouvoir avancer dans la Plante');
-    ok(d.objets.R.chemin === 'f' && d.objets.U.chemin === 'e' && ['sp1', 'se1', 'sf1'].every((id) => par2[id].retour[0] === 's2'), 'temple en solo : les premières salles ramènent à la Salle des Trois Portes');
+    const tout = jouer(null);
+    ok(tout.fini && solo.every((s) => tout.lieux.has(s.id + ':a') && tout.lieux.has(s.id + ':b')), 'temple en solo : on trouve les trois clés et on passe par toutes les salles');
+    ok(Object.keys(d.tresors).every((k) => !jouer(k).fini), 'temple en solo : sans un seul des six objets, on ne finit pas');
+    // aucun ordre imposé : chaque chemin peut avancer en premier (sa deuxième salle s'ouvre avec l'objet d'une
+    // première salle voisine, qu'on atteint dès le début)
+    ok(['p', 'e', 'f'].every((c) => { const v = par2[`s${c}1`].verrou.objet, src = solo.find((q) => q.recoins?.z?.objet === v); return src.id[2] === '1'; }), 'temple en solo : on peut avancer dans les trois chemins à la fois, dans l\'ordre qu\'on veut');
+    ok(['sp1', 'se1', 'sf1'].every((id) => par2[id].retour[0] === 's2') && !d.salles.find((q) => q.id === 's2').plan.join('').includes('D'), 'temple en solo : les premières salles ramènent à la Salle des Trois Portes');
   }
   // les Gardiens
   {

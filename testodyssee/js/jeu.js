@@ -59,6 +59,15 @@ export class TestGame extends Game {
     // dresseurs des Routes Victoire : les attaques, objets tenus et valeurs cachées du jeu d'origine
     if (o.trainer?.rv && o.party) equipeOrigine(o.trainer.team, o.party);
     if (this.modeTest && await this.ui.yesNo('Mode test : passer ce combat (compté comme gagné) ?')) return 'win';
+    // dresseurs des chemins du Temple : battu, on se réveille à l'entrée de la salle (pas au dernier Centre)
+    if (o.trainer && this.donjons?.dresseurTemple?.(o.id)) {
+      const r = await this.runBattleSalle({ ...o, noWhiteout: true });
+      if (r === 'lose') this.donjons.perduTemple();
+      return r;
+    }
+    return this.runBattleSalle(o);
+  }
+  async runBattleSalle(o) {
     const m = this.mapObj;
     if (m?.style !== 'clair' && !m?.fondCombat) return super.runBattle(o);
     const avant = [m.floor, m.battleBg]; m.floor = 'clair'; m.battleBg = m.fondCombat || 'league';

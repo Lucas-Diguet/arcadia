@@ -29,7 +29,8 @@ export function lirePlan(def) {
     // objet accroché au mur (`mur: true`) : la case reste un mur, l'objet se lit en lui faisant face
     if (def.objets?.[c]?.mur) { (out.objets[c] ||= []).push([x, y]); continue; }
     out.sol.push([x, y]);
-    if (c === 'i') out.glace.add(x + ',' + y);
+    // le sol glacé, sauf si le donjon donne un autre sens à la lettre (l'interrupteur i du Temple)
+    if (c === 'i' && !def.objets?.i) out.glace.add(x + ',' + y);
     else if (def.objets?.[c]) (out.objets[c] ||= []).push([x, y]);
     else if (c === 'S') out.depart = [x, y];
     else if (c === 'D') out.sortie = [x, y];

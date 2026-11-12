@@ -12,32 +12,44 @@ import { SPECIES } from '../../../odyssee/js/data/species.js';
 import { healFull } from '../../../odyssee/js/core/mon.js';
 import { battu, resoudreStarters } from './etat.js';
 import { STARTERS_TEMPLE } from '../formes.js';
-import { SAUVAGES_TEMPLE } from '../donjons/temple.js';
 import { itemName, ITEMS } from '../../../odyssee/js/core/items.js';
+import { CHAR_ROWS } from '../../../odyssee/js/render/world3d.js';
+import { DRESSEURS } from '../donjons/temple-chemins.js';
+import { DRESSEURS_TEMPLE, POKEMON_TEMPLE, BUTIN_TEMPLE, OBJETS_SALLES } from '../donjons/temple.js';
 const ITEMS_DESC = (k) => ITEMS[k]?.desc || '';
 
 const cle = (x, y) => x + ',' + y;
 const estTemple = (d) => d.id === 'temple';
-const TYPES = new Set(['grandePorte', 'porteSolo', 'porteCles', 'starter', 'ct', 'porteHall', 'arbuste', 'ronces']);
+const TYPES = new Set(['grandePorte', 'porteSolo', 'porteCles', 'starter', 'ct', 'porteHall', 'arbuste', 'ronces', 'bouche']);
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 export const TALISMAN = 'talisman-elements';
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
 // le solo : objets du Sac, décors des passages et des verrous
-const SAC = { braise: 'braise-eternelle', graine: 'graine-geante', jarre: 'jarre-vide', eau: 'jarre-pleine' };
-const DECOR_PASSAGE = { eau: 'passage_eau', lave: 'passage_lave', liane: 'passage_liane' };
-const DECOR_VERROU = { ronces: 'ronces_geantes', torrent: 'torrent', flammes: 'mur_flammes' };
+const SAC = { braise: 'braise-eternelle', graine: 'graine-geante', fiole: 'fiole-eau-pure', pierre: 'pierre-ardente', rosee: 'rosee-eternelle', corde: 'corde-liane' };
+const DECOR_BOUCHE = { eau: 'bouche_eau', sombre: 'bouche_sombre', tunnel: 'bouche_tunnel' };
+const DECOR_VERROU = { ronces: 'ronces_geantes', torrent: 'torrent', flammes: 'mur_flammes', glace: 'mur_glace', arbre: 'arbre_mort', gouffre: 'gouffre' };
+export const CARTE_TEMPLE = 'carte-temple';
+/** la case devant la sortie d'une salle (la sortie peut être en haut ou sur un côté) */
+export function devantSortie(P) {
+  const [x, y] = P.suivante, sol = new Set(P.sol.map(([a, b]) => a + ',' + b));
+  return [[0, 1], [1, 0], [-1, 0], [0, -1]].map(([dx, dy]) => [x + dx, y + dy]).find(([a, b]) => sol.has(a + ',' + b)) || [x, y + 1];
+}
 const TYPE_FR = { fire: 'Feu', water: 'Eau', grass: 'Plante', normal: 'Normal', steel: 'Acier', flying: 'Vol', poison: 'Poison' };
 const NOM_CLE = { f: 'Clé du Feu', e: 'Clé de l\'Eau', p: 'Clé de la Plante' };
 const IMG_CLE = { f: 'cle_feu', e: 'cle_eau', p: 'cle_plante' };
 const NIVEAU_STARTER = 15;
+// un tirage qui ne dépend que de son texte : tout le monde voit les mêmes dresseurs
+const tirage = (txt) => { let h = 2166136261; for (const c of txt) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; };
 
 export const Temple = {
   poserObjetsTemple(d, m) {
     if (!estTemple(d)) return;
+    if (ITEMS[CARTE_TEMPLE] && !ITEMS[CARTE_TEMPLE].use) ITEMS[CARTE_TEMPLE].use = async () => { await this.carteTemple(d); return true; };
     const P = m.donjon.plan, S = d.salles.find((q) => q.carte === m.id);
-    // les chemins du solo : roche de leur élément, eau à surfer, Pokémon sauvages
+    // la roche de leur élément
     if (S?.biome) m.biome = S.biome;
-    if (S?.sauvages) { const enc = SAUVAGES_TEMPLE[S.sauvages]; if (S.sauvages === 'e') { m.surf = true; m.surfEnc = enc; m.encounter = enc; } else m.encounter = enc; }
+    // on surfe dans tous les chemins (l'Eau, et les passages entre les chemins du solo) ; pas de Pokémon sauvages
+    if (S?.voie || S?.chemin) { m.surf = true; m.encounter = null; m.surfEnc = null; }
     for (const [c, l] of Object.entries(P.objets)) {
       const o = d.objets[c];
       for (const [x, y] of l) {
@@ -59,8 +71,14 @@ export const Temple = {
       const [x, y] = P.objets[c][0];
       m.object(x, y, { use: () => this.recoinTemple(d, S, c) });
     }
-    if (S?.verrou) { const [nx, ny] = P.suivante; m.object(nx, ny + 1, { use: () => this.verrouTemple(d, S) }); }
+    if (S?.verrou) { const [vx, vy] = devantSortie(P); m.object(vx, vy, { use: () => this.verrouTemple(d, S) }); }
+    // les grottes des passages secrets : leur dessin dépend de leurs deux chemins
+    for (const B of S?.bouches || []) { const dd = m.deco.find((q) => q.x === B.x + 1 && q.y === B.y + 1); if (dd) dd.k = DECOR_BOUCHE[B.genre]; }
     if (S?.branche === 'solo') this.syncSolo(d, m);
+    // les objets de la salle, puis ses dresseurs (et le nageur épuisé de la Mer Intérieure)
+    const niv = S?.pk ? Number(S.pk[1]) : 0;
+    (P.objets.I || []).forEach(([x, y], i) => { const k = OBJETS_SALLES[niv]?.[i]; if (k) m.item(x, y, k, 1, `${m.id}:I:${i}`); });
+    if (S?.pk) this.poserDresseursTemple(d, m, S);
     // ponts sur la lave : des planches posées en décalque (le rendu met la lave dessous)
     if (m.biome === 'magma') for (const [x, y] of P.objets['='] || []) {
       const ns = m.get(x - 1, y) === T.LAVA || m.get(x + 1, y) === T.LAVA;
@@ -93,13 +111,177 @@ export const Temple = {
     const g = this.game, d = this.defs?.get('temple'), m = g.world.maps[to?.map];
     if (!d || m?.donjon?.def !== d || g.mapObj === m) return;
     const S = d.salles.find((q) => q.carte === m.id); if (!S?.voie && !S?.chemin) return;
-    // en solo : une porte scellée s'ouvre dès qu'on est arrivé derrière elle
-    if (S.retour && S.branche === 'solo') g.state.flags[`TS:porte:${S.chemin}`] = true;
     const st = g.state, P = m.donjon.plan, t = (st.tiles ||= {})[m.id] = {};
     for (const [c, l] of Object.entries(P.objets)) {
       const o = d.objets[c]; if (o.type !== 'bouton' || !st.flags[`TPB:${m.id}:${c}`]) continue;
       for (const [bx, by] of P.objets[o.ouvre] || []) t[cle(bx, by)] = T.CAVE;
     }
+  },
+  /* ---------------- les dresseurs des chemins ---------------- */
+  /** cinq ou six dresseurs par salle : leur place vient du plan, leur classe et leurs Pokémon du chemin */
+  poserDresseursTemple(d, m, S) {
+    const el = S.pk[0] === 'F' ? 'f' : S.pk[0] === 'E' ? 'e' : 'p', solo = S.branche === 'solo';
+    if (S.pk === 'E4') {
+      const [sx, sy] = m.donjon.plan.depart;
+      m.npc({ id: `${m.id}:epuise`, x: sx + 2, y: sy - 2, dir: 'left', sprite: 'topdresseur', move: 'static',
+        text: ['Je suis arrivé jusqu\'ici, mais les courants m\'ont épuisé.', 'Je reprends mon souffle avant d\'aller chercher la clé.'] });
+      return;
+    }
+    const R = tirage(m.id), D = DRESSEURS_TEMPLE[el], places = DRESSEURS[S.pk] || [];
+    const melange = (l) => { const a = [...l]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    // d'abord ceux qui aiment l'élément du chemin (plus de la moitié), puis les autres
+    const terre = [...melange(D.theme), ...melange(D.autres)], themes = Math.min(D.theme.length, Math.ceil(places.filter((q) => q[3] === 'terre').length * 0.6));
+    const ordre = [...terre.slice(0, themes), ...melange([...terre.slice(themes)])], nage = melange(D.nage || []);
+    const [lo, hi] = solo ? [55, 60] : [20, 25];
+    places.forEach(([px, py, dir, ou], i) => {
+      const P = ou === 'eau' ? nage.shift() : ordre.shift(); if (!P) return;
+      // une salle du solo retournée (miroir) : ses dresseurs aussi
+      if (S.miroir) { px = S.plan[0].length - 1 - px; dir = { left: 'right', right: 'left' }[dir] || dir; }
+      const x = px + 1, y = py + 1, n = 1 + Math.floor(R() * 3);
+      const team = Array.from({ length: n }, () => {
+        const pool = POKEMON_TEMPLE[el === 'f' && R() < 0.3 ? 'roche' : el][solo ? 'solo' : 'trois'];
+        return [pool[Math.floor(R() * pool.length)], lo + Math.floor(R() * (hi - lo + 1))];
+      });
+      // il tourne la tête vers les cases d'où il voit venir (sur l'eau pour un nageur)
+      const libre = (a, b) => { const t = m.get(a, b); return ou === 'eau' ? t === T.WATER && !m.courants?.has(cle(a, b)) : walkable(t); };
+      const tourne = Object.entries(DIRS).filter(([, [dx, dy]]) => libre(x + dx, y + dy)).map(([k]) => k);
+      m.npc({
+        id: `${m.id}:dr${i}`, x, y, dir: tourne.includes(dir) ? dir : tourne[0] || dir, sprite: P.sprite, move: 'static', tourne, nage: ou === 'eau',
+        trainer: { cls: P.cls, name: P.nom, team, prize: solo ? 60 : 24, sight: 4, bs: P.bs, ai: 'normal', intro: P.intro, lose: P.lose, after: P.after },
+        onWin: () => this.butinTemple(),
+      });
+    });
+  },
+  /** un combat de dresseur des chemins ? (battu, on se réveille à l'entrée de la salle) */
+  dresseurTemple(id) { return typeof id === 'string' && id.startsWith('labo:temple:') && /:dr\d+$/.test(id); },
+  perduTemple() { const d = this.defs.get('temple'); if (d) this.taches.push(() => this.defaite(d)); },
+  /** le dresseur vaincu donne deux objets différents, tirés au hasard */
+  async butinTemple() {
+    const g = this.game, pris = [];
+    for (let k = 0; k < 2; k++) {
+      const reste = BUTIN_TEMPLE.filter(([o]) => !pris.includes(o)), tot = reste.reduce((a, [, p]) => a + p, 0);
+      let r = Math.random() * tot;
+      for (const [o, p] of reste) { r -= p; if (r <= 0) { pris.push(o); break; } }
+      if (pris.length === k) pris.push(reste[reste.length - 1][0]);
+    }
+    for (const o of pris) g.give(o, 1);
+    g.sound.sfx('item');
+    await g.ui.say(`${g.state.name} reçoit : ${pris.map((o) => itemName(o)).join(' et ')} !`);
+  },
+  /** une nouvelle épreuve : les dresseurs d'une branche sont de nouveau là */
+  remiseDresseurs(d, branche = 'groupe') {
+    const fl = this.game.state?.flags; if (!fl) return;
+    for (const s of d.salles.filter((q) => q.branche === branche && q.carte)) for (const k of Object.keys(fl)) if (k.startsWith(`T:${s.carte}:dr`)) delete fl[k];
+  },
+  /** les dresseurs tournent la tête de temps en temps ; un nageur voit loin sur l'eau */
+  tickDresseurs(dt) {
+    const g = this.game; if (!g.state || g.busy || !g.mapObj?.id?.startsWith('labo:temple:')) return;
+    for (const n of g.npcs) {
+      const t = n.def.tourne; if (!t?.length || n.move || g.state.flags['T:' + n.id]) continue;
+      n.tourneT = (n.tourneT ?? Math.random() * 2) - dt;
+      if (n.tourneT > 0) continue;
+      n.tourneT = 1.2 + Math.random() * 2.6;
+      n.dir = t[Math.floor(Math.random() * t.length)];
+    }
+  },
+  async regardNageurs() {
+    const g = this.game, m = g.mapObj, p = g.player; if (!m?.id?.startsWith('labo:temple:')) return false;
+    for (const n of g.npcs) {
+      if (!n.def.nage || g.state.flags['T:' + n.id]) continue;
+      const [dx, dy] = DIRS[n.dir];
+      for (let k = 1; k <= 4; k++) {
+        const x = n.x + dx * k, y = n.y + dy * k;
+        if (x === p.x && y === p.y) { await g.trainerBattle(n, true); return true; }
+        if (m.get(x, y) !== T.WATER || g.npcs.some((q) => q !== n && q.x === x && q.y === y)) break;
+      }
+    }
+    return false;
+  },
+  /** les deux nageurs n'existent pas dans Odyssée : on les dessine dans deux rangées libres de la planche */
+  spritesTemple() {
+    const g = this.game, v = g.view; if (!v?.pairSprite || this.nageursPrets === 'ok') return;
+    if (!this.nageursImg) {
+      this.nageursImg = 'charge';
+      const im = new Image(); im.onload = () => { this.nageursImg = im; }; im.src = new URL('../../img/temple/nageurs.png', import.meta.url).href;
+      return;
+    }
+    if (this.nageursImg === 'charge') return;
+    ['labo_nageur', 'labo_nageuse'].forEach((k, i) => {
+      const key = v.pairSprite(k, () => { const c = document.createElement('canvas'); c.width = 768; c.height = 64; c.getContext('2d').drawImage(this.nageursImg, 0, i * 64, 768, 64, 0, 0, 768, 64); return c; });
+      if (key) { CHAR_ROWS[k] = CHAR_ROWS[key]; const e = v.pairs.get(k); if (e) e.t = Infinity; }
+    });
+    if (CHAR_ROWS.labo_nageur != null && CHAR_ROWS.labo_nageuse != null) this.nageursPrets = 'ok';
+  },
+  /* ---------------- la Carte du Temple (solo) ---------------- */
+  /** vue d'ensemble des salles du solo, puis le squelette de chacune : entrées, sorties, passages secrets, rien d'autre */
+  async carteTemple(d) {
+    const g = this.game, ui = g.ui, ids = ['s2', 'sf1', 'sf2', 'sf3', 'se1', 'se2', 'se3', 'se4', 'sp1', 'sp2', 'sp3', 's4'];
+    const salles = ids.map((id) => d.salles.find((s) => s.id === id));
+    let vue = salles.find((s) => g.world.maps[s.carte] === g.mapObj) || null;
+    const box = el('div', 'box mine-plan'); ui.root.appendChild(box);
+    const titre = el('div', 'mine-titre'), cv = document.createElement('canvas'); box.append(titre, cv);
+    const dessiner = () => (vue ? this.dessinerSalleTemple(d, vue, cv, titre) : this.dessinerEnsembleTemple(d, salles, cv, titre));
+    dessiner(); const iv = setInterval(dessiner, 300);
+    try {
+      for (;;) {
+        const items = [{ label: 'Vue d\'ensemble' }, ...salles.map((s) => ({ label: `${s.chemin ? d.voies[s.chemin] + ' · ' : ''}${s.nom}` })), { label: 'Ranger la carte' }];
+        const k = await ui.list({ title: 'Carte du Temple', items, cls: 'shop mine-menu', cancel: items.length - 1, start: vue ? salles.indexOf(vue) + 1 : 0 });
+        if (k < 0 || k >= items.length - 1) return;
+        vue = k === 0 ? null : salles[k - 1]; g.sound.sfx('select'); dessiner();
+      }
+    } finally { clearInterval(iv); box.remove(); }
+  },
+  /** les salles en trois colonnes (Feu, Eau, Plante), les sorties, et les passages secrets en pointillés */
+  dessinerEnsembleTemple(d, salles, cv, titre) {
+    const g = this.game, W = 420, H = 330; if (cv.width !== W) { cv.width = W; cv.height = H; }
+    const x = cv.getContext('2d'), COL = { f: 70, e: 210, p: 350 }, COUL = { f: '#c8502c', e: '#3c82d2', p: '#4a9a44' };
+    x.fillStyle = '#1a140e'; x.fillRect(0, 0, W, H);
+    const pos = (s) => s.id === 's2' ? [210, 305] : s.id === 's4' ? [210, 25] : [COL[s.chemin], 285 - Number(s.id[2]) * 58];
+    const trait = (a, b, pointilles, coul) => { x.save(); x.strokeStyle = coul; x.lineWidth = 2; if (pointilles) x.setLineDash([5, 4]); x.beginPath(); x.moveTo(...a); x.lineTo(...b); x.stroke(); x.restore(); };
+    for (const s of salles) {
+      if (!s.chemin) continue;
+      const n = Number(s.id[2]), avant = n === 1 ? salles[0] : salles.find((q) => q.id === s.id.slice(0, 2) + (n - 1));
+      trait(pos(avant), pos(s), false, '#8a7a60');
+      if (s.cle) trait(pos(s), pos(salles[salles.length - 1]), false, '#8a7a60');
+      for (const B of s.bouches || []) { const s2 = salles.find((q) => q.id === B.vers[0]); if (s2.id > s.id) trait(pos(s), pos(s2), true, '#b070d0'); }
+    }
+    for (const s of salles) {
+      const [cx, cy] = pos(s), ici = g.world.maps[s.carte] === g.mapObj;
+      x.fillStyle = s.chemin ? COUL[s.chemin] : '#8a7a60'; x.fillRect(cx - 52, cy - 14, 104, 28);
+      x.strokeStyle = ici ? '#fff' : '#000'; x.lineWidth = ici ? 3 : 1.5; x.strokeRect(cx - 52, cy - 14, 104, 28);
+      x.fillStyle = '#fff'; x.font = 'bold 10px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s.nom, cx, cy);
+    }
+    titre.innerHTML = `<b>Temple des Éléments</b> · <span class="mine-leg"><i style="background:#8a7a60"></i>sortie <i style="background:#b070d0"></i>passage secret <i style="background:#fff"></i>toi</span>`;
+  },
+  /** une salle, en gros : le sol, l'eau, les murs ; l'entrée, la sortie, les passages secrets, et toi */
+  dessinerSalleTemple(d, s, cv, titre) {
+    const g = this.game, P = s.plan, H = P.length, W = P[0].length, Z = Math.max(3, Math.floor(480 / W));
+    if (cv.width !== W * Z) { cv.width = W * Z; cv.height = H * Z; }
+    const x = cv.getContext('2d'), mur = (c) => '#YuL%&'.includes(c) || c === undefined, eau = (c) => '~<>()E'.includes(c);
+    x.fillStyle = '#1a140e'; x.fillRect(0, 0, cv.width, cv.height);
+    // par blocs de 2 × 2 : le squelette, sans le détail (ni clé, ni rocher, ni arbuste)
+    for (let j = 0; j < H; j += 2) for (let i = 0; i < W; i += 2) {
+      const c4 = [P[j]?.[i], P[j]?.[i + 1], P[j + 1]?.[i], P[j + 1]?.[i + 1]], ouvert = c4.filter((c) => c && !mur(c));
+      if (ouvert.length < 2) continue;
+      x.fillStyle = ouvert.filter(eau).length * 2 >= ouvert.length ? '#3c6ea8' : '#b8a27c';
+      x.fillRect(i * Z, j * Z, 2 * Z, 2 * Z);
+    }
+    const marque = (i, j, coul, txt) => {
+      x.fillStyle = coul; x.fillRect(i * Z - Z, j * Z - Z, Z * 3, Z * 3); x.strokeStyle = '#000'; x.lineWidth = 1; x.strokeRect(i * Z - Z, j * Z - Z, Z * 3, Z * 3);
+      if (!txt) return;
+      x.font = 'bold 11px sans-serif'; x.textBaseline = 'middle'; x.textAlign = i > W / 2 ? 'right' : 'left';
+      const tx = i > W / 2 ? i * Z - Z - 3 : i * Z + 2 * Z + 3;
+      x.strokeStyle = '#000'; x.lineWidth = 3; x.strokeText(txt, tx, j * Z + Z / 2); x.fillStyle = '#fff'; x.fillText(txt, tx, j * Z + Z / 2);
+    };
+    const nomDe = (id) => d.salles.find((q) => q.id === id)?.nom || '';
+    P.forEach((r, j) => [...r].forEach((c, i) => {
+      if (c === 'S' && s.id !== 's2') marque(i, j, '#e8c840', 'entrée');
+      else if (c === 'N') marque(i, j, '#e0a040', 'sortie');
+    }));
+    for (const B of s.bouches || []) marque(B.x, B.y, '#b070d0', `→ ${nomDe(B.vers[0])}`);
+    const m = g.world.maps[s.carte];
+    if (g.mapObj === m) { x.fillStyle = '#fff'; x.beginPath(); x.arc((g.player.x - 1) * Z + Z / 2, (g.player.y - 1) * Z + Z / 2, Z * 1.2, 0, 7); x.fill(); x.strokeStyle = '#000'; x.lineWidth = 2; x.stroke(); }
+    titre.innerHTML = `<b>${esc(s.nom)}</b>${s.chemin ? ` · chemin ${esc(d.voiesDe[s.chemin] + d.voies[s.chemin])}` : ''} · <span class="mine-leg"><i style="background:#e8c840"></i>entrée <i style="background:#e0a040"></i>sortie <i style="background:#b070d0"></i>passage <i style="background:#fff"></i>toi</span>`;
   },
   salleTemple(d, m = this.game.mapObj) { return m && d.salles.find((s) => s.carte === m.id); },
   dt(d, sid) { return this.etats[d.id].salles[sid].donnees || {}; },
@@ -145,6 +327,7 @@ export const Temple = {
     const ici = (c) => P.objets[c]?.some(([x, y]) => x === p.x && y === p.y);
     g.busy = true;
     try {
+      if (await this.regardNageurs()) return;
       if (p.surf && m.courants?.has(cle(p.x, p.y))) await this.courant(m);
       else if (ici('X')) await this.dalleOr(d, m);
       else if (ici('K') && s.cle) await this.ramasserCle(d, s);
@@ -164,6 +347,7 @@ export const Temple = {
     g.sound.sfx('badge'); g.view.shake = 0.25;
     this.grandePorte(d, m, true);
     await ui.say(['La dalle d\'or s\'illumine !', 'La grande porte s\'ouvre... pour toi seul. Elle se refermera derrière toi.']);
+    if (!g.state.bag[CARTE_TEMPLE]) { g.give(CARTE_TEMPLE, 1); g.sound.sfx('item'); await ui.say([`Au pied de la porte, un vieux parchemin : la Carte du Temple.`, `${g.state.name} range la Carte du Temple dans le Sac. Les trois chemins y sont dessinés, et les passages qui les relient.`]); }
   },
   /** la grande porte, ouverte pour ce joueur seulement : sa case du milieu mène au temple en solo */
   grandePorte(d, m, ouvert) {
@@ -210,7 +394,6 @@ export const Temple = {
   },
   async porteSolo(d, o) {
     const g = this.game, ui = g.ui, nom = d.voies[o.chemin];
-    if (o.chemin !== 'p' && !g.state.flags[`TS:porte:${o.chemin}`]) { await ui.say([`Porte ${d.voiesDe[o.chemin]}${nom}.`, 'Elle est scellée de l\'intérieur. Il faudra trouver un autre chemin pour arriver derrière elle.']); return; }
     await ui.say(d.inscriptions[o.chemin]);
     if (!(await ui.yesNo(`Franchir la Porte ${d.voiesDe[o.chemin]}${nom} ?`))) return;
     const cible = d.salles.find((q) => q.branche === 'solo' && q.chemin === o.chemin), cm = g.world.maps[cible.carte], [x, y] = cm.donjon.plan.depart;
@@ -226,6 +409,7 @@ export const Temple = {
       case 'arbuste': return this.couperArbuste(d, m, c, x, y);
       case 'ronces': return g.ui.say(`D'épaisses ronces à fleurs ${o.couleur}. Elles viennent d'un arbuste, pas loin d'ici.`);
       case 'porteSolo': return this.porteSolo(d, o);
+      case 'bouche': return this.boucheTemple(d, s, x, y);
       case 'porteCles': return this.porteCles(d, s);
       case 'starter': return this.balleStarter(d, s, o.n);
       case 'ct': return this.prendreCt(d, s, o.n);
@@ -247,20 +431,31 @@ export const Temple = {
   },
 
   /* ---------------- le Talisman des Éléments (temple à trois) ---------------- */
-  /** le moine de la Salle des Dalles prête le talisman : Coupe, Force, Éclate-Roc et Surf, sans CS ni badge */
-  async talismanTemple() {
-    const g = this.game, ui = g.ui, sp = { speaker: 'Moine' };
-    if (g.state.bag[TALISMAN]) { await ui.say(['Garde bien le Talisman des Éléments.', 'Ses trois pierres tranchent les arbustes, poussent les rochers, brisent la roche et portent sur l\'eau.'], sp); return; }
-    await ui.say(['Les chemins du temple ne s\'ouvrent pas à mains nues.', 'Prends ce Talisman des Éléments. Grâce à lui, tes Pokémon pourront couper les arbustes, pousser les rochers, briser la roche fissurée et surfer, même sans les CS ni les badges.', 'Tu me le rendras... enfin, tu le rendras au Gardien, quand tu l\'auras vaincu.'], sp);
-    g.give(TALISMAN, 1); g.sound.sfx('item');
-    await ui.say(`${g.state.name} reçoit le Talisman des Éléments !`);
+  /** le moine de la Salle des Dalles prête le talisman (Coupe, Force, Éclate-Roc et Surf, sans CS ni badge) et un sac de
+   *  quête : le sac habituel reste à l'entrée, on n'a plus que ce qu'on trouve dans le temple */
+  async talismanTemple(d) {
+    const g = this.game, ui = g.ui, sp = { speaker: 'Moine' }, st = g.state;
+    if (st.sacNormal) { await ui.say(st.bag[TALISMAN] ? ['Garde bien le Talisman des Éléments.', 'Ses trois pierres tranchent les arbustes, poussent les rochers, brisent la roche et portent sur l\'eau.'] : 'Le Gardien a repris le Talisman. Ton sac t\'attend à la sortie du temple.', sp); return; }
+    await ui.say(['Les chemins du temple ne s\'ouvrent pas à mains nues.', 'Prends ce Talisman des Éléments. Grâce à lui, tes Pokémon pourront couper les arbustes, pousser les rochers, briser la roche fissurée et surfer, même sans les CS ni les badges.',
+      'Ton sac, laisse-le ici. Dans le temple, on ne compte que sur ce qu\'on y trouve. Voici un sac de quête, vide.', 'Tu me rendras le Talisman... enfin, tu le rendras au Gardien, quand tu l\'auras vaincu.'], sp);
+    st.sacNormal = st.bag; st.bag = {};
+    g.give('sac-quete', 1); g.give(TALISMAN, 1); g.sound.sfx('item');
+    // une nouvelle épreuve : les dresseurs des chemins sont là de nouveau
+    this.remiseDresseurs?.(d);
+    await ui.say([`${st.name} laisse son sac au moine.`, `${st.name} reçoit le Talisman des Éléments et un Sac de Quête !`]);
   },
-  /** le talisman se rend au Gardien après sa défaite, et se perd si l'on quitte le temple */
+  /** le talisman se rend au Gardien après sa défaite ; en quittant le temple, on perd le sac de quête et l'on reprend le sien */
   tickTalisman(d) {
-    const g = this.game, st = g.state; if (!st?.bag?.[TALISMAN] || this.talismanRendu || g.busy) return;
-    const id = g.mapObj?.id || '', dehors = id !== d.carte && !id.startsWith(d.carte + ':');
+    const g = this.game, st = g.state; if (!st || g.busy || this.talismanRendu) return;
+    const id = g.mapObj?.id || '', dehors = id === d.carte + ':dehors' || (id !== d.carte && !id.startsWith(d.carte + ':'));
+    if (dehors) {
+      if (st.bag?.[CARTE_TEMPLE]) delete st.bag[CARTE_TEMPLE];
+      if (st.sacNormal) { st.bag = st.sacNormal; delete st.sacNormal; g.ui.toast?.('Tu laisses le Sac de Quête au temple et tu reprends ton sac.', 2600); }
+      else if (st.bag?.[TALISMAN]) { delete st.bag[TALISMAN]; g.ui.toast?.('Le Talisman des Éléments retourne au temple.', 2200); }
+      return;
+    }
+    if (!st.bag?.[TALISMAN]) return;
     const g5 = d.salles.find((q) => q.table === 'starters'), ici = g.mapObj?.id === g5.carte;
-    if (dehors) { delete st.bag[TALISMAN]; g.ui.toast?.('Le Talisman des Éléments retourne au temple.', 2200); return; }
     if (ici && this.vaincu(d, 'M')) {
       this.talismanRendu = true;
       this.taches.push(async () => {
@@ -343,10 +538,8 @@ export const Temple = {
     for (const [c, R] of Object.entries(S.recoins || {})) {
       const [x, y] = P.objets[c][0];
       if (R.type === 'objet') maj(x, y, fl[`TS:objet:${R.objet}`] ? null : d.tresors[R.objet].decor);
-      else if (R.type === 'source') maj(x, y, 'source_pure');
-      else maj(x, y, R.lien && !R.maitre && !fl[`TS:lien:${R.lien}`] ? DECOR_PASSAGE[R.genre] + '_f' : DECOR_PASSAGE[R.genre]);
     }
-    if (S.verrou) { const [nx, ny] = P.suivante; maj(nx, ny + 1, fl[`TS:verrou:${S.id}`] ? null : DECOR_VERROU[S.verrou.type]); }
+    if (S.verrou) { const [vx, vy] = devantSortie(P); maj(vx, vy, fl[`TS:verrou:${S.id}`] ? null : DECOR_VERROU[S.verrou.type]); }
     this.syncVegetal(d, m);
   },
   /** nouvelle descente en solo : tout revient comme au début */
@@ -354,6 +547,7 @@ export const Temple = {
     const g = this.game, st = g.state;
     for (const k of Object.keys(st.flags)) if (k.startsWith('TS:')) delete st.flags[k];
     for (const k of Object.values(SAC)) delete st.bag[k];
+    this.remiseDresseurs(d, 'solo');
     for (const s of d.salles.filter((q) => q.branche === 'solo' && q.carte)) {
       for (const k of Object.keys(st.flags)) if (k.startsWith(`TPB:${s.carte}:`)) delete st.flags[k];
       delete st.tiles?.[s.carte];
@@ -362,37 +556,28 @@ export const Temple = {
   },
   async recoinTemple(d, S, c) {
     const g = this.game, ui = g.ui, st = g.state, fl = st.flags, R = S.recoins[c], m = g.world.maps[S.carte];
-    if (R.type === 'objet') {
-      const tr = d.tresors[R.objet]; if (fl[`TS:objet:${R.objet}`]) return;
-      await ui.say(tr.vu);
-      fl[`TS:objet:${R.objet}`] = true; g.give(tr.objet, 1); g.sound.sfx('item'); this.syncSolo(d, m);
-      await ui.say([`${st.name} trouve : ${itemName(tr.objet)} !`, ITEMS_DESC(tr.objet)]);
-      return;
-    }
-    if (R.type === 'source') {
-      if (fl['TS:objet:eau']) { await ui.say('La Source. Ta jarre est déjà pleine de son eau.'); return; }
-      if (!fl['TS:objet:jarre']) { await ui.say(['La Source du temple : une eau si pure qu\'elle éteindrait n\'importe quel feu.', 'Il faudrait de quoi en emporter.']); return; }
-      fl['TS:objet:eau'] = true; delete st.bag[SAC.jarre]; g.give(SAC.eau, 1); g.sound.sfx('heal');
-      await ui.say([`${st.name} remplit la jarre à la Source.`, `${st.name} obtient : ${itemName(SAC.eau)} !`]);
-      return;
-    }
-    // un passage vers un autre chemin
-    const [sid, c2] = R.vers, S2 = d.salles.find((q) => q.id === sid), m2 = g.world.maps[S2.carte], nom2 = `${S2.nom} (chemin ${d.voiesDe[S2.chemin]}${d.voies[S2.chemin]})`;
-    if (R.lien && !R.maitre && !fl[`TS:lien:${R.lien}`]) {
-      await ui.say(R.genre === 'liane' ? ['Une liane pend d\'un puits, très haut dans la roche. On sent un air de jungle.', 'Elle est enroulée là-haut, hors d\'atteinte. Il faudrait la dérouler depuis l\'autre bout.']
-        : ['Un bassin d\'eau claire. Au fond, une dalle de pierre bouche un conduit.', 'Elle ne se soulève que de l\'autre côté.']);
-      return;
-    }
-    const quoi = { eau: ['Un point d\'eau profond. Un conduit s\'enfonce sous la roche.', 'Plonger ?'], lave: ['Un tunnel bordé de lave. L\'air y est brûlant.', 'S\'y engager ?'], liane: ['Une liane solide file dans un puits de roche.', 'L\'emprunter ?'] }[R.genre];
+    if (R.type !== 'objet') return;
+    const tr = d.tresors[R.objet]; if (fl[`TS:objet:${R.objet}`]) return;
+    await ui.say(tr.vu);
+    fl[`TS:objet:${R.objet}`] = true; g.give(tr.objet, 1); g.sound.sfx('item'); this.syncSolo(d, m);
+    await ui.say([`${st.name} trouve : ${itemName(tr.objet)} !`, ITEMS_DESC(tr.objet)]);
+  },
+  /** une grotte d'un passage secret : on ressort par celle d'en face, dans un autre chemin (en surfant, sauf le tunnel) */
+  async boucheTemple(d, S, x, y) {
+    const g = this.game, ui = g.ui, B = (S.bouches || []).find((q) => q.x + 1 === x && q.y + 1 === y); if (!B) return;
+    const S2 = d.salles.find((q) => q.id === B.vers[0]), B2 = S2.bouches[B.vers[1]], m2 = g.world.maps[S2.carte];
+    const quoi = { eau: ['Une petite grotte au ras de l\'eau. Des fleurs et des ronces pendent de la voûte.', 'S\'y enfoncer en surfant ?'],
+      sombre: ['Une grotte basse, au bord d\'une eau sombre. La roche y est noire et tiède.', 'S\'y enfoncer en surfant ?'],
+      tunnel: ['Un tunnel s\'enfonce dans la roche. Il en sort un air tiède et une odeur de feuilles.', 'L\'emprunter ?'] }[B.genre];
     await ui.say(quoi[0]);
+    if (B.genre !== 'tunnel' && !g.player.surf) { await ui.say('L\'eau va jusqu\'au fond de la grotte. Il faudrait surfer.'); return; }
     if (!(await ui.yesNo(quoi[1]))) return;
-    if (R.lien && R.maitre && !fl[`TS:lien:${R.lien}`]) { fl[`TS:lien:${R.lien}`] = true; this.syncSolo(d, m2); await ui.say(R.genre === 'liane' ? 'Tu déroules la liane jusqu\'en bas : le passage servira dans les deux sens.' : 'Tu soulèves la dalle du fond : le passage servira dans les deux sens.'); }
-    const [x, y] = this.pres(m2, m2.donjon.plan.objets[c2][0]);
-    g.sound.sfx(R.genre === 'eau' ? 'heal' : 'ledge');
-    await ui.fade?.(true, 250);
-    await g.warp({ map: m2.id, x, y, dir: 'down' }, 'exit');
-    await ui.fade?.(false, 250);
-    await ui.say(`Tu ressors dans une autre partie du temple : ${nom2}.`);
+    // on ressort devant la grotte d'en face, du côté de la salle
+    const bx = B2.x + 1, by = B2.y + 1, dx = B2.x === 0 ? 1 : -1;
+    g.sound.sfx(B.genre === 'tunnel' ? 'ledge' : 'heal');
+    await g.warp({ map: m2.id, x: bx + dx, y: by, dir: dx > 0 ? 'right' : 'left' }, 'exit');
+    if (B.genre !== 'tunnel') g.player.surf = true;
+    await ui.say(`Tu ressors dans une autre partie du temple : ${S2.nom} (chemin ${d.voiesDe[S2.chemin]}${d.voies[S2.chemin]}).`);
   },
   async verrouTemple(d, S) {
     const g = this.game, ui = g.ui, st = g.state, fl = st.flags, V = S.verrou, m = g.world.maps[S.carte];
@@ -400,7 +585,10 @@ export const Temple = {
     const T_ = {
       ronces: { vu: ['Des ronces géantes, épaisses comme le bras, ferment la sortie.', 'Aucune lame n\'en viendrait à bout. Le feu, peut-être...'], q: 'Approcher la Braise Éternelle ?', fait: 'Les ronces s\'embrasent d\'un coup et tombent en cendres. La voie est libre !' },
       torrent: { vu: ['Un torrent furieux tombe devant la sortie. Impossible de le traverser.', 'Il faudrait quelque chose d\'assez assoiffé pour le boire...'], q: 'Planter la Graine Géante au bord du torrent ?', fait: 'La graine germe aussitôt. Ses racines boivent le torrent jusqu\'à la dernière goutte. La voie est libre !' },
-      flammes: { vu: ['Un mur de flammes barre la sortie. Il ne faiblit jamais.', 'Une eau ordinaire s\'évaporerait avant de le toucher...'], q: 'Verser l\'eau de la Source sur les flammes ?', fait: 'L\'eau de la Source étouffe les flammes dans un nuage de vapeur. La voie est libre !' },
+      flammes: { vu: ['Un mur de flammes barre la sortie. Il ne faiblit jamais.', 'Une eau ordinaire s\'évaporerait avant de le toucher...'], q: 'Verser la Fiole d\'Eau Pure sur les flammes ?', fait: 'L\'eau pure étouffe les flammes dans un nuage de vapeur. La voie est libre !' },
+      glace: { vu: ['Un mur de glace bouche la sortie. Il est froid comme au fond d\'un lac.', 'Rien ici n\'est assez chaud pour le faire fondre...'], q: 'Poser la Pierre Ardente contre la glace ?', fait: 'La glace fond en sifflant et s\'écoule dans les bassins. La voie est libre !' },
+      arbre: { vu: ['Un grand arbre mort, tordu, barre la sortie de ses branches sèches.', 'Il a l\'air d\'avoir eu soif pendant très longtemps.'], q: 'Verser la Rosée Éternelle au pied de l\'arbre ?', fait: 'L\'arbre reverdit d\'un coup et relève ses branches. La voie est libre !' },
+      gouffre: { vu: ['Un gouffre s\'ouvre devant la sortie. Tout au fond, la lave rougeoie.', 'Pas moyen de sauter par-dessus. Avec une corde, peut-être...'], q: 'Lancer la Corde de Liane par-dessus le gouffre ?', fait: 'La liane s\'accroche de l\'autre côté et se tend comme un pont. La voie est libre !' },
     }[V.type];
     await ui.say(T_.vu);
     if (!fl[`TS:objet:${V.objet}`]) return;
@@ -498,6 +686,7 @@ export const Temple = {
     if (mc || g.view.__courants) dessinerCourants(g.view, mc, performance.now());
     if ((mc?.remous || g.view.__remous)) dessinerRemous(g.view, mc?.remous ? mc : null, performance.now());
     this.tickTalisman(d);
+    if (this.estDans(d)) { this.dessinerStatues(d); this.spritesTemple(); this.tickDresseurs(dt); }
     // la grande porte se referme derrière celui qui l'a passée
     if (this.grandeOuverte && g.mapObj?.id !== this.grandeOuverte) { const m = g.world.maps[this.grandeOuverte]; if (m) this.grandePorte(d, m, false); }
   },
@@ -518,7 +707,7 @@ export const Temple = {
     const e = this.etats[d.id], b = this.brancheIci(d);
     const porte = b && this.dt(d, d.salles.find((s) => s.ouvertPar && s.branche === b).id).porte;
     if (q.id === 'dalles') return { faite: !!b || e.salles.e1.faite, txt: b === 'solo' ? 'Tu as passé la grande porte.' : b ? 'La petite porte est ouverte.' : q.but };
-    if (q.id === 'cles' && b === 'solo' && !porte) { const fl = this.game.state.flags, a = [['braise', 'la Braise Éternelle'], ['graine', 'la Graine Géante'], ['jarre', 'une jarre'], ['eau', 'l\'eau de la Source']].filter(([k]) => fl[`TS:objet:${k}`]).map(([, n]) => n); return { faite: false, txt: `${q.but}\nTes clés : ${this.mesCles(d, b).length}.${a.length ? `\nTrouvé en chemin : ${a.join(', ')}.` : ''}` }; }
+    if (q.id === 'cles' && b === 'solo' && !porte) { const fl = this.game.state.flags, a = Object.keys(d.tresors).filter((k) => fl[`TS:objet:${k}`]).map((k) => itemName(d.tresors[k].objet)); return { faite: false, txt: `${q.but}\nTes clés : ${this.mesCles(d, b).length}.${a.length ? `\nTrouvé en chemin : ${a.join(', ')}.` : ''}` }; }
     if (q.id === 'cles') return { faite: !!porte, txt: porte ? 'La porte de la Salle des Clés est ouverte.' : b ? `${q.but}\nTes clés : ${this.mesCles(d, b).length}.` : q.but };
     if (q.id === 'gardien') { const ok = b === 'solo' ? battu(e, d, 'Z') : b === 'groupe' ? battu(e, d, 'M') : false; return { faite: ok, txt: ok ? 'Le Gardien est vaincu.' : q.but }; }
     return null;

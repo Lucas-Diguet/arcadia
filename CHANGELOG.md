@@ -1,5 +1,20 @@
 # Journal des versions — Arcadia
 
+## 5.39 — 12 novembre 2026
+- **TestOdyssée** — Dans tous les donjons, le journal en bas à droite se cache et revient avec la touche N ou son petit bouton.
+- **TestOdyssée** — Temple des Éléments : plus de Pokémon sauvages. Dans chaque salle des chemins, 5 ou 6 dresseurs tournent la tête et viennent te défier.
+  - Au Feu, surtout des montagnards et des Pokémon Feu, parfois Roche ; à l'Eau, des marins, des pêcheurs et des nageurs, certains dans l'eau ; à la Plante, des scouts et des Pokémon Plante ou Insecte. D'autres dresseurs sont venus tenter l'épreuve, comme toi.
+  - Chaque dresseur vaincu te donne deux objets.
+  - Les objets posés dans les salles sont les mêmes d'un chemin à l'autre : deux dans la première salle, trois dans les suivantes.
+- **TestOdyssée** — Temple à trois : le moine donne aussi un Sac de Quête. Ton sac reste à l'entrée : dans le temple, tu n'as que ce que tu y trouves. Au centre du Grand Hall, les statues de Tortank, Dracaufeu et Florizarre.
+- **TestOdyssée** — Temple, chemin de l'Eau : la sortie des trois premières salles n'est plus toujours en haut. La Mer Intérieure est plus grande, et de presque chaque anse partent deux ou trois courants : il faut trouver la bonne route vers l'îlot, puis vers la sortie.
+- **TestOdyssée** — Temple, chemin du Feu : l'interrupteur de la barrière de la clé est bien là, et les rochers posés sur les interrupteurs ne bouchent plus le passage.
+- **TestOdyssée** — Temple en solo :
+  - On peut surfer.
+  - Les trois portes sont ouvertes, et on avance dans les trois chemins dans l'ordre qu'on veut. Chaque sortie des premières et deuxièmes salles demande un objet trouvé dans un autre chemin.
+  - Trois passages secrets relient les chemins : une grotte au bord de l'eau entre la Plante et l'Eau, une autre à l'eau sombre entre l'Eau et le Feu, un tunnel entre la Plante et le Feu.
+  - La Carte du Temple, dans le Sac, montre toutes les salles, leurs entrées, leurs sorties et les passages secrets.
+
 ## 5.38 — 12 novembre 2026
 - **TestOdyssée** — Temple à trois : dans la Salle des Dalles, un moine donne à chacun le Talisman des Éléments. Avec lui, Coupe, Force, Éclate-Roc et Surf marchent sans CS ni badge. Le Gardien le reprend après sa défaite, et on le perd en quittant le temple.
 - **TestOdyssée** — Temple : les clés sont plus loin de la sortie et mieux gardées.

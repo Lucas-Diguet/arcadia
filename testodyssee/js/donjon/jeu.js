@@ -53,6 +53,15 @@ export class Donjons {
     this.panel = el('div', 'dj-panel box'); this.panel.style.display = 'none';
     game.ui.root.appendChild(this.panel);
     // bouton « Quitter le donjon » de l'encadré
+    // le journal du donjon se cache et revient : bouton de l'encadré, ou touche N (le choix vaut pour tous les donjons)
+    try { this.journalCache = localStorage.getItem('labo:journalCache') === '1'; } catch { this.journalCache = false; }
+    const basculer = () => { this.journalCache = !this.journalCache; try { localStorage.setItem('labo:journalCache', this.journalCache ? '1' : '0'); } catch {} this.panelHtml = null; this.majPanneau(); };
+    this.panel.addEventListener('click', (ev) => { if (ev.target.closest('.dj-cacher, .dj-montrer')) { ev.stopPropagation(); basculer(); } });
+    window.addEventListener('keydown', (ev) => {
+      if (ev.code !== 'KeyN' || ev.repeat || ev.ctrlKey || ev.metaKey || ev.altKey || ev.target?.closest?.('input, textarea, [contenteditable]')) return;
+      if (this.panel.style.display === 'none') return;
+      basculer();
+    });
     this.panel.addEventListener('click', (ev) => {
       if (!ev.target.closest('.dj-quitter') || !game.state || game.busy || game.bv.alive) return;
       game.busy = true; this.quitter().catch((e) => console.error(e)).finally(() => { game.busy = false; });
@@ -380,7 +389,9 @@ export class Donjons {
       if (s.type === 'libre') { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
     }
-    const html = `<div class="dj-t">${esc(d.nom)}</div>${this.panneauTombeau(d)}${lignes.join('')}<button type="button" class="dj-quitter" tabindex="-1">Quitter le donjon</button>`;
+    const html = this.journalCache ? `<button type="button" class="dj-montrer" tabindex="-1">Journal (N)</button>`
+      : `<button type="button" class="dj-cacher" tabindex="-1" title="Cacher le journal (N)">–</button><div class="dj-t">${esc(d.nom)}</div>${this.panneauTombeau(d)}${lignes.join('')}<button type="button" class="dj-quitter" tabindex="-1">Quitter le donjon</button>`;
+    this.panel.classList.toggle('cache', !!this.journalCache);
     if (html !== this.panelHtml) { this.panelHtml = html; this.panel.innerHTML = html; }
     this.panel.style.display = '';
   }
