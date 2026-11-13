@@ -149,6 +149,7 @@ Ajouter `[skip changelog]` dans le message d'un commit purement technique pour q
   plus loin peut surcharger un plus tôt) ; `odyssee.css` les réunit par `@import` pour les pages d'aperçu.
   `node tools/test-odyssee-ecrans.mjs` ouvre le jeu dans un vrai Chrome (Playwright, sauté s'il manque) : chaque écran au clavier
   (Espace ne ferme pas, Échap ferme et rend la main), carte, Carte de Dresseur, saisie du code ami, météo (brume, cendres) — à lancer quand on touche à l'interface.
+  Musiques : composées par le code (`THEMES` de `odyssee/js/audio.js`), ou en fichiers MP3 / OGG posés dans `odyssee/musiques/` et déclarés dans `odyssee/musiques/musiques.js` (boucle, intro, volume ; chargés à la première écoute par `playFichier`) : on les choisit par leur nom comme les autres (`music` d'une carte, d'une zone ou d'un combat, `musique` d'un donjon ou d'une salle du labo). Musiques libres de droits seulement, origine notée dans `odyssee/musiques/LISEZMOI.txt`.
   Météo du monde : `getMapWeather()` dans `game.js` ; seules pluie, soleil, sable et grêle comptent en combat (`BATTLE_WEATHERS`), brume et cendres sont du décor (`render/weather3d.js`, `css/22-meteo.css`).
   Touches reçues par les écrans : celles de `odyssee/js/input.js` uniquement (`a`, `b`, flèches, `map`, `menu`…), jamais `space` ni `enter`.
   Rendu : les sprites sont dessinés à l'écran pixel pour pixel, ancrés à leurs pieds

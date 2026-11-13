@@ -180,6 +180,13 @@ Boss à blocs (`raid: true`) : `blocs`, `boost` (stat qui monte à chaque bloc, 
 `baisseAttaques`, `ko` : un Pokémon d'un joueur pas encore visé est mis K.O.). Chaque effet ne joue qu'une fois par
 combat, même si le boss se soigne ; `soinBlocs: 2` : son attaque de soin rend deux blocs.
 
+### Les musiques
+
+Une musique se choisit par son nom : `musique` d'un donjon ou d'une salle, `music` d'une carte, d'une zone ou d'un
+combat. Ce sont les thèmes composés par le code d'Odyssée (`THEMES` de `odyssee/js/audio.js` : `cave`, `tower`,
+`mystic`…) ou des fichiers MP3 posés dans `odyssee/musiques/` et déclarés dans `odyssee/musiques/musiques.js` (voir
+le `LISEZMOI.txt` du dossier). Ils sont rangés côté Odyssée pour suivre les donjons le jour où ils y passent.
+
 ### Le journal
 
 `journal` liste les sous-quêtes du donjon (une par salle à suivre), affichées dans le menu JOURNAL avec les objets de

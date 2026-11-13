@@ -7,6 +7,8 @@ const freq = (m) => 440 * Math.pow(2, (m - 69) / 12);
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
 const SCALES = { maj: [0, 2, 4, 5, 7, 9, 11], min: [0, 2, 3, 5, 7, 8, 10], dor: [0, 2, 3, 5, 7, 9, 10], harm: [0, 2, 3, 5, 7, 8, 11] };
 
+import { MUSIQUES } from '../musiques/musiques.js';
+
 /* ---------------- thèmes : tonalité, tempo, grille, caractère ---------------- */
 const at = (bar, step) => bar * 16 + step;
 
@@ -1039,6 +1041,9 @@ function composeRival() {
   };
 }
 
+// les musiques en fichiers (odyssee/musiques/) : des thèmes comme les autres
+for (const [nom, M] of Object.entries(MUSIQUES)) THEMES[nom] = { ...M, url: new URL('../musiques/' + M.fichier, import.meta.url).href };
+
 export const CUSTOM_COMPOSERS = {
   title: composeTitle,
   leader: composeLeader,
@@ -1159,6 +1164,7 @@ export class Sound {
     if (!this.ctx) { this.pending = name; return; }
     this.stopMusic(0.25);
     if (!name || !THEMES[name]) return;
+    if (THEMES[name].url) { this.playFichier(name); return; }
     const song = this.songs[name] ||= (THEMES[name].custom && CUSTOM_COMPOSERS[THEMES[name].custom] ? CUSTOM_COMPOSERS[THEMES[name].custom]() : compose(THEMES[name]));
     const stepDur = 60 / song.bpm / 4;
     const bus = this.ctx.createGain(); bus.gain.value = 1; bus.connect(this.musicBus);
@@ -1198,8 +1204,32 @@ export class Sound {
     tick();
     this.music = st;
   }
+  /** une musique en fichier : chargée la première fois, gardée ensuite ; boucle entière, avec intro, ou une seule fois */
+  playFichier(name) {
+    const T = THEMES[name], ctx = this.ctx;
+    if (this.offline) return;
+    const bus = ctx.createGain(); bus.gain.value = 0.0001; bus.connect(this.musicBus);
+    const st = { bus, alive: true, fichier: true };
+    this.music = st;
+    this.tampons ||= {};
+    this.tampons[T.url] ||= fetch(T.url).then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then((a) => new Promise((ok, ko) => ctx.decodeAudioData(a, ok, ko)));
+    this.tampons[T.url].then((buf) => {
+      if (!st.alive) return;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      if (T.boucle !== false) { src.loop = true; if (Array.isArray(T.boucle)) { src.loopStart = T.boucle[0]; src.loopEnd = Math.min(T.boucle[1], buf.duration); } }
+      src.connect(bus); src.start();
+      const t = ctx.currentTime; bus.gain.setValueAtTime(0.0001, t); bus.gain.linearRampToValueAtTime(T.volume ?? 1, t + 0.4);
+      st.src = src;
+    }).catch((e) => {
+      console.warn(`Musique « ${name} » introuvable (${T.fichier}) :`, e.message || e);
+      delete this.tampons[T.url];
+      if (st.alive && T.secours && this.current === name) { this.current = null; this.play(T.secours); this.current = name; }
+    });
+  }
   stopMusic(fade = 0.2) {
     const st = this.music; if (!st) return; st.alive = false; clearTimeout(st.timer);
+    if (st.src) { const src = st.src; setTimeout(() => { try { src.stop(); } catch (e) {} }, fade * 1000 + 600); }
     if (this.ctx) { const t = this.ctx.currentTime; st.bus.gain.setValueAtTime(st.bus.gain.value, t); st.bus.gain.linearRampToValueAtTime(0.0001, t + fade); setTimeout(() => st.bus.disconnect(), fade * 1000 + 600); }
     this.music = null;
   }

@@ -1,5 +1,6 @@
 // tools/test-testodyssee.mjs — TestOdyssée : plans des donjons et règles partagées du groupe.
 // node tools/test-testodyssee.mjs
+import fs from 'node:fs';
 import { DONJONS } from '../testodyssee/js/donjons/index.js';
 import { DRESSEURS } from '../testodyssee/js/donjons/temple-chemins.js';
 import { OBJETS_SALLES, DRESSEURS_TEMPLE, POKEMON_TEMPLE, BUTIN_TEMPLE } from '../testodyssee/js/donjons/temple.js';
@@ -929,6 +930,14 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   // le Talisman des Éléments, et le Gardien qui ramène au hall
   ok(par.e1.donjon.plan.pnj['|'] && d.pnj['|'].talisman && ITEMS['talisman-elements']?.key && !par.eo.donjon.plan.pnj['|'], 'temple : le moine de la Salle des Dalles prête le Talisman des Éléments (pas dans le solo)');
   ok(d.pnj.M.retour && d.pnj.Z.retour, 'temple : les Gardiens ramènent au Grand Hall une fois la récompense prise');
+  // les musiques en fichiers (odyssee/musiques/) : chaque fichier déclaré existe, et chaque musique choisie existe
+  {
+    const { MUSIQUES } = await import('../odyssee/musiques/musiques.js');
+    const { THEMES } = await import('../odyssee/js/audio.js');
+    ok(Object.values(MUSIQUES).every((M) => fs.existsSync(new URL('../odyssee/musiques/' + M.fichier, import.meta.url))), `musiques : les ${Object.keys(MUSIQUES).length} fichiers déclarés sont dans odyssee/musiques/`);
+    const voulues = DONJONS.flatMap((D) => [D.musique, ...(D.salles || []).map((q) => q.musique)]).filter(Boolean);
+    ok(voulues.every((k) => THEMES[k]), 'musiques : chaque musique choisie par un donjon ou une salle existe');
+  }
   // les dresseurs des chemins : leurs Pokémon sont du type du chemin, ce qu'ils donnent fait 100 %
   {
     const T_ = { f: ['fire'], roche: ['rock'], e: ['water'], p: ['grass', 'bug'] };

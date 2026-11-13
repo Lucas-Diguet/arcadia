@@ -1,0 +1,11 @@
+Musiques en fichiers d'Odyssée (et du labo TestOdyssée).
+
+Pour en ajouter une :
+1. poser le fichier ici (MP3 ou OGG, 128 kb/s suffisent : une musique de 3 minutes pèse alors 3 Mo) ;
+2. la déclarer dans musiques.js (nom, fichier, et si besoin la boucle et le volume) ;
+3. l'utiliser par son nom : music: 'nom' (carte, zone, combat), musique: 'nom' (donjon ou salle du labo).
+
+Le site est public : seulement des musiques libres de droits, ou composées pour le jeu. Noter ci-dessous l'origine
+et la licence de chaque fichier.
+
+Origine des fichiers :
