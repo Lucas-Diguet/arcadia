@@ -43,71 +43,114 @@ function exterieur() {
 const retour = (plan) => { const i = plan[plan.length - 1].indexOf('S'); return [...plan, '#'.repeat(i) + 'D' + '#'.repeat(plan[0].length - i - 1)]; };
 const [F1r, F2r, F3r, E1r, E2r, E3r, E4r, P1r, P2r, P3r] = [F1, F2, F3, E1, E2, E3, E4, P1, P2, P3].map(retour);
 
-// Le solo : trois passages secrets entre les premières salles des chemins. Une grotte au bord de la salle, au bout
-// d'un petit bras d'eau (Plante et Eau, Eau et Feu : on y entre en surfant) ou d'un couloir (Plante et Feu : un
-// tunnel). La Plante est à droite, l'Eau au milieu, le Feu à gauche : chaque grotte est sur le mur qui fait face à
-// l'autre chemin. Autour de chaque bout, un peu du décor de l'autre chemin. Le bras ou le couloir part d'un endroit
-// qu'on atteint dès l'entrée de la salle, sans rien résoudre, et n'ouvre aucun autre passage.
+// Le solo : trois passages secrets, chacun de la première salle d'un chemin à la deuxième d'un autre (Plante 1 et Eau 2,
+// Eau 1 et Feu 2, Feu 1 et Plante 2), dans les deux sens. Chaque bout est une sortie de grotte percée dans un mur, comme
+// les autres, du côté de la salle qui fait face à l'autre chemin (la Plante est à droite, l'Eau au milieu, le Feu à
+// gauche). Il part d'un endroit qu'on atteint dès l'entrée de la salle, sans rien résoudre, et n'ouvre aucun autre
+// passage. Côté Plante 1 : un petit lac où l'on surfe ; côté Eau 1 : un creux où l'eau s'est évaporée, roche rougie ;
+// côté Feu 1 : un tunnel de roche grise ; côté Eau 2 : la verdure de la Plante ; ailleurs, une sortie toute simple.
 const MURS_SOLO = '#YuL%&';
-const VOLCAN = ['%', '&', '%'], VERDURE = ['Y', 'u', 'Y'];
-/** ce qu'on atteint depuis l'arrivée sans rien résoudre (à pied, en surfant, emporté par les rivières) */
-function atteignables(P) {
+const VERDURE = ['Y', 'u', 'Y'];
+/** ce qu'on atteint depuis l'arrivée sans rien résoudre (à pied, en surfant, emporté par les rivières) */function atteignables(P, rivieres = Infinity) {
   const at = (x, y) => P[y]?.[x] ?? '#', TERRE = '.SNKxzI"fh=', EAU = '~<>()', DIRV = { '<': [-1, 0], '>': [1, 0], '(': [0, -1], ')': [0, 1] };
-  const sy = P.findIndex((r) => r.includes('S')), S = [P[sy].indexOf('S'), sy], vus = new Set([S.join()]), f = [S];
-  while (f.length) {
-    const [x, y] = f.pop();
+  const sy = P.findIndex((r) => r.includes('S')), S = [P[sy].indexOf('S'), sy], rang = new Map([[S.join(), 0]]), f = [S];
+  for (let i = 0; i < f.length; i++) {
+    const [x, y] = f[i], r0 = rang.get(f[i].join());
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      let n = [x + dx, y + dy];
+      let n = [x + dx, y + dy], r = r0;
       const c = at(...n);
       if (!TERRE.includes(c) && !EAU.includes(c)) continue;
+      if (DIRV[c]) r++;
       for (let k = 0; k < 400 && DIRV[at(...n)]; k++) { const [ax, ay] = DIRV[at(...n)], m = [n[0] + ax, n[1] + ay]; if (!EAU.includes(at(...m))) break; n = m; }
-      if (!vus.has(n.join())) { vus.add(n.join()); f.push(n); }
+      if (r > rivieres || (rang.has(n.join()) && rang.get(n.join()) <= r)) continue;
+      rang.set(n.join(), r); f.push(n);
     }
   }
-  return vus;
+  return new Set(rang.keys());
 }
 /** la salle vue dans un miroir (gauche et droite échangées, rivières comprises) */
 const MIROIR = { '<': '>', '>': '<' };
 export const miroir = (plan) => plan.map((r) => [...r].reverse().map((c) => MIROIR[c] || c).join(''));
-/** creuse les grottes d'une salle du solo : [{ cote, genre, decor }] → { plan, bouches: [{ x, y, genre }], miroir } ;
- *  si la salle s'y prête mieux à l'envers (son début loin du mur voulu), elle est retournée */
-export function creuserBouches(plan, specs) {
-  try { return creuser(plan, specs); } catch (e) { return { ...creuser(miroir(plan), specs), miroir: true }; }
-}
-function creuser(plan, specs) {
-  const P = plan.map((r) => [...r]), H = P.length, W = P[0].length, at = (x, y) => P[y]?.[x] ?? '#';
-  const mur = (x, y) => MURS_SOLO.includes(at(x, y)), vus = atteignables(plan), bouches = [];
-  for (const { cote, genre, decor } of specs) {
-    const dx = cote === 'gauche' ? -1 : 1, bord = cote === 'gauche' ? 0 : W - 1, eau = genre !== 'tunnel';
-    let best = null;
-    for (const k of vus) {
-      const [x, y] = k.split(',').map(Number);
-      if (y < 4 || y > H - 6 || bouches.some((b) => Math.abs(b.y - y) < 6)) continue;
-      // le bras : toutes les cases jusqu'au bord sont du mur, et leurs voisines du dessus et du dessous aussi
-      const bras = [];
-      for (let cx = x + dx; cx > 0 && cx < W - 1 && bras.length <= 20; cx += dx) bras.push([cx, y]);
-      if (bras.length < 1 || bras.length > 20 || !bras.every(([a, b]) => mur(a, b) && mur(a, b - 1) && mur(a, b + 1))) continue;
-      if (!mur(bord, y - 1) || !mur(bord, y + 1)) continue;
-      // de l'eau ou du sol au départ : on doit pouvoir s'y engager
-      if (!'.~SNxz"fh='.includes(at(x, y))) continue;
-      const score = bras.length + Math.abs(y - H / 2) / 8;
-      if (!best || score < best.score) best = { x, y, bras, score };
-    }
-    if (!best) throw new Error(`Temple : pas de place pour la grotte ${genre} (${cote})`);
-    for (const [a, b] of best.bras) P[b][a] = eau ? '~' : '.';
-    P[best.y][bord] = 'ç';
-    // un peu du décor de l'autre chemin autour du bout du bras
-    const pres = best.bras.slice(-3).concat([[bord, best.y]]);
-    let i = 0;
-    for (const [a, b] of pres) for (const [ox, oy] of [[0, -1], [0, 1]]) if (at(a, b + oy) === '#') P[b + oy][a] = decor[i++ % decor.length];
-    bouches.push({ x: bord, y: best.y, genre });
+/** perce le passage secret d'une salle du solo : { cote, mode : 'porte' | 'lac' | 'sec', long, decor, teinte } →
+ *  { plan, bouche: { x, y, devant, garde }, teintes, miroir } ; la salle est retournée si elle s'y prête mieux à l'envers */
+export function creuserBouche(plan, spec) {
+  // d'abord tout près de l'arrivée (une rivière au plus, dans l'Eau), puis un peu plus loin, et la salle à l'envers
+  for (const bord of [0.4, 1]) for (const rivieres of [1, 2, 3]) for (const m of [false, true]) {
+    try { return { ...creuser(m ? miroir(plan) : plan, spec, rivieres, bord), miroir: m }; } catch (e) { /* on essaie autrement */ }
   }
-  return { plan: P.map((r) => r.join('')), bouches, miroir: false };
+  throw new Error(`Temple : pas de place pour le passage secret (${spec.mode}, ${spec.cote})`);
 }
-// les trois premières salles du solo, creusées
-const SOLO_P1 = creuserBouches(P1r, [{ cote: 'gauche', genre: 'eau', decor: ['u', 'Y'] }, { cote: 'gauche', genre: 'tunnel', decor: VOLCAN }]);
-const SOLO_E1 = creuserBouches(E1r, [{ cote: 'droite', genre: 'eau', decor: VERDURE }, { cote: 'gauche', genre: 'sombre', decor: VOLCAN }]);
-const SOLO_F1 = creuserBouches(F1r, [{ cote: 'droite', genre: 'sombre', decor: VOLCAN }, { cote: 'droite', genre: 'tunnel', decor: VERDURE }]);
+function creuser(plan, { cote, mode = 'porte', long = 1, decor, teinte }, rivieres, bord) {
+  const P = plan.map((r) => [...r]), H = P.length, W = P[0].length, at = (x, y) => P[y]?.[x] ?? '#';
+  const mur = (x, y) => MURS_SOLO.includes(at(x, y)), vus = atteignables(plan, rivieres), K = (x, y) => x + ',' + y;
+  const PIED = '.SNxz"fh=', depart = [...vus].map((k) => k.split(',').map(Number)).filter(([x, y]) => y > 3 && y < H - 4 && (PIED + '~').includes(at(x, y)));
+  const pres = ([x]) => (cote === 'gauche' ? x : W - 1 - x);
+  depart.splice(0, depart.length, ...depart.filter((c) => pres(c) <= W * bord));
+  depart.sort((a, b) => pres(a) - pres(b) || a[1] - b[1]);
+  const murs = (cases, sauf) => cases.every(([x, y]) => mur(x, y) || sauf.has(K(x, y)));
+  const anneau = (cases) => { const C = new Set(cases.map(([x, y]) => K(x, y))), A = []; for (const [x, y] of cases) for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) if (!C.has(K(x + i, y + j))) A.push([x + i, y + j]); return A; };
+  let best = null;
+  for (const f of depart) {
+    if (best && pres(f) > best.pres + 2) break;
+    if (mode === 'porte') {
+      // une porte au fond d'un couloir qui monte dans la roche, juste au-dessus de f
+      const col = Array.from({ length: long + 1 }, (_, i) => [f[0], f[1] - 1 - i]);
+      if (!murs(col, new Set()) || !murs(anneau(col).filter(([x, y]) => !(x === f[0] && y === f[1]) && y <= f[1] - 1), new Set())) continue;
+      const porte = col[col.length - 1];
+      best = { pres: pres(f), creux: col.slice(0, -1), porte, devant: col.length > 1 ? col[col.length - 2] : f, garde: col.length > 1 ? col[0] : null, f };
+      break;
+    }
+    // un lac (ou un creux asséché) derrière une case de rive s, la porte au-dessus, une case de sol devant elle
+    const tailles = mode === 'lac' ? [[7, 4], [6, 5], [8, 4], [6, 4], [8, 3], [7, 3]] : [[4, 3], [3, 3], [4, 2], [3, 2]];
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, 1], [0, -1]]) {
+      const sh = [f[0] + dx, f[1] + dy]; if (!mur(...sh)) continue;
+      for (const [w, h] of tailles) for (let o = 0; o < (dx ? h : w); o++) {
+        const x0 = dx < 0 ? sh[0] - w : dx > 0 ? sh[0] + 1 : sh[0] - o, y0 = dy > 0 ? sh[1] + 1 : dy < 0 ? sh[1] - h : sh[1] - o;
+        const lac = []; for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) lac.push([x, y]);
+        const dc = x0 + (w >> 1), quai = [dc, y0 - 1], porte = [dc, y0 - 2];
+        const tout = [...lac, quai, porte, sh], sauf = new Set([K(...f)]);
+        if (x0 < 1 || x0 + w > W - 1 || y0 < 4 || y0 + h > H - 2 || !murs(tout, new Set())) continue;
+        // tout autour, de la roche (la case de rive mise à part : elle touche f, et ses deux côtés restent du mur)
+        const cote2 = dx ? [[sh[0], sh[1] - 1], [sh[0], sh[1] + 1]] : [[sh[0] - 1, sh[1]], [sh[0] + 1, sh[1]]];
+        if (!murs(cote2, new Set()) || !murs(anneau([...lac, quai, porte]).filter(([x, y]) => !(x === sh[0] && y === sh[1])), sauf)) continue;
+        if (!best || pres(f) < best.pres) best = { pres: pres(f), lac, quai, porte, sh, f, devant: quai, garde: sh };
+        break;
+      }
+      if (best?.f === f) break;
+    }
+    if (best?.f === f) break;
+  }
+  if (!best) throw new Error(`Temple : pas de place pour le passage secret (${mode}, ${cote})`);
+  const sol = mode === 'sec' ? 'à' : '~';
+  if (best.lac) { for (const [x, y] of best.lac) P[y][x] = sol; P[best.quai[1]][best.quai[0]] = mode === 'sec' ? 'à' : '.'; P[best.sh[1]][best.sh[0]] = mode === 'sec' ? 'à' : '.'; }
+  for (const [x, y] of best.creux || []) P[y][x] = '.';
+  P[best.porte[1]][best.porte[0]] = 'ç';
+  // autour de la porte : un peu de verdure, ou une roche d'une autre couleur
+  const autour = []; for (let j = -2; j <= 1; j++) for (let i = -2; i <= 2; i++) autour.push([best.porte[0] + i, best.porte[1] + j]);
+  for (const [x, y] of best.creux || []) for (const i of [-1, 1]) autour.push([x + i, y]);
+  for (const [x, y] of best.lac ? [...best.lac, best.quai] : []) for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) autour.push([x + i, y + j]);
+  const teintes = [];
+  let n = 0;
+  for (const [x, y] of autour) {
+    if (at(x, y) !== '#' || P[y][x] !== '#') continue;
+    if (decor) P[y][x] = decor[n++ % decor.length];
+    if (teinte) teintes.push([x, y, teinte]);
+  }
+  return { plan: P.map((r) => r.join('')), bouche: { x: best.porte[0], y: best.porte[1], devant: best.devant, garde: best.garde }, teintes };
+}
+// les six bouts : chemin, rang de la salle, plan, comment le percer, et ce qui le garde (côté salle 1 seulement)
+const BOUTS = {
+  p1: { plan: P1r, spec: { cote: 'gauche', mode: 'lac' }, garde: { type: 'ronces', objet: 'braise' } },
+  e2: { plan: E2r, spec: { cote: 'droite', mode: 'porte', decor: VERDURE } },
+  e1: { plan: E1r, spec: { cote: 'gauche', mode: 'sec', teinte: 'magma' }, garde: { type: 'vapeur', objet: 'graine' } },
+  f2: { plan: F2r, spec: { cote: 'droite', mode: 'porte' } },
+  f1: { plan: F1r, spec: { cote: 'droite', mode: 'porte', long: 3, teinte: 'grotte' }, garde: { type: 'flammes', objet: 'fiole' } },
+  p2: { plan: P2r, spec: { cote: 'gauche', mode: 'porte' } },
+};
+const PAIRES = [['p1', 'e2'], ['e1', 'f2'], ['f1', 'p2']];
+const SOLO = Object.fromEntries(Object.entries(BOUTS).map(([k, B]) => [k, creuserBouche(B.plan, B.spec)]));
+for (const [a, b] of PAIRES) for (const [u, v] of [[a, b], [b, a]]) Object.assign(SOLO[u].bouche, { vers: 's' + v, genre: { p1: 'lac', e1: 'sec', f1: 'tunnel' }[a] || 'porte' }, BOUTS[u].garde ? { verrou: BOUTS[u].garde } : {});
+const solo = (k) => ({ plan: SOLO[k].plan, miroir: SOLO[k].miroir, teintes: SOLO[k].teintes, bouches: [SOLO[k].bouche] });
 
 // le Grand Hall : deux portes en haut (e : la Salle des Dalles, p : le temple en solo, gardé par le moine @),
 // le vieil homme ! près de l'entrée, des dresseurs qui se préparent
@@ -122,7 +165,7 @@ const HALL = (() => {
   for (const [x, y, c] of [[7, 5, '$'], [13, 7, ':'], [20, 6, ';'], [26, 8, ','], [9, 10, '/'], [22, 12, '_'], [28, 12, '?']]) pose(x, y, c);
   return g.map((r) => r.join(''));
 })();
-// la Salle des Clés : la porte aux trois gemmes ; en solo, le téléporteur qui ramène aux trois portes
+// la Salle des Clés : la porte aux trois gemmes
 const CLES = (solo) => [
   '###############',
   '#######N#######',
@@ -130,7 +173,7 @@ const CLES = (solo) => [
   '##...........##',
   '#.............#',
   '#.............#',
-  solo ? '#......T......#' : '#.............#',
+  '#.............#',
   '#.............#',
   '##...........##',
   '#######S#######',
@@ -310,12 +353,12 @@ const DEF_TEMPLE = {
     x: { type: 'recoin', sol: true },
     z: { type: 'recoin', sol: true },
     // le solo : les grottes des passages secrets entre les chemins
-    'ç': { type: 'bouche', decor: 'bouche_eau' },
+    'ç': { type: 'bouche', sol: true },
+    'à': { type: 'tuile', t: 'SAND', sol: true },
     // les objets de la salle (OBJETS_SALLES), au fond des culs-de-sac
     I: { type: 'objetSalle', sol: true },
     K: { type: 'cle', sol: true },
     Q: { type: 'porteCles', decor: 'porte_vide' },
-    T: { type: 'teleporteur', sol: true, decor: 'teleporteur' },
     // la table : trois Poké Balls (à trois) ; en solo, trois CT
     a: { type: 'starter', decor: 'counter', n: 0 },
     b: { type: 'starter', decor: 'counter', n: 1 },
@@ -410,25 +453,24 @@ const DEF_TEMPLE = {
       '#######D#######',
     ] },
     { id: 's2', nom: 'Salle des Trois Portes', type: 'libre', branche: 'solo', suivante: null, plan: PORTES('R', 'U', 'W').map((r) => r.replace('D', '#')) },
-    // les trois portes sont ouvertes ; chaque sortie d'une première ou d'une deuxième salle est fermée par un verrou
-    // qui demande ce qu'on trouve dans la salle de même rang d'un autre chemin (recoin z, au fond de la salle)
-    { id: 'sp1', nom: 'Jardin Abandonné', type: 'libre', branche: 'solo', chemin: 'p', biome: 'terre', suivante: 'sp2', retour: ['s2', 'W'], pk: 'P1', plan: SOLO_P1.plan, miroir: SOLO_P1.miroir,
-      verrou: { type: 'ronces', objet: 'braise' }, recoins: { z: { type: 'objet', objet: 'graine' } },
-      bouches: [{ ...SOLO_P1.bouches[0], vers: ['se1', 0] }, { ...SOLO_P1.bouches[1], vers: ['sf1', 1] }] },
-    { id: 'sp2', nom: 'Jungle Profonde', type: 'libre', branche: 'solo', chemin: 'p', biome: 'terre', suivante: 'sp3', pk: 'P2', plan: P2r,
+    // les trois portes sont ouvertes. La sortie de chaque première salle est une grille qui ne s'ouvre que de l'autre côté :
+    // on entre dans une deuxième salle par le passage secret d'un autre chemin (gardé par un obstacle qui demande l'objet
+    // trouvé au fond de la première salle d'un troisième chemin), puis la grille s'ouvre derrière soi. La sortie de chaque
+    // deuxième salle demande l'objet trouvé au fond de la deuxième salle d'un autre chemin.
+    { id: 'sp1', nom: 'Jardin Abandonné', type: 'libre', branche: 'solo', chemin: 'p', biome: 'terre', suivante: 'sp2', retour: ['s2', 'W'], pk: 'P1', ...solo('p1'),
+      verrou: { type: 'grille' }, recoins: { z: { type: 'objet', objet: 'graine' } } },
+    { id: 'sp2', nom: 'Jungle Profonde', type: 'libre', branche: 'solo', chemin: 'p', biome: 'terre', suivante: 'sp3', pk: 'P2', ...solo('p2'),
       verrou: { type: 'arbre', objet: 'rosee' }, recoins: { z: { type: 'objet', objet: 'corde' } } },
     { id: 'sp3', nom: 'Cœur de la Jungle', type: 'libre', branche: 'solo', chemin: 'p', biome: 'terre', cle: 'p', suivante: 's4', pk: 'P3', plan: P3r },
-    { id: 'se1', nom: 'Bassin Profond', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', suivante: 'se2', retour: ['s2', 'U'], pk: 'E1', plan: SOLO_E1.plan, miroir: SOLO_E1.miroir,
-      verrou: { type: 'torrent', objet: 'graine' }, recoins: { z: { type: 'objet', objet: 'fiole' } },
-      bouches: [{ ...SOLO_E1.bouches[0], vers: ['sp1', 0] }, { ...SOLO_E1.bouches[1], vers: ['sf1', 0] }] },
-    { id: 'se2', nom: 'Grotte des Courants', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', suivante: 'se3', pk: 'E2', plan: E2r,
+    { id: 'se1', nom: 'Bassin Profond', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', suivante: 'se2', retour: ['s2', 'U'], pk: 'E1', ...solo('e1'),
+      verrou: { type: 'grille' }, recoins: { z: { type: 'objet', objet: 'fiole' } } },
+    { id: 'se2', nom: 'Grotte des Courants', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', suivante: 'se3', pk: 'E2', ...solo('e2'),
       verrou: { type: 'glace', objet: 'pierre' }, recoins: { z: { type: 'objet', objet: 'rosee' } } },
     { id: 'se3', nom: 'Source', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', suivante: 'se4', pk: 'E3', plan: E3r },
     { id: 'se4', nom: 'Mer Intérieure', type: 'libre', branche: 'solo', chemin: 'e', biome: 'mer', cle: 'e', suivante: 's4', pk: 'E4', plan: E4r },
-    { id: 'sf1', nom: 'Pentes du Volcan', type: 'libre', branche: 'solo', chemin: 'f', biome: 'magma', suivante: 'sf2', retour: ['s2', 'R'], pk: 'F1', plan: SOLO_F1.plan, miroir: SOLO_F1.miroir,
-      verrou: { type: 'flammes', objet: 'fiole' }, recoins: { z: { type: 'objet', objet: 'braise' } },
-      bouches: [{ ...SOLO_F1.bouches[0], vers: ['se1', 1] }, { ...SOLO_F1.bouches[1], vers: ['sp1', 1] }] },
-    { id: 'sf2', nom: 'Gradins de Lave', type: 'libre', branche: 'solo', chemin: 'f', biome: 'magma', suivante: 'sf3', pk: 'F2', plan: F2r,
+    { id: 'sf1', nom: 'Pentes du Volcan', type: 'libre', branche: 'solo', chemin: 'f', biome: 'magma', suivante: 'sf2', retour: ['s2', 'R'], pk: 'F1', ...solo('f1'),
+      verrou: { type: 'grille' }, recoins: { z: { type: 'objet', objet: 'braise' } } },
+    { id: 'sf2', nom: 'Gradins de Lave', type: 'libre', branche: 'solo', chemin: 'f', biome: 'magma', suivante: 'sf3', pk: 'F2', ...solo('f2'),
       verrou: { type: 'gouffre', objet: 'corde' }, recoins: { z: { type: 'objet', objet: 'pierre' } } },
     { id: 'sf3', nom: 'Cratère', type: 'libre', branche: 'solo', chemin: 'f', biome: 'magma', cle: 'f', suivante: 's4', pk: 'F3', plan: F3r },
     { id: 's4', nom: 'Salle des Clés', type: 'libre', branche: 'solo', ouvertPar: 'porte', plan: CLES(true) },

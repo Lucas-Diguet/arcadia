@@ -105,7 +105,7 @@ export function appliquer(def, e, qui, m, o = {}) {
       return res(true, true);
     }
     case 'gagne': {
-      const s = salleDe(def, m.pnj); if (!s || (s.type !== 'combat' && s.type !== 'etage')) return res(false, false, 'inconnu');
+      const s = salleDe(def, m.pnj); if (!s || (s.type !== 'combat' && s.type !== 'etage' && s.type !== 'libre')) return res(false, false, 'inconnu');
       const S = e.salles[s.id];
       if (S.battus.includes(m.pnj)) return res(false, false, 'battu');
       if (S.pris[m.pnj] && S.pris[m.pnj] !== qui) return res(false, false, 'occupe');

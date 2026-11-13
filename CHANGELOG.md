@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 5.41 — 13 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : un pilleur vaincu ne te défie plus quand tu repasses dans son champ de vision.
+- **TestOdyssée** — Temple des Éléments : un dresseur vaincu dit qu'il te laisse ses affaires avant de te les donner.
+- **TestOdyssée** — Temple des Éléments, chemin de l'Eau : les sorties sur les côtés s'ouvrent maintenant contre un mur, au bout d'un petit couloir, comme celles du haut.
+- **TestOdyssée** — Temple des Éléments en solo :
+  - Les passages secrets mènent de la première salle d'un chemin à la deuxième d'un autre, et ressemblent à de vraies sorties de grotte : un petit lac où l'on surfe côté Plante, un creux asséché à la roche rougie côté Eau, un tunnel de roche grise côté Feu.
+  - La sortie de chaque première salle est une grille qui ne s'ouvre que de l'autre côté : il faut passer par un passage secret. Chaque passage est gardé par un obstacle qui demande l'objet trouvé dans la première salle d'un troisième chemin.
+  - Plus de téléporteur dans la Salle des Clés.
+
 ## 5.40 — 13 novembre 2026
 - **TestOdyssée** — De vraies musiques dans deux donjons.
   - Temple des Éléments : une musique pour chaque chemin (Feu, Eau, Plante), une autre dans le Grand Hall, les salles des dalles et les salles de fin, et une musique de boss contre le Gardien.

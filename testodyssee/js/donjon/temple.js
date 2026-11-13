@@ -14,20 +14,27 @@ import { battu, resoudreStarters } from './etat.js';
 import { STARTERS_TEMPLE } from '../formes.js';
 import { itemName, ITEMS } from '../../../odyssee/js/core/items.js';
 import { CHAR_ROWS } from '../../../odyssee/js/render/world3d.js';
+import { ReliefHGSS } from '../../../odyssee/js/render/falaises.js';
 import { DRESSEURS } from '../donjons/temple-chemins.js';
 import { DRESSEURS_TEMPLE, POKEMON_TEMPLE, BUTIN_TEMPLE, OBJETS_SALLES } from '../donjons/temple.js';
 const ITEMS_DESC = (k) => ITEMS[k]?.desc || '';
 
 const cle = (x, y) => x + ',' + y;
 const estTemple = (d) => d.id === 'temple';
-const TYPES = new Set(['grandePorte', 'porteSolo', 'porteCles', 'starter', 'ct', 'porteHall', 'arbuste', 'ronces', 'bouche']);
+const TYPES = new Set(['grandePorte', 'porteSolo', 'porteCles', 'starter', 'ct', 'porteHall', 'arbuste', 'ronces']);
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 export const TALISMAN = 'talisman-elements';
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
 // le solo : objets du Sac, décors des passages et des verrous
 const SAC = { braise: 'braise-eternelle', graine: 'graine-geante', fiole: 'fiole-eau-pure', pierre: 'pierre-ardente', rosee: 'rosee-eternelle', corde: 'corde-liane' };
-const DECOR_BOUCHE = { eau: 'bouche_eau', sombre: 'bouche_sombre', tunnel: 'bouche_tunnel' };
-const DECOR_VERROU = { ronces: 'ronces_geantes', torrent: 'torrent', flammes: 'mur_flammes', glace: 'mur_glace', arbre: 'arbre_mort', gouffre: 'gouffre' };
+const DECOR_VERROU = { ronces: 'ronces_geantes', vapeur: 'vapeur', flammes: 'mur_flammes', glace: 'mur_glace', arbre: 'arbre_mort', gouffre: 'gouffre', grille: 'grille_temple' };
+/** la roche des grottes : une couleur par salle, sauf là où la salle en donne une autre (biomesCase) */
+let teinte = false;
+function teinterRoche() {
+  if (teinte) return; teinte = true;
+  const avant = ReliefHGSS.prototype.biomeDe;
+  ReliefHGSS.prototype.biomeDe = function (x, y) { return this.m?.biomesCase?.get(x + ',' + y) || avant.call(this, x, y); };
+}
 export const CARTE_TEMPLE = 'carte-temple';
 /** la case devant la sortie d'une salle (la sortie peut être en haut ou sur un côté) */
 export function devantSortie(P) {
@@ -73,7 +80,14 @@ export const Temple = {
     }
     if (S?.verrou) { const [vx, vy] = devantSortie(P); m.object(vx, vy, { use: () => this.verrouTemple(d, S) }); }
     // les grottes des passages secrets : leur dessin dépend de leurs deux chemins
-    for (const B of S?.bouches || []) { const dd = m.deco.find((q) => q.x === B.x + 1 && q.y === B.y + 1); if (dd) dd.k = DECOR_BOUCHE[B.genre]; }
+    for (const B of S?.bouches || []) {
+      // une sortie de grotte comme les autres, vers le devant de la porte d'en face ; côté première salle, un obstacle
+      const S2 = d.salles.find((q) => q.id === B.vers), B2 = S2.bouches[0], m2 = this.game.world.maps[S2.carte];
+      m.set(B.x + 1, B.y + 1, T.CAVEDOOR); m.warp(B.x + 1, B.y + 1, { map: m2.id, x: B2.devant[0] + 1, y: B2.devant[1] + 1, dir: 'down' }); m.deco.push({ k: 'exitlight', x: B.x + 1, y: B.y + 1 });
+      if (B.verrou) m.object(B.garde[0] + 1, B.garde[1] + 1, { use: () => this.verrouTemple(d, S, B.verrou, `${S.id}:passage`) });
+    }
+    // la roche d'une autre couleur autour de certains passages (rougie près du Feu, grise dans le tunnel)
+    if (S?.teintes?.length) { m.biomesCase = new Map(S.teintes.map(([x, y, b]) => [cle(x + 1, y + 1), b])); teinterRoche(); }
     if (S?.branche === 'solo') this.syncSolo(d, m);
     // les objets de la salle, puis ses dresseurs (et le nageur épuisé de la Mer Intérieure)
     const niv = S?.pk ? Number(S.pk[1]) : 0;
@@ -148,7 +162,7 @@ export const Temple = {
       m.npc({
         id: `${m.id}:dr${i}`, x, y, dir: tourne.includes(dir) ? dir : tourne[0] || dir, sprite: P.sprite, move: 'static', tourne, nage: ou === 'eau',
         trainer: { cls: P.cls, name: P.nom, team, prize: solo ? 60 : 24, sight: 4, bs: P.bs, ai: 'normal', intro: P.intro, lose: P.lose, after: P.after },
-        onWin: () => this.butinTemple(),
+        onWin: (api, n) => this.butinTemple(n),
       });
     });
   },
@@ -156,13 +170,20 @@ export const Temple = {
   dresseurTemple(id) { return typeof id === 'string' && id.startsWith('labo:temple:') && /:dr\d+$/.test(id); },
   perduTemple() { const d = this.defs.get('temple'); if (d) this.taches.push(() => this.defaite(d)); },
   /** le dresseur vaincu donne deux objets différents, tirés au hasard */
-  async butinTemple() {
-    const g = this.game, pris = [];
+  async butinTemple(n) {
+    const g = this.game, pris = [], tr = n?.def?.trainer;
     for (let k = 0; k < 2; k++) {
       const reste = BUTIN_TEMPLE.filter(([o]) => !pris.includes(o)), tot = reste.reduce((a, [, p]) => a + p, 0);
       let r = Math.random() * tot;
       for (const [o, p] of reste) { r -= p; if (r <= 0) { pris.push(o); break; } }
       if (pris.length === k) pris.push(reste[reste.length - 1][0]);
+    }
+    if (tr) {
+      const MOTS = ['Tiens, prends mes affaires. Moi, je n\'irai pas plus loin.', 'Tu l\'as mérité. Prends ce que j\'ai, ça te servira plus qu\'à moi.',
+        'Bon... Voilà ce que j\'avais sur moi. Fais-en bon usage.', 'Prends ça. Le Gardien ne fera pas de cadeau, lui.', 'Je rentre. Garde mes provisions, tu en auras besoin.',
+        'C\'est de bonne guerre. Tiens, mes objets sont à toi.'];
+      let h = 0; for (const c of n.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      await g.ui.say(MOTS[h % MOTS.length], { speaker: `${tr.cls} ${tr.name}` });
     }
     for (const o of pris) g.give(o, 1);
     g.sound.sfx('item');
@@ -243,7 +264,7 @@ export const Temple = {
       const n = Number(s.id[2]), avant = n === 1 ? salles[0] : salles.find((q) => q.id === s.id.slice(0, 2) + (n - 1));
       trait(pos(avant), pos(s), false, '#8a7a60');
       if (s.cle) trait(pos(s), pos(salles[salles.length - 1]), false, '#8a7a60');
-      for (const B of s.bouches || []) { const s2 = salles.find((q) => q.id === B.vers[0]); if (s2.id > s.id) trait(pos(s), pos(s2), true, '#b070d0'); }
+      for (const B of s.bouches || []) { const s2 = salles.find((q) => q.id === B.vers); if (s2.id[2] > s.id[2]) trait(pos(s), pos(s2), true, '#b070d0'); }
     }
     for (const s of salles) {
       const [cx, cy] = pos(s), ici = g.world.maps[s.carte] === g.mapObj;
@@ -278,7 +299,7 @@ export const Temple = {
       if (c === 'S' && s.id !== 's2') marque(i, j, '#e8c840', 'entrée');
       else if (c === 'N') marque(i, j, '#e0a040', 'sortie');
     }));
-    for (const B of s.bouches || []) marque(B.x, B.y, '#b070d0', `→ ${nomDe(B.vers[0])}`);
+    for (const B of s.bouches || []) marque(B.x, B.y, '#b070d0', `→ ${nomDe(B.vers)}`);
     const m = g.world.maps[s.carte];
     if (g.mapObj === m) { x.fillStyle = '#fff'; x.beginPath(); x.arc((g.player.x - 1) * Z + Z / 2, (g.player.y - 1) * Z + Z / 2, Z * 1.2, 0, 7); x.fill(); x.strokeStyle = '#000'; x.lineWidth = 2; x.stroke(); }
     titre.innerHTML = `<b>${esc(s.nom)}</b>${s.chemin ? ` · chemin ${esc(d.voiesDe[s.chemin] + d.voies[s.chemin])}` : ''} · <span class="mine-leg"><i style="background:#e8c840"></i>entrée <i style="background:#e0a040"></i>sortie <i style="background:#b070d0"></i>passage <i style="background:#fff"></i>toi</span>`;
@@ -320,7 +341,7 @@ export const Temple = {
     }
   },
 
-  /** après un pas : dalle d'or, clé, téléporteur */
+  /** après un pas : dalle d'or, clé ; en solo, la grille de la salle d'avant s'ouvre quand on arrive dans une deuxième salle */
   async apresPasTemple() {
     const g = this.game, d = this.defs.get('temple'); if (!d || !this.estDans(d) || g.busy) return;
     const m = g.mapObj, P = m.donjon?.plan, p = g.player, s = this.salleTemple(d); if (!P || !s) return;
@@ -331,10 +352,10 @@ export const Temple = {
       if (p.surf && m.courants?.has(cle(p.x, p.y))) await this.courant(m);
       else if (ici('X')) await this.dalleOr(d, m);
       else if (ici('K') && s.cle) await this.ramasserCle(d, s);
-      else if (ici('T')) {
-        const s2 = d.salles.find((q) => q.id === 's2'), cm = g.world.maps[s2.carte], [x, y] = cm.donjon.plan.depart;
-        g.sound.sfx('exit'); await g.ui.say('Le téléporteur te ramène à la Salle des Trois Portes.');
-        await g.warp({ map: cm.id, x, y, dir: 'up' }, 'exit');
+      if (s.branche === 'solo' && s.chemin && s.id[2] === '2' && !g.state.flags[`TS:verrou:${s.id.slice(0, 2)}1`]) {
+        const s1 = d.salles.find((q) => q.id === s.id.slice(0, 2) + '1');
+        g.state.flags[`TS:verrou:${s1.id}`] = true; this.syncSolo(d, g.world.maps[s1.carte]);
+        g.sound.sfx('door'); await g.ui.say('Derrière toi, une lourde grille de pierre se lève. Le chemin vers la salle d\'avant est ouvert.');
       }
     } finally { g.busy = false; }
   },
@@ -409,7 +430,6 @@ export const Temple = {
       case 'arbuste': return this.couperArbuste(d, m, c, x, y);
       case 'ronces': return g.ui.say(`D'épaisses ronces à fleurs ${o.couleur}. Elles viennent d'un arbuste, pas loin d'ici.`);
       case 'porteSolo': return this.porteSolo(d, o);
-      case 'bouche': return this.boucheTemple(d, s, x, y);
       case 'porteCles': return this.porteCles(d, s);
       case 'starter': return this.balleStarter(d, s, o.n);
       case 'ct': return this.prendreCt(d, s, o.n);
@@ -540,6 +560,7 @@ export const Temple = {
       if (R.type === 'objet') maj(x, y, fl[`TS:objet:${R.objet}`] ? null : d.tresors[R.objet].decor);
     }
     if (S.verrou) { const [vx, vy] = devantSortie(P); maj(vx, vy, fl[`TS:verrou:${S.id}`] ? null : DECOR_VERROU[S.verrou.type]); }
+    for (const B of S.bouches || []) if (B.verrou) maj(B.garde[0] + 1, B.garde[1] + 1, fl[`TS:verrou:${S.id}:passage`] ? null : DECOR_VERROU[B.verrou.type]);
     this.syncVegetal(d, m);
   },
   /** nouvelle descente en solo : tout revient comme au début */
@@ -562,30 +583,15 @@ export const Temple = {
     fl[`TS:objet:${R.objet}`] = true; g.give(tr.objet, 1); g.sound.sfx('item'); this.syncSolo(d, m);
     await ui.say([`${st.name} trouve : ${itemName(tr.objet)} !`, ITEMS_DESC(tr.objet)]);
   },
-  /** une grotte d'un passage secret : on ressort par celle d'en face, dans un autre chemin (en surfant, sauf le tunnel) */
-  async boucheTemple(d, S, x, y) {
-    const g = this.game, ui = g.ui, B = (S.bouches || []).find((q) => q.x + 1 === x && q.y + 1 === y); if (!B) return;
-    const S2 = d.salles.find((q) => q.id === B.vers[0]), B2 = S2.bouches[B.vers[1]], m2 = g.world.maps[S2.carte];
-    const quoi = { eau: ['Une petite grotte au ras de l\'eau. Des fleurs et des ronces pendent de la voûte.', 'S\'y enfoncer en surfant ?'],
-      sombre: ['Une grotte basse, au bord d\'une eau sombre. La roche y est noire et tiède.', 'S\'y enfoncer en surfant ?'],
-      tunnel: ['Un tunnel s\'enfonce dans la roche. Il en sort un air tiède et une odeur de feuilles.', 'L\'emprunter ?'] }[B.genre];
-    await ui.say(quoi[0]);
-    if (B.genre !== 'tunnel' && !g.player.surf) { await ui.say('L\'eau va jusqu\'au fond de la grotte. Il faudrait surfer.'); return; }
-    if (!(await ui.yesNo(quoi[1]))) return;
-    // on ressort devant la grotte d'en face, du côté de la salle
-    const bx = B2.x + 1, by = B2.y + 1, dx = B2.x === 0 ? 1 : -1;
-    g.sound.sfx(B.genre === 'tunnel' ? 'ledge' : 'heal');
-    await g.warp({ map: m2.id, x: bx + dx, y: by, dir: dx > 0 ? 'right' : 'left' }, 'exit');
-    if (B.genre !== 'tunnel') g.player.surf = true;
-    await ui.say(`Tu ressors dans une autre partie du temple : ${S2.nom} (chemin ${d.voiesDe[S2.chemin]}${d.voies[S2.chemin]}).`);
-  },
-  async verrouTemple(d, S) {
-    const g = this.game, ui = g.ui, st = g.state, fl = st.flags, V = S.verrou, m = g.world.maps[S.carte];
-    if (fl[`TS:verrou:${S.id}`]) return;
+  /** un verrou du solo : la sortie d'une salle (S.verrou), ou l'obstacle devant un passage secret */
+  async verrouTemple(d, S, V = S.verrou, k = S.id) {
+    const g = this.game, ui = g.ui, st = g.state, fl = st.flags, m = g.world.maps[S.carte];
+    if (fl[`TS:verrou:${k}`]) return;
+    if (V.type === 'grille') { await ui.say(['Une lourde grille de pierre ferme la sortie.', 'Elle ne bouge pas d\'un pouce. On dirait qu\'elle se manœuvre de l\'autre côté.']); return; }
     const T_ = {
-      ronces: { vu: ['Des ronces géantes, épaisses comme le bras, ferment la sortie.', 'Aucune lame n\'en viendrait à bout. Le feu, peut-être...'], q: 'Approcher la Braise Éternelle ?', fait: 'Les ronces s\'embrasent d\'un coup et tombent en cendres. La voie est libre !' },
-      torrent: { vu: ['Un torrent furieux tombe devant la sortie. Impossible de le traverser.', 'Il faudrait quelque chose d\'assez assoiffé pour le boire...'], q: 'Planter la Graine Géante au bord du torrent ?', fait: 'La graine germe aussitôt. Ses racines boivent le torrent jusqu\'à la dernière goutte. La voie est libre !' },
-      flammes: { vu: ['Un mur de flammes barre la sortie. Il ne faiblit jamais.', 'Une eau ordinaire s\'évaporerait avant de le toucher...'], q: 'Verser la Fiole d\'Eau Pure sur les flammes ?', fait: 'L\'eau pure étouffe les flammes dans un nuage de vapeur. La voie est libre !' },
+      ronces: { vu: ['Des ronces géantes, épaisses comme le bras, ferment le passage.', 'Aucune lame n\'en viendrait à bout. Le feu, peut-être...'], q: 'Approcher la Braise Éternelle ?', fait: 'Les ronces s\'embrasent d\'un coup et tombent en cendres. La voie est libre !' },
+      vapeur: { vu: ['Une vapeur brûlante jaillit d\'une fissure, juste devant le creux. Impossible de passer.', 'Il faudrait boucher la fissure... avec quelque chose qui pousse vite ?'], q: 'Planter la Graine Géante dans la fissure ?', fait: 'La graine germe aussitôt. Ses racines bouchent la fissure, et la vapeur s\'éteint. La voie est libre !' },
+      flammes: { vu: ['Un mur de flammes barre le tunnel. Il ne faiblit jamais.', 'Une eau ordinaire s\'évaporerait avant de le toucher...'], q: 'Verser la Fiole d\'Eau Pure sur les flammes ?', fait: 'L\'eau pure étouffe les flammes dans un nuage de vapeur. La voie est libre !' },
       glace: { vu: ['Un mur de glace bouche la sortie. Il est froid comme au fond d\'un lac.', 'Rien ici n\'est assez chaud pour le faire fondre...'], q: 'Poser la Pierre Ardente contre la glace ?', fait: 'La glace fond en sifflant et s\'écoule dans les bassins. La voie est libre !' },
       arbre: { vu: ['Un grand arbre mort, tordu, barre la sortie de ses branches sèches.', 'Il a l\'air d\'avoir eu soif pendant très longtemps.'], q: 'Verser la Rosée Éternelle au pied de l\'arbre ?', fait: 'L\'arbre reverdit d\'un coup et relève ses branches. La voie est libre !' },
       gouffre: { vu: ['Un gouffre s\'ouvre devant la sortie. Tout au fond, la lave rougeoie.', 'Pas moyen de sauter par-dessus. Avec une corde, peut-être...'], q: 'Lancer la Corde de Liane par-dessus le gouffre ?', fait: 'La liane s\'accroche de l\'autre côté et se tend comme un pont. La voie est libre !' },
@@ -593,7 +599,7 @@ export const Temple = {
     await ui.say(T_.vu);
     if (!fl[`TS:objet:${V.objet}`]) return;
     if (!(await ui.yesNo(T_.q))) return;
-    fl[`TS:verrou:${S.id}`] = true; delete st.bag[SAC[V.objet]];
+    fl[`TS:verrou:${k}`] = true; delete st.bag[SAC[V.objet]];
     g.sound.sfx('badge'); g.view.shake = 0.25; this.syncSolo(d, m);
     await ui.say(T_.fait);
   },

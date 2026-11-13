@@ -401,7 +401,8 @@ Le Feu et la Plante ont trois grandes salles (60 × 44 cases), l'Eau quatre (80 
   Un interrupteur où le rocher posé boucherait le passage est décalé d'une ou deux cases (`ecarter_interrupteurs`).
 - Eau : un labyrinthe de vingt bassins (8 à 12 rivières à prendre au moins). La sortie n'est jamais dans un coin du haut
   ni au milieu du haut : sur le mur de gauche dans la première salle, en haut (entre le coin et le milieu) dans la
-  deuxième, sur le mur de droite dans la troisième. Des rivières (`<` `>` `(` `)` : courant vers la gauche, la droite, le haut, le
+  deuxième, à droite dans la troisième ; sur les côtés, elle s'ouvre au fond d'un petit couloir qui monte de la rive,
+  contre un mur, comme celles du haut. Des rivières (`<` `>` `(` `)` : courant vers la gauche, la droite, le haut, le
   bas) emportent le surfeur d'un bassin à l'autre, dans un seul sens (`courant`, chevrons dessinés par
   `dessinerCourants`) ; beaucoup ramènent en arrière. L'outil garde le labyrinthe le plus long où aucun bassin n'est un
   piège : de partout, la sortie reste atteignable. La quatrième salle, la Mer Intérieure, est une grande étendue d'eau
@@ -430,26 +431,30 @@ l'élément du chemin (montagnards au Feu, marins et pêcheurs à l'Eau, scouts 
 l'épreuve ; nageurs sur l'eau (`nage`, sprites `img/temple/nageurs.png` posés dans deux rangées libres de la planche,
 `spritesTemple` ; ils voient loin sur l'eau : `regardNageurs`). 1 à 3 Pokémon (`POKEMON_TEMPLE` : niveaux 20 à 25 à
 trois, 55 à 60 en solo ; au Feu, 30 % de Roche). Vaincu, un dresseur donne deux objets différents, tirés au hasard
-(`BUTIN_TEMPLE`, `butinTemple`) ; battu, on se réveille à l'entrée de la salle (`perduTemple`). Ils reviennent à chaque
+(`BUTIN_TEMPLE`, `butinTemple`, avec une phrase du dresseur) ; battu, on se réveille à l'entrée de la salle (`perduTemple`). Ils reviennent à chaque
 nouvelle épreuve (`remiseDresseurs`).
 
-Le solo, chemins mêlés. Les trois portes sont ouvertes. Les premières salles (Jardin Abandonné, Bassin Profond, Pentes
-du Volcan) ont des grottes (`ç`, `bouches`) creusées au bord du plan par `creuserBouches` : trois passages secrets, chacun
-dans les deux sens, sur le mur qui fait face à l'autre chemin (la Plante est à droite, l'Eau au milieu, le Feu à
-gauche), au bout d'un petit bras qu'on atteint dès l'entrée de la salle. Plante et Eau : eau claire, on y entre en
-surfant ; Eau et Feu : eau sombre, roche volcanique, en surfant ; Plante et Feu : un tunnel. Autour de chaque grotte, un
-peu du décor de l'autre chemin. Une salle qui s'y prête mieux à l'envers est retournée (`miroir`, ses dresseurs aussi).
-Les sorties des premières et deuxièmes salles ont un `verrou` qui demande ce qu'on trouve au fond (recoin `z`) de la
-salle de même rang d'un autre chemin (`tresors`) :
-- premières salles : la Braise Éternelle (Feu) brûle les ronces géantes de la Plante, la Graine Géante (Plante) boit
-  le torrent de l'Eau, la Fiole d'Eau Pure (Eau) éteint le mur de flammes du Feu ;
-- deuxièmes salles : la Pierre Ardente (Feu) fait fondre le mur de glace de l'Eau, la Rosée Éternelle (Eau) rend vie
-  à l'arbre mort de la Plante, la Corde de Liane (Plante) fait franchir le gouffre du Feu.
-On avance dans les trois chemins à la fois, dans l'ordre qu'on veut. La Carte du Temple (`carte-temple`, dans le Sac)
-montre les salles en trois colonnes avec les sorties et les passages secrets, puis le squelette de chaque salle (sol,
-eau, entrée, sortie, grottes, pas de clé ni d'obstacle). Tout est gardé dans les drapeaux `TS:…` de la partie, remis à
-zéro quand on marche sur la dalle d'or (`resetSolo`, `syncSolo`). Les tests résolvent chaque salle (rochers, rivières,
-ronces) et jouent le solo en abrégé : on finit, et pas sans un seul des six objets.
+Le solo, chemins mêlés. Les trois portes sont ouvertes. Trois passages secrets (`bouches`, percés par `creuserBouche`)
+relient la première salle d'un chemin à la deuxième d'un autre, dans les deux sens : Plante 1 et Eau 2, Eau 1 et Feu 2,
+Feu 1 et Plante 2. Chaque bout est une sortie de grotte contre un mur, du côté de la salle qui fait face à l'autre
+chemin (la Plante est à droite, l'Eau au milieu, le Feu à gauche), qu'on atteint dès l'entrée de la salle. Côté Plante 1,
+un petit lac où l'on surfe ; côté Eau 1, un creux où l'eau s'est évaporée (sable `à`, roche rougie) ; côté Feu 1, un
+tunnel de roche grise (`teintes` : la roche d'une case prend un autre biome, `biomesCase`) ; côté Eau 2, de la verdure.
+Une salle qui s'y prête mieux à l'envers est retournée (`miroir`, ses dresseurs aussi).
+- La sortie de chaque première salle est une grille (`grille`) qui ne s'ouvre que de l'autre côté : arrivé dans la
+  deuxième salle (par un passage secret), elle se lève.
+- Côté première salle, chaque passage est gardé par un obstacle (`verrou` de la bouche) qui demande l'objet trouvé au
+  fond (recoin `z`) de la première salle du troisième chemin : les ronces devant le lac de la Plante avec la Braise
+  Éternelle (Feu), la vapeur devant le creux de l'Eau avec la Graine Géante (Plante), les flammes du tunnel du Feu avec
+  la Fiole d'Eau Pure (Eau). On l'ouvre d'un côté ou de l'autre.
+- La sortie de chaque deuxième salle demande l'objet du fond de la deuxième salle d'un autre chemin : la Pierre
+  Ardente (Feu) pour la glace de l'Eau, la Rosée Éternelle (Eau) pour l'arbre mort de la Plante, la Corde de Liane
+  (Plante) pour le gouffre du Feu.
+On avance dans les trois chemins à la fois, dans l'ordre qu'on veut. Pas de téléporteur dans la Salle des Clés. La
+Carte du Temple (`carte-temple`, dans le Sac) montre les salles en trois colonnes avec les sorties et les passages
+secrets, puis le squelette de chaque salle (sol, eau, entrée, sortie, passages). Tout est gardé dans les drapeaux
+`TS:…` de la partie, remis à zéro quand on marche sur la dalle d'or (`resetSolo`, `syncSolo`). Les tests résolvent
+chaque salle (rochers, rivières, ronces) et jouent le solo en abrégé : on finit, et pas sans un seul des six objets.
 
 ### Les formes du Temple
 

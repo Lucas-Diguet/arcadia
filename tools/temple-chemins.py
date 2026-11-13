@@ -513,10 +513,18 @@ class Eau:
             g_ = self.cote == 'gauche'
             for x, y in self.bassin[self.fin]:
                 if (x <= fx - 3 if g_ else x >= fx + 3) and self.at(x, y) == '~' and (x, y) not in self.reserve: self.g[y][x] = '.'
-            xs = range(1, fx - 2) if g_ else range(fx + 3, W - 1)
-            for x in xs:
-                if self.g[fy][x] not in '.~': self.g[fy][x] = '.'
-            self.N = (0 if g_ else W - 1, fy); self.g[fy][self.N[0]] = 'N'
+            # la sortie s'ouvre au fond d'un petit couloir qui monte de la rive, dans la roche (une porte contre un mur,
+            # comme celles du haut) : le plus près possible du mur du côté voulu
+            rive = sorted([(x, y) for x, y in self.bassin[self.fin] if self.g[y][x] == '.'], key=lambda c: c[0] if g_ else -c[0])
+            fait = False
+            for x, y in rive:
+                for k in (2, 3, 4):
+                    col = [(x, y - i) for i in range(1, k + 1)]
+                    if all(self.at(a, b) == '#' and self.at(a - 1, b) == '#' and self.at(a + 1, b) == '#' for a, b in col) and self.at(x, y - k - 1) == '#':
+                        for a, b in col[:-1]: self.g[b][a] = '.'
+                        self.N = col[-1]; self.g[col[-1][1]][x] = 'N'; fait = True; break
+                if fait: break
+            if not fait: raise Echec('pas de place pour la sortie')
         self.importants = []
         # recoins sur les rives
         for lettre, i, col in (('x', self.dep, cx), ('z', self.fin, fx)):

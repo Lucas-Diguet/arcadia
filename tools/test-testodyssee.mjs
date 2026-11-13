@@ -805,7 +805,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
     const pres = (vus, [x, y]) => vus.has(K(x, y)) || D4.some(([dx, dy]) => vus.has(K(x + dx, y + dy)));
     for (const c of ['f', 'e', 'p']) for (const n of [1, 2, 3]) {
       const s = d.salles.find((q) => q.id === `g${c}${n}`), { P, at, ou, S, N } = lire(s);
-      const so = d.salles.find((q) => q.id === `s${c}${n}`), memePlan = n === 1 ? so.plan.length === P.length && so.plan[0].length === P[0].length : so.plan === s.plan;
+      const so = d.salles.find((q) => q.id === `s${c}${n}`), memePlan = n <= 2 ? so.plan.length === P.length && so.plan[0].length === P[0].length : so.plan === s.plan;
       ok((c === 'e' ? P.length === 61 && P[0].length === 80 : P.length === 45 && P[0].length === 60) && memePlan && ou('x').length === 1 && ou('z').length === 1 && ou('I').length === (n === 1 ? 2 : 3) && !ou('JOPV').length && OBJETS_SALLES[n].length === ou('I').length, `temple : ${s.id} (${s.nom}) est grande, sert aussi en solo, avec ${ou('I').length} objets et ses deux recoins`);
       // ses dresseurs : 5 ou 6, sur le sol (ou sur l'eau, pour les nageurs), loin les uns des autres
       const dr = DRESSEURS[`${c.toUpperCase()}${n}`];
@@ -950,58 +950,69 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
   // le solo : les trois chemins se mêlent
   {
     const solo = d.salles.filter((s) => s.branche === 'solo' && s.chemin), par2 = Object.fromEntries(solo.map((s) => [s.id, s])), D4c = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-    // les passages secrets : trois, entre les premières salles, chacun dans les deux sens, sur le mur qui fait face à
-    // l'autre chemin ; on y arrive dès l'entrée de la salle, sans rien résoudre
-    const bouches = solo.flatMap((s) => (s.bouches || []).map((B, i) => ({ s, B, i })));
-    ok(bouches.length === 6 && bouches.every(({ s, B, i }) => { const s2 = par2[B.vers[0]]; return s2.chemin !== s.chemin && s2.bouches[B.vers[1]].vers.join() === `${s.id},${i}` && s2.bouches[B.vers[1]].genre === B.genre && s.plan[B.y][B.x] === 'ç'; })
-      && ['eau', 'sombre', 'tunnel'].every((g) => bouches.filter(({ B }) => B.genre === g).length === 2), 'temple en solo : trois passages secrets (Plante et Eau, Eau et Feu, Plante et Feu), dans les deux sens');
-    const cote = { p: { e: 0, f: 0 }, e: { p: 1, f: 0 }, f: { e: 1, p: 1 } };
-    ok(bouches.every(({ s, B }) => (B.x === 0 ? 0 : 1) === cote[s.chemin][par2[B.vers[0]].chemin]), 'temple en solo : chaque grotte est sur le mur qui fait face à l\'autre chemin');
-    ok(bouches.every(({ s, B }) => {
-      const P = s.plan, at = (x, y) => P[y]?.[x] ?? '#', sy = P.findIndex((r) => r.includes('S')), S = [P[sy].indexOf('S'), sy];
-      const dx = B.x === 0 ? 1 : -1, devant = [B.x + dx, B.y], TERRE = '.SNxzI"fh=', EAU = '~';
-      const v = new Set([S.join()]), f = [S];
-      const DV = { '<': [-1, 0], '>': [1, 0], '(': [0, -1], ')': [0, 1] };
+    // les passages secrets : trois, chacun de la première salle d'un chemin à la deuxième d'un autre, dans les deux sens ;
+    // une sortie de grotte percée dans un mur (de la roche à gauche, à droite et au-dessus), on y arrive dès l'entrée
+    const bouches = solo.flatMap((s) => (s.bouches || []).map((B) => ({ s, B })));
+    const paire = { sp1: 'se2', se2: 'sp1', se1: 'sf2', sf2: 'se1', sf1: 'sp2', sp2: 'sf1' };
+    ok(bouches.length === 6 && bouches.every(({ s, B }) => paire[s.id] === B.vers && s.plan[B.y][B.x] === 'ç'), 'temple en solo : trois passages secrets, de la salle 1 d\'un chemin à la salle 2 d\'un autre, dans les deux sens');
+    const MURS = '#YuL%&';
+    ok(bouches.every(({ s, B }) => { const P = s.plan, at = (x, y) => P[y]?.[x] ?? '#'; return [[-1, 0], [1, 0], [0, -1]].every(([dx, dy]) => MURS.includes(at(B.x + dx, B.y + dy))) && B.devant[0] === B.x && B.devant[1] === B.y + 1 && !MURS.includes(at(...B.devant)); }), 'temple en solo : chaque passage est une porte contre un mur, avec une case devant');
+    const flot = (P) => {
+      const at = (x, y) => P[y]?.[x] ?? '#', sy = P.findIndex((r) => r.includes('S')), S = [P[sy].indexOf('S'), sy], DV = { '<': [-1, 0], '>': [1, 0], '(': [0, -1], ')': [0, 1] };
+      const v = new Set([S.join()]), f = [S], OK = '.SNxzI"fh=~à<>()';
       while (f.length) {
         const [x, y] = f.pop();
         for (const [ax, ay] of D4c) {
           let t = [x + ax, y + ay];
-          if (!(TERRE + EAU).includes(at(...t)) && !DV[at(...t)]) continue;
+          if (!OK.includes(at(...t))) continue;
           for (let k = 0; k < 400 && DV[at(...t)]; k++) { const [ux, uy] = DV[at(...t)], u = [t[0] + ux, t[1] + uy]; if (!'~<>()'.includes(at(...u))) break; t = u; }
           if (!v.has(t.join())) { v.add(t.join()); f.push(t); }
         }
       }
-      return v.has(devant.join()) && (B.genre === 'tunnel' ? at(...devant) === '.' : at(...devant) === '~');
-    }), 'temple en solo : on atteint chaque grotte dès l\'entrée de la salle, à pied ou en surfant');
-    ok(['p', 'e', 'f'].every((c) => [1, 2].every((n) => par2[`s${c}${n}`].verrou && par2[`s${c}${n}`].recoins?.z?.type === 'objet')) && Object.keys(d.tresors).every((k) => ITEMS[d.tresors[k].objet]?.key) && ITEMS['carte-temple']?.key, 'temple en solo : un verrou au bout des premières et deuxièmes salles, et les objets qui les ouvrent');
-    ok(solo.every((s) => !s.verrou || par2[solo.find((q) => q.recoins?.z?.objet === s.verrou.objet).id].chemin !== s.chemin && solo.find((q) => q.recoins?.z?.objet === s.verrou.objet).id[2] === s.id[2]), 'temple en solo : un verrou demande ce qu\'on trouve dans la salle de même rang d\'un autre chemin');
+      return v;
+    };
+    ok(bouches.every(({ s, B }) => flot(s.plan).has(B.devant.join())), 'temple en solo : on atteint chaque passage dès l\'entrée de la salle, sans rien résoudre');
+    const lac = par2.sp1.plan.join('').split('~').length - 1, sec = par2.se1.plan.join('').split('à').length - 1;
+    ok(lac >= 24 && sec >= 6 && par2.se1.teintes.length && par2.sf1.teintes.length, `temple en solo : le petit lac de la Plante (${lac} cases), le creux asséché de l'Eau (${sec} cases), la roche rougie et grise`);
+    // les verrous : une grille au bout des premières salles (elle s'ouvre de la salle 2), un obstacle devant chaque passage
+    // côté salle 1 (l'objet de la première salle d'un troisième chemin), un verrou au bout des deuxièmes salles
+    ok(['p', 'e', 'f'].every((c) => par2[`s${c}1`].verrou.type === 'grille' && par2[`s${c}2`].verrou.objet && par2[`s${c}1`].bouches[0].verrou?.objet), 'temple en solo : grilles, obstacles des passages et verrous des deuxièmes salles');
+    const source = (objet) => solo.find((q) => q.recoins?.z?.objet === objet);
+    ok(['p', 'e', 'f'].every((c) => { const B = par2[`s${c}1`].bouches[0], src = source(B.verrou.objet); return src.id[2] === '1' && src.chemin !== c && src.chemin !== par2[B.vers].chemin; }), 'temple en solo : chaque passage demande l\'objet de la première salle du troisième chemin');
+    ok(['p', 'e', 'f'].every((c) => { const src = source(par2[`s${c}2`].verrou.objet); return src.id[2] === '2' && src.chemin !== c; }), 'temple en solo : la sortie d\'une deuxième salle demande l\'objet de la deuxième salle d\'un autre chemin');
+    ok(Object.keys(d.tresors).every((k) => ITEMS[d.tresors[k].objet]?.key) && ITEMS['carte-temple']?.key, 'temple en solo : les objets qui ouvrent les verrous, et la Carte du Temple');
     // parcours abstrait : chaque salle a un début (a) et une fin (b) ; les trois portes sont ouvertes
     const jouer = (sans) => {
-      const lieux = new Set(['s2']), a = new Set(), verrous = new Set(), cles = new Set();
-      for (let tour = 0; tour < 60; tour++) {
-        const n0 = lieux.size + a.size + verrous.size + cles.size;
+      const lieux = new Set(['s2']), a = new Set(), ouverts = new Set(), cles = new Set();
+      for (let tour = 0; tour < 80; tour++) {
+        const n0 = lieux.size + a.size + ouverts.size + cles.size;
         if (lieux.has('s2')) for (const c of ['p', 'e', 'f']) lieux.add(`s${c}1:a`);
         for (const s of solo) {
           const A = s.id + ':a', B = s.id + ':b', n = +s.id[2], suiv = par2[s.id.slice(0, 2) + (n + 1)];
           if (lieux.has(A)) { lieux.add(B); if (n === 1) lieux.add('s2'); }
-          for (const Bo of s.bouches || []) if (lieux.has(A)) lieux.add(Bo.vers[0] + ':a');
+          // un passage : on ouvre l'obstacle (d'un côté ou de l'autre) avec l'objet, puis on passe dans les deux sens
+          for (const Bo of s.bouches || []) {
+            const k = Bo.verrou ? s.id : Bo.vers, V = Bo.verrou || par2[Bo.vers].bouches[0].verrou;
+            if (lieux.has(A) && V && a.has(V.objet)) ouverts.add('passage:' + k);
+            if (lieux.has(A) && (!V || ouverts.has('passage:' + k))) lieux.add(Bo.vers + ':a');
+          }
+          // arrivé dans une deuxième salle, la grille de la première se lève
+          if (n === 2 && lieux.has(A)) { ouverts.add(s.id.slice(0, 2) + '1'); lieux.add(s.id.slice(0, 2) + '1:b'); }
           if (lieux.has(B)) {
             if (s.cle) cles.add(s.cle);
             const z = s.recoins?.z; if (z?.type === 'objet' && z.objet !== sans) a.add(z.objet);
-            if (s.verrou && a.has(s.verrou.objet)) verrous.add(s.id);
-            if (suiv && (!s.verrou || verrous.has(s.id))) lieux.add(suiv.id + ':a');
+            if (s.verrou && s.verrou.objet && a.has(s.verrou.objet)) ouverts.add(s.id);
+            if (suiv && (!s.verrou || ouverts.has(s.id))) lieux.add(suiv.id + ':a');
           }
         }
-        if (lieux.size + a.size + verrous.size + cles.size === n0) break;
+        if (lieux.size + a.size + ouverts.size + cles.size === n0) break;
       }
       return { fini: cles.size === 3, lieux, a };
     };
     const tout = jouer(null);
     ok(tout.fini && solo.every((s) => tout.lieux.has(s.id + ':a') && tout.lieux.has(s.id + ':b')), 'temple en solo : on trouve les trois clés et on passe par toutes les salles');
     ok(Object.keys(d.tresors).every((k) => !jouer(k).fini), 'temple en solo : sans un seul des six objets, on ne finit pas');
-    // aucun ordre imposé : chaque chemin peut avancer en premier (sa deuxième salle s'ouvre avec l'objet d'une
-    // première salle voisine, qu'on atteint dès le début)
-    ok(['p', 'e', 'f'].every((c) => { const v = par2[`s${c}1`].verrou.objet, src = solo.find((q) => q.recoins?.z?.objet === v); return src.id[2] === '1'; }), 'temple en solo : on peut avancer dans les trois chemins à la fois, dans l\'ordre qu\'on veut');
+    ok(!d.salles.find((q) => q.id === 's4').plan.join('').includes('T'), 'temple en solo : plus de téléporteur dans la Salle des Clés');
     ok(['sp1', 'se1', 'sf1'].every((id) => par2[id].retour[0] === 's2') && !d.salles.find((q) => q.id === 's2').plan.join('').includes('D'), 'temple en solo : les premières salles ramènent à la Salle des Trois Portes');
   }
   // les Gardiens
@@ -1025,7 +1036,7 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
     const un2 = t.hp; b.hp(1, -9999);
     ok(un2 === Math.round(4 * M0 / 5) && t.hp === Math.round(3 * M0 / 5) && [1, 2, 3].every(() => { b.hp(1, -9999); return true; }) && t.hp === 0, 'temple : un coup ne fait jamais tomber plus d\'un bloc de vie');
   }
-  ok(par.s4.donjon.plan.objets.T && !par.g4.donjon.plan.objets.T && par.g5.donjon.plan.objets.a && par.s5.donjon.plan.objets.j && par.s5.donjon.plan.objets.l && !par.s5.donjon.plan.objets.a, 'temple : téléporteur en solo seulement ; trois Poké Balls à trois, trois CT en solo');
+  ok(!par.s4.donjon.plan.objets.T && !par.g4.donjon.plan.objets.T && par.g5.donjon.plan.objets.a && par.s5.donjon.plan.objets.j && par.s5.donjon.plan.objets.l && !par.s5.donjon.plan.objets.a, 'temple : pas de téléporteur ; trois Poké Balls à trois, trois CT en solo');
   // la table à trois
   let e = nouvelEtat(d, { joueurs: 3 });
   ok(appliquer(d, e, '1', { a: 'choixStarter', salle: 'g5', n: 0 }).ok && appliquer(d, e, '2', { a: 'choixStarter', salle: 'g5', n: 0 }).ok, 'temple : deux joueurs peuvent vouloir la même Poké Ball');
