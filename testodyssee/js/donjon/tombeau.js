@@ -145,6 +145,9 @@ export const Tombeau = {
   appliquerProfondeurs(d) {
     const g = this.game, M = (id) => g.world.maps[d.salles.find((q) => q.id === id)?.carte];
     const passe = !!this.dTombeau(d, 'b3').passe, etape = this.etape(d), E7 = this.dTombeau(d, 'p7'), E10 = this.dTombeau(d, 'g10');
+    // les morts-vivants sont là : leurs salles changent de musique
+    const musique = etape >= 2 && d.musiqueMorts ? d.musiqueMorts : d.musique;
+    for (const id of d.sallesMorts || []) for (const z of M(id)?.zones || []) if (z.music !== musique) { z.music = musique; if (g.mapObj === M(id)) g.updateZone(); }
     // l'éboulement : le passage du -3 au -4 est bouché, des deux côtés
     const m4 = M('p4'), m3 = M('b3');
     if (m4?.donjon.plan.sortie) {

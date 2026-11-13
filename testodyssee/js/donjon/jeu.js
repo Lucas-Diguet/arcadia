@@ -460,7 +460,7 @@ export class Donjons {
     const tr = { cls: p.cls, name: p.nom, prize: p.prix ?? 0, bs: p.bs || p.sprite, ai: 'smart', items: {}, lose: p.perd || '...' };
     // une copie (miroirs) garde l'objet de l'original : pas de gemme donnée par Odyssée, Méga seulement si l'original tient la sienne
     if (p.copie) Object.assign(tr, { megaSp: 'copie', mega: party.some((m) => megaFormOf(m)) });
-    const res = await g.runBattle({ trainer: tr, party, music: p.boss ? 'legend' : 'trainer', noWhiteout: true });
+    const res = await g.runBattle({ trainer: tr, party, music: p.musique || (p.boss ? 'legend' : 'trainer'), noWhiteout: true });
     g.musicLock = false; g.updateZone();
     return res;
   }

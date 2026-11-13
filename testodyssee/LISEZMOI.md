@@ -187,6 +187,13 @@ combat. Ce sont les thèmes composés par le code d'Odyssée (`THEMES` de `odyss
 `mystic`…) ou des fichiers MP3 posés dans `odyssee/musiques/` et déclarés dans `odyssee/musiques/musiques.js` (voir
 le `LISEZMOI.txt` du dossier). Ils sont rangés côté Odyssée pour suivre les donjons le jour où ils y passent.
 
+- Temple des Éléments : `routevictoirerse` dans le hall, les salles des dalles et les salles de fin ; `templedufeu`,
+  `templedeleau` et `templedelaforet` dans les salles de chaque chemin (à trois comme en solo) ; `opboss` contre le
+  Gardien (`musique` du PNJ). Dehors, la musique de la route.
+- Tombeau du Roi Sans Nom : `yghdesert` dans la vallée, `yghtombeau` dans toutes les salles. Quand les morts-vivants
+  apparaissent (le sceptre repris au sous-chef), les salles du -6 au -9 (`sallesMorts`) passent sur `musiqueMorts`,
+  à donner (en attendant, elles gardent `yghtombeau`).
+
 ### Le journal
 
 `journal` liste les sous-quêtes du donjon (une par salle à suivre), affichées dans le menu JOURNAL avec les objets de

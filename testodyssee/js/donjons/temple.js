@@ -233,14 +233,15 @@ const NIDO = ['ice-beam', 'thunderbolt', 'sludge-wave', 'earth-power'];
 // dresseurs du hall : ils parlent, on ne les combat pas
 const H = (id, sprite, dir, cls, nom, dit) => ({ id, sprite, dir, cls, nom, dit, toujours: true });
 
-export default {
+const DEF_TEMPLE = {
   id: 'temple',
   carte: 'labo:temple',
   nom: 'Temple des Éléments',
   niveau: 'niv. 20 à 30 à trois, 50 à 65 en solo',
   entree: 'Le feu, l\'eau, la plante. À trois, chacun suit un élément. Seul, il faut les maîtriser tous.',
   joueurs: { mode: 'groupe', n: 3 },
-  musique: 'tower',
+  // le hall, les dalles et les salles de fin ; chaque chemin a la sienne (plus bas)
+  musique: 'routevictoirerse',
   equipe: 'debut',
   exterieur,
   voies: CHEMINS,
@@ -342,7 +343,7 @@ export default {
     _: H('hall-6', 'karateka', 'up', 'Karatéka', 'Kenji', ['Le Gardien garde son Pokémon le plus fort pour la fin.', 'Tant qu\'un seul de ses trois singes tient debout, il ne l\'envoie pas.']),
     '?': H('hall-7', 'scientifique', 'left', 'Scientifique', 'Odile', ['J\'étudie la table du Gardien. Trois Poké Balls pour ceux qui viennent à trois, trois CT pour celui qui vient seul.', 'Dans les deux cas, on n\'en prend qu\'une.']),
     M: {
-      id: 'gardien-trois', cls: 'Gardien', nom: 'des Éléments', sprite: 'pretre', dir: 'down', groupe: true,
+      id: 'gardien-trois', cls: 'Gardien', nom: 'des Éléments', sprite: 'pretre', dir: 'down', groupe: true, musique: 'opboss',
       avant: ['Le feu, l\'eau et la plante vous ont menés jusqu\'ici.', 'Montrez-moi que vous savez les vaincre ensemble !'],
       apres: 'Vous avez dompté les trois éléments. La table est à vous : que chacun choisisse son compagnon.',
       reste: 'Félicitations pour avoir triomphé de cette épreuve. Vous pouvez à présent choisir une récompense sur la table derrière moi.',
@@ -352,7 +353,7 @@ export default {
       equipe: [...SINGES, [128, 45, { blocs: 5, attend: true }]],
     },
     Z: {
-      id: 'gardien-solo', cls: 'Gardien', nom: 'des Éléments', sprite: 'pretre', dir: 'down',
+      id: 'gardien-solo', cls: 'Gardien', nom: 'des Éléments', sprite: 'pretre', dir: 'down', musique: 'opboss',
       defi: 'Seul, tu as traversé les trois éléments. Voyons si tu peux les vaincre tous à la fois !',
       perd: 'Tu les maîtrises tous. Ce qui est sur la table t\'appartient.',
       reste: 'Félicitations pour avoir triomphé de cette épreuve. Tu peux à présent choisir une récompense sur la table derrière moi.',
@@ -461,3 +462,7 @@ export default {
     victoire: 'Le Temple vous reconnaît.',
   },
 };
+// la musique de chaque chemin, à trois comme en solo
+const MUSIQUE_CHEMIN = { f: 'templedufeu', e: 'templedeleau', p: 'templedelaforet' };
+for (const salle of DEF_TEMPLE.salles) { const el = salle.voie || salle.chemin; if (el) salle.musique = MUSIQUE_CHEMIN[el]; }
+export default DEF_TEMPLE;

@@ -9,3 +9,5 @@ Le site est public : seulement des musiques libres de droits, ou composées pour
 et la licence de chaque fichier.
 
 Origine des fichiers :
+- opboss, routevictoirerse, templedeleau, templedelaforet, templedufeu, yghdesert, yghtombeau : fournies par Lucas,
+  libres de droits ou utilisables avec l'accord de leur auteur (13 novembre 2026).

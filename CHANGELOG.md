@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 5.40 — 13 novembre 2026
+- **TestOdyssée** — De vraies musiques dans deux donjons.
+  - Temple des Éléments : une musique pour chaque chemin (Feu, Eau, Plante), une autre dans le Grand Hall, les salles des dalles et les salles de fin, et une musique de boss contre le Gardien.
+  - Tombeau du Roi Sans Nom : une musique dans la vallée, une autre dans tout le tombeau.
+
 ## 5.39 — 12 novembre 2026
 - **TestOdyssée** — Dans tous les donjons, le journal en bas à droite se cache et revient avec la touche N ou son petit bouton.
 - **TestOdyssée** — Temple des Éléments : plus de Pokémon sauvages. Dans chaque salle des chemins, 5 ou 6 dresseurs tournent la tête et viennent te défier.

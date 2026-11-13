@@ -40,7 +40,7 @@ const PASSANTS = [
 /** l'extérieur : une grande place de sable devant la façade du tombeau, gardée ; l'entrée des pilleurs est cachée
  *  sous une des roches du bord (porte) */
 function exterieur() {
-  const W = 48, H = 40, m = new GameMap('labo:tombeau:dehors', W, H, { outdoor: true, fill: T.ROCK, name: 'Vallée des Rois Oubliés', music: 'mystic' });
+  const W = 48, H = 40, m = new GameMap('labo:tombeau:dehors', W, H, { outdoor: true, fill: T.ROCK, name: 'Vallée des Rois Oubliés', music: 'yghdesert' });
   m.blob(24, 21, 21, 17, T.SAND, rng(9191));
   m.rect(4, 4, 43, 36, T.SAND, [T.ROCK]);
   // la façade du tombeau, au nord : la porte officielle est fermée
@@ -68,7 +68,7 @@ function exterieur() {
   // les roches du bord de la place : une seule est fissurée (l'entrée des pilleurs)
   const roches = [[5, 13], [5, 21], [6, 30], [42, 11], [42, 23], [41, 28], [13, 35], [34, 35]];
   for (const [x, y] of roches) m.prop('rocher_grand', x, y);
-  m.zone(0, 0, W - 1, H - 1, { name: 'Vallée des Rois Oubliés', music: 'mystic' });
+  m.zone(0, 0, W - 1, H - 1, { name: 'Vallée des Rois Oubliés', music: 'yghdesert' });
   return { carte: m, porte: [42, 23], roches, devant: [px, py + 5], arrivee: [px, H - 6], panneau: [px + 4, py + 5] };
 }
 
@@ -220,7 +220,11 @@ const TOMBEAU = {
   niveau: 'niv. 35',
   entree: 'Des moines qui ne dorment jamais, des brigands qui ne posent pas de questions, et le sceptre d\'un roi oublié. Une aventure à mener seul, sans se faire voir.',
   joueurs: { mode: 'solo' },
-  musique: 'cave',
+  musique: 'yghtombeau',
+  // quand les morts-vivants apparaissent (le sceptre repris au sous-chef), leurs salles changent de musique : le nom de
+  // cette musique ici (une de odyssee/musiques/musiques.js) ; en attendant, elles gardent celle du tombeau
+  musiqueMorts: null,
+  sallesMorts: ['p6', 'p7', 'm8', 'm9'],
   equipe: 'milieu',
   style: 'egypte',
   tombeau: true,

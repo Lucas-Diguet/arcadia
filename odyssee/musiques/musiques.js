@@ -10,4 +10,13 @@
 // Un nom déjà pris par une musique du jeu (cave, route, trainer…) la remplace. Le fichier n'est chargé que la première
 // fois qu'il joue ; s'il manque, on entend la musique `secours` (par défaut, aucune).
 export const MUSIQUES = {
+  // TestOdyssée, Temple des Éléments : le hall, les dalles et les salles de fin ; un chemin par élément ; le Gardien
+  routevictoirerse: { fichier: 'routevictoirerse.mp3' },
+  templedufeu: { fichier: 'templedufeu.mp3' },
+  templedeleau: { fichier: 'templedeleau.mp3' },
+  templedelaforet: { fichier: 'templedelaforet.mp3' },
+  opboss: { fichier: 'opboss.mp3' },
+  // TestOdyssée, Tombeau du Roi Sans Nom : la vallée dehors ; toutes les salles
+  yghdesert: { fichier: 'yghdesert.mp3' },
+  yghtombeau: { fichier: 'yghtombeau.mp3' },
 };
