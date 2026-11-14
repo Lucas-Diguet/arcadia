@@ -1,5 +1,9 @@
 # Journal des versions — Arcadia
 
+## 5.49 — 14 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : la première fois, la porte de fer du -3 s'ouvre avec une petite scène, la Clé Antique dans la vieille serrure rouillée.
+  - Le ruinemaniac ne commente plus sa carte.
+
 ## 5.48 — 14 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : une réplique du ruinemaniac est raccourcie.
 

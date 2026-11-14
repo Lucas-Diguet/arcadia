@@ -619,7 +619,6 @@ export const Tombeau = {
     await ui.say(P.apres, qui);
     g.give('carte-tombeau', 1); g.sound.sfx('item');
     await ui.say(`${st.name} reçoit la Carte du Tombeau !`);
-    await ui.say('Sur la carte, j\'ai noté ce que je connais : du -1 au -4. Plus bas, personne n\'est revenu pour me le dire.', qui);
   },
   async roche(d, x, y) {
     const g = this.game, ui = g.ui, E = g.world.maps[d.carte].donjon.exterieur, vraie = E.porte[0] === x && E.porte[1] === y;
@@ -711,6 +710,16 @@ export const Tombeau = {
   async porteFer(d, m, c) {
     const g = this.game, ui = g.ui;
     if (!g.state.bag['cle-ruinemaniac']) { await ui.say('Une lourde porte de fer, fermée à clé.'); return; }
+    // la première fois : la vieille serrure, la Clé Antique, la porte qui grince
+    if (!this.dTombeau(d, 'b3').fer) {
+      await ui.say(['Une lourde porte de fer, fermée à clé.', 'La rouille la ronge de partout. Personne ne l\'a ouverte depuis très, très longtemps.']);
+      if (!(await ui.yesNo('Insérer la Clé Antique ?'))) return;
+      g.sound.sfx('select');
+      await ui.say(['La Clé Antique entre dans la serrure.', 'Tu forces un peu... Clac !']);
+      g.view.shake = 0.3; g.sound.sfx('bang');
+      await this.demande(d.id, { a: 'maj', salle: 'b3', donnees: { fer: true } });
+      await ui.say('Dans un long grincement, la porte de fer s\'ouvre.');
+    }
     g.sound.sfx('door');
     await g.warp(this.arriveeLien(d, c), 'door');
   },
