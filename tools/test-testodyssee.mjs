@@ -1304,6 +1304,11 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     ok(S('p7').piege && P7.objets['¤']?.[0][0] === nx && P7.objets['¤'][0][1] === ny + 1, 'tombeau : au -7, le piège, et la grille fermée à clé sous la sortie');
     const P10 = M.g10.donjon.plan;
     ok(P10.objets['Ж'] && P10.pnj['Ѡ'] && d.pnj['Ѡ'].chef && M.g10.w * M.g10.h > M.b4b.w * M.b4b.h && !P10.suivante, 'tombeau : au -10, la grande salle, la porte scellée et le chef de Sable-Noir');
+    { const P11 = M.g11.donjon.plan, O = P11.objets, [cx, cy] = O['ǂ'][0], num = ([x, y]) => { const a = Math.atan2(y - cy, x - cx) + Math.PI / 2; return ((Math.round(a / (2 * Math.PI / 5)) % 5) + 5) % 5; };
+      const tous = (c) => new Set((O[c] || []).map(num)).size === 5 && O[c].length === 5;
+      ok(S('g11')?.sepulture && S('g11').lumiere === 'noire' && Math.abs(M.g11.w * M.g11.h - M.g10.w * M.g10.h) < 120 && cx === Math.floor(M.g11.w / 2) - 1 && tous('Ϙ') && tous('Ϟ') && tous('ȶ') && !(P11.decor || []).some(([k]) => k === 'Ϯ'),
+        'tombeau : au -11, la sépulture dans le noir, le sarcophage au centre, cinq torches, cinq brasiers et leurs inscriptions');
+      ok((O['Ϟ'] || []).every((q) => { const b = O['Ϙ'].find((r) => num(r) === num(q)); return Math.hypot(q[0] - cx, q[1] - cy) < Math.hypot(b[0] - cx, b[1] - cy); }), 'tombeau : au -11, chaque inscription est devant son brasier'); }
     ok(d.pnj['Ҩ']?.souschef && d.pnj['Ҩ'].equipe.every(([sp]) => SPECIES[sp]) && d.pnj['Ѡ'].equipe.length === 6 && ITEMS['sceptre-jumeau']?.key && ITEMS['cle-sable-noir']?.key, 'tombeau : le sous-chef, le chef, le Sceptre Jumeau et la Clé de Sable-Noir');
   }
   const e = nouvelEtat(d, { joueurs: 1 });

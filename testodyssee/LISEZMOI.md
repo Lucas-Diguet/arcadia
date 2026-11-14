@@ -726,7 +726,15 @@ porte de fer, ouverte par la Clé de Fer dans les deux sens) :
   autour d'eux, marchent lentement sur qui passe devant eux, et se combattent comme des Pokémon sauvages. Corps (`ɠ`)
   et mourants (`ɑ`, quelques mots chacun) : des brigands couchés (`gisant_*`).
 - -10 (`g10`) : la grande salle, la porte scellée (`Ж`) et le chef Khamsin. Il se lamente, voit le second sceptre,
-  attaque ; battu, il laisse le Sceptre Jumeau ; les deux sceptres ouvrent la porte (`ouverte` de g10). La sépulture viendra.
+  attaque ; battu, il laisse le Sceptre Jumeau ; les deux sceptres ouvrent la porte (`ouverte` de g10), qui mène au -11.
+- -11 (`g11`, `sepulture()`, salle `sepulture: true`, sans torches ajoutées) : la sépulture, de la taille du -10, dans le
+  noir complet. Au centre le sarcophage du roi (`ǂ`), autour cinq torches éteintes (`ȶ`), plus loin cinq brasiers (`Ϙ`)
+  et une inscription devant chacun (`Ϟ`) ; brasier, inscription et torche sont numérotés par leur place sur le cercle
+  (`numeroCercle`). Chaque inscription donne un casse-tête (provisoire : il se résout d'un clic) qui allume son brasier
+  (`feux` de g11) ; la salle s'éclaire d'un cran par brasier (`lumiereSepulture`). Au cinquième : la caméra regarde
+  l'autel (`camera`, `finCamera` : `view.update` décalé), les torches s'allument une à une, le sarcophage s'ouvre
+  (`torches`, `ouvert`) ; on y lance le combat contre le Roi Sans Nom (Ectoplasma niveau 65 pour l'instant, `battu`).
+  Images provisoires : `sarcophage`, `sarcophage_ouvert`, `torche_off`, `brasier` et `brasier_on` (ceux des Miroirs).
 
 Les salles du -4 au -9 viennent de `python3 tools/tombeau.py [graine]` (`js/donjons/tombeau-salles.js`, ne pas le
 modifier à la main). Images :

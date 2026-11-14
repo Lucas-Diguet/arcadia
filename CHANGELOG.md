@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 5.44 — 14 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : la porte scellée s'ouvre enfin sur la sépulture du roi, plongée dans le noir.
+  - Cinq brasiers éteints entourent l'autel, avec une inscription devant chacun. Chaque casse-tête résolu rallume un brasier et éclaire un peu la salle (les casse-têtes se résolvent d'un clic pour l'instant).
+  - Au cinquième brasier, les torches de l'autel s'allument une à une et le sarcophage s'ouvre : le Roi Sans Nom t'attend.
+
 ## 5.43 — 14 novembre 2026
 - **TestOdyssée** — Place des Champions : retouches des équipes du Conseil 4.
   - Lance-Soleil part tout de suite quand le soleil brille.

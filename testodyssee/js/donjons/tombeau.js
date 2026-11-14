@@ -194,6 +194,19 @@ function grandeSalle() {
   cr(15, 24, 15, 24);
   return g.map((r) => r.join(''));
 }
+// -11 : la sépulture du Roi Sans Nom, dans le noir complet. L'autel et son sarcophage au centre, cinq torches éteintes
+// autour, cinq brasiers éteints plus loin, une inscription devant chacun (un casse-tête par brasier)
+export const SEPULTURE = { centre: [15, 13], brasiers: 5 };
+function sepulture() {
+  const W = 32, H = 27, g = Array.from({ length: H }, () => Array(W).fill('#')), cr = (x0, y0, x1, y1, c = '.') => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) g[y][x] = c; };
+  cr(2, 4, 29, 23);
+  const [cx, cy] = SEPULTURE.centre;
+  const cercle = (rx, ry, c) => { for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + k * 2 * Math.PI / 5; g[Math.round(cy + ry * Math.sin(a))][Math.round(cx + rx * Math.cos(a))] = c; } };
+  cercle(11, 8, 'Ϙ'); cercle(9, 6.4, 'Ϟ'); cercle(3.6, 3, 'ȶ');
+  g[cy][cx] = 'ǂ';
+  g[24][15] = '.'; g[25][15] = 'S'; g[26][15] = 'D';
+  return g.map((r) => r.join(''));
+}
 // le sous-chef : il vole le sceptre au -7, puis remonte jusqu'à l'éboulement du -4 ; le chef attend au -10
 pnj['Ҩ'] = { id: 'sous-chef', cls: 'Sous-chef', nom: 'Vipère', sprite: 'corbin', dir: 'down', toujours: true, souschef: true, prix: 3000, equipe: [[553, 42], [330, 43], [430, 43]] };
 pnj['Ѡ'] = { id: 'chef', cls: 'Chef de Sable-Noir', nom: 'Khamsin', sprite: 'nox', dir: 'up', toujours: true, chef: true, prix: 8000, boss: true, equipe: [[450, 46], [332, 46], [344, 46], [553, 47], [330, 47], [248, 48]] };
@@ -241,6 +254,11 @@ const TOMBEAU = {
     'ɑ': { type: 'mourant', decor: 'gisant_brume' },
     '¤': { type: 'verrou', decor: 'porte_grille' },
     'Ж': { type: 'porte_scellee', decor: 'porte_grande' },
+    // la sépulture du -11 : le sarcophage du roi, les brasiers et leurs inscriptions, les torches de l'autel
+    'ǂ': { type: 'sarcophage_roi', decor: 'sarcophage' },
+    'Ϙ': { type: 'brasier_roi', decor: 'brasier' },
+    'Ϟ': { type: 'inscription_roi', decor: 'stele' },
+    'ȶ': { type: 'torche_autel', decor: 'torche_off' },
     // passages entre les étages (vers : la salle, cible : la marque du passage d'en face) ; porte : fermée à clé
     'α': { type: 'lien', vers: 's2', cible: 'β', porte: true }, 'β': { type: 'lien', vers: 'b3', cible: 'α', porte: true },
     'γ': { type: 'lien', vers: 's1', cible: 'δ', sol: true }, 'δ': { type: 'lien', vers: 's2', cible: 'γ', sol: true },
@@ -360,6 +378,7 @@ const TOMBEAU = {
     { id: 'm8', nom: 'Fosse des Pillards (-8)', type: 'libre', lumiere: 'noire', pnj: PROF.m8.lettres, plan: PROF.m8.plan },
     { id: 'm9', nom: 'Couloirs des Morts (-9)', type: 'libre', lumiere: 'noire', pnj: PROF.m9.lettres, plan: PROF.m9.plan },
     { id: 'g10', nom: 'Salle de la Porte Scellée (-10)', type: 'libre', lumiere: 'noire', suivante: null, pnj: ['Ѡ'], plan: grandeSalle() },
+    { id: 'g11', nom: 'Sépulture du Roi Sans Nom (-11)', type: 'libre', lumiere: 'noire', sepulture: true, suivante: null, plan: sepulture() },
   ],
   journal: [
     { id: 'entree', nom: 'L\'entrée des pilleurs', salle: 'b3', but: 'L\'entrée officielle est gardée. Le ruinemaniac de la place connaît un autre accès : une roche à pousser avec Force, au bord est de la place.' },
@@ -367,11 +386,12 @@ const TOMBEAU = {
     { id: 'passage', nom: 'Le passage du -4', salle: 'b3', but: 'Au fond du repaire, deux brigands gardent le passage du -4. Ils ne laissent passer personne... sauf peut-être quelqu\'un d\'assez fort.' },
     { id: 'profondeurs', nom: 'Les profondeurs', salle: 'p4', but: 'Le passage s\'est effondré derrière toi. Les pilleurs de Sable-Noir rôdent dans les profondeurs, et ils veulent ton sceptre.' },
     { id: 'porte', nom: 'La porte scellée', salle: 'g10', but: 'Tout au fond, une porte scellée. Le chef de Sable-Noir est déjà là.' },
+    { id: 'sepulture', nom: 'La sépulture', salle: 'g11', but: 'Cinq brasiers éteints entourent l\'autel du roi, une inscription devant chacun. Rallume-les pour briser le sceau du sarcophage.' },
   ],
   textes: {
     perdu: ['Tes Pokémon n\'en peuvent plus...', 'Tu reprends tes esprits à l\'entrée de la salle. Tes Pokémon ont retrouvé un peu de forces.'],
   },
   recompense: { objets: { 'sceau-roi': 1 } },
 };
-for (const salle of TOMBEAU.salles) if (!salle.gardes) salle.plan = torches(salle.plan, salle.lumiere === 'vive' ? 4 : salle.lumiere === 'noire' ? 12 : 7);
+for (const salle of TOMBEAU.salles) if (!salle.gardes && !salle.sepulture) salle.plan = torches(salle.plan, salle.lumiere === 'vive' ? 4 : salle.lumiere === 'noire' ? 12 : 7);
 export default TOMBEAU;
