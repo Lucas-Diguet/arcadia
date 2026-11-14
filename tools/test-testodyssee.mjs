@@ -1265,7 +1265,7 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   ok(d.salles.find((q) => q.id === 'b4a').lumiere === 'vive' && feux('b4a') >= 6, 'tombeau : la Caverne d\'Ali Baba est bien éclairée');
   ok(ITEMS['cle-ruinemaniac'] && ITEMS['carte-tombeau'] && !ITEMS['cle-fragile'] && !d.boutique.some((k) => /cle/.test(k)), 'tombeau : la clé de la porte de fer et la carte viennent du ruinemaniac ; Ali Baba ne vend pas de clé');
   ok(Object.values(d.pnj).filter((p) => p.brigand?.combat).length >= 4 && Object.values(d.pnj).filter((p) => p.brigand?.combat).every((p) => p.brigand.combat.every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 40)), 'tombeau : certains brigands proposent un combat');
-  ok(d.boutique.length >= 20 && d.boutique.every((k) => ITEMS[k]?.price > 0 && ITEMS[k].desc) && d.boutique.filter((k) => OBJETS[k]).every((k) => OBJETS[k].replique) && d.boutique.includes('seringue-somnifere'), 'tombeau : la Caverne d\'Ali Baba vend du classique, du louche et des antiquités');
+  ok(d.boutique.length >= 15 && d.boutique.includes('gants-hiver') && !d.boutique.includes('chat-momifie') && d.boutique.every((k) => ITEMS[k]?.price > 0 && ITEMS[k].desc) && d.boutique.filter((k) => OBJETS[k]).every((k) => OBJETS[k].replique) && d.boutique.includes('seringue-somnifere'), 'tombeau : la Caverne d\'Ali Baba vend du classique, du louche et des antiquités');
   // les moines : rondes dans le sol, et on traverse sans être vu (aller et retour), quelle que soit l'heure d'arrivée
   {
     const outils = (m) => {

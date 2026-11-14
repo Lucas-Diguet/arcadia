@@ -276,9 +276,8 @@ const TOMBEAU = {
   pnj,
   // ce que vend Ali Baba : le classique, puis les objets « parfaitement légaux », puis les antiquités
   boutique: ['super-potion', 'hyper-potion', 'max-potion', 'full-heal', 'revive', 'max-repel', 'ultra-ball',
-    'seringue-somnifere', 'batte-bricolage', 'couteau-pot-au-feu', 'vieux-couteau', 'pied-de-biche', 'cagoule', 'bougie-anniversaire',
-    'carte-conservatoire', 'gants-velours', 'pelle-pliante', 'sac-toile', 'fausse-moustache',
-    'scarabee-or', 'masque-funeraire', 'vase-canope', 'papyrus-ancien', 'chat-momifie', 'sceptre-pharaon'],
+    'seringue-somnifere', 'batte-bricolage', 'couteau-pot-au-feu', 'vieux-couteau', 'pied-de-biche', 'cagoule', 'gants-hiver',
+    'bougie-anniversaire', 'carte-conservatoire', 'sceptre-pharaon'],
   salles: [
     // -3 : le repaire des brigands, où l'on arrive par le trou des pilleurs ; la porte de fer vers le -2, ses trois salles,
     // et le passage du -4, gardé par deux brigands

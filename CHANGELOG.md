@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 5.46 — 14 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : la boutique d'Ali Baba change.
+  - Il ne vend plus d'antiquités volées, mais propose des Gants d'Hiver.
+  - Nouvelles descriptions et nouvelles répliques d'Ali Baba pour la seringue, la batte, les couteaux (dont la Lame Aiguisée), le pied-de-biche et la cagoule.
+
 ## 5.45 — 14 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : dialogues retravaillés.
   - Le ruinemaniac propose d'abord le marché, puis explique tout son plan et donne la Clé Antique. Il peut te le répéter.

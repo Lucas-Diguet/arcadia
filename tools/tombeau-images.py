@@ -187,8 +187,12 @@ def carte(im):
     for y in (12, 14, 16): rect(im, 12, y, 7, 1, (120, 120, 120, 255))
     rect(im, 15, 14, 4, 3, ROUGE[1])
 def gants(im):
-    for ox in (2, 12):
-        rect(im, ox + 1, 10, 8, 9, (30, 30, 40, 255)); rect(im, ox + 1, 5, 2, 6, (30, 30, 40, 255)); rect(im, ox + 4, 4, 2, 7, (30, 30, 40, 255)); rect(im, ox + 7, 5, 2, 6, (30, 30, 40, 255)); rect(im, ox + 1, 18, 8, 2, (90, 30, 50, 255))
+    """des « gants » d'hiver : un poing américain, quatre anneaux et la poignée"""
+    for k in range(4):
+        ox = 2 + k * 5
+        rect(im, ox, 5, 5, 6, GRIS[2]); rect(im, ox + 1, 6, 3, 4, (0, 0, 0, 0)); rect(im, ox, 5, 5, 1, GRIS[3])
+    rect(im, 2, 11, 20, 3, GRIS[1]); rect(im, 2, 11, 20, 1, GRIS[2])
+    rect(im, 5, 14, 14, 3, GRIS[1]); rect(im, 7, 17, 10, 2, GRIS[0]); rect(im, 5, 14, 14, 1, GRIS[2])
 def pelle(im):
     ligne(im, 5, 19, 15, 9, BOIS[1], 2); rect(im, 3, 18, 4, 3, BOIS[0])
     for y in range(3, 12):
@@ -250,9 +254,8 @@ def plan_tombeau(im):
     for x, y in ((12, 8), (10, 12), (14, 16)): rect(im, x, y, 1, 2, E)
     rect(im, 16, 18, 2, 2, (170, 30, 30, 255))
 for k, fn in {'seringue': seringue, 'batte': batte, 'couteau': lambda im: couteau(im, True), 'vieux_couteau': lambda im: couteau(im, False),
-              'pied_de_biche': pied_de_biche, 'cagoule': cagoule, 'bougie': bougie, 'carte': carte, 'gants': gants, 'pelle': pelle,
-              'sac': sac, 'moustache': moustache, 'scarabee': scarabee, 'masque': masque, 'vase': vase, 'papyrus': papyrus,
-              'chat': chat, 'sceptre': sceptre, 'cle_fer': cle_fer, 'plan_tombeau': plan_tombeau}.items():
+              'pied_de_biche': pied_de_biche, 'cagoule': cagoule, 'bougie': bougie, 'carte': carte, 'gants': gants,
+              'sceptre': sceptre, 'cle_fer': cle_fer, 'plan_tombeau': plan_tombeau}.items():
     images['objet_' + k] = icone24(fn)
 # torche sur pied : un poteau de bois, une coupelle de bronze, une flamme
 def torche():
