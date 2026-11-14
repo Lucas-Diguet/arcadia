@@ -1,7 +1,7 @@
 // testodyssee/js/donjons/tombeau.js — le Tombeau du Roi Sans Nom : un donjon solo, d'infiltration.
 //
 // Dehors : la grande place, la façade gardée (on ne passe pas), des touristes ; le ruinemaniac indique l'entrée des
-// pilleurs (une roche fissurée, à pousser avec Force) et donne la Clé de Fer de la porte entre le -3 et le -2. Il faut
+// pilleurs (une roche fissurée, à pousser avec Force) et donne la Clé Antique de la porte entre le -3 et le -2. Il faut
 // le Sceptre du Roi Sans Nom pour ouvrir la dernière salle du tombeau, celle de sa sépulture.
 // -3 : le repaire des brigands (ils n'attaquent jamais), la Caverne d'Ali Baba, le tripot, le dortoir ; deux brigands
 //      gardent le passage du -4 et ne laissent passer qu'un dresseur qui a le sceptre... et qui les bat.
@@ -382,7 +382,7 @@ const TOMBEAU = {
   ],
   journal: [
     { id: 'entree', nom: 'L\'entrée des pilleurs', salle: 'b3', but: 'L\'entrée officielle est gardée. Le ruinemaniac de la place connaît un autre accès : une roche à pousser avec Force, au bord est de la place.' },
-    { id: 'sceptre', nom: 'Le sceptre', salle: 's1', but: 'La sépulture du Roi Sans Nom ne s\'ouvre qu\'avec son sceptre, gardé au -1. La porte de fer du -3 mène au -2 (la Clé de Fer du ruinemaniac l\'ouvre). Ne te fais pas voir des moines : endors le gardien du sceptre avec une Seringue Somnifère, en t\'approchant par derrière.' },
+    { id: 'sceptre', nom: 'Le sceptre', salle: 's1', but: 'La sépulture du Roi Sans Nom ne s\'ouvre qu\'avec son sceptre, gardé au -1. La porte de fer du -3 mène au -2 (la Clé Antique du ruinemaniac l\'ouvre). Ne te fais pas voir des moines : endors le gardien du sceptre avec une Seringue Somnifère, en t\'approchant par derrière.' },
     { id: 'passage', nom: 'Le passage du -4', salle: 'b3', but: 'Au fond du repaire, deux brigands gardent le passage du -4. Ils ne laissent passer personne... sauf peut-être quelqu\'un d\'assez fort.' },
     { id: 'profondeurs', nom: 'Les profondeurs', salle: 'p4', but: 'Le passage s\'est effondré derrière toi. Les pilleurs de Sable-Noir rôdent dans les profondeurs, et ils veulent ton sceptre.' },
     { id: 'porte', nom: 'La porte scellée', salle: 'g10', but: 'Tout au fond, une porte scellée. Le chef de Sable-Noir est déjà là.' },

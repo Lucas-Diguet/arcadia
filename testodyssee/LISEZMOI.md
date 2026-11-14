@@ -691,7 +691,7 @@ d'une salle : `vive` (la Caverne d'Ali Baba) ou `noire` (le -4).
 Dehors, la Vallée des Rois Oubliés : la façade (`entree_tombeau`) et sa porte officielle sont fermées, derrière un
 cordon et trois gardiens ; des touristes (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac indique l'entrée des
 pilleurs, explique qu'il faut le sceptre du roi pour ouvrir sa sépulture, demande qu'on lui rapporte le trésor contre une
-récompense, et donne la Clé de Fer (`cle-ruinemaniac`) et la Carte du Tombeau (`carte-tombeau`, du -1 au -4 : liste
+récompense ; si l'on accepte, il explique le plan (`planRuinemaniac`, qu'il répète si on le lui demande) et donne la Clé Antique (`cle-ruinemaniac`) et la Carte du Tombeau (`carte-tombeau`, du -1 au -4 : liste
 `CARTE`). La roche fissurée du bord droit (`porte`, parmi `roches`) se pousse avec Force et laisse place à une échelle
 (`trou` dans la salle s1). `devant` : où les moines jettent ceux qu'ils attrapent.
 
@@ -717,9 +717,9 @@ porte de fer, ouverte par la Clé de Fer dans les deux sens) :
   le passage est muré au -3, un éboulement bouche la sortie du -4).
 - -4 à -7 (`p4` à `p7`, `lumiere: 'noire'`) : longues salles des pilleurs de Sable-Noir. Ils n'attaquent que si l'on a le
   sceptre (ils s'en étonnent), sinon ils se moquent. Au -7 (`piege`), passé le milieu de la salle avec le sceptre, le sable
-  mouvant : le sous-chef Vipère prend le sceptre et remonte (`vol` de p7 : 1) ; on se débat aux flèches. La sortie du -7
-  est fermée par une grille (`¤`). Au -4, devant l'éboulement, le sous-chef se sait pris au piège et défie le joueur ;
-  battu, il rend le sceptre et donne la Clé de Sable-Noir (`vol` : 2).
+  mouvant : le sous-chef Vipère prend le sceptre et remonte (`vol` de p7 : 1) ; on se débat aux flèches. Tant que le
+  sceptre est volé, une grille (`¤`) ferme la sortie du -7 (« je dois remonter reprendre le sceptre »). Au -4, devant
+  l'éboulement, le sous-chef se sait pris au piège et défie le joueur ; battu, il rend le sceptre (`vol` : 2).
 - À partir de là (`apres` des PNJ, des corps et des mourants), au -6 et au -7 les pilleurs se battent contre les
   morts-vivants (`lutteur` contre `lutte`). -8 et -9 (`m8`, `m9`) : l'hécatombe. Les morts-vivants (`mortvivant`, sprite
   `spectrel`) sont des abominations du labo (`ABOMINATIONS` de `contenu.js`, sans capture possible) : ils regardent

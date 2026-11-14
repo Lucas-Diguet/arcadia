@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 5.45 — 14 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : dialogues retravaillés.
+  - Le ruinemaniac propose d'abord le marché, puis explique tout son plan et donne la Clé Antique. Il peut te le répéter.
+  - Nouvelles répliques pour les portiers du -3, Ali Baba, le sous-chef et le chef de Sable-Noir.
+  - Plus de clé pour la grille du -7 : elle ne se ferme que tant que le sceptre volé n'a pas été repris.
+
 ## 5.44 — 14 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la porte scellée s'ouvre enfin sur la sépulture du roi, plongée dans le noir.
   - Cinq brasiers éteints entourent l'autel, avec une inscription devant chacun. Chaque casse-tête résolu rallume un brasier et éclaire un peu la salle (les casse-têtes se résolvent d'un clic pour l'instant).

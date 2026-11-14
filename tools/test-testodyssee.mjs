@@ -1309,7 +1309,7 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
       ok(S('g11')?.sepulture && S('g11').lumiere === 'noire' && Math.abs(M.g11.w * M.g11.h - M.g10.w * M.g10.h) < 120 && cx === Math.floor(M.g11.w / 2) - 1 && tous('Ϙ') && tous('Ϟ') && tous('ȶ') && !(P11.decor || []).some(([k]) => k === 'Ϯ'),
         'tombeau : au -11, la sépulture dans le noir, le sarcophage au centre, cinq torches, cinq brasiers et leurs inscriptions');
       ok((O['Ϟ'] || []).every((q) => { const b = O['Ϙ'].find((r) => num(r) === num(q)); return Math.hypot(q[0] - cx, q[1] - cy) < Math.hypot(b[0] - cx, b[1] - cy); }), 'tombeau : au -11, chaque inscription est devant son brasier'); }
-    ok(d.pnj['Ҩ']?.souschef && d.pnj['Ҩ'].equipe.every(([sp]) => SPECIES[sp]) && d.pnj['Ѡ'].equipe.length === 6 && ITEMS['sceptre-jumeau']?.key && ITEMS['cle-sable-noir']?.key, 'tombeau : le sous-chef, le chef, le Sceptre Jumeau et la Clé de Sable-Noir');
+    ok(d.pnj['Ҩ']?.souschef && d.pnj['Ҩ'].equipe.every(([sp]) => SPECIES[sp]) && d.pnj['Ѡ'].equipe.length === 6 && ITEMS['sceptre-jumeau']?.key && !ITEMS['cle-sable-noir'], 'tombeau : le sous-chef, le chef et le Sceptre Jumeau (plus de clé du -7)');
   }
   const e = nouvelEtat(d, { joueurs: 1 });
   ok(appliquer(d, e, '1', { a: 'maj', salle: 's2', donnees: { dorment: ['x'] } }).ok && e.salles.s2.donnees.dorment.join() === 'x' && appliquer(d, e, '1', { a: 'maj', salle: 's2', donnees: { dorment: [] } }).ok && !e.salles.s2.donnees.dorment.length, 'tombeau : on endort un moine, il se réveille quand on quitte la salle');

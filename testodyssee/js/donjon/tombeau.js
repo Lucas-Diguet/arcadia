@@ -18,7 +18,7 @@ import { prisPar, battu } from './etat.js';
 
 /** les salles que montre la carte du ruinemaniac (du -1 au -4 ; plus tard, un peu plus bas) */
 const CARTE = ['s1', 's2', 'b3', 'b4a', 'b4b', 'b4c', 'p4'];
-const SCEPTRE = 'sceptre-roi', JUMEAU = 'sceptre-jumeau', CLE7 = 'cle-sable-noir';
+const SCEPTRE = 'sceptre-roi', JUMEAU = 'sceptre-jumeau';
 /** ce que murmurent les mourants (un fragment chacun, selon la case) */
 const MOURANTS = [['Argh... Ces monstres...', '... d\'où sortent-ils...'], ['Le chef... il a posé... le sceptre...', '... et le tombeau... a hurlé...'], ['J\'ai froid... si froid...'], ['Ne... descends pas...'], ['Ils sortaient... des murs...', '... des murs...'], ['Le trésor... ça valait pas... ça...'], ['Maman...'], ['Cours... cours...']];
 const cle = (x, y) => x + ',' + y;
@@ -136,7 +136,7 @@ export const Tombeau = {
     const E7 = this.dTombeau(d, 'p7'), E10 = this.dTombeau(d, 'g10'), dedans = this.estDans(d);
     if (st) {
       const garde = (k, v) => { if (v && dedans) st.bag[k] = 1; else delete st.bag[k]; };
-      garde(SCEPTRE, pris && E7.vol !== 1 && !E10.ouverte); garde(CLE7, E7.vol === 2 && !E7.ouverte); garde(JUMEAU, !!E10.jumeau && !E10.ouverte);
+      garde(SCEPTRE, pris && E7.vol !== 1 && !E10.ouverte); garde(JUMEAU, !!E10.jumeau && !E10.ouverte);
     }
     this.appliquerProfondeurs(d);
     for (const s of d.salles) {
@@ -192,7 +192,7 @@ export const Tombeau = {
     // au -6 et au -7, les corps et les mourants n'apparaissent qu'avec la lutte
     for (const id of ['p6', 'p7']) { const m = M(id); for (const [x, y, k] of m?.tomb?.apres || []) this.decorTombeau(m, x, y, etape >= 2 ? k : null); }
     // la grille du -7
-    const m7 = M('p7'); for (const [x, y] of m7?.donjon.plan.objets['¤'] || []) this.decorTombeau(m7, x, y, E7.ouverte ? null : 'porte_grille');
+    const m7 = M('p7'); for (const [x, y] of m7?.donjon.plan.objets['¤'] || []) this.decorTombeau(m7, x, y, etape === 1 ? 'porte_grille' : null);
     // le sable mouvant du piège
     if (m7 && E7.sable && !m7.deco.some((q) => q.k === 'sable_mouvant')) { const [x, y] = E7.sable; m7.deco.push({ k: 'sable_mouvant', x, y }); if (g.mapObj === m7) { g.view.decoAt.set(cle(x, y), m7.deco[m7.deco.length - 1]); g.view.rebuildAt(x, y); } }
     // la porte scellée
@@ -362,9 +362,9 @@ export const Tombeau = {
   /** au -4, devant l'éboulement : le sous-chef comprend qu'il est pris au piège */
   async sousChef(d) {
     const g = this.game, ui = g.ui, qui = { speaker: 'Sous-chef Vipère' }, n = g.npcs.find((q) => q.id === `${d.id}:souschef-4`);
-    if (this.etape(d) >= 2) { await ui.say(['Laisse-moi...', 'Je n\'ai plus rien. Plus de sortie, plus de sceptre.'], qui); return; }
+    if (this.etape(d) >= 2) { await ui.say('Laisse-moi...', qui); return; }
     if (n) { n.dir = 'down'; }
-    await ui.say(['Non... non, non, non !', 'Le passage... il est bouché ! Des tonnes de pierres !', 'Je ne sortirai jamais d\'ici... Je vais crever dans ce tombeau...'], qui);
+    await ui.say(['Non... non, non, non !', 'Le passage... il est bouché ! Des tonnes de pierres !', 'On ne sortira jamais d\'ici... On va tous crever dans ce tombeau...'], qui);
     if (n) { n.bang = true; g.sound.sfx('bang'); await attendre(650); n.bang = false; n.dir = g.player.x > n.x ? 'right' : g.player.x < n.x ? 'left' : g.player.y > n.y ? 'down' : 'up'; }
     await ui.say(['TOI ! C\'est à cause de toi, tout ça !', 'Si je dois mourir ici, tu tomberas avec moi !'], qui);
     const P = d.pnj['Ҩ'];
@@ -373,23 +373,20 @@ export const Tombeau = {
       if (res === 'win') break;
       await this.defaite(d); return;
     }
-    await ui.say(['C\'est fini... Prends-le, ton sceptre.', 'Et tiens, la clé de la grille du -7. Là où tu vas, elle te servira plus qu\'à moi.'], qui);
+    await ui.say(['C\'est fini... Prends-le, ton sceptre.', 'Mais ça ne te sert plus à rien maintenant. Tu ne sortiras jamais d\'ici...'], qui);
     await this.demande(d.id, { a: 'maj', salle: 'p7', donnees: { vol: 2 } });
     g.sound.sfx('item');
-    await ui.say([`${g.state.name} reprend le Sceptre du Roi Sans Nom !`, `${g.state.name} reçoit la Clé de Sable-Noir !`]);
+    await ui.say(`${g.state.name} reprend le Sceptre du Roi Sans Nom !`);
   },
   async grille(d) {
     const g = this.game, ui = g.ui;
-    if (this.dTombeau(d, 'p7').ouverte) return;
-    if (!g.state.bag[CLE7]) { await ui.say('Une grille de fer, fermée à clé.'); return; }
-    g.sound.sfx('door');
-    await this.demande(d.id, { a: 'maj', salle: 'p7', donnees: { ouverte: true } });
-    await ui.say('La Clé de Sable-Noir tourne dans la serrure. La grille s\'ouvre en grinçant.');
+    if (this.etape(d) !== 1) return;
+    await ui.say('Je ne dois pas redescendre. Je dois me dépêcher de remonter reprendre le sceptre volé !');
   },
   /** au -10 : le chef de Sable-Noir devant la porte scellée */
   async chef(d) {
     const g = this.game, ui = g.ui, E = this.dTombeau(d, 'g10'), qui = { speaker: 'Khamsin' }, n = g.npcs.find((q) => q.id === `${d.id}:chef`);
-    if (E.battu) { await ui.say(['Vas-y... Ouvre-la.', 'Moi, je n\'ai plus personne à qui la montrer.'], qui); return; }
+    if (E.battu) { await ui.say('Vas-y... Ouvre-la.', qui); return; }
     if (n) n.dir = 'up';
     await ui.say(['Pourquoi... Pourquoi ne s\'ouvre-t-elle pas ?', 'J\'ai le sceptre. Le sceptre du roi, sous le nez de toute la ville...', 'Je l\'ai posé sur la porte, et le tombeau a grondé. Il a compris qu\'on était des pillards.', 'Et ces... choses sont sorties des murs pour le défendre.'], qui);
     if (n) { n.bang = true; g.sound.sfx('bang'); await attendre(650); n.bang = false; n.dir = 'down'; }
@@ -569,24 +566,47 @@ export const Tombeau = {
   equipe(l) { return l.map(([sp, lvl]) => createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false })); },
 
   /* ---------------- la place : le ruinemaniac et l'entrée des pilleurs ---------------- */
+  /** le plan du ruinemaniac ; dejaCle : il a déjà donné la clé (on lui demande de répéter) */
+  planRuinemaniac(dejaCle) {
+    return {
+      avant: ['Le trésor du Roi Sans Nom dort tout au fond, dans la salle de sa sépulture. Elle est scellée.',
+        'La première étape, c\'est d\'entrer dans le tombeau. Mais l\'entrée est fermée et pleine de gardes : impossible de passer par là.',
+        'Heureusement, il existe un autre accès, connu seulement des pilleurs.',
+        'Une roche fissurée, au bord est de la place. Pousse-la avec Force : dessous, il y a un trou qui descend au -3, dans le repaire des brigands.',
+        'Eh oui, hé hé ! Les gardiens ne le savent pas : ils occupent les étages -1 et -2, mais sous leurs pieds, le tombeau est infesté de bandits et de pillards en tout genre !',
+        'J\'ai fait partie de leur bande, dans le temps... Mais bon, ce n\'est pas le sujet !',
+        'Passons au plan : tu dois descendre tout au fond du tombeau et trouver la sépulture. Le trésor se trouve sûrement dedans.',
+        '« Mais c\'est super simple ! », tu vas me répondre. Hé hé, c\'est vrai. Mais il y a un petit problème, et de taille.',
+        'Pour ouvrir cette dernière salle, il te faut le sceptre du roi. Et malheureusement, il est dangereusement défendu par les gardiens, au -1.',
+        'Il faudra donc d\'abord remonter les étages pour le voler, puis redescendre tout en bas.',
+        dejaCle ? 'Mais ne t\'inquiète pas, j\'ai un atout dans ma manche : la clé que je t\'ai donnée.' : 'Mais ne t\'inquiète pas, j\'ai quand même un atout dans ma manche : tiens, prends cette clé.'],
+      apres: ['Tu dois te demander comment les gardiens ne savent pas que des hordes de pillards se sont installées sous leurs pieds.',
+        'Eh bien, c\'est très simple : le passage est fermé depuis une vingtaine d\'années, et personne à part toi n\'a le moyen de l\'ouvrir !',
+        'Alors fais-toi discret. Des gardiens... et des bandits...', 'Allez, bon courage !'],
+    };
+  },
   async ruinemaniac(d) {
     const g = this.game, ui = g.ui, st = g.state, qui = { speaker: 'Ruinemaniac' };
     if (st.bag['cle-ruinemaniac']) {
       await ui.say(this.dTombeau(d, 's1').trou
         ? ['Le passage est ouvert ? Parfait.', 'Rappelle-toi : sans le sceptre du roi, la dernière salle ne s\'ouvrira pas. Il est au -1.', 'Et rapporte-moi le trésor. Tu ne le regretteras pas.']
         : ['Alors, cette roche ? Elle est au bord est de la place. Celle qui est fissurée.', 'Un Pokémon costaud avec Force, et elle roulera.'], qui);
+      if (!(await ui.yesNo('Tu veux que je te rappelle le plan ?', qui))) return;
+      const P = this.planRuinemaniac(true);
+      await ui.say([...P.avant, ...P.apres], qui);
       return;
     }
-    await ui.say(['Psst, gamin ! Viens par là.', 'Je vois que t\'as l\'air d\'un dresseur drôlement costaud. J\'ai un plan à te proposer.',
-      'L\'entrée du tombeau est bien gardée : impossible d\'y entrer par là. Mais il existe un autre accès, connu seulement des pilleurs.',
-      'Une roche fissurée, au bord est de la place. Pousse-la avec Force : dessous, il y a un trou qui descend au -3, dans le repaire des brigands.',
-      'Le trésor du Roi Sans Nom dort tout au fond, dans la salle de sa sépulture. Elle est scellée.',
-      'Pour l\'ouvrir, il faut absolument son sceptre. Il est gardé tout en haut, au -1. Il faudra remonter le chercher, puis redescendre avec.',
-      'Du -3, une porte de fer mène au -2. Voici sa clé : je l\'ai gardée de ma jeunesse.',
-      'Va me chercher le trésor. En échange, je te donnerai une récompense qui va te plaire, crois-moi.'], qui);
-    if (!(await ui.yesNo('Marché conclu ?', qui))) { await ui.say('Réfléchis bien. Je ne bouge pas d\'ici.', qui); return; }
-    g.give('cle-ruinemaniac', 1); g.give('carte-tombeau', 1); g.sound.sfx('item');
-    await ui.say([`${st.name} reçoit la Clé de Fer !`, `${st.name} reçoit la Carte du Tombeau !`]);
+    await ui.say(['Psst, gamin ! Viens par là.', 'T\'as l\'air d\'un dresseur drôlement costaud. J\'ai un plan à te proposer.',
+      'Ce tombeau cache un trésor antique d\'une valeur inestimable !', 'Je suis trop vieux pour y aller maintenant, mais toi, je crois que tu as ce qu\'il faut pour le voler !',
+      'Qu\'est-ce que t\'en dis ? Tu me rapportes ce trésor, et en échange, je t\'offre une récompense. Elle vaut le détour, crois-moi !'], qui);
+    if (!(await ui.yesNo('Alors ? Marché conclu ?', qui))) { await ui.say('Réfléchis bien. Je ne bouge pas d\'ici.', qui); return; }
+    const P = this.planRuinemaniac(false);
+    await ui.say(P.avant, qui);
+    g.give('cle-ruinemaniac', 1); g.sound.sfx('item');
+    await ui.say(`${st.name} obtient la Clé Antique !`);
+    await ui.say(P.apres, qui);
+    g.give('carte-tombeau', 1); g.sound.sfx('item');
+    await ui.say(`${st.name} reçoit la Carte du Tombeau !`);
     await ui.say('Sur la carte, j\'ai noté ce que je connais : du -1 au -4. Plus bas, personne n\'est revenu pour me le dire.', qui);
   },
   async roche(d, x, y) {
@@ -668,7 +688,7 @@ export const Tombeau = {
     }
     return { map: m.id, x: P.depart[0], y: P.depart[1], dir: 'up' };
   },
-  /** la porte de fer entre le -3 et le -2 : la Clé de Fer du ruinemaniac l'ouvre, dans les deux sens */
+  /** la porte de fer entre le -3 et le -2 : la Clé Antique du ruinemaniac l'ouvre, dans les deux sens */
   async porteFer(d, m, c) {
     const g = this.game, ui = g.ui;
     if (!g.state.bag['cle-ruinemaniac']) { await ui.say('Une lourde porte de fer, fermée à clé.'); return; }
@@ -826,8 +846,8 @@ export const Tombeau = {
     const qui = (q) => ({ speaker: `${q.cls} ${q.nom}` });
     if (!D.duel) {
       await ui.say(['Halte. Personne ne descend au -4 en ce moment.', 'En bas, c\'est une chasse gardée. Des bandes de pilleurs dangereux s\'allient pour rafler tous les trésors du tombeau.',
-        'Surtout la bande de Sable-Noir. Ils essaient d\'ouvrir la dernière salle, celle du roi. Et ils ne font pas de cadeaux.'], qui(P[0]));
-      if (!g.state.bag[SCEPTRE]) { await ui.say('Alors tu fais demi-tour. Personne ne passe. Personne.', qui(P[1])); return; }
+        'Surtout la bande de Sable-Noir. Ils ne font pas de cadeaux. Crois-moi, mon gars, c\'est mieux pour toi que tu restes ici.'], qui(P[0]));
+      if (!g.state.bag[SCEPTRE]) { await ui.say('Allez, fais demi-tour. Personne ne passe. Personne.', qui(P[1])); return; }
       await ui.say(['Mais bon... Tu as l\'air de savoir ce que tu fais.', 'Prouve-nous que tu es assez fort pour survivre en bas. Un duel contre chacun de nous.'], qui(P[1]));
     } else if (!g.state.bag[SCEPTRE]) { await ui.say('Tu reviens ? Le passage reste fermé. Personne ne passe.', qui(P[0])); return; }
     else await ui.say('Tu reviens pour la suite ? On t\'attend.', qui(P[D.duel] || P[0]));
@@ -837,15 +857,15 @@ export const Tombeau = {
       for (const mon of g.state.party) healFull(mon);
       if (res !== 'win') { g.sound.sfx('heal'); await ui.say(['Trop faible. Je soigne tes Pokémon : reviens quand tu veux.'], qui(P[i])); return; }
       await this.demande(d.id, { a: 'maj', salle: 'b3', donnees: { duel: i + 1 } });
-      if (i + 1 < P.length) { g.sound.sfx('heal'); await ui.say(['Joli combat. Je soigne tes Pokémon.', `Mais ${P[i + 1].nom} est bien plus coriace que moi.`], qui(P[i])); }
+      if (i + 1 < P.length) { g.sound.sfx('heal'); await ui.say(['Ouah, t\'es vraiment pas un rigolo, toi !', 'Je soigne tes Pokémon.', `Mais ${P[i + 1].nom} est bien plus coriace que moi !`], qui(P[i])); }
     }
     // la scène : ils voient le sceptre... et tout le repaire l'apprend
     await ui.say(['Bon sang... Tu es vraiment très fort.', 'Hé, attends. Qu\'est-ce que tu tiens là ?'], qui(P[0]));
     g.sound.sfx('encounter'); g.view.shake = 0.25;
     for (const n of g.npcs) if (P.some((q) => n.id === `${d.id}:${q.id}`)) n.bang = true;
     await attendre(700);
-    await ui.say(['C\'est... c\'est le SCEPTRE DU ROI SANS NOM !'], qui(P[1]));
-    await ui.say(['IL A LE SCEPTRE ! TOUT LE MONDE ! IL A LE SCEPTRE DU ROI !'], qui(P[0]));
+    await ui.say(['C\'est... c\'est le sceptre du roi !', 'Comment tu l\'as chopé ?!'], qui(P[1]));
+    await ui.say(['IL A LE SCEPTRE ! LES GARS ! IL A LE SCEPTRE DU ROI !'], qui(P[0]));
     g.view.shake = 0.4; g.sound.sfx('bang');
     await ui.say(['Des cris éclatent dans tout le repaire. Des dizaines de brigands se tournent vers toi.', 'Pas le temps de discuter : tu fonces dans le passage !']);
     for (const n of g.npcs) n.bang = false;
@@ -877,7 +897,7 @@ export const Tombeau = {
   /* ---------------- la Caverne d'Ali Baba ---------------- */
   async boutique(d) {
     const g = this.game, ui = g.ui, st = g.state, qui = { speaker: 'Ali Baba', keep: true };
-    await ui.say(['Bienvenue dans la Caverne d\'Ali Baba !', 'Ici, tout est parfaitement légal. Enfin, tout a une utilisation parfaitement légale.'], qui);
+    await ui.say('Bienvenue dans la Caverne d\'Ali Baba !', qui);
     for (;;) {
       const r = await ui.ask('Qu\'est-ce qui te ferait plaisir ?', ['Acheter', 'Vendre', 'Au revoir'], qui);
       if (r === 1) {
