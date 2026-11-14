@@ -69,7 +69,7 @@ function exterieur() {
   const roches = [[5, 13], [5, 21], [6, 30], [42, 11], [42, 23], [41, 28], [13, 35], [34, 35]];
   for (const [x, y] of roches) m.prop('rocher_grand', x, y);
   m.zone(0, 0, W - 1, H - 1, { name: 'Vallée des Rois Oubliés', music: 'yghdesert' });
-  return { carte: m, porte: [42, 23], roches, devant: [px, py + 5], arrivee: [px, H - 6], panneau: [px + 4, py + 5] };
+  return { carte: m, porte: [42, 23], decale: [42, 24], roches, devant: [px, py + 5], arrivee: [px, H - 6], panneau: [px + 4, py + 5] };
 }
 
 // les pilleurs des grandes salles : une lettre chacun (le plan généré dit seulement « t »)
@@ -110,30 +110,31 @@ function pilleurs(sid, gen, pnj) {
 // les brigands du -3 : ils n'attaquent jamais ; certains proposent un combat (autant de fois qu'on veut)
 const brig = (cls, nom, sprite, dir, dit, combat) => ({ cls, nom, sprite, dir, toujours: true, prix: combat ? 900 : 0, brigand: { dit, combat } });
 const BRIGANDS = Object.fromEntries(Object.entries({
-  // le repaire
-  'ñ': brig('Brigand', 'Fernand', 'voleur', 'right', 'Encore un nouveau ? Bienvenue au repaire. Ici, personne ne pose de questions.'),
-  'ç': brig('Brigande', 'Sidonie', 'brume_f', 'down', 'Les moines d\'en haut ? Ils ne descendent jamais. Ils nous croient tous morts depuis longtemps.'),
-  'ø': brig('Brigand', 'Marcel', 'brutus', 'up', 'J\'ai creusé le tunnel jusqu\'ici pendant six mois. À la petite cuillère.'),
-  'æ': brig('Brigand', 'Ange', 'brume', 'left', ['Tu veux monter au -2 ? La porte de fer est fermée à clé.', 'Nous, on ne monte jamais. Et c\'est très bien comme ça.']),
-  'œ': brig('Brigand', 'Riton', 'voleur', 'down', 'Je m\'ennuie à mourir. Un petit combat pour passer le temps ?', [[52, 34], [19, 35], [20, 35]]),
-  'ß': brig('Brigande', 'Lulu', 'brume_f', 'down', 'Tu as l\'air d\'en avoir dans le ventre. Un combat, histoire de rigoler ?', [[41, 35], [96, 35], [302, 36]]),
+  // l'atelier : fausses pièces, le tunnel, les sarcophages du voisin
+  'ç': brig('Brigande', 'Sidonie', 'brume_f', 'up', ['Chut ! Je frappe des pièces anciennes.', 'Toutes neuves, sorties du four. Personne ne verra la différence.']),
+  'ø': brig('Brigand', 'Marcel', 'brutus', 'right', 'J\'ai creusé le tunnel jusqu\'ici pendant six mois. À la petite cuillère.'),
+  'ć': brig('Brigand', 'Gégé', 'brume', 'down', 'Le Roi Sans Nom ? Un voisin comme un autre. Il ne se plaint jamais du bruit.'),
+  'ą': brig('Brigand', 'Boris', 'brutus', 'left', 'Cette porte de fer mène au -2. On ne l\'a jamais ouverte : personne n\'a la clé.'),
+  // la table de dés, tenue par le croupier
+  'ẑ': brig('Croupier', 'Fortuné', 'croupier', 'down', ['Faites vos jeux ! Rien ne va plus !', 'Tu n\'as rien à miser ? Alors misons nos Pokémon !'], [[302, 38], [198, 38], [359, 38]]),
+  'ŕ': brig('Brigand', 'Double-Six', 'voleur', 'up', 'Le double six ! Encore ! Ces dés sont formidables. Je les ai achetés chez Ali Baba.'),
+  'ŝ': brig('Brigand', 'Lucky', 'corbin', 'right', 'Une partie ? Pas aux dés : aux Pokémon. Et à la loyale, promis juré.', [[262, 37], [229, 37]]),
+  'ŷ': brig('Brigande', 'Margot', 'brume_f', 'left', 'J\'ai perdu ma chemise, ma pelle et mon chameau. Mais je me refais à la prochaine.'),
+  // la table de cartes
+  'œ': brig('Brigand', 'Riton', 'voleur', 'right', 'Encore perdu aux cartes... Un petit combat pour me refaire ?', [[52, 34], [19, 35], [20, 35]]),
+  'ß': brig('Brigande', 'Lulu', 'brume_f', 'left', 'Tu joues ? Non ? Alors un combat, histoire de rigoler ?', [[41, 35], [96, 35], [302, 36]]),
+  'ł': brig('Brigand', 'Tonton', 'voleur', 'down', 'On parie sur un combat ? Si tu gagnes, tu gagnes. Si tu perds... tu perds.', [[198, 36], [215, 36]]),
+  'ś': brig('Brigand', 'Nono', 'brume', 'up', 'Ces cartes sont marquées, j\'en suis sûr. Un combat, au moins, c\'est honnête.', [[105, 36], [93, 37]]),
+  // la négociation
+  'ŧ': brig('Brigand', 'Pipette', 'corbin', 'right', 'Je te dis que c\'est un vrai scarabée d\'or ! Bon, peut-être pas en or. Ni un scarabée.'),
+  'ñ': brig('Brigand', 'Fernand', 'voleur', 'left', 'Trois cents pièces pour ce caillou ? Tu me prends pour un touriste ?'),
+  // le butin, les bavards
   'ð': brig('Brigand', 'Comptable', 'corbin', 'up', 'Chut ! Je compte le butin. Quatre cent douze, quatre cent treize... Zut, je recommence.'),
   'þ': brig('Brigande', 'Mado', 'brume_f', 'left', ['Le sceptre du roi ? Il est tout en haut, gardé par des moines.', 'Ils ne dorment jamais. Enfin... jamais tout seuls.']),
-  'ą': brig('Brigand', 'Boris', 'brutus', 'right', 'Cette porte de fer mène au -2. On ne l\'a jamais ouverte : personne n\'a la clé.'),
-  'ć': brig('Brigand', 'Gégé', 'brume', 'down', 'Le Roi Sans Nom ? Un voisin comme un autre. Il ne se plaint jamais du bruit.'),
-  'ę': brig('Brigande', 'Rosine', 'brume_f', 'right', 'Plus bas, au -4, c\'est une autre affaire. Là-bas, les pilleurs ne rigolent pas.'),
-  'ł': brig('Brigand', 'Tonton', 'voleur', 'down', 'On parie sur un combat ? Si tu gagnes, tu gagnes. Si tu perds... tu perds.', [[198, 36], [215, 36]]),
-  'ś': brig('Brigand', 'Nono', 'brume', 'up', 'Mes Pokémon rouillent. Un combat, vite fait ?', [[105, 36], [93, 37]]),
-  // le tripot
-  'ŝ': brig('Brigand', 'Lucky', 'corbin', 'down', 'Une partie ? Pas aux dés : aux Pokémon. Et à la loyale, promis juré.', [[262, 37], [229, 37]]),
-  'ŷ': brig('Brigande', 'Margot', 'brume_f', 'left', 'J\'ai perdu ma chemise, ma pelle et mon chameau. Mais je me refais à la prochaine.'),
-  'ẑ': brig('Croupier', 'Fortuné', 'croupier', 'up', ['Faites vos jeux ! Rien ne va plus !', 'Tu n\'as rien à miser ? Alors misons nos Pokémon !'], [[302, 38], [198, 38], [359, 38]]),
-  'ŕ': brig('Brigand', 'Double-Six', 'voleur', 'up', 'Le double six ! Encore ! Ces dés sont formidables. Je les ai achetés chez Ali Baba.'),
-  'ŧ': brig('Brigand', 'Pipette', 'corbin', 'right', 'Psst. Tu veux acheter un dé qui tombe toujours sur six ? Non ? Tant pis pour toi.'),
-  // le dortoir
-  'ǩ': brig('Brigand', 'Gros-Louis', 'brutus', 'down', 'Zzz... Touche pas... à mon butin... Zzz...'),
-  'ǯ': brig('Brigande', 'Nini', 'brume_f', 'down', 'Zzz... Encore cinq minutes... Zzz...'),
-  'ǰ': brig('Brigand', 'Petit-Paul', 'brume', 'down', 'Zzz... Le sceptre... du roi... Zzz...'),
+  'æ': brig('Brigand', 'Ange', 'brume', 'right', ['Tu veux monter au -2 ? La porte de fer est fermée à clé.', 'Nous, on ne monte jamais. Et c\'est très bien comme ça.']),
+  'ę': brig('Brigande', 'Rosine', 'brume_f', 'left', 'Plus bas, au -4, c\'est une autre affaire. Là-bas, les pilleurs ne rigolent pas.'),
+  // il dort contre le mur
+  'ǩ': { ...brig('Brigand', 'Gros-Louis', 'brutus', 'down', 'Zzz... Touche pas... à mon butin... Zzz...'), dort: true },
 }).map(([k, p], i) => [k, { id: `brigand-${i}`, ...p }]));
 
 // les deux brigands qui gardent le passage du -4 : sans le sceptre, on ne passe pas ; avec, il faut les battre
@@ -196,15 +197,16 @@ function grandeSalle() {
 }
 // -11 : la sépulture du Roi Sans Nom, dans le noir complet. L'autel et son sarcophage au centre, cinq torches éteintes
 // autour, cinq brasiers éteints plus loin, une inscription devant chacun (un casse-tête par brasier)
-export const SEPULTURE = { centre: [15, 13], brasiers: 5 };
+export const SEPULTURE = { centre: [23, 20], brasiers: 5 };
 function sepulture() {
-  const W = 32, H = 27, g = Array.from({ length: H }, () => Array(W).fill('#')), cr = (x0, y0, x1, y1, c = '.') => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) g[y][x] = c; };
-  cr(2, 4, 29, 23);
+  const W = 48, H = 40, g = Array.from({ length: H }, () => Array(W).fill('#')), cr = (x0, y0, x1, y1, c = '.') => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) g[y][x] = c; };
+  cr(2, 4, 45, 36);
   const [cx, cy] = SEPULTURE.centre;
   const cercle = (rx, ry, c) => { for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + k * 2 * Math.PI / 5; g[Math.round(cy + ry * Math.sin(a))][Math.round(cx + rx * Math.cos(a))] = c; } };
-  cercle(11, 8, 'Ϙ'); cercle(9, 6.4, 'Ϟ'); cercle(3.6, 3, 'ȶ');
+  // les brasiers tout au bord de la salle, leurs inscriptions juste devant, les torches serrées autour de l'autel
+  cercle(20, 15, 'Ϙ'); cercle(18, 13.4, 'Ϟ'); cercle(3.6, 3, 'ȶ');
   g[cy][cx] = 'ǂ';
-  g[24][15] = '.'; g[25][15] = 'S'; g[26][15] = 'D';
+  g[37][23] = '.'; g[38][23] = 'S'; g[39][23] = 'D';
   return g.map((r) => r.join(''));
 }
 // le sous-chef : il vole le sceptre au -7, puis remonte jusqu'à l'éboulement du -4 ; le chef attend au -10
@@ -262,9 +264,7 @@ const TOMBEAU = {
     // passages entre les étages (vers : la salle, cible : la marque du passage d'en face) ; porte : fermée à clé
     'α': { type: 'lien', vers: 's2', cible: 'β', porte: true }, 'β': { type: 'lien', vers: 'b3', cible: 'α', porte: true },
     'γ': { type: 'lien', vers: 's1', cible: 'δ', sol: true }, 'δ': { type: 'lien', vers: 's2', cible: 'γ', sol: true },
-    'η': { type: 'lien', vers: 'b4a', cible: 'θ', sol: true }, 'θ': { type: 'lien', vers: 'b3', cible: 'η', sol: true },
-    'ι': { type: 'lien', vers: 'b4b', cible: 'λ', sol: true }, 'λ': { type: 'lien', vers: 'b3', cible: 'ι', sol: true },
-    'κ': { type: 'lien', vers: 'b4c', cible: 'μ', sol: true }, 'μ': { type: 'lien', vers: 'b3', cible: 'κ', sol: true },
+    'ι': { type: 'lien', vers: 'b4a', cible: 'θ', sol: true }, 'θ': { type: 'lien', vers: 'b3', cible: 'ι', sol: true },
     // objets à ramasser
     h: { type: 'ramasser', objet: 'hyper-potion' },
     r: { type: 'ramasser', objet: 'revive' },
@@ -286,39 +286,39 @@ const TOMBEAU = {
       "#########α##########################N#########",
       "#########..#########################..########",
       "#########..#########################Ǥǥ########",
-      "###...............####........b...b........###",
-      "###.v...........v.####..w.w.............w..###",
+      "###...............####.........b...b.......###",
+      "###.v......ą....v.####.w.w................w###",
+      "###.....b.........####...................yy###",
+      "###.....ç.........####...................ð.###",
+      "###..........................ẑ.............###",
+      "###...k.......k............ŝpppŷ...........###",
+      "###....ć..........####.......ŕ.............###",
       "###...............####.....................###",
-      "###...............####....................w###",
-      "###.........ć............ą.................###",
-      "###...k.......k............|.........|.....###",
-      "###...............####.....................###",
-      "###....ę..........####........œ............###",
-      "###...............####.........ppp.........###",
-      "###.v...........v.####............ß..........ι",
-      "###...............####..........ð..........###",
-      "##########..##########...ł..............þ..###",
+      "###..........øcc..####...|.......|........þ###",
+      "###.v...........v.####.......................ι",
+      "###...............####.............ł.......###",
+      "##########..##########............œppß.....###",
+      "##########..##########..............ś......###",
       "##########..##########.....................###",
-      "##########..##########.....|.........|.....###",
-      "###n.....b......c...n#.....................###",
-      "###n.................#..................ś..###",
-      "###...pp..........æ........................###",
-      "η.......ñ...............w.................w###",
-      "###...........pp.....#.....................###",
-      "###..ø.......ç.......##################..#####",
-      "###..............b...##################..#####",
-      "###..................##################..#####",
-      "###c........c......nn##################..#####",
-      "####..#################################..#####",
-      "####..#################################..#####",
-      "####..#################################..#####",
-      "####S.#################################κ######",
+      "###n.n.............n.#...|.......|.........###",
+      "###nǩ................#.....................###",
+      "###........................ŧpñ.............###",
+      "###.....æpę...............................w###",
+      "###..................#.w.........w....########",
+      "###..................#########################",
+      "###...............cc.#########################",
+      "###..................#########################",
+      "###c.................#########################",
+      "####..########################################",
+      "####..########################################",
+      "####..########################################",
+      "####S.########################################",
       "####D#########################################",
     ] },
     // -2 et -1 : les moines (gardes : leurs rondes, dans le plan ; gardien : celui du sceptre)
     { id: 's2', nom: 'Galeries des Moines (-2)', type: 'libre', gardiens: true, suivante: null, gardes: GALERIES.gardes, plan: GALERIES.plan },
     { id: 's1', nom: 'Crypte du Sceptre (-1)', type: 'libre', gardiens: true, suivante: null, gardes: [...CRYPTE.gardes, CRYPTE.gardien], plan: CRYPTE.plan },
-    // les trois salles du repaire ; Ali Baba vit là depuis longtemps : sa caverne est mieux éclairée
+    // la caverne d'Ali Baba, à l'est du repaire ; il vit là depuis longtemps : elle est mieux éclairée
     { id: 'b4a', nom: 'Caverne d\'Ali Baba (-3)', type: 'libre', suivante: null, lumiere: 'vive', plan: [
       "##################",
       "##################",
@@ -327,47 +327,13 @@ const TOMBEAU = {
       "##......Ŵ......n##",
       "##v...ŖŖ.ŖŖ.....##",
       "##..............##",
-      "##............S..θ",
+      "θ.............S..#",
       "##v..............#",
       "##..............##",
       "##.............n##",
       "##wϮ..........Ϯw##",
       "##################",
       "##################",
-    ] },
-    { id: 'b4b', nom: 'Tripot (-3)', type: 'libre', suivante: null, plan: [
-      "######################",
-      "######################",
-      "##n.......b.......n###",
-      "##.................###",
-      "##....ŝ............###",
-      "##....pp.....pp....###",
-      "##............ŷ....###",
-      "λ....................#",
-      "#...|...........|....#",
-      "##........ẑ........###",
-      "##.......ppp.......###",
-      "##.ŧ........ŕ......###",
-      "##........S........###",
-      "##n...............n###",
-      "######################",
-      "######################",
-    ] },
-    { id: 'b4c', nom: 'Dortoir (-3)', type: 'libre', suivante: null, plan: [
-      "############μ#############",
-      "############..############",
-      "##.....................n##",
-      "##..........S...........##",
-      "##..ʙ...ʙ.......ʙ...ʙ...##",
-      "##...ǩ..................##",
-      "##e..................ǰ..##",
-      "##......................##",
-      "##...............ǯ......##",
-      "##..ʙ...ʙ.......ʙ...ʙ...##",
-      "##.....................h##",
-      "##n........c..c........n##",
-      "##########################",
-      "##########################",
     ] },
     // -4 à -10 : les profondeurs, bien plus sombres. Au -4, l'éboulement ferme le retour ; au -7, le piège et la grille
     { id: 'p4', nom: 'Galerie des Pilleurs (-4)', type: 'libre', lumiere: 'noire', eboulement: true, pnj: PROF.p4.lettres, plan: PROF.p4.plan },

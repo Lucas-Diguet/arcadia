@@ -1,5 +1,15 @@
 # Journal des versions — Arcadia
 
+## 5.47 — 14 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : la sépulture est complète.
+  - Cinq vrais casse-têtes rallument les brasiers : un puzzle à neuf pièces, un solitaire, les tours de Hanoï, un blocage où il faut sortir le sarcophage d'or, et des dalles-soleils à allumer.
+  - Le Roi Sans Nom a son équipe (niveau 55), et Zoroark se cache sous les traits d'un autre Pokémon. Tutankafer, lui, transmet son talent Momie à qui le frappe.
+  - La salle est bien plus grande, les brasiers loin de l'autel. Le halo de départ est un peu plus large, et la salle s'éclaire plus doucement.
+  - Une fois ouverte, on franchit la porte scellée en marchant.
+- **TestOdyssée** — Repaire des brigands : le tripot et le dortoir disparaissent, et la Caverne d'Ali Baba prend la place du tripot. Le repaire s'anime avec des tables de jeu, des marchandages, un faux-monnayeur et un dormeur.
+  - La roche fissurée roule sur le côté au lieu de disparaître.
+  - Dans les listes longues, comme la boutique d'Ali Baba, le curseur ne saute plus vers la souris quand on descend au clavier.
+
 ## 5.46 — 14 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la boutique d'Ali Baba change.
   - Il ne vend plus d'antiquités volées, mais propose des Gants d'Hiver.

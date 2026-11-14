@@ -154,7 +154,7 @@ export const OBJETS = {
 };
 
 // dessins en combat des adversaires du labo
-export const DRESSEURS = { robot_combat: 'miroirs/robot_combat.png', copycat_combat: 'miroirs/copycat_combat.png', miroir_piege: 'miroirs/miroir_piege.png' };
+export const DRESSEURS = { roi_sans_nom: 'tombeau/roi_sans_nom.png', robot_combat: 'miroirs/robot_combat.png', copycat_combat: 'miroirs/copycat_combat.png', miroir_piege: 'miroirs/miroir_piege.png' };
 // décor du labo ajouté aux images d'Odyssée (dessiné à 16 pixels par case)
 export const DECOR = [
   ...['miroir_mur', 'miroir_mur_jaune', 'miroir_mur_rouge', 'miroir_mur_bleu', 'miroir_mur_noir', 'miroir_mur_vert', 'miroir_brise', 'miroir_d', 'miroir_g', 'miroir_poche', 'socle', 'brasier', 'brasier_on', 'soleil', 'soleil_on', 'porte_miroirs', 'robot'].map((k) => [k, IMG + 'miroirs/' + k + '.png']),

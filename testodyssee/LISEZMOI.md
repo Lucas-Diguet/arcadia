@@ -692,13 +692,14 @@ Dehors, la Vallée des Rois Oubliés : la façade (`entree_tombeau`) et sa porte
 cordon et trois gardiens ; des touristes (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac indique l'entrée des
 pilleurs, explique qu'il faut le sceptre du roi pour ouvrir sa sépulture, demande qu'on lui rapporte le trésor contre une
 récompense ; si l'on accepte, il explique le plan (`planRuinemaniac`, qu'il répète si on le lui demande) et donne la Clé Antique (`cle-ruinemaniac`) et la Carte du Tombeau (`carte-tombeau`, du -1 au -4 : liste
-`CARTE`). La roche fissurée du bord droit (`porte`, parmi `roches`) se pousse avec Force et laisse place à une échelle
-(`trou` dans la salle s1). `devant` : où les moines jettent ceux qu'ils attrapent.
+`CARTE`). La roche fissurée du bord droit (`porte`, parmi `roches`) se pousse avec Force : elle roule d'une case (`decale`)
+et laisse voir une échelle (`trou` dans la salle s1). `devant` : où les moines jettent ceux qu'ils attrapent.
 
 Étages (les salles se relient par des passages `lien` : `vers` la salle, `cible` la marque d'en face ; `porte` : la
-porte de fer, ouverte par la Clé de Fer dans les deux sens) :
-- -3, Repaire des Brigands (`b3`, la première salle) et ses salles : la Caverne d'Ali Baba (`b4a`), le tripot
-  (`b4b`), le dortoir (`b4c`). Les brigands (`brigand`) n'attaquent jamais ; ceux qui ont un `combat` le proposent,
+porte de fer, ouverte par la Clé Antique dans les deux sens) :
+- -3, Repaire des Brigands (`b3`, la première salle) et la Caverne d'Ali Baba (`b4a`, à l'est). Le repaire vit :
+  une table de dés tenue par le croupier, une table de cartes, deux brigands qui marchandent, un faux-monnayeur à
+  l'atelier, un comptable sur ses coffres, un brigand qui dort contre le mur (`dort` : des « Zzz »). Les brigands (`brigand`) n'attaquent jamais ; ceux qui ont un `combat` le proposent,
   autant de fois qu'on veut, et soignent après. Ali Baba (`boutique`) vend la liste `boutique` (alibis `desc` et
   répliques `replique` dans `contenu.js`) ; seule la Seringue Somnifère sert.
 - Le passage du -4 (`N` du repaire) est bouché par deux brigands (`portier`) : sans le sceptre, ils ne laissent pas
@@ -727,14 +728,22 @@ porte de fer, ouverte par la Clé de Fer dans les deux sens) :
   et mourants (`ɑ`, quelques mots chacun) : des brigands couchés (`gisant_*`).
 - -10 (`g10`) : la grande salle, la porte scellée (`Ж`) et le chef Khamsin. Il se lamente, voit le second sceptre,
   attaque ; battu, il laisse le Sceptre Jumeau ; les deux sceptres ouvrent la porte (`ouverte` de g10), qui mène au -11.
-- -11 (`g11`, `sepulture()`, salle `sepulture: true`, sans torches ajoutées) : la sépulture, de la taille du -10, dans le
-  noir complet. Au centre le sarcophage du roi (`ǂ`), autour cinq torches éteintes (`ȶ`), plus loin cinq brasiers (`Ϙ`)
+- -11 (`g11`, `sepulture()`, salle `sepulture: true`, sans torches ajoutées) : la sépulture, bien plus grande que le -10,
+  dans le noir complet ; une fois ouverte, on franchit la porte scellée en marchant. Au centre le sarcophage du roi (`ǂ`), autour cinq torches éteintes (`ȶ`), plus loin cinq brasiers (`Ϙ`)
   et une inscription devant chacun (`Ϟ`) ; brasier, inscription et torche sont numérotés par leur place sur le cercle
-  (`numeroCercle`). Chaque inscription donne un casse-tête (provisoire : il se résout d'un clic) qui allume son brasier
+  (`numeroCercle`). Chaque inscription donne un casse-tête qui allume son brasier
   (`feux` de g11) ; la salle s'éclaire d'un cran par brasier (`lumiereSepulture`). Au cinquième : la caméra regarde
   l'autel (`camera`, `finCamera` : `view.update` décalé), les torches s'allument une à une, le sarcophage s'ouvre
-  (`torches`, `ouvert`) ; on y lance le combat contre le Roi Sans Nom (Ectoplasma niveau 65 pour l'instant, `battu`).
+  (`torches`, `ouvert`) ; on y lance le combat contre le Roi Sans Nom (`EQUIPE_ROI` de `champions.js`, niveau 55, `battu`).
+  Son équipe s'ouvre sur Zoroark déguisé en Ectoplasma (talent Illusion, dans `combat/regles.js` : une espèce cachée
+  garde ses vrais types, l'écran rejoue la fin de l'illusion par l'événement `illusion`, branché dans `js/jeu.js`) ;
+  Tutankafer a Momie (le talent de qui le frappe au contact devient Momie jusqu'à la fin du combat ou au changement).
+  Les cinq casse-têtes (`donjon/jeux-tombeau.js`, sans DOM, écran dans `donjon/jeux-tombeau-ecran.js`), dans l'ordre
+  des brasiers : le puzzle à neuf pièces (la fresque `img/tombeau/fresque.png`), le solitaire (pyramide de 16 billes,
+  il doit en rester une), les tours de Hanoï (4 disques), le blocage façon Rush Hour (sortir le sarcophage d'or,
+  31 glissements au moins) et les dalles-soleils façon Lights Out (5 × 5). Chacun est résolu par les tests.
   Images provisoires : `sarcophage`, `sarcophage_ouvert`, `torche_off`, `brasier` et `brasier_on` (ceux des Miroirs).
+  L'image du roi en combat (`img/tombeau/roi_sans_nom.png`) vient d'une illustration fournie par l'auteur, détourée et réduite.
 
 Les salles du -4 au -9 viennent de `python3 tools/tombeau.py [graine]` (`js/donjons/tombeau-salles.js`, ne pas le
 modifier à la main). Images :

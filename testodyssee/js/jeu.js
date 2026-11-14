@@ -1,6 +1,28 @@
 // testodyssee/js/jeu.js — le jeu d'Odyssée, en version labo : rien n'est sauvegardé (la vraie partie d'Odyssée
 // n'est jamais touchée) et le menu propose de changer de lieu.
 import { Game } from '../../odyssee/js/game.js';
+import { BattleView } from '../../odyssee/js/ui/battleView.js';
+import { ASSETS } from '../../odyssee/js/assets.js';
+import { dissiperIllusion } from './combat/regles.js';
+
+// l'écran de combat rejoue la fin d'une Illusion : le déguisement tombe, le vrai Pokémon apparaît
+{
+  const jouer = BattleView.prototype.play;
+  BattleView.prototype.play = async function (evs) {
+    let lot = [];
+    for (const e of evs) {
+      if (e.t !== 'illusion') { lot.push(e); continue; }
+      if (lot.length) { await jouer.call(this, lot); lot = []; }
+      const m = this.battle.act(e.side), o = e.side === 1 ? this.st.foe : this.st.me;
+      if (!dissiperIllusion(m)) continue;
+      await this.tween(260, (u) => { o.white = u; });
+      await this.loadSide(e.side); this.setHud(e.side, m);
+      await this.tween(260, (u) => { o.white = 1 - u; }); o.white = 0;
+      this.sound.cry(ASSETS.cry(m.sp));
+    }
+    if (lot.length) await jouer.call(this, lot);
+  };
+}
 import { T, DIRS, walkable } from '../../odyssee/js/world/tiles.js';
 import { partyScreen, dexScreen, mapScreen, optionsScreen } from '../../odyssee/js/ui/screens.js';
 import { ILE } from './ile/modele.js';

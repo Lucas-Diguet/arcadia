@@ -10,6 +10,7 @@ import { SPECIES } from '../../../odyssee/js/data/species.js';
 import { ITEMS, itemName } from '../../../odyssee/js/core/items.js';
 import { TALENTS_ESPECES } from '../../../odyssee/js/data/talents.js';
 import { isFainted, calcStats } from '../../../odyssee/js/core/mon.js';
+import { getAbility } from '../../../odyssee/js/data/abilities.js';
 
 // attaques qui manquent à Odyssée (numéros de PokeAPI)
 const A = (id, key, n, t, c, p, a, pp, o = {}) => ({ id, key, n, t, c, p, a, pp, pr: o.pr || 0, tg: o.tg ?? 10, m: { cat: 0, ...o.m } });
@@ -86,6 +87,25 @@ function changerForme(m, sp) {
 }
 export const formeDeBase = (m) => { if (m?.formeDe) changerForme(m, m.formeDe); };
 
+// Illusion : le Pokémon prend l'apparence (nom, image, cri) du dernier Pokémon valide de son équipe ;
+// une « espèce » cachée garde ses vrais types et ses vraies stats
+const ILLUSIONS = {};
+function especeIllusion(base, deguise) {
+  const k = base + '>' + deguise; if (ILLUSIONS[k]) return ILLUSIONS[k];
+  const id = 45000 + Object.keys(ILLUSIONS).length, S = SPECIES[base], D = SPECIES[deguise];
+  Object.defineProperty(SPECIES, id, { enumerable: false, configurable: true, value: { ...S, n: D.n, visuel: D.visuel || deguise, ev: [], forme: true, illusion: base } });
+  TALENTS_ESPECES[id] = TALENTS_ESPECES[base];
+  return (ILLUSIONS[k] = id);
+}
+function poserIllusion(b, i, idx) {
+  const s = b.sides[i], m = s.party[idx]; if (!m || isFainted(m) || getAbility(m)?.id !== 'illusion') return;
+  let k = s.party.length - 1; while (k >= 0 && (k === idx || isFainted(s.party[k]))) k--;
+  if (k < 0) return;
+  changerForme(m, especeIllusion(m.formeDe || m.sp, s.party[k].formeDe || s.party[k].sp)); m.illusionBrisee = false;
+}
+/** à la relecture du combat : l'illusion se dissipe à l'écran (le moteur, lui, connaît déjà la vérité) */
+export function dissiperIllusion(m) { if (m && SPECIES[m.sp]?.illusion) { formeDeBase(m); return true; } return false; }
+
 /** objet qu'on peut faire tomber (pas une Méga-Gemme) */
 const otable = (m) => !!m?.item && ITEMS[m.item]?.hold !== 'mega' && !m.megaFrom;
 
@@ -95,13 +115,19 @@ export function installerRegles() {
   for (const mv of ATTAQUES_COMBAT) if (!Object.values(MOVES).some((q) => q.key === mv.key)) MOVES[mv.id] = mv;
   for (const [k, o] of Object.entries(OBJETS_COMBAT)) ITEMS[k] ||= o;
   const B = Battle.prototype, orig = {};
-  for (const k of ['hits', 'resolve', 'playerSwitch', 'playerAction', 'foeChoose', 'useMove', 'special', 'statusMove', 'inflict', 'boost', 'hp', 'stat', 'effOn', 'moveType', 'movePower', 'damageCore', 'doSwitch', 'checkFaints', 'endOfTurn', 'triggerEntry', 'doMega', 'end', 'start']) orig[k] = B[k];
+  for (const k of ['nm', 'hits', 'resolve', 'playerSwitch', 'playerAction', 'foeChoose', 'useMove', 'special', 'statusMove', 'inflict', 'boost', 'hp', 'stat', 'effOn', 'moveType', 'movePower', 'damageCore', 'doSwitch', 'checkFaints', 'endOfTurn', 'triggerEntry', 'doMega', 'end', 'start']) orig[k] = B[k];
   // seulement le combat ordinaire (pas les duels entre joueurs ni les combats à plusieurs du labo) : les changements en plein tour
   const simple = (b) => Object.getPrototypeOf(b) === B;
   const banc = (b, i) => b.sides[i].party.findIndex((m, k) => k !== b.sides[i].active && m.hp > 0);
 
   Object.assign(B, {
-    start() { for (const s of this.sides) for (const m of s.party) m._obj0 = m.item || null; return orig.start.call(this); },
+    start() { for (const s of this.sides) for (const m of s.party) m._obj0 = m.item || null; this.sides.forEach((s, i) => poserIllusion(this, i, s.active)); return orig.start.call(this); },
+    /** le nom affiché : celui de l'illusion, jusqu'à ce qu'elle se dissipe */
+    nm(i) {
+      const m = this.act(i), r = m && SPECIES[m.sp]?.illusion;
+      if (!r || !m.illusionBrisee) return orig.nm.call(this, i);
+      const sp = m.sp; m.sp = r; try { return orig.nm.call(this, i); } finally { m.sp = sp; }
+    },
 
     /** Pokémon que l'adversaire envoie en plein tour (Demi-Tour, Bouton Fuite) : le meilleur pour l'IA sérieuse */
     remplacant() { const c = this.sides[1].trainer?.ai === 'smart' && this.choisirEnvoi?.(true); return c && c.idx >= 0 ? c.idx : banc(this, 1); },
@@ -275,6 +301,15 @@ export function installerRegles() {
       const vivant = !isFainted(T), eff = this.ev.slice(n0).filter((e) => e.t === 'hit' && e.side === d).reduce((x, e) => Math.max(x, e.eff || 1), 0);
       // Prélèvement Destin : celui qui met K.O. part avec
       if (avant && !vivant && tv.lien && !isFainted(m)) { this.say(`${this.Nm(d)} entraîne ${this.nm(i)} dans sa chute !`); this.hp(i, -m.hp); }
+      // Illusion : un coup qui fait des dégâts dissipe le déguisement
+      if (vivant && mv.c !== 'status' && SPECIES[T.sp]?.illusion && !T.illusionBrisee) {
+        T.illusionBrisee = true; this.ev.push({ t: 'illusion', side: d }); this.say(`L'illusion de ${this.nm(d)} se dissipe !`);
+      }
+      // Momie : qui le frappe au contact attrape son talent
+      if (mv.c === 'physical' && this.ab(d) === 'mummy' && !isFainted(m) && this.ab(i) !== 'mummy') {
+        if (!m._momie) m._momie = { a: m.ability };
+        m.ability = 'mummy'; this.say(`Le talent de ${this.nm(i)} devient Momie !`);
+      }
       if (vivant) {
         if (u === 'sabotage' && otable(T)) { (this._perdus ||= []).push([T, T.item]); this.say(`${this.Nm(i)} fait tomber ${itemName(T.item)} de ${this.nm(d)} !`); T.item = null; }
         if (this.ab(d) === 'cursed-body' && mv.c !== 'status' && !isFainted(m) && !v.entrave && this.r(100) < 30) { v.entrave = { id: mv.id, n: 4 }; this.say(`Corps Maudit de ${this.nm(d)} entrave ${mv.n} de ${this.nm(i)} !`); }
@@ -480,7 +515,8 @@ export function installerRegles() {
     doSwitch(i, idx, afterFaint, trigger = true) {
       if (this._retenir && i === 1 && afterFaint) { this._remplacant = idx; return; }
       const out = this.act(i);
-      if (out) formeDeBase(out);
+      if (out) { formeDeBase(out); if (out._momie) { out.ability = out._momie.a; delete out._momie; } }
+      poserIllusion(this, i, idx);
       orig.doSwitch.call(this, i, idx, afterFaint, trigger);
       const m = this.act(i);
       // Relais : ce que le Pokémon précédent avait gagné passe au nouveau
@@ -554,7 +590,7 @@ export function installerRegles() {
       if (m.ability && t && t !== m.ability) { m._abBase = m.ability; m.ability = t; }
     },
     end(result) {
-      for (const s of this.sides) for (const m of s.party) formeDeBase(m);
+      for (const s of this.sides) for (const m of s.party) { formeDeBase(m); delete m.illusionBrisee; if (m._momie) { m.ability = m._momie.a; delete m._momie; } }
       orig.end.call(this, result);
       for (const s of this.sides) for (const m of s.party) { if (m._abBase) { m.ability = m._abBase; delete m._abBase; } delete m._obj0; }
       // les objets tombés (Sabotage) ou partis (Bouton Fuite, Vulné-Assurance) reviennent après le combat

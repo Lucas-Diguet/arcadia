@@ -1258,7 +1258,11 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   const liens = Object.entries(d.objets).filter(([, o]) => o.type === 'lien');
   ok(liens.every(([c, o]) => { const s = d.salles.find((q) => q.id === o.vers), e = d.objets[o.cible]; return s && M[s.id].donjon.plan.objets[o.cible] && e.cible === c && !!e.porte === !!o.porte && cartes.some((m) => m.donjon.plan.objets[c]); }), 'tombeau : chaque passage entre étages a son pendant de l\'autre côté');
   ok(d.objets['α'].porte && M.b3.donjon.plan.objets['α'] && M.s2.donjon.plan.objets['β'], 'tombeau : la porte de fer relie le -3 et le -2');
-  ok(['b4a', 'b4b', 'b4c'].every((id) => liens.some(([c, q]) => q.vers === id && M.b3.donjon.plan.objets[c])) && Object.values(d.pnj).filter((p) => p.brigand).length >= 15 && M.b4a.donjon.plan.pnj['Ŵ'] && Object.keys(M.b4a.donjon.plan.pnj).length === 1, 'tombeau : un seul étage de brigands (-3, avec la Caverne d\'Ali Baba, le tripot et le dortoir) ; Ali Baba seul dans sa caverne');
+  ok(liens.some(([c, q]) => q.vers === 'b4a' && M.b3.donjon.plan.objets[c]) && !M.b4b && !M.b4c && Object.values(d.pnj).filter((p) => p.brigand).length >= 15 && M.b4a.donjon.plan.pnj['Ŵ'] && Object.keys(M.b4a.donjon.plan.pnj).length === 1, 'tombeau : un seul étage de brigands (-3, avec la Caverne d\'Ali Baba, sans tripot ni dortoir) ; Ali Baba seul dans sa caverne');
+  { const P3 = M.b3.donjon.plan, tables = (P3.decor || []).filter(([k]) => k === 'table').length, dort = Object.keys(d.pnj).filter((k) => d.pnj[k].dort && P3.pnj[k]);
+    ok(tables >= 6 && dort.length === 1, 'tombeau : au -3, des brigands autour de trois tables, un autre qui dort contre le mur'); }
+  { const E = d.exterieur?.(), [ax, ay] = E?.decale || [];
+    ok(E && walkable(E.carte.get(ax, ay)) && Math.abs(ax - E.porte[0]) + Math.abs(ay - E.porte[1]) === 1, 'tombeau : la roche fissurée roule d\'une case, sur du sol libre'); }
   const BRIG = new Set(['voleur', 'brume', 'brume_f', 'brutus', 'corbin', 'croupier']);
   ok(Object.values(d.pnj).filter((p) => p.brigand || p.portier != null).every((p) => BRIG.has(p.sprite)), 'tombeau : les brigands ont tous une tête de brigand');
   const feux = (id) => M[id].donjon.plan.decor.filter(([k]) => ['torche', 'brasero', 'lanterne'].includes(k)).length;
@@ -1303,10 +1307,10 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     const P7 = M.p7.donjon.plan, [nx, ny] = P7.suivante;
     ok(S('p7').piege && P7.objets['¤']?.[0][0] === nx && P7.objets['¤'][0][1] === ny + 1, 'tombeau : au -7, le piège, et la grille fermée à clé sous la sortie');
     const P10 = M.g10.donjon.plan;
-    ok(P10.objets['Ж'] && P10.pnj['Ѡ'] && d.pnj['Ѡ'].chef && M.g10.w * M.g10.h > M.b4b.w * M.b4b.h && !P10.suivante, 'tombeau : au -10, la grande salle, la porte scellée et le chef de Sable-Noir');
+    ok(P10.objets['Ж'] && P10.pnj['Ѡ'] && d.pnj['Ѡ'].chef && M.g10.w * M.g10.h > M.b4a.w * M.b4a.h && !P10.suivante, 'tombeau : au -10, la grande salle, la porte scellée et le chef de Sable-Noir');
     { const P11 = M.g11.donjon.plan, O = P11.objets, [cx, cy] = O['ǂ'][0], num = ([x, y]) => { const a = Math.atan2(y - cy, x - cx) + Math.PI / 2; return ((Math.round(a / (2 * Math.PI / 5)) % 5) + 5) % 5; };
       const tous = (c) => new Set((O[c] || []).map(num)).size === 5 && O[c].length === 5;
-      ok(S('g11')?.sepulture && S('g11').lumiere === 'noire' && Math.abs(M.g11.w * M.g11.h - M.g10.w * M.g10.h) < 120 && cx === Math.floor(M.g11.w / 2) - 1 && tous('Ϙ') && tous('Ϟ') && tous('ȶ') && !(P11.decor || []).some(([k]) => k === 'Ϯ'),
+      ok(S('g11')?.sepulture && S('g11').lumiere === 'noire' && M.g11.w * M.g11.h > 1.5 * M.g10.w * M.g10.h && O['Ϙ'].every((b) => Math.hypot(b[0] - cx, b[1] - cy) > 12) && cx === Math.floor(M.g11.w / 2) - 1 && tous('Ϙ') && tous('Ϟ') && tous('ȶ') && !(P11.decor || []).some(([k]) => k === 'Ϯ'),
         'tombeau : au -11, la sépulture dans le noir, le sarcophage au centre, cinq torches, cinq brasiers et leurs inscriptions');
       ok((O['Ϟ'] || []).every((q) => { const b = O['Ϙ'].find((r) => num(r) === num(q)); return Math.hypot(q[0] - cx, q[1] - cy) < Math.hypot(b[0] - cx, b[1] - cy); }), 'tombeau : au -11, chaque inscription est devant son brasier'); }
     ok(d.pnj['Ҩ']?.souschef && d.pnj['Ҩ'].equipe.every(([sp]) => SPECIES[sp]) && d.pnj['Ѡ'].equipe.length === 6 && ITEMS['sceptre-jumeau']?.key && !ITEMS['cle-sable-noir'], 'tombeau : le sous-chef, le chef et le Sceptre Jumeau (plus de clé du -7)');
@@ -1614,6 +1618,49 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   // Bluff : seulement au premier tour
   { const a = mk(143, ['splash']), d = mk(678, ['fake-out']); const b = combat([a], [d], { tr: { ai: 'normal' } }); b.foeChoose = () => ({ type: 'move', id: id('fake-out'), slot: 0 });
     b.playerAction({ type: 'move', idx: 0 }); const hp = a.hp; b.playerAction({ type: 'move', idx: 0 }); ok(a.hp === hp, 'combat du labo : Bluff échoue après le premier tour'); }
+  // les cinq casse-têtes de la sépulture : chacun se résout avec les touches du jeu
+  { const { PUZZLE, BILLES, HANOI, BLOCAGE, SOLEILS, JEUX_SEPULTURE } = await import('../testodyssee/js/donjon/jeux-tombeau.js');
+    const aller = (e, W, H, [tx, ty]) => { while (e.cur[0] !== tx) PUZZLE.touche(e, 'right'); while (e.cur[1] !== ty) PUZZLE.touche(e, 'down'); };
+    { const e = PUZZLE.nouveau(R(4)); let r;
+      ok(!PUZZLE.resolu(e) && [...Array(9).keys()].every((p) => e.cases.indexOf(p) >= 0 && !PUZZLE.dansCadre(e.cases.indexOf(p) % 7, Math.floor(e.cases.indexOf(p) / 7))), 'casse-têtes : le puzzle commence avec ses neuf pièces autour du cadre');
+      for (let p = 0; p < 9; p++) { const i = e.cases.indexOf(p); aller(e, 7, 5, [i % 7, Math.floor(i / 7)]); PUZZLE.touche(e, 'a'); aller(e, 7, 5, [2 + (p % 3), 1 + Math.floor(p / 3)]); r = PUZZLE.touche(e, 'a'); }
+      ok(r === 'fini' && PUZZLE.resolu(e), 'casse-têtes : le puzzle se résout en posant chaque pièce à sa place'); }
+    { const e = BILLES.nouveau(), memo = new Set(), chemin = [];
+      const dfs = (b) => { if (b.size === 1) return true; const k = [...b].sort().join('|'); if (memo.has(k)) return false;
+        for (const c of b) { const [x, y] = c.split(',').map(Number); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const t = [x + 2 * dx, y + 2 * dy]; if (!BILLES.saut({ billes: b }, [x, y], t)) continue;
+          const n = new Set(b); BILLES.sauter({ billes: n, coups: 0 }, [x, y], t); chemin.push([[x, y], t]); if (dfs(n)) return true; chemin.pop(); } }
+        memo.add(k); return false; };
+      ok(e.billes.size === 16 && dfs(e.billes), 'casse-têtes : le solitaire (16 billes) peut finir avec une seule bille');
+      let r; for (const [de, vers] of chemin) { e.cur = de; BILLES.touche(e, 'a'); e.cur = vers; r = BILLES.touche(e, 'a'); }
+      ok(r === 'fini', 'casse-têtes : le solitaire se joue saut par saut jusqu\'à la dernière bille'); }
+    { const e = HANOI.nouveau(); let r;
+      const poser = (de, vers) => { while (e.cur !== de) HANOI.touche(e, 'right'); HANOI.touche(e, 'a'); while (e.cur !== vers) HANOI.touche(e, 'right'); r = HANOI.touche(e, 'a'); };
+      const h = (n, a, b, c) => { if (!n) return; h(n - 1, a, c, b); poser(a, c); h(n - 1, b, a, c); };
+      const t = HANOI.nouveau(); HANOI.touche(t, 'a'); HANOI.touche(t, 'right'); HANOI.touche(t, 'a'); HANOI.touche(t, 'left'); HANOI.touche(t, 'a'); HANOI.touche(t, 'right');
+      ok(HANOI.touche(t, 'a') === 'refus', 'casse-têtes : Hanoï refuse un grand disque sur un petit');
+      h(4, 0, 1, 2); ok(r === 'fini' && e.coups === 15, 'casse-têtes : les tours de Hanoï se résolvent en 15 coups'); }
+    { const n = BLOCAGE.solution(); ok(n >= 20 && n <= 45, `casse-têtes : le sarcophage d'or sort en ${n} glissements`); }
+    { let ok5 = true;
+      for (let g = 1; g <= 20; g++) { const e = SOLEILS.nouveau(R(g)); if (SOLEILS.resolu(e)) { ok5 = false; break; }
+        let trouve = false;
+        for (let m = 0; m < 32 && !trouve; m++) { const c = { allume: e.allume.slice() }; for (let x = 0; x < 5; x++) if (m >> x & 1) SOLEILS.retourner(c, x, 0);
+          for (let y = 1; y < 5; y++) for (let x = 0; x < 5; x++) if (!c.allume[(y - 1) * 5 + x]) SOLEILS.retourner(c, x, y);
+          trouve = SOLEILS.resolu(c); }
+        if (!trouve) { ok5 = false; break; } }
+      ok(ok5, 'casse-têtes : les dalles-soleils ont toujours une solution'); }
+    ok(JEUX_SEPULTURE.length === 5 && new Set(JEUX_SEPULTURE.map((j) => j.id)).size === 5, 'casse-têtes : cinq jeux différents, un par brasier'); }
+  // le Roi Sans Nom : niveau 55, Zoroark déguisé en Ectoplasma ; un coup dissipe l'illusion ; Momie
+  { const { equipeRoi } = await import('../testodyssee/js/champions.js'), roi = equipeRoi('x');
+    ok(roi.length === 6 && roi.every((m) => m.lvl === 55) && roi[0].sp === 571 && roi[3].ability === 'mummy', 'Roi Sans Nom : six Pokémon niveau 55, Zoroark en tête, Tutankafer à Momie');
+    const b = combat([mk(129, ['tackle'])], roi, { tr: { ai: 'normal' } }), z = b.sides[1].party[0];
+    ok(SPECIES[z.sp].illusion === 571 && /Ectoplasma/.test(b.nm(1)) && SPECIES[z.sp].t.join() === SPECIES[571].t.join(), 'Illusion : Zoroark arrive sous les traits d\'Ectoplasma, avec ses vrais types');
+    b.foeChoose = () => ({ type: 'move', id: z.moves[0].id, slot: 0 }); const ev = b.playerAction({ type: 'move', idx: 0 });
+    ok(ev.some((e) => e.t === 'illusion' && e.side === 1) && /Zoroark/.test(b.nm(1)), 'Illusion : un coup qui fait des dégâts la dissipe');
+    b.end('win'); ok(z.sp === 571, 'Illusion : Zoroark retrouve sa forme à la fin du combat');
+    const t = roi[3], a = mk(68, ['crunch'], { ability: 'no-guard' }), c = combat([a], [t, mk(143, ['splash'])], { tr: { ai: 'normal' } });
+    c.foeChoose = () => ({ type: 'move', id: t.moves[0].id, slot: 0 }); c.playerAction({ type: 'move', idx: 0 });
+    ok(a.ability === 'mummy', 'Momie : le Pokémon qui frappe au contact prend le talent Momie');
+    c.end('win'); ok(a.ability === 'no-guard', 'Momie : il retrouve son talent après le combat'); }
   // Sabotage : objet tombé, plus fort, rendu après le combat
   { const a = mk(461, ['knock-off']), d = mk(143, ['splash'], { item: 'leftovers' }); const b = combat([a], [d]); b.playerAction({ type: 'move', idx: 0 }); ok(d.item === null, 'combat du labo : Sabotage fait tomber l\'objet'); b.end('win'); ok(d.item === 'leftovers', 'combat du labo : l\'objet revient après le combat'); }
   // Demi-Tour du joueur : il choisit qui le remplace, le tour continue

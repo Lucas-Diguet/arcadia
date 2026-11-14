@@ -10,12 +10,13 @@ import { TALENTS_ESPECES } from '../../odyssee/js/data/talents.js';
 
 const nature = (n) => { const k = NATURES.indexOf(n); if (k < 0) throw new Error('nature inconnue : ' + n); return k; };
 const attaque = (key) => { const m = Object.values(MOVES).find((q) => q.key === key); if (!m) throw new Error('attaque inconnue : ' + key); return m.id; };
+const SANS_ATQ0 = [31, 0, 31, 31, 31, 31];
 const P = (sp, item, ability, nat, ev, moves, o = {}) => ({ sp, item, ability, nat, ev, moves, ...o });
 const EV = (hp = 0, atk = 0, def = 0, spa = 0, spd = 0, spe = 0) => [hp, atk, def, spa, spd, spe];
 
-/** un Pokémon de champion, prêt au combat (niveau 100) */
+/** un Pokémon de champion, prêt au combat (niveau 100, ou s.lvl) */
 export function monChampion(s, ot = '') {
-  const m = createMon(s.sp, 100, { iv: s.iv ? s.iv.slice() : Array(6).fill(31), nat: nature(s.nat), moves: s.moves.map(attaque), item: s.item, ability: s.ability, shiny: !!s.shiny, ot, met: 'Place des Champions' });
+  const m = createMon(s.sp, s.lvl || 100, { iv: s.iv ? s.iv.slice() : Array(6).fill(31), nat: nature(s.nat), moves: s.moves.map(attaque), item: s.item, ability: s.ability, shiny: !!s.shiny, ot, met: 'Place des Champions' });
   m.ev = s.ev.slice(); refreshStats(m); m.hp = m.stats[0];
   if (s.pc) m.pc = { ...s.pc };
   if (s.role) m.role = s.role;   // rôle dans l'équipe, lu par l'IA (combat/ia.js) : 'climat' = pose la météo
@@ -103,6 +104,17 @@ if (!Object.prototype.hasOwnProperty.call(SPECIES, DEMETEROS_T)) {
     value: { ...SPECIES[645], k: 'landorus-therian', b: [89, 145, 90, 105, 80, 91], ev: [] } });
   TALENTS_ESPECES[DEMETEROS_T] = ['intimidate', null, null];
 }
+
+// le Roi Sans Nom, au fond de son tombeau (niveau 55) : Zoroark se fait passer pour Ectoplasma
+export const EQUIPE_ROI = [
+  P(571, 'life-orb', 'illusion', 'Timide', EV(4, 0, 0, 252, 0, 252), ['dark-pulse', 'extrasensory', 'flamethrower', 'focus-blast'], { iv: SANS_ATQ0, lvl: 55 }),
+  P(344, 'leftovers', 'levitate', 'Rigide', EV(252, 252, 0, 0, 4, 0), ['rapid-spin', 'stone-edge', 'earthquake', 'explosion'], { lvl: 55 }),
+  P(623, 'choice-band', 'no-guard', 'Rigide', EV(252, 252, 0, 0, 4, 0), ['dynamic-punch', 'earthquake', 'fire-punch', 'hammer-arm'], { lvl: 55 }),
+  P(563, 'leftovers', 'mummy', 'Assuré', EV(252, 0, 252, 4, 0, 0), ['toxic', 'protect', 'pain-split', 'shadow-ball'], { iv: SANS_ATQ0, lvl: 55 }),
+  P(59, 'assault-vest', 'intimidate', 'Pressé', EV(0, 252, 0, 4, 0, 252), ['overheat', 'crunch', 'flare-blitz', 'close-combat'], { lvl: 55 }),
+  P(94, 'life-orb', 'levitate', 'Timide', EV(4, 0, 0, 252, 0, 252), ['shadow-ball', 'sludge-wave', 'destiny-bond', 'thunder'], { iv: SANS_ATQ0, lvl: 55 }),
+];
+export const equipeRoi = (ot) => EQUIPE_ROI.map((s) => monChampion(s, ot));
 
 // le Conseil 4 : le soleil, le Relais, la Distorsion, puis un combat double (joué en simple pour l'instant)
 const SANS_ATQ = [31, 0, 31, 31, 31, 31], SANS_ATQS = [31, 31, 31, 0, 31, 31], LENT = [31, 31, 31, 31, 31, 0], LENT_SPE = [31, 0, 31, 31, 31, 0];

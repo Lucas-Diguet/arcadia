@@ -109,8 +109,13 @@ export class UI {
         if (o.items[i]?.disabled) { this.sound.sfx('bump'); return; }
         this.sound.sfx('select'); close(i);
       };
+      // la souris ne choisit une ligne que si elle bouge vraiment : quand la liste défile au clavier, les lignes
+      // passent sous le pointeur immobile, et le curseur ne doit pas sauter vers lui
+      let sx = null, sy = null;
       rows.forEach((r, idx) => {
-        r.addEventListener('mouseenter', () => {
+        r.addEventListener('mousemove', (e) => {
+          if (e.screenX === sx && e.screenY === sy) return;
+          sx = e.screenX; sy = e.screenY;
           if (i !== idx) { i = idx; show(); }
         });
         r.addEventListener('click', (e) => {

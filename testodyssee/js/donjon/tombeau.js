@@ -15,9 +15,12 @@ import { ronde, auPas, vueGarde, PAS } from '../donjons/tombeau-gardes.js';
 import { dessinerZones, dessinerZzz } from '../rendu.js';
 import { HPX } from '../../../odyssee/js/render/world3d.js';
 import { prisPar, battu } from './etat.js';
+import { equipeRoi } from '../champions.js';
+import { JEUX_SEPULTURE } from './jeux-tombeau.js';
+import { jouerCasseTete } from './jeux-tombeau-ecran.js';
 
 /** les salles que montre la carte du ruinemaniac (du -1 au -4 ; plus tard, un peu plus bas) */
-const CARTE = ['s1', 's2', 'b3', 'b4a', 'b4b', 'b4c', 'p4'];
+const CARTE = ['s1', 's2', 'b3', 'b4a', 'p4'];
 const SCEPTRE = 'sceptre-roi', JUMEAU = 'sceptre-jumeau';
 /** ce que murmurent les mourants (un fragment chacun, selon la case) */
 const MOURANTS = [['Argh... Ces monstres...', '... d\'où sortent-ils...'], ['Le chef... il a posé... le sceptre...', '... et le tombeau... a hurlé...'], ['J\'ai froid... si froid...'], ['Ne... descends pas...'], ['Ils sortaient... des murs...', '... des murs...'], ['Le trésor... ça valait pas... ça...'], ['Maman...'], ['Cours... cours...']];
@@ -37,15 +40,15 @@ const numeroCercle = (x, y, [cx, cy]) => { const a = Math.atan2(y - cy, x - cx) 
 /** la pénombre de la sépulture : noire, puis un cran plus claire à chaque brasier rallumé */
 const lumiereSepulture = (n, t) => {
   const mix = (a, b, u) => a.map((v, i) => Math.round(v + (b[i] - v) * u)), u = n / 5;
-  return { fond: mix(mix([3, 2, 1], [56, 27, 13], u), [84, 44, 22], t / 5), r: 4.6, feu: [200, 120, 64], soi: 1.1 + 1.1 * u + 0.2 * t / 5 };
+  return { fond: mix(mix([3, 2, 1], [30, 15, 8], u), [84, 44, 22], t / 5), r: 4.6, feu: [200, 120, 64], soi: 1.6 + 0.4 * u + 0.2 * t / 5 };
 };
 /** ce que disent les inscriptions, en attendant les casse-têtes */
 const INSCRIPTIONS = [
-  '« Au premier feu, la mémoire du roi. »',
-  '« Au deuxième feu, le nom qu\'on lui a pris. »',
-  '« Au troisième feu, ceux qui l\'ont servi. »',
-  '« Au quatrième feu, ceux qui l\'ont trahi. »',
-  '« Au dernier feu, le sommeil se brise. »',
+  '« Rends au roi le visage de son royaume. »',
+  '« Les billes sautent leurs sœurs. Qu\'il n\'en reste qu\'une. »',
+  '« Jamais le grand ne repose sur le petit. »',
+  '« Libère le sarcophage d\'or de la pierre qui l\'enferme. »',
+  '« Que tous les soleils brillent ensemble. »',
 ];
 
 export const Tombeau = {
@@ -196,7 +199,15 @@ export const Tombeau = {
     // le sable mouvant du piège
     if (m7 && E7.sable && !m7.deco.some((q) => q.k === 'sable_mouvant')) { const [x, y] = E7.sable; m7.deco.push({ k: 'sable_mouvant', x, y }); if (g.mapObj === m7) { g.view.decoAt.set(cle(x, y), m7.deco[m7.deco.length - 1]); g.view.rebuildAt(x, y); } }
     // la porte scellée
-    const m10 = M('g10'); for (const [x, y] of m10?.donjon.plan.objets['Ж'] || []) this.decorTombeau(m10, x, y, E10.ouverte ? 'porte_grande_o' : 'porte_grande');
+    const m10 = M('g10'); for (const [x, y] of m10?.donjon.plan.objets['Ж'] || []) {
+      this.decorTombeau(m10, x, y, E10.ouverte ? 'porte_grande_o' : 'porte_grande');
+      // ouverte : on la franchit en marchant, et l'on descend à la sépulture
+      if (E10.ouverte && !m10.warps.has(cle(x, y))) {
+        const m11 = M('g11'), [sx, sy] = m11.donjon.plan.depart;
+        m10.set(x, y, T.CAVEDOOR); m10.warp(x, y, { map: m11.id, x: sx, y: sy, dir: 'up' });
+        if (g.mapObj === m10) g.view.rebuildAt(x, y);
+      }
+    }
   },
   /** un corps, un mourant */
   async gisant(d, m, x, y, type) {
@@ -425,8 +436,8 @@ export const Tombeau = {
     if (E.battu) { await ui.say(['Le sarcophage est vide.', 'Le Roi Sans Nom a retrouvé le sommeil.']); return; }
     await ui.say(['Le couvercle a glissé sur le côté.', 'Dans le noir du sarcophage, quelque chose bouge...', 'Une silhouette couronnée se redresse lentement.']);
     await ui.say(['Qui...', 'Qui ose rallumer les feux de mon tombeau ?'], { speaker: 'Roi Sans Nom' });
-    const R = { cls: 'Roi', nom: 'Roi Sans Nom', sprite: 'spectrel', prix: 0, boss: true, perd: 'Le sommeil... enfin...' };
-    const res = await this.combat(R, this.equipe([[94, 65]]));
+    const R = { cls: 'Roi', nom: 'Roi Sans Nom', sprite: 'roi_sans_nom', prix: 0, boss: true, perd: 'Le sommeil... enfin...' };
+    const res = await this.combat(R, equipeRoi(g.state.name));
     if (res !== 'win') { await this.defaite(d); return; }
     await this.demande(d.id, { a: 'maj', salle: 'g11', donnees: { battu: true } });
     await ui.say(['Le Roi Sans Nom s\'effondre dans son sarcophage.', 'Les flammes des brasiers vacillent, puis se calment.']);
@@ -435,12 +446,13 @@ export const Tombeau = {
     const ui = this.game.ui;
     await ui.say((this.dTombeau(d, 'g11').feux || [])[k] ? 'Le brasier brûle d\'une flamme haute et claire.' : 'Un brasier immense, éteint depuis des siècles. Une inscription est gravée devant.');
   },
-  /** une inscription : son casse-tête (provisoire : il se résout d'un clic), puis le brasier s'allume */
+  /** une inscription : son casse-tête (jeux-tombeau.js), puis le brasier s'allume */
   async inscriptionRoi(d, k) {
     const g = this.game, ui = g.ui, E = this.dTombeau(d, 'g11'), feux = (E.feux || []).slice();
     if (feux[k]) { await ui.say(['L\'inscription brille faiblement.', INSCRIPTIONS[k]]); return; }
     await ui.say(['Une inscription gravée dans la pierre :', INSCRIPTIONS[k]]);
-    if (!(await ui.yesNo('Résoudre le casse-tête ? (provisoire : il se résout tout seul)'))) return;
+    if (!(await ui.yesNo(`${JEUX_SEPULTURE[k].nom} : tenter le casse-tête ?`))) return;
+    if (!(await jouerCasseTete(g, JEUX_SEPULTURE[k]))) { await ui.say('Tu t\'éloignes de l\'inscription. Le brasier reste éteint.'); return; }
     feux[k] = true;
     for (let i = 0; i < 5; i++) feux[i] = !!feux[i];
     g.sound.sfx('select');
@@ -628,9 +640,16 @@ export const Tombeau = {
     this.trouOuvert = ouvert;
     const g = this.game, E = g.world.maps[d.carte].donjon.exterieur; if (!E) return;
     const X = E.carte, [x, y] = E.porte;
-    if (ouvert) { X.set(x, y, T.SAND); X.under.delete(cle(x, y)); X.deco = X.deco.filter((q) => !(q.x === x && q.y === y)); X.deco.push({ k: 'ladder', x, y }); }
-    else if (!X.deco.some((q) => q.x === x && q.y === y && q.k === 'rocher_grand')) { X.deco = X.deco.filter((q) => !(q.x === x && q.y === y)); X.prop('rocher_grand', x, y); }
-    if (g.mapObj === X) { g.view.decoAt.set(cle(x, y), X.deco.find((q) => q.x === x && q.y === y)); g.view.rebuildAt(x, y); }
+    // la roche roule d'une case sur le côté (E.decale) et laisse voir l'échelle
+    const [ax, ay] = E.decale, roche = (u, v) => X.deco.some((q) => q.x === u && q.y === v && q.k === 'rocher_grand');
+    if (ouvert) {
+      X.set(x, y, T.SAND); X.under.delete(cle(x, y)); X.deco = X.deco.filter((q) => !(q.x === x && q.y === y)); X.deco.push({ k: 'ladder', x, y });
+      if (!roche(ax, ay)) { E.solDecale ??= X.get(ax, ay); X.prop('rocher_grand', ax, ay); }
+    } else {
+      if (!roche(x, y)) { X.deco = X.deco.filter((q) => !(q.x === x && q.y === y)); X.prop('rocher_grand', x, y); }
+      if (roche(ax, ay)) { X.deco = X.deco.filter((q) => !(q.x === ax && q.y === ay)); X.set(ax, ay, E.solDecale ?? T.SAND); X.under.delete(cle(ax, ay)); }
+    }
+    if (g.mapObj === X) for (const [u, v] of [[x, y], [ax, ay]]) { const dd = X.deco.find((q) => q.x === u && q.y === v); if (dd) g.view.decoAt.set(cle(u, v), dd); else g.view.decoAt.delete(cle(u, v)); g.view.rebuildAt(u, v); }
   },
 
   /* ---------------- la carte du ruinemaniac : du -1 au -4 ---------------- */
@@ -733,7 +752,7 @@ export const Tombeau = {
     const L = E11 ? lumiereSepulture((E11.feux || []).filter(Boolean).length, (m.deco || []).filter((q) => q.k === 'torche').length) : LUMIERE[s.lumiere] || LUMIERE.normale;
     x.globalCompositeOperation = 'source-over'; x.fillStyle = `rgb(${L.fond.join(',')})`; x.fillRect(0, 0, W, H);
     const feux = (m.deco || []).filter((q) => q.k === 'torche' || q.k === 'brasero' || q.k === 'lanterne' || q.k === 'brasier_on'), lum = [];
-    feux.forEach((q, i) => lum.push([...proj(q.x, q.y, 6), case_ * L.r * (q.k === 'brasier_on' ? 1.6 : 1) * (1 + 0.035 * Math.sin(t * 7.3 + i * 1.7) + 0.02 * Math.sin(t * 13.1 + i)), L.feu]));
+    feux.forEach((q, i) => lum.push([...proj(q.x, q.y, 6), case_ * L.r * (q.k === 'brasier_on' ? 1.15 : 1) * (1 + 0.035 * Math.sin(t * 7.3 + i * 1.7) + 0.02 * Math.sin(t * 13.1 + i)), L.feu]));
     lum.push([...proj(v.focus.x - 0.5, v.focus.z - 0.5, 10), case_ * L.soi, [70, 50, 36]]);
     // la lanterne d'un moine : un halo sur lui, et la lumière jaune de son regard
     for (const [n, vue] of moines) {
@@ -773,6 +792,11 @@ export const Tombeau = {
       const zones = moines.flatMap(([, v]) => v), cleZ = zones.map((c) => c.join()).join(';') + '@' + m.id;
       if (cleZ !== this.zonesVues) { this.zonesVues = cleZ; dessinerZones(g.view, zones); }
     } else if (this.zonesVues) { this.zonesVues = null; dessinerZones(g.view, []); dessinerZzz(g.view, []); }
+    // au -3, le brigand qui dort contre le mur
+    if (!s?.gardes) {
+      const dort = s?.id === 'b3' ? g.npcs.filter((n) => Object.values(d.pnj).some((q) => q.dort && `${d.id}:${q.id}` === n.id)) : [];
+      if (dort.length || this.zzzRepaire) { dessinerZzz(g.view, dort); this.zzzRepaire = dort.length > 0; }
+    }
     this.eclairerTombeau(s, m, moines);
     if (s && !s.gardes) { this.tickMorts(d, m); this.tickLuttes(d); }
     if (!moines.length || g.busy || g.bv.alive || !g.input.free) return;
