@@ -35,6 +35,8 @@ const LUMIERE = {
   noire: { fond: [26, 12, 6], r: 3.4, feu: [190, 120, 70], soi: 2.2 },
 };
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
+/** ce que disent les pilleurs déjà battus */
+const VAINCUS = ['Ça va, ça va... Garde-le, ton sceptre.', 'Laisse-moi tranquille. J\'ai mon compte.', 'Le chef va me tuer quand il saura...', 'T\'as eu de la chance, c\'est tout.'];
 /** brasier, inscription, torche de la sépulture : son numéro (0 à 4) selon sa place sur le cercle autour du sarcophage c, en partant du haut */
 const numeroCercle = (x, y, [cx, cy]) => { const a = Math.atan2(y - cy, x - cx) + Math.PI / 2; return ((Math.round(a / (2 * Math.PI / 5)) % 5) + 5) % 5; };
 /** la pénombre de la sépulture : noire, puis un cran plus claire à chaque brasier rallumé */
@@ -77,7 +79,7 @@ export const Tombeau = {
       if (Q.brigand) { n.talk = () => this.brigand(d, k); n.when = () => true; }
       else if (Q.portier != null) { n.talk = () => this.portiers(d); n.when = () => !this.dTombeau(d, 'b3').passe; }
       else if (Q.boutique) { n.talk = () => this.boutique(d); n.when = () => true; }
-      else if (Q.pilleur) n.talk = () => this.parlerPilleur(d, k);
+      else if (Q.pilleur) { n.talk = () => this.parlerPilleur(d, k); n.when = () => true; }
       else if (Q.mortvivant) n.talk = () => this.attaqueMort(d, k);
       else if (Q.lutteur) n.talk = () => this.parlerLutteur(d, k);
       else if (Q.chef) n.talk = () => this.chef(d);
@@ -218,8 +220,10 @@ export const Tombeau = {
   },
   /** un pilleur de Sable-Noir : avec le sceptre, il attaque ; sans, il se moque */
   async parlerPilleur(d, k) {
-    if (this.aLeSceptre(d)) return this.engager(d, k);
     const P = d.pnj[k];
+    // battu, il reste là, la mine basse
+    if (battu(this.etats[d.id], d, k)) { await this.game.ui.say(VAINCUS[[...k].reduce((a, c) => a + c.charCodeAt(0), 0) % VAINCUS.length], { speaker: `${P.cls} ${P.nom}` }); return; }
+    if (this.aLeSceptre(d)) return this.engager(d, k);
     await this.game.ui.say(MOQUE[[...k].reduce((a, c) => a + c.charCodeAt(0), 0) % MOQUE.length], { speaker: `${P.cls} ${P.nom}` });
   },
   async parlerLutteur(d, k) {
@@ -887,10 +891,9 @@ export const Tombeau = {
     for (let i = D.duel || 0; i < P.length; i++) {
       if (!(await ui.yesNo(`Affronter ${P[i].nom} ?`))) { await ui.say('Reviens quand tu seras prêt.', qui(P[i])); return; }
       const res = await this.combat({ ...P[i], perd: i ? 'Incroyable...' : 'Pas mal du tout...' }, this.equipe(P[i].equipe));
-      for (const mon of g.state.party) healFull(mon);
-      if (res !== 'win') { g.sound.sfx('heal'); await ui.say(['Trop faible. Je soigne tes Pokémon : reviens quand tu veux.'], qui(P[i])); return; }
+      if (res !== 'win') { for (const mon of g.state.party) healFull(mon); g.sound.sfx('heal'); await ui.say(['Trop faible. Je soigne tes Pokémon : reviens quand tu veux.'], qui(P[i])); return; }
       await this.demande(d.id, { a: 'maj', salle: 'b3', donnees: { duel: i + 1 } });
-      if (i + 1 < P.length) { g.sound.sfx('heal'); await ui.say(['Ouah, t\'es vraiment pas un rigolo, toi !', 'Je soigne tes Pokémon.', `Mais ${P[i + 1].nom} est bien plus coriace que moi !`], qui(P[i])); }
+      if (i + 1 < P.length) await ui.say(['Ouah, t\'es vraiment pas un rigolo, toi !', `Mais ${P[i + 1].nom} est bien plus coriace que moi !`], qui(P[i]));
     }
     // la scène : ils voient le sceptre... et tout le repaire l'apprend
     await ui.say(['Bon sang... Tu es vraiment très fort.', 'Hé, attends. Qu\'est-ce que tu tiens là ?'], qui(P[0]));

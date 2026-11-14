@@ -1,5 +1,9 @@
 # Journal des versions — Arcadia
 
+## 5.50 — 14 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : les pilleurs battus restent là au lieu de disparaître, et ont un mot quand on leur parle.
+  - Gros-Bras ne soigne plus tes Pokémon après sa défaite.
+
 ## 5.49 — 14 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la première fois, la porte de fer du -3 s'ouvre avec une petite scène, la Clé Antique dans la vieille serrure rouillée.
   - Le ruinemaniac ne commente plus sa carte.
