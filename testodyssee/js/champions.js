@@ -2,7 +2,7 @@
 // et le Maître de la Ligue. Tous au niveau 100, IV à 31. Ceux qui n'ont pas encore d'équipe ne se combattent pas.
 // Une équipe : [espèce, objet, talent, nature, PV/Atq/Déf/AtqSpé/DéfSpé/Vit (EV), attaques, options { pc, shiny }].
 // pc : Puissance Cachée fixée, sans tenir compte des IV ({ t: type, p: puissance }) ; role : 'climat' (pose la météo,
-// l'IA le garde en vie et le renvoie quand la météo s'arrête).
+// l'IA le garde en vie et le renvoie quand la météo s'arrête) ; iv : les IV s'ils ne sont pas tous à 31 (PV/Atq/Déf/AtqSpé/DéfSpé/Vit).
 import { createMon, refreshStats, NATURES } from '../../odyssee/js/core/mon.js';
 import { MOVES } from '../../odyssee/js/data/moves.js';
 
@@ -13,7 +13,7 @@ const EV = (hp = 0, atk = 0, def = 0, spa = 0, spd = 0, spe = 0) => [hp, atk, de
 
 /** un Pokémon de champion, prêt au combat (niveau 100) */
 export function monChampion(s, ot = '') {
-  const m = createMon(s.sp, 100, { iv: Array(6).fill(31), nat: nature(s.nat), moves: s.moves.map(attaque), item: s.item, ability: s.ability, shiny: !!s.shiny, ot, met: 'Place des Champions' });
+  const m = createMon(s.sp, 100, { iv: s.iv ? s.iv.slice() : Array(6).fill(31), nat: nature(s.nat), moves: s.moves.map(attaque), item: s.item, ability: s.ability, shiny: !!s.shiny, ot, met: 'Place des Champions' });
   m.ev = s.ev.slice(); refreshStats(m); m.hp = m.stats[0];
   if (s.pc) m.pc = { ...s.pc };
   if (s.role) m.role = s.role;   // rôle dans l'équipe, lu par l'IA (combat/ia.js) : 'climat' = pose la météo
@@ -94,6 +94,41 @@ const EAU = [
   P(184, 'choice-band', 'huge-power', 'Rigide', EV(0, 252, 0, 0, 0, 252), ['waterfall', 'play-rough', 'aqua-jet', 'superpower']),
 ];
 
+// le Conseil 4 : le soleil, le Relais, la Distorsion, puis un combat double (joué en simple pour l'instant)
+const SANS_ATQ = [31, 0, 31, 31, 31, 31], SANS_ATQS = [31, 31, 31, 0, 31, 31], LENT = [31, 31, 31, 31, 31, 0], LENT_SPE = [31, 0, 31, 31, 31, 0];
+const SOLEIL = [
+  P(6, 'charizardite-y', 'blaze', 'Timide', EV(4, 0, 0, 252, 0, 252), ['flamethrower', 'solar-beam', 'roost', 'focus-blast']),
+  P(3, 'life-orb', 'chlorophyll', 'Modeste', EV(252, 0, 0, 252, 0, 4), ['solar-beam', 'sunny-day', 'sludge-bomb', 'hidden-power'], { pc: { t: 'fire', p: 60 } }),
+  P(324, 'heat-rock', 'drought', 'Assuré', EV(248, 0, 252, 0, 8, 0), ['stealth-rock', 'lava-plume', 'rapid-spin', 'toxic'], { role: 'climat' }),
+  P(149, 'weakness-policy', 'multiscale', 'Rigide', EV(252, 252, 0, 0, 0, 4), ['dragon-dance', 'dragon-claw', 'earthquake', 'extreme-speed']),
+  P(485, 'choice-scarf', 'flash-fire', 'Timide', EV(0, 0, 0, 252, 4, 252), ['flash-cannon', 'fire-blast', 'dragon-pulse', 'earth-power']),
+  P(244, 'choice-band', 'pressure', 'Jovial', EV(0, 252, 0, 0, 4, 252), ['extreme-speed', 'flare-blitz', 'stone-edge', 'crunch']),
+];
+const RELAIS = [
+  P(134, 'weakness-policy', 'water-absorb', 'Assuré', EV(252, 0, 120, 0, 136, 0), ['aqua-ring', 'acid-armor', 'baton-pass', 'scald'], { iv: SANS_ATQ }),
+  P(472, 'toxic-orb', 'poison-heal', 'Malin', EV(244, 0, 40, 0, 0, 224), ['substitute', 'earthquake', 'swords-dance', 'baton-pass'], { iv: SANS_ATQS }),
+  P(196, 'life-orb', 'magic-bounce', 'Timide', EV(0, 0, 4, 252, 0, 252), ['dazzling-gleam', 'stored-power', 'calm-mind', 'baton-pass'], { iv: SANS_ATQ }),
+  P(291, 'mental-herb', 'speed-boost', 'Malin', EV(248, 0, 236, 0, 0, 24), ['swords-dance', 'baton-pass', 'protect', 'substitute'], { iv: [31, 0, 31, 0, 31, 31] }),
+  P(700, 'leftovers', 'pixilate', 'Assuré', EV(252, 0, 252, 0, 4, 0), ['moonblast', 'calm-mind', 'baton-pass', 'wish'], { iv: SANS_ATQ }),
+  P(308, 'medichamite', 'pure-power', 'Jovial', EV(0, 252, 4, 0, 0, 252), ['drain-punch', 'fire-punch', 'zen-headbutt', 'baton-pass'], { iv: SANS_ATQS }),
+];
+const DISTORSION = [
+  P(591, 'sitrus-berry', 'regenerator', 'Malpoli', EV(252, 0, 176, 0, 80, 0), ['toxic', 'protect', 'giga-drain', 'energy-ball'], { iv: LENT_SPE }),
+  P(80, 'leftovers', 'regenerator', 'Relax', EV(252, 0, 252, 0, 4, 0), ['ice-beam', 'trick-room', 'flamethrower', 'slack-off'], { iv: LENT_SPE }),
+  P(534, 'punching-glove', 'iron-fist', 'Brave', EV(252, 252, 4, 0, 0, 0), ['thunder-punch', 'drain-punch', 'knock-off', 'bulk-up'], { iv: LENT }),
+  P(488, 'leftovers', 'levitate', 'Malpoli', EV(252, 0, 252, 4, 0, 0), ['lunar-dance', 'trick-room', 'psychic', 'moonblast'], { iv: LENT_SPE }),
+  P(214, 'heracronite', 'swarm', 'Brave', EV(252, 252, 4, 0, 0, 0), ['pin-missile', 'close-combat', 'rock-blast', 'bullet-seed'], { iv: LENT }),
+  P(579, 'focus-sash', 'magic-guard', 'Discret', EV(252, 0, 0, 252, 4, 0), ['trick-room', 'focus-blast', 'psyshock', 'energy-ball'], { iv: LENT_SPE }),
+];
+const DOUBLE = [
+  P(94, 'gengarite', 'cursed-body', 'Timide', EV(0, 0, 0, 252, 4, 252), ['protect', 'hypnosis', 'shadow-ball', 'sludge-bomb'], { iv: SANS_ATQ }),
+  P(645, 'rocky-helmet', 'intimidate', 'Jovial', EV(252, 0, 4, 0, 0, 252), ['gravity', 'u-turn', 'rock-slide', 'knock-off']),
+  P(678, 'focus-sash', 'prankster', 'Pressé', EV(0, 4, 0, 252, 0, 252), ['gravity', 'fake-out', 'psychic', 'energy-ball']),
+  P(464, 'life-orb', 'solid-rock', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['rock-slide', 'swords-dance', 'rock-polish', 'fire-punch']),
+  P(381, 'soul-dew', 'levitate', 'Timide', EV(4, 0, 0, 252, 0, 252), ['draco-meteor', 'psychic', 'ice-beam', 'thunderbolt'], { iv: SANS_ATQ }),
+  P(637, 'sitrus-berry', 'flame-body', 'Timide', EV(4, 0, 0, 252, 0, 252), ['bug-buzz', 'quiver-dance', 'protect', 'heat-wave']),
+];
+
 // titre, nom, image (personnage d'Odyssée), type, équipe (null : pas encore prête)
 const C = (rang, cls, nom, sprite, type, equipe = null) => ({ rang, cls, nom, sprite, type, equipe });
 export const CHAMPIONS = [
@@ -115,10 +150,10 @@ export const CHAMPIONS = [
   C(16, 'Champion', 'Ferdinand', 'ferdinand', 'Acier', ACIER),
   C(17, 'Champion', 'Drakos', 'drakos', 'Dragon', DRAGON),
   C(18, 'Championne', 'Marine', 'marine', 'Eau', EAU),
-  C(19, 'Conseil 4', 'Frimas', 'frimas', null),
-  C(20, 'Conseil 4', 'Brutus', 'brutus', null),
-  C(21, 'Conseil 4', 'Spectrel', 'spectrel', null),
-  C(22, 'Conseil 4', 'Ombrelle', 'ombrelle', null),
+  C(19, 'Conseil 4', 'Frimas', 'frimas', 'Soleil', SOLEIL),
+  C(20, 'Conseil 4', 'Brutus', 'brutus', 'Relais', RELAIS),
+  C(21, 'Conseil 4', 'Spectrel', 'spectrel', 'Distorsion', DISTORSION),
+  C(22, 'Conseil 4', 'Ombrelle', 'ombrelle', 'Double', DOUBLE),
   C(23, 'Maître', 'Célestine', 'celestine', null),
 ];
 /** nom affiché : « Champion Corbin » ; ceux qui n'ont pas encore de nom : « Champion Combat » */

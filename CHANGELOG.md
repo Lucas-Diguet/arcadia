@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 5.42 — 14 novembre 2026
+- **TestOdyssée** — Place des Champions : les quatre membres du Conseil 4 ont leur équipe au niveau 100, et tu peux les emprunter comme celles des autres champions.
+  - Une équipe soleil, une équipe Relais, une équipe Distorsion et une équipe pensée pour le combat double (jouée en simple pour l'instant).
+  - Nouvelles attaques en combat : Relais, Anneau Hydro, Distorsion, Danse Lune et Gravité ; Bluff ne marche plus qu'au premier tour.
+  - Nouveaux objets : Poing de Boxe, Rosée Âme, Roche Chaude et Herbe Mental.
+
 ## 5.41 — 13 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : un pilleur vaincu ne te défie plus quand tu repasses dans son champ de vision.
 - **TestOdyssée** — Temple des Éléments : un dresseur vaincu dit qu'il te laisse ses affaires avant de te les donner.

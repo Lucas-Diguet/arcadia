@@ -158,7 +158,7 @@ export function installerIA() {
       const changer = (idx) => { this._iaChange = this.turn; return { type: 'switch', idx }; };
       const abP = this.talentCru(P);
       const opts = ok.map((k) => { const mv = MOVES[m.moves[k].id]; return { k, mv, u: uDe(mv), dmg: this.degats(1, 0, mv, abP), prio: this.prioDe(1, mv) }; });
-      const M = this.menace(), vite = this.stat(1, 5) > this.stat(0, 5), pv = m.hp, max = m.stats[0];
+      const M = this.menace(), vite = (this.stat(1, 5) > this.stat(0, 5)) !== (this.distorsion > 0), pv = m.hp, max = m.stats[0];
       const tombe = M.best >= pv, tranquille = M.best < pv * 0.45 && !tombe;
       const attaques = opts.filter((o) => o.dmg > 0).sort((a, b) => b.dmg - a.dmg);
       const meilleur = attaques[0];
@@ -174,6 +174,15 @@ export function installerIA() {
         if (vite || !tombe) return pick(tuent.sort((a, b) => (b.mv.a ?? 100) - (a.mv.a ?? 100))[0].k);
         if (prio) return pick(prio.k);
       }
+      // Relais : ce qu'il a gagné part au suivant (quand il en a assez, ou avant de tomber)
+      const crans = v.st.reduce((a, x) => a + Math.max(0, x), 0), relaisB = opts.find((o) => o.u === 'relais-baton');
+      if (relaisB && banc && (crans >= 3 || (crans >= 1 && (tombe || v.clone)))) return pick(relaisB.k);
+      // Danse Lune : il se sacrifie pour soigner le suivant
+      const lune = opts.find((o) => o.u === 'danse-lune');
+      if (lune && banc && (tombe || pv < max * 0.3) && s.party.some((q, k) => k !== s.active && q.hp > 0 && (q.hp < q.stats[0] * 0.7 || q.status))) return pick(lune.k);
+      // Distorsion : le plus lent la pose dès qu'il peut
+      const dist = opts.find((o) => o.u === 'distorsion');
+      if (dist && !(this.distorsion > 0) && this.stat(1, 5) < this.stat(0, 5) && !tombe) return pick(dist.k);
       // 2. il va tomber : Prélèvem. Destin, changer, ou frapper le plus fort possible
       if (tombe) {
         const lien = opts.find((o) => o.u === 'prelevement');
@@ -208,6 +217,8 @@ export function installerIA() {
         if ((o = has((q) => SOIN.has(q.mv.key) || q.u === 'atterrissage')) && pv < max * 0.55 && M.best < max * 0.45) return pick(o.k);
         if ((o = has((q) => q.u === 'aromatherapie')) && s.party.some((q) => q.hp > 0 && q.status)) return pick(o.k);
         if ((o = has((q) => q.u === 'vent-arriere')) && !s.vent) return pick(o.k);
+        if ((o = has((q) => q.u === 'anneau-hydro')) && !v.anneau) return pick(o.k);
+        if ((o = has((q) => q.u === 'gravite')) && !(this.gravite > 0) && m.moves.some((q) => MOVES[q.id]?.a && MOVES[q.id].a < 80)) return pick(o.k);
         if ((o = has((q) => q.u === 'clonage')) && !v.clone && pv > max * 0.6 && tranquille) return pick(o.k);
         if ((o = has((q) => q.u === 'provoc')) && !this.sides[0].v.provoc && [...this.vu(P).moves].some((id) => MOVES[id]?.c === 'status')) return pick(o.k);
         if (!stP && this.ab(0) !== 'magic-guard') {
@@ -220,7 +231,7 @@ export function installerIA() {
         // boost : seulement s'il encaisse deux coups et qu'il ne peut pas déjà achever
         const boost = (q) => q.mv.c === 'status' && (q.u === 'malediction' && !SPECIES[m.sp].t.includes('ghost') || (q.mv.m?.st || []).every(([, c]) => c > 0) && (q.mv.m?.st || []).length && (q.mv.tg === 7 || q.mv.tg === 4));
         const cran = Math.max(v.st[1], v.st[3]);
-        if ((o = has(boost)) && M.best * 2 < pv && cran < 2 && pv > max * 0.6 && !(meilleur && meilleur.dmg >= P.hp)) return pick(o.k);
+        if ((o = has(boost)) && M.best * 2 < pv && cran < (relaisB ? 3 : 2) && pv > max * 0.6 && !(meilleur && meilleur.dmg >= P.hp)) return pick(o.k);
       }
       // 6. la plus forte attaque (Tour Rapide quand il y a des pierres de son côté, Demi-Tour quand le duel est perdu)
       if (attaques.length) {

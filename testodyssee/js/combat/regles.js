@@ -36,6 +36,11 @@ export const ATTAQUES_COMBAT = [
   A(57, 'surf', 'Surf', 'water', 'special', 90, 100, 15, { tg: 9 }),
   A(228, 'pursuit', 'Poursuite', 'dark', 'physical', 40, 100, 20, { m: { u: 'poursuite' } }),
   A(194, 'destiny-bond', 'Prélèvem. Destin', 'ghost', 'status', 0, null, 5, { tg: 7, m: { cat: 13, u: 'prelevement' } }),
+  A(226, 'baton-pass', 'Relais', 'normal', 'status', 0, null, 40, { tg: 7, m: { cat: 13, u: 'relais-baton' } }),
+  A(392, 'aqua-ring', 'Anneau Hydro', 'water', 'status', 0, null, 20, { tg: 7, m: { cat: 13, u: 'anneau-hydro' } }),
+  A(433, 'trick-room', 'Distorsion', 'psychic', 'status', 0, null, 5, { pr: -7, tg: 12, m: { cat: 13, u: 'distorsion' } }),
+  A(461, 'lunar-dance', 'Danse Lune', 'psychic', 'status', 0, null, 10, { tg: 7, m: { cat: 13, u: 'danse-lune' } }),
+  A(356, 'gravity', 'Gravité', 'psychic', 'status', 0, null, 5, { tg: 12, m: { cat: 13, u: 'gravite' } }),
 ];
 // objets tenus qui manquent à Odyssée
 const O = (name, price, desc) => ({ pocket: 'objets', price, name, desc: 'Objet à tenir. ' + desc });
@@ -47,6 +52,10 @@ export const OBJETS_COMBAT = {
   'toxic-orb': O('Orbe Toxique', 4000, 'À la fin du tour, le porteur est gravement empoisonné.'),
   'damp-rock': O('Roche Humide', 4000, 'La pluie lancée par le porteur dure 8 tours au lieu de 5.'),
   'expert-belt': O('Ceinture Pro', 4000, 'Les attaques super efficaces du porteur sont 20 % plus fortes.'),
+  'punching-glove': O('Poing de Boxe', 4000, 'Les attaques de poing du porteur sont 10 % plus fortes.'),
+  'soul-dew': O('Rosée Âme', 10000, 'Portée par Latios ou Latias, renforce de 20 % leurs attaques Dragon et Psy.'),
+  'heat-rock': O('Roche Chaude', 4000, 'Le soleil lancé par le porteur dure 8 tours au lieu de 5.'),
+  'mental-herb': O('Herbe Mental', 4000, 'Libère une fois le porteur de la Provoc ou d\'une entrave.'),
 };
 for (const [k, o] of Object.entries(OBJETS_COMBAT)) o.hold = k;
 
@@ -84,7 +93,7 @@ export function installerRegles() {
   for (const mv of ATTAQUES_COMBAT) if (!Object.values(MOVES).some((q) => q.key === mv.key)) MOVES[mv.id] = mv;
   for (const [k, o] of Object.entries(OBJETS_COMBAT)) ITEMS[k] ||= o;
   const B = Battle.prototype, orig = {};
-  for (const k of ['resolve', 'playerSwitch', 'playerAction', 'foeChoose', 'useMove', 'special', 'statusMove', 'inflict', 'boost', 'hp', 'stat', 'effOn', 'moveType', 'movePower', 'damageCore', 'doSwitch', 'checkFaints', 'endOfTurn', 'triggerEntry', 'doMega', 'end', 'start']) orig[k] = B[k];
+  for (const k of ['hits', 'resolve', 'playerSwitch', 'playerAction', 'foeChoose', 'useMove', 'special', 'statusMove', 'inflict', 'boost', 'hp', 'stat', 'effOn', 'moveType', 'movePower', 'damageCore', 'doSwitch', 'checkFaints', 'endOfTurn', 'triggerEntry', 'doMega', 'end', 'start']) orig[k] = B[k];
   // seulement le combat ordinaire (pas les duels entre joueurs ni les combats à plusieurs du labo) : les changements en plein tour
   const simple = (b) => Object.getPrototypeOf(b) === B;
   const banc = (b, i) => b.sides[i].party.findIndex((m, k) => k !== b.sides[i].active && m.hp > 0);
@@ -175,7 +184,9 @@ export function installerRegles() {
         const mv = MOVES[x.a.id], id = this.ab(x.i);
         return mv.pr + ((id === 'prankster' && mv.c === 'status') || (id === 'gale-wings' && mv.t === 'flying') ? 1 : 0);
       };
-      movers.sort((p, q) => prio(q) - prio(p) || this.stat(q.i, 5) - this.stat(p.i, 5) || this.tie(p, q));
+      // Distorsion : les plus lents agissent d'abord (dans une même priorité)
+      const sens = this.distorsion > 0 ? -1 : 1;
+      movers.sort((p, q) => prio(q) - prio(p) || sens * (this.stat(q.i, 5) - this.stat(p.i, 5)) || this.tie(p, q));
       movers.forEach((x, n) => { x.first = n === 0 && movers.length === 2; x.actif = this.sides[x.i].active; });
       if (this.jouerSuite(movers)) return;
       if (this.state !== 'over') this.endOfTurn();
@@ -231,6 +242,8 @@ export function installerRegles() {
       if (u !== 'prelevement') v.lien = false;
       // Provoc ou entrave reçue pendant le tour : l'attaque ne part pas
       if ((mv.c === 'status' && v.provoc > 0) || v.entrave?.id === mv.id) { this.say(this.interdit(i, mv.id) || 'Mais cela échoue !'); return; }
+      // Bluff : seulement au premier tour du Pokémon sur le terrain
+      if (mv.key === 'fake-out' && v.turns > 0) { this.say(`${this.Nm(i)} utilise ${mv.n} !`); this.say('Mais cela échoue !'); v.turns++; return; }
       // Déclic Tactique : Forme Assaut pour attaquer, Forme Parade avec le Bouclier Royal
       if (this.ab(i) === 'stance-change' && (m.formeDe || m.sp) === EXAGIDE) {
         if (mv.c !== 'status' && !v.lame) { v.lame = true; changerForme(m, forme(EXAGIDE, { b: LAME })); this.say(`${this.Nm(i)} passe en Forme Assaut !`); }
@@ -290,9 +303,12 @@ export function installerRegles() {
           this.sides[cible].roc = true; this.say(cible === 0 ? 'Des pierres pointues s\'éparpillent autour de votre équipe !' : 'Des pierres pointues s\'éparpillent autour de l\'équipe adverse !'); return true;
         }
         case 'provoc': {
-          const c = renvoi() ? i : d, cv = this.sides[c].v;
+          const c = renvoi() ? i : d, cv = this.sides[c].v, C = this.act(c);
           if (cv.provoc > 0 || (c === d && this._cible?.actif)) return echec();
-          cv.provoc = 3; this.say(`${this.Nm(c)} est provoqué !`); return true;
+          cv.provoc = 3; this.say(`${this.Nm(c)} est provoqué !`);
+          // Herbe Mental : libère tout de suite, une fois
+          if (C?.item === 'mental-herb') { cv.provoc = 0; (this._perdus ||= []).push([C, C.item]); C.item = null; this.say(`L'Herbe Mental de ${this.nm(c)} le libère de la Provoc !`); }
+          return true;
         }
         case 'clonage': {
           const cout = Math.floor(m.stats[0] / 4);
@@ -332,6 +348,26 @@ export function installerRegles() {
           try { this.doSwitch(c, l[this.r(l.length)], true); } finally { this._impose = false; }
           return true;
         }
+        case 'relais-baton': {
+          // Relais : le lanceur revient, son remplaçant garde ses changements de stats, son clone et son Anneau Hydro
+          if (!simple(this) || banc(this, i) < 0) return echec();
+          (this._relais ||= {})[i] = { st: v.st.slice(), clone: v.clone || 0, anneau: !!v.anneau };
+          this.say(`${this.Nm(i)} passe le relais !`);
+          if (i === 1) this.doSwitch(1, this.remplacant(), false); else this._pivotJoueur = true;
+          return true;
+        }
+        case 'anneau-hydro':
+          if (v.anneau) return echec();
+          v.anneau = true; this.say(`${this.Nm(i)} s'entoure d'un voile d'eau !`); return true;
+        case 'distorsion':
+          if (this.distorsion > 0) { this.distorsion = 0; this.say('L\'espace redevient normal !'); return true; }
+          this.distorsion = 5; this.say(`${this.Nm(i)} tord l'espace ! Les plus lents agiront en premier.`); return true;
+        case 'gravite':
+          if (this.gravite > 0) return echec();
+          this.gravite = 5; this.say('La gravité s\'intensifie !'); return true;
+        case 'danse-lune':
+          if (banc(this, i) < 0) return echec();
+          this.sides[i].danseLune = true; this.say(`${this.Nm(i)} danse sous la lune...`); this.hp(i, -m.hp); return true;
         case 'tour-rapide':
           if (this.sides[i].roc || v.seed || v.trap) { this.sides[i].roc = false; v.seed = false; v.trap = 0; this.say(`${this.Nm(i)} se libère de ce qui l'entoure !`); }
           return false;
@@ -394,7 +430,7 @@ export function installerRegles() {
     },
     effOn(a, d, type) {
       const v = this.sides[d].v, t = SPECIES[this.act(d).sp].t;
-      if (v.atterri && t.includes('flying')) return typeEff(type, t.filter((q) => q !== 'flying').length ? t.filter((q) => q !== 'flying') : ['normal']);
+      if ((v.atterri || (this.gravite > 0 && type === 'ground')) && t.includes('flying')) return typeEff(type, t.filter((q) => q !== 'flying').length ? t.filter((q) => q !== 'flying') : ['normal']);
       return orig.effOn.call(this, a, d, type);
     },
     moveType(i, mv) {
@@ -411,6 +447,8 @@ export function installerRegles() {
       if (u === 'gyroballe') return Math.max(1, Math.min(150, Math.floor(25 * this.stat(d, 5) / Math.max(1, this.stat(i, 5))) + 1));
       let p = orig.movePower.call(this, i, d, mv);
       if (mv.key === 'acrobatics' && !m.item) p *= 2;
+      // Force Ajoutée : 20, plus 20 par cran de stat gagné
+      if (mv.key === 'stored-power') p = 20 + 20 * this.sides[i].v.st.reduce((a, x) => a + Math.max(0, x), 0);
       if (u === 'sabotage' && otable(T)) p = Math.floor(p * 1.5);
       if (u === 'poursuite' && this._poursuite) p *= 2;
       return p;
@@ -425,6 +463,8 @@ export function installerRegles() {
       if (aId === 'pixilate' && mv.t === 'normal' && type === 'fairy') f *= 1.2;
       if (aId === 'tough-claws' && mv.c === 'physical') f *= 1.3;
       if (A.item === 'expert-belt' && this.effOn(a, d, type) > 1) f *= 1.2;
+      if (A.item === 'punching-glove' && /punch/.test(mv.key || '')) f *= 1.1;
+      if (A.item === 'soul-dew' && (A.formeDe || A.sp) >= 380 && (A.formeDe || A.sp) <= 381 && (type === 'dragon' || type === 'psychic')) f *= 1.2;
       return f === 1 ? dmg : Math.max(1, Math.floor(dmg * f));
     },
 
@@ -433,8 +473,16 @@ export function installerRegles() {
       const out = this.act(i);
       if (out) formeDeBase(out);
       orig.doSwitch.call(this, i, idx, afterFaint, trigger);
-      // Piège de Roc : blesse en arrivant, selon l'efficacité de la Roche
       const m = this.act(i);
+      // Relais : ce que le Pokémon précédent avait gagné passe au nouveau
+      const R = this._relais?.[i];
+      if (R) { delete this._relais[i]; const v = this.sides[i].v; v.st = R.st; if (R.clone) v.clone = R.clone; if (R.anneau) v.anneau = true; this.ev.push({ t: 'stat', side: i, up: true, all: this.stages() }); }
+      // Danse Lune : le suivant arrive soigné de tout
+      if (this.sides[i].danseLune && m && !isFainted(m)) {
+        this.sides[i].danseLune = false; m.hp = m.stats[0]; m.status = null; m.slp = 0; m.tox = 0; for (const q of m.moves) q.pp = MOVES[q.id]?.pp ?? q.pp;
+        this.ev.push({ t: 'hp', side: i, hp: m.hp, from: 0, status: null }); this.say(`${this.Nm(i)} est baigné d'un clair de lune mystique et se sent revigoré !`);
+      }
+      // Piège de Roc : blesse en arrivant, selon l'efficacité de la Roche
       if (this.sides[i].roc && m && !isFainted(m) && this.ab(i) !== 'magic-guard') {
         const n = Math.max(1, Math.floor(m.stats[0] * typeEff('rock', SPECIES[m.sp].t) / 8));
         this.hp(i, -n); this.say(`Des pierres pointues blessent ${this.nm(i)} !`);
@@ -454,6 +502,11 @@ export function installerRegles() {
         this.weatherTurns = 8;
         const e = [...this.ev].reverse().find((q) => q.t === 'weather'); if (e) e.turns = 8;
       }
+      // Roche Chaude : le soleil du porteur dure 8 tours
+      if (m && this.ab(side) === 'drought' && m.item === 'heat-rock' && this.weather === 'sun' && this.weatherTurns === 5) {
+        this.weatherTurns = 8;
+        const e = [...this.ev].reverse().find((q) => q.t === 'weather'); if (e) e.turns = 8;
+      }
     },
     endOfTurn() {
       orig.endOfTurn.call(this);
@@ -466,6 +519,7 @@ export function installerRegles() {
           const w = s.voeu; s.voeu = null;
           if (m && !isFainted(m) && m.hp < m.stats[0]) { this.say(`Le vœu de ${w.nom} se réalise !`); this.hp(i, w.pv); }
         }
+        if (v.anneau && m && !isFainted(m) && m.hp < m.stats[0]) { this.say(`L'Anneau Hydro soigne ${this.nm(i)} !`); this.hp(i, Math.max(1, Math.floor(m.stats[0] / 16))); }
         if (s.vent && --s.vent <= 0) { s.vent = 0; this.say(i === 0 ? 'Le vent arrière de votre équipe retombe.' : 'Le vent arrière de l\'équipe adverse retombe.'); }
         if (!m || isFainted(m)) continue;
         if (v.maudit && this.ab(i) !== 'magic-guard') { this.say(`${this.Nm(i)} est touché par la malédiction !`); this.hp(i, -Math.max(1, Math.floor(m.stats[0] / 4))); if (isFainted(m)) { ko = true; continue; } }
@@ -474,7 +528,14 @@ export function installerRegles() {
         // Orbe Toxique
         if (m.item === 'toxic-orb' && !m.status && !SPECIES[m.sp].t.some((t) => t === 'poison' || t === 'steel')) { this.say(`L'Orbe Toxique de ${this.nm(i)} s'active !`); this.inflict(i, 'psn', { key: 'toxic' }, true); }
       }
+      if (this.distorsion > 0 && --this.distorsion === 0) this.say('L\'espace redevient normal.');
+      if (this.gravite > 0 && --this.gravite === 0) this.say('La gravité redevient normale.');
       if (ko) this.checkFaints();
+    },
+    /** Gravité : les attaques visent mieux (précision × 5/3) */
+    hits(i, d, mv) {
+      if (this.gravite > 0 && mv.a != null) return orig.hits.call(this, i, d, { ...mv, a: Math.min(100, mv.a * 5 / 3) });
+      return orig.hits.call(this, i, d, mv);
     },
     doMega(i) {
       orig.doMega.call(this, i);

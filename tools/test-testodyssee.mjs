@@ -1576,14 +1576,25 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   const mk = (sp, moves, o = {}) => { const m = createMon(sp, 100, { iv: Array(6).fill(31), nat: 12, moves: moves.map((k) => Object.values(MOVES).find((q) => q.key === k).id), shiny: false, ...o }); return m; };
   const combat = (moi, lui, o = {}) => { const b = new BattleT({ rng: R(o.seed), player: { name: 'Test', party: moi }, foe: { name: 'Champion', party: lui, trainer: { cls: 'Champion', name: 'Test', items: {}, ai: 'smart', ...o.tr } } }); b.start(); return b; };
   const id = (k) => Object.values(MOVES).find((q) => q.key === k)?.id;
-  ok(['stealth-rock', 'taunt', 'knock-off', 'u-turn', 'sludge-wave', 'substitute', 'heavy-slam', 'rapid-spin', 'grass-knot', 'curse', 'wish', 'aromatherapy', 'sucker-punch', 'roost', 'dazzling-gleam', 'gyro-ball', 'tailwind', 'kings-shield', 'draco-meteor', 'surf', 'pursuit', 'destiny-bond'].every(id), 'combat du labo : les attaques ajoutées existent');
-  ok(['assault-vest', 'eject-button', 'weakness-policy', 'light-clay', 'toxic-orb', 'damp-rock', 'expert-belt'].every((k) => ITEMS[k]?.name), 'combat du labo : les objets ajoutés existent');
-  ok(CHAMPIONS.length === 23 && CHAMPIONS.filter((c) => c.equipe).length === 9 && CHAMPIONS.map((c) => c.rang).join() === Array.from({ length: 23 }, (_, i) => i + 1).join(), 'Place des Champions : 23 champions dans l\'ordre, 9 équipes prêtes');
+  ok(['stealth-rock', 'taunt', 'knock-off', 'u-turn', 'sludge-wave', 'substitute', 'heavy-slam', 'rapid-spin', 'grass-knot', 'curse', 'wish', 'aromatherapy', 'sucker-punch', 'roost', 'dazzling-gleam', 'gyro-ball', 'tailwind', 'kings-shield', 'draco-meteor', 'surf', 'pursuit', 'destiny-bond', 'baton-pass', 'aqua-ring', 'trick-room', 'lunar-dance', 'gravity', 'sunny-day', 'bullet-seed'].every(id), 'combat du labo : les attaques ajoutées existent');
+  ok(['assault-vest', 'eject-button', 'weakness-policy', 'light-clay', 'toxic-orb', 'damp-rock', 'expert-belt', 'punching-glove', 'soul-dew', 'heat-rock', 'mental-herb'].every((k) => ITEMS[k]?.name), 'combat du labo : les objets ajoutés existent');
+  ok(CHAMPIONS.length === 23 && CHAMPIONS.filter((c) => c.equipe).length === 13 && CHAMPIONS.map((c) => c.rang).join() === Array.from({ length: 23 }, (_, i) => i + 1).join(), 'Place des Champions : 23 champions dans l\'ordre, 13 équipes prêtes (dont le Conseil 4)');
   ok(CHAMPIONS[1].type === 'Poison' && CHAMPIONS[2].type === 'Normal' && CHAMPIONS[17].type === 'Eau', 'Place des Champions : Poison 2e, Normal 3e, Eau 18e');
   for (const c of CHAMPIONS.filter((q) => q.equipe)) {
     const t = equipeChampion(c);
-    ok(t.length === 6 && t.every((m) => m.lvl === 100 && m.iv.every((v) => v === 31) && m.moves.length === 4 && m.item && m.ability), `Place des Champions : ${c.type}, six Pokémon niveau 100, IV 31, quatre attaques, objet et talent`);
+    ok(t.length === 6 && t.every((m, k) => m.lvl === 100 && m.iv.join() === (c.equipe[k].iv || Array(6).fill(31)).join() && m.moves.length === 4 && m.item && m.ability), `Place des Champions : ${c.type}, six Pokémon niveau 100, IV voulus, quatre attaques, objet et talent`);
   }
+  // Relais : les crans passent au suivant
+  { const a = mk(143, ['splash']), d = mk(291, ['baton-pass']), d2 = mk(143, ['splash']); const b = combat([a], [d, d2], { tr: { ai: 'normal' } });
+    b.sides[1].v.st[1] = 2; b.foeChoose = () => ({ type: 'move', id: id('baton-pass'), slot: 0 }); b.playerAction({ type: 'move', idx: 0 });
+    ok(b.sides[1].active === 1 && b.sides[1].v.st[1] === 2, 'combat du labo : Relais passe les crans au remplaçant'); }
+  // Distorsion : le plus lent frappe d'abord
+  { const a = mk(291, ['tackle']), d = mk(80, ['trick-room', 'tackle']); const b = combat([a], [d], { tr: { ai: 'normal' } });
+    b.distorsion = 3; b.foeChoose = () => ({ type: 'move', id: id('tackle'), slot: 1 }); const ev = b.playerAction({ type: 'move', idx: 0 });
+    const k = ev.findIndex((e) => /utilise Charge/.test(e.text || '')); ok(k >= 0 && /Flagadoss/.test(ev[k].text), 'combat du labo : sous Distorsion, le plus lent agit d\'abord'); }
+  // Bluff : seulement au premier tour
+  { const a = mk(143, ['splash']), d = mk(678, ['fake-out']); const b = combat([a], [d], { tr: { ai: 'normal' } }); b.foeChoose = () => ({ type: 'move', id: id('fake-out'), slot: 0 });
+    b.playerAction({ type: 'move', idx: 0 }); const hp = a.hp; b.playerAction({ type: 'move', idx: 0 }); ok(a.hp === hp, 'combat du labo : Bluff échoue après le premier tour'); }
   // Sabotage : objet tombé, plus fort, rendu après le combat
   { const a = mk(461, ['knock-off']), d = mk(143, ['splash'], { item: 'leftovers' }); const b = combat([a], [d]); b.playerAction({ type: 'move', idx: 0 }); ok(d.item === null, 'combat du labo : Sabotage fait tomber l\'objet'); b.end('win'); ok(d.item === 'leftovers', 'combat du labo : l\'objet revient après le combat'); }
   // Demi-Tour du joueur : il choisit qui le remplace, le tour continue

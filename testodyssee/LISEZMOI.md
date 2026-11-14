@@ -516,7 +516,11 @@ d'arène (Insecte, Poison, Normal, Plante, Roche, Glace, Électrik, Psy, Combat,
 Acier, Dragon, Eau), le Conseil 4 et le Maître. On parle à un champion pour l'affronter : tout le monde au niveau 100,
 IV à 31, soin complet sans message après le combat (objets tenus compris). Un champion sans équipe (`equipe: null`)
 dit que son équipe n'est pas prête. L'organisatrice prête l'équipe « fin de jeu » au niveau 100 (`fin100` de
-`equipes.js`) ou celle d'un champion. Une équipe : `P(espèce, objet, talent, nature, EV, attaques, { pc, shiny })`.
+`equipes.js`) ou celle d'un champion. Une équipe : `P(espèce, objet, talent, nature, EV, attaques, { pc, shiny, iv })`
+(`iv` quand ils ne sont pas tous à 31). Le Conseil 4 a ses équipes : Soleil (Frimas), Relais (Brutus), Distorsion (Spectrel)
+et Double (Ombrelle, pensée pour un combat double mais jouée en simple tant que le moteur ne sait pas faire les doubles).
+Règles ajoutées pour elles dans `combat/regles.js` : Relais, Anneau Hydro, Distorsion, Danse Lune, Gravité, Force Ajoutée
+selon les crans, Bluff au premier tour seulement, Poing de Boxe, Rosée Âme, Roche Chaude, Herbe Mental.
 
 ### Les arènes (prototypes)
 
