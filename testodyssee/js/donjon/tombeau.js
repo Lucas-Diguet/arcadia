@@ -588,7 +588,7 @@ export const Tombeau = {
         'Eh oui, hé hé ! Les gardiens ne le savent pas : ils occupent les étages -1 et -2, mais sous leurs pieds, le tombeau est infesté de bandits et de pillards en tout genre !',
         'J\'ai fait partie de leur bande, dans le temps... Mais bon, ce n\'est pas le sujet !',
         'Passons au plan : tu dois descendre tout au fond du tombeau et trouver la sépulture. Le trésor se trouve sûrement dedans.',
-        '« Mais c\'est super simple ! », tu vas me répondre. Hé hé, c\'est vrai. Mais il y a un petit problème, et de taille.',
+        '« Mais c\'est super simple ! », tu vas me répondre. Hé hé, c\'est vrai. Mais il y a un petit problème.',
         'Pour ouvrir cette dernière salle, il te faut le sceptre du roi. Et malheureusement, il est dangereusement défendu par les gardiens, au -1.',
         'Il faudra donc d\'abord remonter les étages pour le voler, puis redescendre tout en bas.',
         dejaCle ? 'Mais ne t\'inquiète pas, j\'ai un atout dans ma manche : la clé que je t\'ai donnée.' : 'Mais ne t\'inquiète pas, j\'ai quand même un atout dans ma manche : tiens, prends cette clé.'],

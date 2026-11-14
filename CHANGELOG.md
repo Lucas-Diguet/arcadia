@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 5.48 — 14 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : une réplique du ruinemaniac est raccourcie.
+
 ## 5.47 — 14 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la sépulture est complète.
   - Cinq vrais casse-têtes rallument les brasiers : un puzzle à neuf pièces, un solitaire, les tours de Hanoï, un blocage où il faut sortir le sarcophage d'or, et des dalles-soleils à allumer.
