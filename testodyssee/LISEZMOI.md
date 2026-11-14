@@ -750,6 +750,31 @@ modifier à la main). Images :
 `python3 tools/tombeau-images.py` (`img/tombeau/`). Le Pendentif Maudit et le Monocle de Vérité (objets de
 `contenu.js`, action `artefact` d'`etat.js`) sont gardés pour un autre donjon.
 
+### Le Bois des Contes
+
+Seul ou à plusieurs, sans mécanique de groupe (`joueurs: groupe`, `contes: true`), niveaux 40 à 45. Plans dans
+`js/donjons/contes.js`, mécaniques dans `js/donjon/contes.js`. Les salles en plein air (`dehors: true` d'une salle :
+sol d'herbe ou `solDehors`, murs d'arbres ou de haies `mur`, `zoneOpts` pour la zone : thème, ombre, Pokémon sauvages)
+sont prises en charge par `donjon/plan.js`. Passages (`lien`, comme au Tombeau) ; une `maison` est un bâtiment
+d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
+- Labyrinthe des Haies (`lab`, 49 × 49, généré) : entrée en bas depuis l'Orée des Contes, clairière vide au centre, cinq
+  sorties avec leur pancarte (Hansel et Gretel, Chaperon rouge, Pinocchio, Jack, Boucle d'or).
+- Hansel et Gretel (`hg0` à `hg4`) : la clairière et la maison en pain d'épice (rez-de-chaussée, étage, grenier, cave).
+  La vieille dame demande quatre services (`service` : grimoire, lunettes, louche, sucre), puis attend à la cuisine,
+  attaque (`sorciere` : hall, cuisine) ; battue, sa clé ouvre la cage des enfants. Le scénario entre l'entrée et
+  l'attaque est à écrire (dialogues provisoires).
+- Le Petit Chaperon rouge (`cr1` à `cr4`) : deux salles de forêt sombre (60 × 45, générées : allées, clairières, hautes
+  herbes, dresseurs qui restent après leur défaite), la clairière, la maison de Mère-Grand (le loup dans le lit,
+  combat ; Mère-Grand dans l'armoire).
+- Jack et le haricot magique (`jk0` à `jk3`) : le potager, la tige (générée : le vide `_`, feuilles fragiles `ᶠ` qui
+  tombent une fois quittées et repoussent après une chute, paliers `ᴘ`), les nuages, le château du géant endormi
+  (plancher qui grince `ᴄ` : au troisième bruit il se réveille et attaque), la poule aux œufs d'or.
+- Pinocchio (`pn0` à `pn4`) : la plage, la gorge (le souffle de la baleine repousse au dernier abri `ᴀ` qui n'y est
+  pas), l'estomac (les épaves `ᴇ` s'enfoncent si l'on s'y arrête), l'épave (quatre matelots de bois, un menteur
+  dont le nez s'allonge si on lui demande « Tu es sûr ? », la clé dans un des quatre coffres, la marionnette
+  Fil-de-Fer), la cabine de Geppetto (le bûcher, l'éternuement, retour sur la plage).
+- Boucle d'or (`bo0`) : la maison des trois ours, fermée pour l'instant.
+
 ### Le Mont Givrécime
 
 Une montagne enneigée pour l'aventure solo, pas un donjon : ni groupe, ni boss, ni état partagé. Dix grandes salles

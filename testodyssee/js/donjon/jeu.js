@@ -21,6 +21,7 @@ import { Mine } from './mine.js';
 import { Train } from './train.js';
 import { Temple } from './temple.js';
 import { Tombeau } from './tombeau.js';
+import { Contes } from './contes.js';
 import { Fonderie } from './fonderie.js';
 import { Cristal } from './cristal.js';
 import { Arenes } from './arenes.js';
@@ -46,7 +47,7 @@ export class Donjons {
       for (const c of cartes) game.world.maps[c.id] = c;
       const dehors = relierExterieur(d, m);
       if (dehors) game.world.maps[dehors.id] = dehors;
-      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); this.poserObjetsFonderie(d, c); this.poserObjetsCristal(d, c); this.poserObjetsArenes(d, c); }
+      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); this.poserObjetsContes(d, c); this.poserObjetsFonderie(d, c); this.poserObjetsCristal(d, c); this.poserObjetsArenes(d, c); }
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -128,6 +129,7 @@ export class Donjons {
     this.appliquerTrain(d);
     this.appliquerTemple(d);
     this.appliquerTombeau(d);
+    this.appliquerContes(d);
     this.appliquerFonderie(d);
     if (ici) g.refreshNpcs();
     const vu = this.vus[id];
@@ -320,6 +322,7 @@ export class Donjons {
     this.tickTrain(dt);
     this.tickTemple(dt);
     this.tickTombeau(dt);
+    this.tickContes(dt);
     this.tickFonderie(dt);
     this.tickCristal(dt);
     this.tickArenes(dt);
@@ -361,7 +364,7 @@ export class Donjons {
       if (s.pourVoies && voie && !s.pourVoies.includes(voie)) continue;
       if (!this.salleVisibleTemple(d, s)) continue;
       // le tombeau a dix salles : seulement celle où l'on est
-      if (d.tombeau && s.carte !== g.mapObj?.id) continue;
+      if ((d.tombeau || d.contes) && s.carte !== g.mapObj?.id) continue;
       const S = e.salles[s.id];
       let txt = '';
       if (s.type === 'accueil') txt = S.faite ? 'ouverte' : 'parle au gardien';
@@ -383,6 +386,7 @@ export class Donjons {
       if (this.texteTrain(d, s)) txt = this.texteTrain(d, s);
       if (this.texteTemple(d, s)) txt = this.texteTemple(d, s);
       if (this.texteTombeau(d, s)) txt = this.texteTombeau(d, s);
+      if (this.texteContes(d, s)) txt = this.texteContes(d, s);
       if (this.texteFonderie(d, s)) txt = this.texteFonderie(d, s);
       if (this.texteCristal(d, s)) txt = this.texteCristal(d, s);
       if (s.type === 'voies' && !voie) { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
@@ -476,4 +480,4 @@ export class Donjons {
   }
 }
 
-Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau, Fonderie, Cristal, Arenes);
+Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau, Contes, Fonderie, Cristal, Arenes);

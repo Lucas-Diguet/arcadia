@@ -49,11 +49,13 @@ export function lirePlan(def) {
 /** construit la carte du donjon ; les portes sont posées fermées */
 export function construireCarte(def) {
   const P = lirePlan(def);
-  const m = new GameMap(def.carte, P.w, P.h, { outdoor: false, fill: T.CAVEWALL, floor: 'cave', music: def.musique || 'cave', name: def.nom, battleBg: 'cave' });
-  m.edge = T.CAVEWALL;
-  for (const [x, y] of P.sol) m.set(x, y, T.CAVE);
-  if (P.sortie) m.set(...P.sortie, T.CAVEWALL);   // fermée tant qu'aucun extérieur ne la relie
-  if (P.suivante) m.set(...P.suivante, T.CAVEWALL); // fermée tant que la salle n'est pas terminée
+  // une salle en plein air (def.dehors) : sol d'herbe (def.solDehors), murs d'arbres ou de haies (def.mur)
+  const dehors = !!def.dehors, MUR = dehors ? T[def.mur || 'TREE'] : T.CAVEWALL, SOL = dehors ? T[def.solDehors || 'GRASS'] : T.CAVE;
+  const m = new GameMap(def.carte, P.w, P.h, dehors ? { outdoor: true, fill: MUR, name: def.nom, music: def.musique || 'route' } : { outdoor: false, fill: T.CAVEWALL, floor: 'cave', music: def.musique || 'cave', name: def.nom, battleBg: 'cave' });
+  m.edge = dehors ? T.TREE : T.CAVEWALL;
+  for (const [x, y] of P.sol) m.set(x, y, SOL);
+  if (P.sortie) m.set(...P.sortie, MUR);   // fermée tant qu'aucun extérieur ne la relie
+  if (P.suivante) m.set(...P.suivante, MUR); // fermée tant que la salle n'est pas terminée
   for (const [k, x, y] of P.decor) m.prop(k, x, y);
   for (const [c, l] of Object.entries(P.objets)) {
     const o = def.objets[c];
@@ -90,8 +92,8 @@ export function construireSalles(def) {
   const cartes = def.salles.map((s, i) => {
     const id = i ? `${def.carte}:${s.id}` : def.carte;
     s.carte = id;
-    const m = construireCarte({ ...def, carte: id, plan: s.plan, salles: [], style: 'style' in s ? s.style : def.style });
-    m.zone(0, 0, m.w - 1, m.h - 1, { name: s.nom, music: s.musique || def.musique || 'cave', salle: s.id });
+    const m = construireCarte({ ...def, carte: id, plan: s.plan, salles: [], style: 'style' in s ? s.style : def.style, dehors: s.dehors, mur: s.mur, solDehors: s.solDehors });
+    m.zone(0, 0, m.w - 1, m.h - 1, { name: s.nom, music: s.musique || def.musique || 'cave', salle: s.id, ...(s.zoneOpts || {}) });
     m.salle = s.id;
     if (s.sol) m.solSalle = s.sol;   // sol d'une autre couleur que celui du style
     if (s.sombre) m.dark = 'arene';   // dans le noir, même avec Flash

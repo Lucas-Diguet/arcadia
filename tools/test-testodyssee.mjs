@@ -1578,6 +1578,38 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   }
 }
 
+/* ---------------- Bois des Contes ---------------- */
+{
+  const d = DONJONS.find((q) => q.id === 'contes'), cartes = construireSalles(d), dehors = relierExterieur(d, cartes[0]);
+  const M = Object.fromEntries(cartes.map((m) => [m.salle, m]));
+  ok(d.joueurs?.mode === 'groupe' && cartes[0].salle === 'lab' && dehors && dehors.warpAt(16, 1)?.map === cartes[0].id, 'contes : seul ou à plusieurs, on entre dans le labyrinthe depuis l\'Orée des Contes');
+  // chaque passage a son pendant, chaque maison sa porte vers une salle
+  const liens = Object.entries(d.objets).filter(([, o]) => o.type === 'lien' || (o.type === 'maison' && !o.ferme));
+  ok(liens.every(([c, o]) => { const s = d.salles.find((q) => q.id === o.vers); return s && M[s.id].donjon.plan.objets[o.cible] && cartes.some((m) => m.donjon.plan.objets[c]); }), 'contes : chaque passage et chaque porte mène quelque part');
+  ok(liens.filter(([, o]) => o.type === 'lien').every(([c, o]) => d.objets[o.cible].cible === c), 'contes : chaque passage a son pendant de l\'autre côté');
+  const sorties = ['α', 'β', 'γ', 'δ', 'ε'].filter((c) => M.lab.donjon.plan.objets[c]);
+  ok(sorties.length === 5 && sorties.every((c) => d.objets[c].conte), 'contes : le labyrinthe a cinq sorties, une par conte');
+  ok(M.lab.w >= 49 && M.cr1.w >= 60 && M.cr1.h >= 45 && M.cr2.w >= 60, 'contes : un grand labyrinthe, deux salles de forêt de la taille d\'une voie du Temple');
+  ok(['hg1', 'hg2', 'hg3', 'hg4'].every((id) => M[id]) && ['①', '②', '③', '④'].every((c) => cartes.some((m) => m.donjon.plan.objets[c])), 'contes : la maison de la sorcière a quatre niveaux et quatre services à rendre');
+  // de l'arrivée de chaque salle, on atteint ses passages, ses PNJ et ses objets (le vide de la tige et le suc de l'estomac ne se traversent pas)
+  for (const m of cartes) {
+    const P = m.donjon.plan;
+    for (const [c, l] of Object.entries(P.objets)) { const o = d.objets[c]; for (const [x, y] of l) { if (o.type === 'tuile') m.set(x, y, T[o.t]); if (o.type === 'vide') m.set(x, y, T.TREE); } }
+    const bloc = new Set(Object.entries(P.pnj).filter(([k]) => !d.pnj[k].marionnette).flatMap(([, l]) => l.map((p) => p.join())));
+    const v = new Set([P.depart.join()]), f = [P.depart];
+    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = x + dx, b = y + dy, k = a + ',' + b; if (v.has(k) || bloc.has(k) || !walkable(m.get(a, b))) continue; v.add(k); f.push([a, b]); } }
+    const pres = ([x, y]) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => v.has((x + dx) + ',' + (y + dy)));
+    const manque = [];
+    for (const [c, l] of Object.entries(P.objets)) { const o = d.objets[c]; if (['lien', 'maison', 'service', 'cage', 'poule', 'coffrePn', 'bucher', 'ramasser'].includes(o.type)) for (const p of l) if (!pres(p)) manque.push(c); }
+    for (const [k, l] of Object.entries(P.pnj)) if (!pres(l[0])) manque.push(k);
+    ok(!manque.length, `contes : ${m.salle}, tout est atteignable${manque.length ? ' (manque ' + manque.join(' ') + ')' : ''}`);
+  }
+  for (const p of Object.values(d.pnj)) for (const [sp, lvl] of p.equipe || []) ok(SPECIES[sp] && lvl >= 40 && lvl <= 47, `contes : ${p.nom} a des Pokémon valides, niveau 40 à 47`);
+  // la tige : des paliers, des feuilles fragiles ; la gorge : des abris ; l'estomac : des épaves
+  const compte = (id, c) => (M[id].donjon.plan.objets[c] || []).length;
+  ok(compte('jk1', 'ᴘ') >= 4 && compte('jk1', 'ᶠ') >= 10 && compte('pn1', 'ᴀ') >= 10 && compte('pn2', 'ᴇ') >= 20 && compte('jk3', 'ᴄ') >= 20, 'contes : paliers et feuilles fragiles de la tige, abris de la gorge, épaves de l\'estomac, plancher qui grince');
+}
+
 /* ---------------- règles de combat du labo ---------------- */
 {
   const { CHAMPIONS, equipeChampion } = await import('../testodyssee/js/champions.js');

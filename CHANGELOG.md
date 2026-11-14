@@ -1,5 +1,13 @@
 # Journal des versions — Arcadia
 
+## 5.51 — 15 novembre 2026
+- **TestOdyssée** — Nouveau donjon, le Bois des Contes, à faire seul ou à plusieurs : un grand labyrinthe de haies et, à ses cinq sorties, cinq contes.
+  - Hansel et Gretel : une grande maison en pain d'épice, une vieille dame qui demande des services... et un four bien chaud.
+  - Le Petit Chaperon rouge : une forêt sombre et ses dresseurs, puis une Mère-Grand aux bien grandes dents.
+  - Jack et le haricot magique : une tige aux feuilles qui cèdent, puis le château d'un géant qu'il ne faut pas réveiller.
+  - Pinocchio : le ventre d'une baleine, son souffle, ses épaves qui coulent, un matelot menteur et Geppetto.
+  - La maison de Boucle d'or est encore fermée.
+
 ## 5.50 — 14 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : les pilleurs battus restent là au lieu de disparaître, et ont un mot quand on leur parle.
   - Gros-Bras ne soigne plus tes Pokémon après sa défaite.
