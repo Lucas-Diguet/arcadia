@@ -5,6 +5,8 @@
 // l'IA le garde en vie et le renvoie quand la météo s'arrête) ; iv : les IV s'ils ne sont pas tous à 31 (PV/Atq/Déf/AtqSpé/DéfSpé/Vit).
 import { createMon, refreshStats, NATURES } from '../../odyssee/js/core/mon.js';
 import { MOVES } from '../../odyssee/js/data/moves.js';
+import { SPECIES } from '../../odyssee/js/data/species.js';
+import { TALENTS_ESPECES } from '../../odyssee/js/data/talents.js';
 
 const nature = (n) => { const k = NATURES.indexOf(n); if (k < 0) throw new Error('nature inconnue : ' + n); return k; };
 const attaque = (key) => { const m = Object.values(MOVES).find((q) => q.key === key); if (!m) throw new Error('attaque inconnue : ' + key); return m.id; };
@@ -94,11 +96,19 @@ const EAU = [
   P(184, 'choice-band', 'huge-power', 'Rigide', EV(0, 252, 0, 0, 0, 252), ['waterfall', 'play-rough', 'aqua-jet', 'superpower']),
 ];
 
+// Démétéros Forme Totémique : une forme du labo, invisible des listes, comme les Méga
+export const DEMETEROS_T = 10021;
+if (!Object.prototype.hasOwnProperty.call(SPECIES, DEMETEROS_T)) {
+  Object.defineProperty(SPECIES, DEMETEROS_T, { enumerable: false, configurable: true,
+    value: { ...SPECIES[645], k: 'landorus-therian', b: [89, 145, 90, 105, 80, 91], ev: [] } });
+  TALENTS_ESPECES[DEMETEROS_T] = ['intimidate', null, null];
+}
+
 // le Conseil 4 : le soleil, le Relais, la Distorsion, puis un combat double (joué en simple pour l'instant)
 const SANS_ATQ = [31, 0, 31, 31, 31, 31], SANS_ATQS = [31, 31, 31, 0, 31, 31], LENT = [31, 31, 31, 31, 31, 0], LENT_SPE = [31, 0, 31, 31, 31, 0];
 const SOLEIL = [
   P(6, 'charizardite-y', 'blaze', 'Timide', EV(4, 0, 0, 252, 0, 252), ['flamethrower', 'solar-beam', 'roost', 'focus-blast']),
-  P(3, 'life-orb', 'chlorophyll', 'Modeste', EV(252, 0, 0, 252, 0, 4), ['solar-beam', 'sunny-day', 'sludge-bomb', 'hidden-power'], { pc: { t: 'fire', p: 60 } }),
+  P(3, 'life-orb', 'chlorophyll', 'Modeste', EV(252, 0, 0, 252, 0, 4), ['solar-beam', 'sunny-day', 'sludge-bomb', 'weather-ball']),
   P(324, 'heat-rock', 'drought', 'Assuré', EV(248, 0, 252, 0, 8, 0), ['stealth-rock', 'lava-plume', 'rapid-spin', 'toxic'], { role: 'climat' }),
   P(149, 'weakness-policy', 'multiscale', 'Rigide', EV(252, 252, 0, 0, 0, 4), ['dragon-dance', 'dragon-claw', 'earthquake', 'extreme-speed']),
   P(485, 'choice-scarf', 'flash-fire', 'Timide', EV(0, 0, 0, 252, 4, 252), ['flash-cannon', 'fire-blast', 'dragon-pulse', 'earth-power']),
@@ -113,16 +123,16 @@ const RELAIS = [
   P(308, 'medichamite', 'pure-power', 'Jovial', EV(0, 252, 4, 0, 0, 252), ['drain-punch', 'fire-punch', 'zen-headbutt', 'baton-pass'], { iv: SANS_ATQS }),
 ];
 const DISTORSION = [
-  P(591, 'sitrus-berry', 'regenerator', 'Malpoli', EV(252, 0, 176, 0, 80, 0), ['toxic', 'protect', 'giga-drain', 'energy-ball'], { iv: LENT_SPE }),
-  P(80, 'leftovers', 'regenerator', 'Relax', EV(252, 0, 252, 0, 4, 0), ['ice-beam', 'trick-room', 'flamethrower', 'slack-off'], { iv: LENT_SPE }),
-  P(534, 'punching-glove', 'iron-fist', 'Brave', EV(252, 252, 4, 0, 0, 0), ['thunder-punch', 'drain-punch', 'knock-off', 'bulk-up'], { iv: LENT }),
+  P(591, 'sitrus-berry', 'regenerator', 'Malpoli', EV(252, 0, 176, 0, 80, 0), ['toxic', 'protect', 'giga-drain', 'spore'], { iv: LENT_SPE }),
+  P(80, 'leftovers', 'regenerator', 'Relax', EV(252, 0, 252, 0, 4, 0), ['psychic', 'trick-room', 'scald', 'slack-off'], { iv: LENT_SPE }),
+  P(534, 'flame-orb', 'guts', 'Rigide', EV(0, 252, 0, 0, 4, 252), ['close-combat', 'facade', 'knock-off', 'mach-punch']),
   P(488, 'leftovers', 'levitate', 'Malpoli', EV(252, 0, 252, 4, 0, 0), ['lunar-dance', 'trick-room', 'psychic', 'moonblast'], { iv: LENT_SPE }),
   P(214, 'heracronite', 'swarm', 'Brave', EV(252, 252, 4, 0, 0, 0), ['pin-missile', 'close-combat', 'rock-blast', 'bullet-seed'], { iv: LENT }),
   P(579, 'focus-sash', 'magic-guard', 'Discret', EV(252, 0, 0, 252, 4, 0), ['trick-room', 'focus-blast', 'psyshock', 'energy-ball'], { iv: LENT_SPE }),
 ];
 const DOUBLE = [
   P(94, 'gengarite', 'cursed-body', 'Timide', EV(0, 0, 0, 252, 4, 252), ['protect', 'hypnosis', 'shadow-ball', 'sludge-bomb'], { iv: SANS_ATQ }),
-  P(645, 'rocky-helmet', 'intimidate', 'Jovial', EV(252, 0, 4, 0, 0, 252), ['gravity', 'u-turn', 'rock-slide', 'knock-off']),
+  P(DEMETEROS_T, 'rocky-helmet', 'intimidate', 'Jovial', EV(252, 0, 4, 0, 0, 252), ['gravity', 'u-turn', 'rock-slide', 'knock-off']),
   P(678, 'focus-sash', 'prankster', 'Pressé', EV(0, 4, 0, 252, 0, 252), ['gravity', 'fake-out', 'psychic', 'energy-ball']),
   P(464, 'life-orb', 'solid-rock', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['rock-slide', 'swords-dance', 'rock-polish', 'fire-punch']),
   P(381, 'soul-dew', 'levitate', 'Timide', EV(4, 0, 0, 252, 0, 252), ['draco-meteor', 'psychic', 'ice-beam', 'thunderbolt'], { iv: SANS_ATQ }),

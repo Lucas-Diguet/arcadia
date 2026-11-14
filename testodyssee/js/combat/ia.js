@@ -174,9 +174,22 @@ export function installerIA() {
         if (vite || !tombe) return pick(tuent.sort((a, b) => (b.mv.a ?? 100) - (a.mv.a ?? 100))[0].k);
         if (prio) return pick(prio.k);
       }
-      // Relais : ce qu'il a gagné part au suivant (quand il en a assez, ou avant de tomber)
+      // Relais : se renforcer d'abord, puis passer ce qu'il a gagné lui-même (pas ce qu'il vient de recevoir)
       const crans = v.st.reduce((a, x) => a + Math.max(0, x), 0), relaisB = opts.find((o) => o.u === 'relais-baton');
-      if (relaisB && banc && (crans >= 3 || (crans >= 1 && (tombe || v.clone)))) return pick(relaisB.k);
+      // assez de crans : il s'en sert pour attaquer au lieu de les faire tourner
+      if (relaisB && banc && !(crans >= 8 && attaques.length)) {
+        const gagnes = crans - (v.recu || 0);
+        const monte = (o) => o.mv.c === 'status' && o.mv.tg === 7 && (o.mv.m?.st || []).length && o.mv.m.st.every(([, c]) => c > 0) && o.mv.m.st.some(([k]) => v.st[k - 1] < 6);
+        const protege = opts.find((o) => o.mv.key === 'protect' || o.mv.key === 'detect');
+        const clone = opts.find((o) => o.u === 'clonage');
+        if (tombe && gagnes >= 1 && !v.clone) return pick(relaisB.k);
+        if (gagnes >= 2) return pick(relaisB.k);
+        if (protege && v.turns === 0 && this.ab(1) === 'speed-boost') return pick(protege.k);
+        if (clone && !v.clone && pv > max * 0.5 && v.dernier !== 'clonage') return pick(clone.k);
+        const bo = opts.find(monte);
+        if (bo && !tombe) return pick(bo.k);
+        if (crans >= 1 && !attaques.length) return pick(relaisB.k);
+      }
       // Danse Lune : il se sacrifie pour soigner le suivant
       const lune = opts.find((o) => o.u === 'danse-lune');
       if (lune && banc && (tombe || pv < max * 0.3) && s.party.some((q, k) => k !== s.active && q.hp > 0 && (q.hp < q.stats[0] * 0.7 || q.status))) return pick(lune.k);

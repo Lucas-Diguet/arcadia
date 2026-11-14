@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 5.43 — 14 novembre 2026
+- **TestOdyssée** — Place des Champions : retouches des équipes du Conseil 4.
+  - Lance-Soleil part tout de suite quand le soleil brille.
+  - L'équipe Relais se renforce avant de passer le relais, et ne le passe plus en boucle.
+  - Nouveaux sets : Bétochef à l'Orbe Flamme et Cran, Flagadoss avec Psyko et Ébullition, Gaulet avec Spore, Florizarre avec Ball'Météo, et Démétéros en Forme Totémique.
+
 ## 5.42 — 14 novembre 2026
 - **TestOdyssée** — Place des Champions : les quatre membres du Conseil 4 ont leur équipe au niveau 100, et tu peux les emprunter comme celles des autres champions.
   - Une équipe soleil, une équipe Relais, une équipe Distorsion et une équipe pensée pour le combat double (jouée en simple pour l'instant).

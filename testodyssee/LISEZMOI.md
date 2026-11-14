@@ -520,7 +520,9 @@ dit que son équipe n'est pas prête. L'organisatrice prête l'équipe « fin de
 (`iv` quand ils ne sont pas tous à 31). Le Conseil 4 a ses équipes : Soleil (Frimas), Relais (Brutus), Distorsion (Spectrel)
 et Double (Ombrelle, pensée pour un combat double mais jouée en simple tant que le moteur ne sait pas faire les doubles).
 Règles ajoutées pour elles dans `combat/regles.js` : Relais, Anneau Hydro, Distorsion, Danse Lune, Gravité, Force Ajoutée
-selon les crans, Bluff au premier tour seulement, Poing de Boxe, Rosée Âme, Roche Chaude, Herbe Mental.
+selon les crans, Bluff au premier tour seulement, Poing de Boxe, Rosée Âme, Roche Chaude, Herbe Mental, Ball'Météo, Orbe Flamme, Lance-Soleil sans charge au soleil.
+Démétéros Forme Totémique : forme du labo n° 10021 (`DEMETEROS_T` de `champions.js`, invisible des listes comme les Méga ;
+images et cri copiés de PokeAPI). L'IA d'une équipe Relais se renforce d'abord et ne passe que ce qu'elle a gagné elle-même.
 
 ### Les arènes (prototypes)
 

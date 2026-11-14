@@ -1576,8 +1576,8 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   const mk = (sp, moves, o = {}) => { const m = createMon(sp, 100, { iv: Array(6).fill(31), nat: 12, moves: moves.map((k) => Object.values(MOVES).find((q) => q.key === k).id), shiny: false, ...o }); return m; };
   const combat = (moi, lui, o = {}) => { const b = new BattleT({ rng: R(o.seed), player: { name: 'Test', party: moi }, foe: { name: 'Champion', party: lui, trainer: { cls: 'Champion', name: 'Test', items: {}, ai: 'smart', ...o.tr } } }); b.start(); return b; };
   const id = (k) => Object.values(MOVES).find((q) => q.key === k)?.id;
-  ok(['stealth-rock', 'taunt', 'knock-off', 'u-turn', 'sludge-wave', 'substitute', 'heavy-slam', 'rapid-spin', 'grass-knot', 'curse', 'wish', 'aromatherapy', 'sucker-punch', 'roost', 'dazzling-gleam', 'gyro-ball', 'tailwind', 'kings-shield', 'draco-meteor', 'surf', 'pursuit', 'destiny-bond', 'baton-pass', 'aqua-ring', 'trick-room', 'lunar-dance', 'gravity', 'sunny-day', 'bullet-seed'].every(id), 'combat du labo : les attaques ajoutées existent');
-  ok(['assault-vest', 'eject-button', 'weakness-policy', 'light-clay', 'toxic-orb', 'damp-rock', 'expert-belt', 'punching-glove', 'soul-dew', 'heat-rock', 'mental-herb'].every((k) => ITEMS[k]?.name), 'combat du labo : les objets ajoutés existent');
+  ok(['stealth-rock', 'taunt', 'knock-off', 'u-turn', 'sludge-wave', 'substitute', 'heavy-slam', 'rapid-spin', 'grass-knot', 'curse', 'wish', 'aromatherapy', 'sucker-punch', 'roost', 'dazzling-gleam', 'gyro-ball', 'tailwind', 'kings-shield', 'draco-meteor', 'surf', 'pursuit', 'destiny-bond', 'baton-pass', 'aqua-ring', 'trick-room', 'lunar-dance', 'gravity', 'sunny-day', 'bullet-seed', 'weather-ball', 'spore'].every(id), 'combat du labo : les attaques ajoutées existent');
+  ok(['assault-vest', 'eject-button', 'weakness-policy', 'light-clay', 'toxic-orb', 'damp-rock', 'expert-belt', 'punching-glove', 'soul-dew', 'heat-rock', 'mental-herb', 'flame-orb'].every((k) => ITEMS[k]?.name), 'combat du labo : les objets ajoutés existent');
   ok(CHAMPIONS.length === 23 && CHAMPIONS.filter((c) => c.equipe).length === 13 && CHAMPIONS.map((c) => c.rang).join() === Array.from({ length: 23 }, (_, i) => i + 1).join(), 'Place des Champions : 23 champions dans l\'ordre, 13 équipes prêtes (dont le Conseil 4)');
   ok(CHAMPIONS[1].type === 'Poison' && CHAMPIONS[2].type === 'Normal' && CHAMPIONS[17].type === 'Eau', 'Place des Champions : Poison 2e, Normal 3e, Eau 18e');
   for (const c of CHAMPIONS.filter((q) => q.equipe)) {
@@ -1592,6 +1592,20 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   { const a = mk(291, ['tackle']), d = mk(80, ['trick-room', 'tackle']); const b = combat([a], [d], { tr: { ai: 'normal' } });
     b.distorsion = 3; b.foeChoose = () => ({ type: 'move', id: id('tackle'), slot: 1 }); const ev = b.playerAction({ type: 'move', idx: 0 });
     const k = ev.findIndex((e) => /utilise Charge/.test(e.text || '')); ok(k >= 0 && /Flagadoss/.test(ev[k].text), 'combat du labo : sous Distorsion, le plus lent agit d\'abord'); }
+  // Lance-Soleil part tout de suite au soleil
+  { const a = mk(143, ['splash']), d = mk(3, ['solar-beam']); const b = combat([a], [d], { tr: { ai: 'normal' } }); b.setWeather('sun', 5); b.foeChoose = () => ({ type: 'move', id: id('solar-beam'), slot: 0 });
+    const hp = a.hp; b.playerAction({ type: 'move', idx: 0 }); ok(a.hp < hp, 'combat du labo : Lance-Soleil sans tour de charge au soleil'); }
+  // Ball'Météo : Feu et deux fois plus forte au soleil
+  { const a = mk(143, ['splash']), d = mk(3, ['weather-ball']); const b = combat([a], [d]); b.setWeather('sun', 5); ok(b.moveType(1, MOVES[id('weather-ball')]) === 'fire', 'combat du labo : Ball\'Météo devient Feu au soleil'); }
+  // l'équipe Relais ne passe pas le relais en boucle
+  { const brutus = equipeChampion(CHAMPIONS.find((c) => c.type === 'Relais')), moi = equipeChampion(CHAMPIONS.find((c) => c.type === 'Acier'));
+    const b = combat(moi, brutus, { seed: 3 }); let suite = 0, pire = 0;
+    for (let t = 0; t < 60 && b.state === 'choose'; t++) {
+      const r = b.foeChoose(); const k = r.type === 'move' && MOVES[r.id]?.key === 'baton-pass'; suite = k ? suite + 1 : 0; pire = Math.max(pire, suite);
+      b.foeChoose = () => r; b.playerAction({ type: 'move', idx: 0 }); delete b.foeChoose;
+      while (b.state === 'switch') { const j = b.sides[0].party.findIndex((q, n) => n !== b.sides[0].active && q.hp > 0); if (j < 0) break; b.playerSwitch(j); }
+    }
+    ok(pire <= 2, `IA : l'équipe Relais ne passe pas le relais en boucle (au plus ${pire} de suite)`); }
   // Bluff : seulement au premier tour
   { const a = mk(143, ['splash']), d = mk(678, ['fake-out']); const b = combat([a], [d], { tr: { ai: 'normal' } }); b.foeChoose = () => ({ type: 'move', id: id('fake-out'), slot: 0 });
     b.playerAction({ type: 'move', idx: 0 }); const hp = a.hp; b.playerAction({ type: 'move', idx: 0 }); ok(a.hp === hp, 'combat du labo : Bluff échoue après le premier tour'); }
