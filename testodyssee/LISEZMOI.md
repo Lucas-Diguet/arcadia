@@ -757,7 +757,7 @@ Seul ou à plusieurs, sans mécanique de groupe (`joueurs: groupe`, `contes: tru
 sol d'herbe ou `solDehors`, murs d'arbres ou de haies `mur`, `zoneOpts` pour la zone : thème, ombre, Pokémon sauvages)
 sont prises en charge par `donjon/plan.js`. Passages (`lien`, comme au Tombeau) ; une `maison` est un bâtiment
 d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
-- Labyrinthe des Haies (`lab`, 49 × 49, généré) : entrée en bas depuis l'Orée des Contes, clairière vide au centre, cinq
+- Labyrinthe des Haies (`lab`, 49 × 49, généré ; `haies: true` : les buissons deviennent de hautes haies, `img/contes/haie0-2.png`) : entrée en bas depuis l'Orée des Contes, clairière vide au centre, cinq
   sorties avec leur pancarte (Hansel et Gretel, Chaperon rouge, Pinocchio, Jack, Boucle d'or).
 - Hansel et Gretel (`hg0` à `hg4`) : la clairière et la maison en pain d'épice (rez-de-chaussée, étage, grenier, cave).
   La vieille dame demande quatre services (`service` : grimoire, lunettes, louche, sucre), puis attend à la cuisine,

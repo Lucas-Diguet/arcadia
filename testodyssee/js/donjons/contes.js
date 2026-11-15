@@ -274,7 +274,7 @@ const CONTES = {
   pnj,
   salles: [
     // le labyrinthe de haies (plein air) : l'entrée en bas, cinq sorties
-    { id: 'lab', nom: 'Labyrinthe des Haies', type: 'libre', dehors: true, mur: 'BUSH', style: null, musique: 'forest', plan: labyrinthe() },
+    { id: 'lab', nom: 'Labyrinthe des Haies', type: 'libre', dehors: true, mur: 'BUSH', haies: true, style: null, musique: 'forest', plan: labyrinthe() },
     // Hansel et Gretel : la clairière, puis la maison (rez-de-chaussée, étage, grenier, cave)
     { id: 'hg0', nom: 'Clairière de la Maison en Pain d\'Épice', type: 'libre', dehors: true, style: null, conte: 'hg', plan: [
       "############################",

@@ -102,6 +102,11 @@ export const Contes = {
       const E = m.donjon.exterieur, w = E.carte.warpAt(...E.porte); if (w) w.step = true;
       if (P.sortie) { m.set(...P.sortie, T.PATH); m.deco = m.deco.filter((q) => !(q.k === 'exitlight' && q.x === P.sortie[0] && q.y === P.sortie[1])); const ws = m.warpAt(...P.sortie); if (ws) ws.step = true; }
     }
+    // le labyrinthe : de vraies haies, hautes, à la place des buissons
+    if (s.haies) for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
+      if (m.get(x, y) !== T.BUSH) continue;
+      m.set(x, y, T.BLOCK); m.deco.push({ k: 'haie' + ((x * 7 + y * 13) % 3), x, y });
+    }
     // les PNJ des contes
     for (const n of m.npcs) {
       const k = Object.keys(d.pnj).find((q) => `${d.id}:${d.pnj[q].id}` === n.id), Q = k && d.pnj[k]; if (!Q) continue;

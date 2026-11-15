@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 5.52 — 15 novembre 2026
+- **TestOdyssée** — Bois des Contes : le labyrinthe est fait de vraies haies, hautes et taillées, au lieu de petits buissons.
+
 ## 5.51 — 15 novembre 2026
 - **TestOdyssée** — Nouveau donjon, le Bois des Contes, à faire seul ou à plusieurs : un grand labyrinthe de haies et, à ses cinq sorties, cinq contes.
   - Hansel et Gretel : une grande maison en pain d'épice, une vieille dame qui demande des services... et un four bien chaud.
