@@ -188,7 +188,7 @@ combat. Ce sont les thèmes composés par le code d'Odyssée (`THEMES` de `odyss
 le `LISEZMOI.txt` du dossier). Ils sont rangés côté Odyssée pour suivre les donjons le jour où ils y passent.
 
 - Temple des Éléments : `routevictoirerse` dans le hall, les salles des dalles et les salles de fin ; `templedufeu`,
-  `templedeleau` et `templedelaforet` dans les salles de chaque chemin (à trois comme en solo) ; `opboss` contre le
+  `templedeleau` et `templedelaforet` dans les salles de chaque chemin (à trois comme en solo) ; `yghbosselt` contre le
   Gardien (`musique` du PNJ). Dehors, la musique de la route.
 - Tombeau du Roi Sans Nom : `yghdesert` dans la vallée, `yghtombeau` dans toutes les salles. Quand les morts-vivants
   apparaissent (le sceptre repris au sous-chef), les salles du -6 au -9 (`sallesMorts`) passent sur `musiqueMorts`,
@@ -201,6 +201,19 @@ quête du joueur (les clés). Tout ce qui est dans le journal reste dans le donj
 
 L'encadré du donjon (en bas à droite) se cache et revient avec la touche N ou son petit bouton (`journalCache`, gardé
 dans le navigateur pour tous les donjons) ; caché, il n'en reste qu'un onglet « Journal (N) ».
+
+### Les pancartes de classement
+
+Un donjon peut avoir des pancartes qui montrent les dix meilleurs temps : noms des joueurs (tout le groupe), date, durée.
+Le chrono part quand on entre dans le donjon et s'arrête à sa fin, ou à la défaite d'un PNJ choisi.
+
+```js
+classements: [{ id: 'trio', nom: 'Temple des Éléments — à trois', pnj: 'M' }],   // sans pnj : la fin du donjon
+pancartesClassement: [{ classement: 'trio', salle: 'h0', cote: 'gauche' }],       // contre le mur de gauche ou de droite
+```
+
+Les résultats sont gardés dans le navigateur (`STOCKAGE` de `js/donjon/classement.js`) ; on pourra les envoyer au relais plus tard.
+Pancartes posées : Donjon des Miroirs (salle 1, à gauche), Temple des Éléments (hall : à trois à gauche, solo à droite).
 
 ### Le combat à plusieurs
 

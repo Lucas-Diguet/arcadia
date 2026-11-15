@@ -15,7 +15,7 @@ export const MUSIQUES = {
   templedufeu: { fichier: 'templedufeu.mp3' },
   templedeleau: { fichier: 'templedeleau.mp3' },
   templedelaforet: { fichier: 'templedelaforet.mp3' },
-  opboss: { fichier: 'opboss.mp3' },
+  yghbosselt: { fichier: 'yghbosselt.mp3' },
   // TestOdyssée, Tombeau du Roi Sans Nom : la vallée dehors ; toutes les salles
   yghdesert: { fichier: 'yghdesert.mp3' },
   yghtombeau: { fichier: 'yghtombeau.mp3' },

@@ -1,5 +1,13 @@
 # Journal des versions — Arcadia
 
+## 5.54 — 15 novembre 2026
+- **TestOdyssée** — Temple des Éléments : le Gardien demande maintenant si l'on veut vraiment retourner au Grand Hall, et redemande si la récompense n'a pas été prise sur la table.
+  - Nouvelle musique pour le combat contre le Gardien.
+- **TestOdyssée** — Pancartes de classement : on y voit qui a fini le donjon, à quelle date et en combien de temps (tout le groupe pour les donjons à plusieurs). Le chrono part à l'entrée et s'arrête au boss vaincu.
+  - Une pancarte contre le mur de gauche de la première salle du Donjon des Miroirs.
+  - Deux dans le Grand Hall du Temple des Éléments : à gauche pour le temple à trois, à droite pour le solo.
+  - Le classement est gardé sur l'ordinateur pour l'instant.
+
 ## 5.53 — 15 novembre 2026
 - **TestOdyssée** — Temple des Éléments, en solo : la Salle des Clés a maintenant trois portes, une par chemin. On arrive devant celle du chemin qu'on vient de finir, et on peut retourner chercher une clé oubliée.
 

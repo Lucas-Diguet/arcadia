@@ -22,6 +22,7 @@ import { Train } from './train.js';
 import { Temple } from './temple.js';
 import { Tombeau } from './tombeau.js';
 import { Contes } from './contes.js';
+import { Classement } from './classement.js';
 import { Fonderie } from './fonderie.js';
 import { Cristal } from './cristal.js';
 import { Arenes } from './arenes.js';
@@ -47,7 +48,7 @@ export class Donjons {
       for (const c of cartes) game.world.maps[c.id] = c;
       const dehors = relierExterieur(d, m);
       if (dehors) game.world.maps[dehors.id] = dehors;
-      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); this.poserObjetsContes(d, c); this.poserObjetsFonderie(d, c); this.poserObjetsCristal(d, c); this.poserObjetsArenes(d, c); }
+      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); this.poserObjetsContes(d, c); this.poserClassements(d, c); this.poserObjetsFonderie(d, c); this.poserObjetsCristal(d, c); this.poserObjetsArenes(d, c); }
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -130,6 +131,7 @@ export class Donjons {
     this.appliquerTemple(d);
     this.appliquerTombeau(d);
     this.appliquerContes(d);
+    this.verifierClassements(d);
     this.appliquerFonderie(d);
     if (ici) g.refreshNpcs();
     const vu = this.vus[id];
@@ -323,6 +325,7 @@ export class Donjons {
     this.tickTemple(dt);
     this.tickTombeau(dt);
     this.tickContes(dt);
+    for (const d of this.defs.values()) if (d.classements && this.estDans(d)) this.chronoDonjon(d);
     this.tickFonderie(dt);
     this.tickCristal(dt);
     this.tickArenes(dt);
@@ -480,4 +483,4 @@ export class Donjons {
   }
 }
 
-Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau, Contes, Fonderie, Cristal, Arenes);
+Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau, Contes, Classement, Fonderie, Cristal, Arenes);

@@ -68,6 +68,9 @@ export default {
     c: { type: 'pc', decor: 'pc', salle: 's2' },
   },
   // une carte par salle : on passe de l'une à l'autre par N (en haut) et on revient par D (en bas)
+  // la pancarte de classement : contre le mur de gauche de la première salle
+  classements: [{ id: 'solo', nom: 'Donjon des Miroirs' }],
+  pancartesClassement: [{ classement: 'solo', salle: 's1', cote: 'gauche' }],
   salles: [
     { id: 's0', nom: 'Salle du Secret', type: 'enigme', porteObjet: 'M', suivi: 'parle au miroir', plan: [
       '###########',

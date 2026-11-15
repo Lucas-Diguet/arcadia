@@ -390,7 +390,7 @@ const DEF_TEMPLE = {
     _: H('hall-6', 'karateka', 'up', 'Karatéka', 'Kenji', ['Le Gardien garde son Pokémon le plus fort pour la fin.', 'Tant qu\'un seul de ses trois singes tient debout, il ne l\'envoie pas.']),
     '?': H('hall-7', 'scientifique', 'left', 'Scientifique', 'Odile', ['J\'étudie la table du Gardien. Trois Poké Balls pour ceux qui viennent à trois, trois CT pour celui qui vient seul.', 'Dans les deux cas, on n\'en prend qu\'une.']),
     M: {
-      id: 'gardien-trois', cls: 'Gardien', nom: 'des Éléments', sprite: 'pretre', dir: 'down', groupe: true, musique: 'opboss',
+      id: 'gardien-trois', cls: 'Gardien', nom: 'des Éléments', sprite: 'pretre', dir: 'down', groupe: true, musique: 'yghbosselt',
       avant: ['Le feu, l\'eau et la plante vous ont menés jusqu\'ici.', 'Montrez-moi que vous savez les vaincre ensemble !'],
       apres: 'Vous avez dompté les trois éléments. La table est à vous : que chacun choisisse son compagnon.',
       reste: 'Félicitations pour avoir triomphé de cette épreuve. Vous pouvez à présent choisir une récompense sur la table derrière moi.',
@@ -400,7 +400,7 @@ const DEF_TEMPLE = {
       equipe: [...SINGES, [128, 45, { blocs: 5, attend: true }]],
     },
     Z: {
-      id: 'gardien-solo', cls: 'Gardien', nom: 'des Éléments', sprite: 'pretre', dir: 'down', musique: 'opboss',
+      id: 'gardien-solo', cls: 'Gardien', nom: 'des Éléments', sprite: 'pretre', dir: 'down', musique: 'yghbosselt',
       defi: 'Seul, tu as traversé les trois éléments. Voyons si tu peux les vaincre tous à la fois !',
       perd: 'Tu les maîtrises tous. Ce qui est sur la table t\'appartient.',
       reste: 'Félicitations pour avoir triomphé de cette épreuve. Tu peux à présent choisir une récompense sur la table derrière moi.',
@@ -492,6 +492,9 @@ const DEF_TEMPLE = {
   // les CT du solo : `fin` si le donjon arrive tard dans le jeu, `tot` s'il arrive plus tôt
   cts: { fin: ['ct-eruption-temple', 'ct-gicledo-temple', 'ct-jaillisseve-temple'], tot: ['ct-surchauffe-temple', 'ct-lame-de-fond-temple', 'ct-tempete-verte-temple'] },
   ctsChoix: 'fin',
+  // classements : à trois (le Gardien du temple à trois vaincu), en solo (celui du solo) ; pancartes aux deux bouts du hall
+  classements: [{ id: 'trio', nom: 'Temple des Éléments — à trois', pnj: 'M' }, { id: 'solo', nom: 'Temple des Éléments — en solo', pnj: 'Z' }],
+  pancartesClassement: [{ classement: 'trio', salle: 'h0', cote: 'gauche' }, { classement: 'solo', salle: 'h0', cote: 'droite' }],
   inscriptions: {
     f: ['Porte du Feu.', 'Au bout du chemin, la Clé du Feu.'],
     e: ['Porte de l\'Eau.', 'Au bout du chemin, la Clé de l\'Eau.'],

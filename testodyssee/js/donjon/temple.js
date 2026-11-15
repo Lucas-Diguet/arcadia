@@ -499,12 +499,14 @@ export const Temple = {
       });
     }
   },
-  /** le Gardien battu : il invite à choisir sur la table ; une fois la récompense prise, il ramène au Grand Hall */
+  /** le Gardien battu : il invite à choisir sur la table et propose de ramener au Grand Hall (deux fois si la récompense n'est pas prise) */
   async resteGardien(d, k) {
     const g = this.game, ui = g.ui, p = d.pnj[k], sp = { speaker: `${p.cls} ${p.nom}`.trim() };
     const s = d.salles.find((q) => q.pnj?.includes(k)), D = this.dt(d, s.id);
     const pris = s.table === 'starters' ? (D.attrib || {})[this.moi] != null : !!D[`ct:${this.moi}`];
-    if (!pris) { await ui.say(p.reste, sp); return; }
+    if (!pris) await ui.say(p.reste, sp);
+    if (!(await ui.yesNo('Veux-tu que je te ramène dans le Grand Hall ?', sp))) return;
+    if (!pris && !(await ui.yesNo('Tu n\'as pas pris ta récompense sur la table. Veux-tu quand même que je te ramène ?', sp))) return;
     await ui.say(p.retour, sp);
     const h = g.world.maps[d.salles[0].carte], [x, y] = h.donjon.plan.depart;
     g.sound.sfx('heal');

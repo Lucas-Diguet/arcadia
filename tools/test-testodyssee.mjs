@@ -1581,6 +1581,20 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   }
 }
 
+/* ---------------- pancartes de classement ---------------- */
+{
+  const { placePancarte, duree } = await import('../testodyssee/js/donjon/classement.js');
+  for (const id of ['miroirs', 'temple']) {
+    const d = DONJONS.find((q) => q.id === id), cartes = d.salles.some((s) => s.plan) ? construireSalles(d) : [construireCarte(d)];
+    for (const p of d.pancartesClassement) {
+      const s = d.salles.find((q) => q.id === p.salle), m = cartes.find((c) => c.id === (s.carte || d.carte)) || cartes[0], c = placePancarte(m, m.donjon.plan, s, p.cote);
+      const xs = m.donjon.plan.sol.map(([x]) => x);
+      ok(c && d.classements.some((C) => C.id === p.classement) && (p.cote === 'gauche' ? !walkable(m.get(c[0] - 1, c[1])) : !walkable(m.get(c[0] + 1, c[1]))), `classement : la pancarte « ${p.classement} » de ${d.nom} est contre le mur ${p.cote === 'gauche' ? 'de gauche' : 'de droite'}`);
+    }
+  }
+  ok(duree(75000) === '1 min 15 s' && duree(3725000) === '1 h 02 min', 'classement : les temps s\'écrivent en minutes et secondes');
+}
+
 /* ---------------- Bois des Contes ---------------- */
 {
   const d = DONJONS.find((q) => q.id === 'contes'), cartes = construireSalles(d), dehors = relierExterieur(d, cartes[0]);
