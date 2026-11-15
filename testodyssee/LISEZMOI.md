@@ -450,7 +450,9 @@ Une salle qui s'y prête mieux à l'envers est retournée (`miroir`, ses dresseu
 - La sortie de chaque deuxième salle demande l'objet du fond de la deuxième salle d'un autre chemin : la Pierre
   Ardente (Feu) pour la glace de l'Eau, la Rosée Éternelle (Eau) pour l'arbre mort de la Plante, la Corde de Liane
   (Plante) pour le gouffre du Feu.
-On avance dans les trois chemins à la fois, dans l'ordre qu'on veut. Pas de téléporteur dans la Salle des Clés. La
+On avance dans les trois chemins à la fois, dans l'ordre qu'on veut. Pas de téléporteur dans la Salle des Clés, mais
+trois portes en bas (`retourChemin`, Ⓕ Ⓔ Ⓟ) qui ramènent au bout de chaque chemin ; on y arrive devant celle du chemin
+qu'on vient de finir. La
 Carte du Temple (`carte-temple`, dans le Sac) montre les salles en trois colonnes avec les sorties et les passages
 secrets, puis le squelette de chaque salle (sol, eau, entrée, sortie, passages). Tout est gardé dans les drapeaux
 `TS:…` de la partie, remis à zéro quand on marche sur la dalle d'or (`resetSolo`, `syncSolo`). Les tests résolvent

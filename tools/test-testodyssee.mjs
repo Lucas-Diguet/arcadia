@@ -796,6 +796,9 @@ ok(!appliquer(d, e, A, { a: 'zzz' }).ok, 'une demande inconnue est refusée');
     ok(d.salles.find((s) => s.id === 'e1').retour.join() === 'h0,e' && d.salles.find((s) => s.id === 'eo').retour.join() === 'h0,p' && par.e1.donjon.versSuivante?.map === par.g2.id, 'temple : les deux salles ramènent au hall');
   }
   ok(par.g2.donjon.versSuivante == null && ['f', 'e', 'p'].every((c) => ['g', 's'].every((b) => par[`${b}${c}1`].donjon.versSuivante?.map === par[`${b}${c}2`].id && par[`${b}${c}2`].donjon.versSuivante?.map === par[`${b}${c}3`].id && (c === 'e' ? par[`${b}e3`].donjon.versSuivante?.map === par[`${b}e4`].id && par[`${b}e4`].donjon.versSuivante?.map === par[`${b}4`].id : par[`${b}${c}3`].donjon.versSuivante?.map === par[`${b}4`].id))) && par.g4.donjon.versSuivante?.map === par.g5.id && par.s4.donjon.versSuivante?.map === par.s5.id, 'temple : les chemins se rejoignent à la Salle des Clés, puis le Gardien');
+  { const P4 = par.s4.donjon.plan, portes = ['Ⓕ', 'Ⓔ', 'Ⓟ'].map((c) => P4.objets[c]?.[0]);
+    ok(portes.every((p) => p && walkable(par.s4.get(p[0], p[1] - 1))) && ['f', 'e', 'p'].every((c, i) => d.objets[['Ⓕ', 'Ⓔ', 'Ⓟ'][i]].chemin === c) && ['sf3', 'se4', 'sp3'].every((id) => par[id].donjon.plan.suivante),
+      'temple solo : la Salle des Clés a trois portes qui ramènent au bout de chaque chemin'); }
   ok(['f', 'e', 'p'].every((c) => ['g', 's'].every((b) => (c === 'e' ? [2, 3, 4] : [2, 3]).every((n) => par[`${b}${c}${n}`].warpAt(...par[`${b}${c}${n}`].donjon.plan.sortie)?.map === par[`${b}${c}${n - 1}`].id))), 'temple : dans un chemin, on peut revenir à la salle d\'avant');
   // les chemins : trois grandes salles par élément, chacune avec sa mécanique (les mêmes plans à trois et en solo)
   {

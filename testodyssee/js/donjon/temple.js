@@ -21,7 +21,7 @@ const ITEMS_DESC = (k) => ITEMS[k]?.desc || '';
 
 const cle = (x, y) => x + ',' + y;
 const estTemple = (d) => d.id === 'temple';
-const TYPES = new Set(['grandePorte', 'porteSolo', 'porteCles', 'starter', 'ct', 'porteHall', 'arbuste', 'ronces']);
+const TYPES = new Set(['grandePorte', 'porteSolo', 'retourChemin', 'porteCles', 'starter', 'ct', 'porteHall', 'arbuste', 'ronces']);
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 export const TALISMAN = 'talisman-elements';
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -72,6 +72,11 @@ export const Temple = {
       const moine = Object.values(cm.donjon.plan.pnj).some(([[a, b]]) => a === ox && b === oy + 1);
       const [sx, sy] = P.sortie;
       m.set(sx, sy, T.CAVEDOOR); m.warp(sx, sy, { map: cm.id, x: moine ? ox - 1 : ox, y: moine ? oy + 2 : oy + 1, dir: 'down' }); m.deco.push({ k: 'exitlight', x: sx, y: sy });
+    }
+    // le bout d'un chemin du solo : on arrive dans la Salle des Clés devant la porte de ce chemin
+    if (S?.cle && S.branche === 'solo' && m.donjon.versSuivante) {
+      const s4 = this.game.world.maps[d.salles.find((q) => q.id === S.suivante).carte], porte = Object.entries(s4.donjon.plan.objets).find(([c]) => d.objets[c].type === 'retourChemin' && d.objets[c].chemin === S.chemin);
+      if (porte) { const [px, py] = porte[1][0]; m.donjon.versSuivante = { map: s4.id, x: px, y: py - 1, dir: 'up' }; }
     }
     // le solo : recoins (passages, objets, source) et verrou devant la sortie
     if (S?.recoins) for (const [c, R] of Object.entries(S.recoins)) {
@@ -422,6 +427,15 @@ export const Temple = {
     await g.warp({ map: cm.id, x, y, dir: 'up' }, 'door');
   },
 
+  /** Salle des Clés du solo : revenir au bout d'un chemin */
+  async retourChemin(d, o) {
+    const g = this.game, ui = g.ui, nom = d.voies[o.chemin];
+    if (!(await ui.yesNo(`Revenir sur la voie ${d.voiesDe[o.chemin]}${nom} ?`))) return;
+    const S = d.salles.find((q) => q.branche === 'solo' && q.chemin === o.chemin && q.cle), cm = g.world.maps[S.carte], [x, y] = cm.donjon.plan.suivante;
+    g.sound.sfx('door');
+    await g.warp({ map: cm.id, x, y: y + 1, dir: 'down' }, 'door');
+  },
+
   async objetTemple(d, m, c, x, y) {
     const o = d.objets[c], s = this.salleTemple(d, m), g = this.game;
     switch (o.type) {
@@ -430,6 +444,7 @@ export const Temple = {
       case 'arbuste': return this.couperArbuste(d, m, c, x, y);
       case 'ronces': return g.ui.say(`D'épaisses ronces à fleurs ${o.couleur}. Elles viennent d'un arbuste, pas loin d'ici.`);
       case 'porteSolo': return this.porteSolo(d, o);
+      case 'retourChemin': return this.retourChemin(d, o);
       case 'porteCles': return this.porteCles(d, s);
       case 'starter': return this.balleStarter(d, s, o.n);
       case 'ct': return this.prendreCt(d, s, o.n);

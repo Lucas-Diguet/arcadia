@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 5.53 — 15 novembre 2026
+- **TestOdyssée** — Temple des Éléments, en solo : la Salle des Clés a maintenant trois portes, une par chemin. On arrive devant celle du chemin qu'on vient de finir, et on peut retourner chercher une clé oubliée.
+
 ## 5.52 — 15 novembre 2026
 - **TestOdyssée** — Bois des Contes : le labyrinthe est fait de vraies haies, hautes et taillées, au lieu de petits buissons.
 

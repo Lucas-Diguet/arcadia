@@ -166,6 +166,7 @@ const HALL = (() => {
   return g.map((r) => r.join(''));
 })();
 // la Salle des Clés : la porte aux trois gemmes
+// en solo, trois portes en bas ramènent au bout de chaque chemin (on y revient chercher la clé qui manque)
 const CLES = (solo) => [
   '###############',
   '#######N#######',
@@ -175,8 +176,7 @@ const CLES = (solo) => [
   '#.............#',
   '#.............#',
   '#.............#',
-  '##...........##',
-  '#######S#######',
+  ...(solo ? ['##.....S.....##', '###Ⓕ###Ⓔ###Ⓟ###'] : ['##...........##', '#######S#######']),
 ];
 // la salle du Gardien : la table derrière lui
 const GARDIEN = (table, boss) => [
@@ -309,6 +309,10 @@ const DEF_TEMPLE = {
     H: { type: 'voie', decor: 'porte_plante', voie: 'p' },
     // en solo : les mêmes portes ; celles du Feu et de l'Eau sont scellées tant qu'on n'est pas arrivé derrière
     R: { type: 'porteSolo', decor: 'porte_feu', chemin: 'f' },
+    // Salle des Clés du solo : les portes qui ramènent au bout de chaque chemin
+    'Ⓕ': { type: 'retourChemin', decor: 'porte_feu', chemin: 'f' },
+    'Ⓔ': { type: 'retourChemin', decor: 'porte_eau', chemin: 'e' },
+    'Ⓟ': { type: 'retourChemin', decor: 'porte_plante', chemin: 'p' },
     U: { type: 'porteSolo', decor: 'porte_eau', chemin: 'e' },
     W: { type: 'porteSolo', decor: 'porte_plante', chemin: 'p' },
     // le décor des chemins
