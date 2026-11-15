@@ -112,8 +112,14 @@ export class TestGame extends Game {
     if (!lead || (this.state.repel > 0 && lead.lvl >= lvl)) return;
     return super.wildBattle([[e[0], lvl, lvl, 1]], { ...o, fixed: true });
   }
-  setTile(x, y, v) { super.setTile(x, y, v); if (v === T.BOULDER) { this.rv?.rocherPose(x, y); this.donjons?.rocherTemple?.(x, y); this.donjons?.rocherArene?.(x, y); } }
-  warp(to, sfx) { (this.rv ||= new RoutesVictoire(this)).arrivee(to); this.donjons?.remiseTemple?.(to); return super.warp(to, sfx); }
+  setTile(x, y, v) {
+    // un meuble poussé (Bois des Contes) garde son dessin : il suit le rocher d'une case à l'autre
+    const B = this.mapObj?.blocs, k = x + ',' + y;
+    if (B) { if (v !== T.BOULDER && B.has(k)) { this._bloc = B.get(k); B.delete(k); } else if (v === T.BOULDER && this._bloc) { B.set(k, this._bloc); this._bloc = null; } }
+    super.setTile(x, y, v); if (v === T.BOULDER) { this.rv?.rocherPose(x, y); this.donjons?.rocherTemple?.(x, y); this.donjons?.rocherArene?.(x, y); }
+  }
+  async useForce() { if (await this.donjons?.forceMeuble?.()) return; return super.useForce(); }
+  warp(to, sfx) { (this.rv ||= new RoutesVictoire(this)).arrivee(to); this.donjons?.remiseTemple?.(to); this.donjons?.remiseContes?.(to); return super.warp(to, sfx); }
   /** dans les donjons du labo, les capacités de terrain servent sans attendre les badges */
   /** le Talisman des Éléments (Temple des Éléments) : Coupe, Force, Éclate-Roc et Surf, sans CS ni badge */
   hasField(k) { return (['coupe', 'force', 'eclate', 'surf'].includes(k) && !!this.state?.bag?.['talisman-elements']) || super.hasField(k); }

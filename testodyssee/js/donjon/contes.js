@@ -2,24 +2,29 @@
 // (jeu.js). Seul ou à plusieurs, sans mécanique de groupe : l'avancée de chaque conte est partagée par le salon (état
 // des salles, action « maj »), le reste (chutes, bruit, souffle de la baleine) se joue chez chaque joueur.
 //
-// Hansel et Gretel : la sorcière demande quatre services (des objets cachés dans sa maison), puis attend à la cuisine.
+// Hansel et Gretel : la sorcière demande de l'aide pour son repas, par vagues de missions (`vagues` du donjon ; l'état
+// est dans la salle hg1 : accepte, vague, m_<mission>). Chaque mission a sa petite épreuve : un Pokémon niché dans le
+// bois, le seau coincé du puits (casse-tête), le débarras et ses meubles à pousser avec Force (donjon/meubles.js), les
+// soufflets du four à actionner dans l'ordre. Le grenier est fermé à clé.
 // Le Petit Chaperon rouge : la forêt sombre, puis Mère-Grand... qui n'est pas Mère-Grand.
 // Jack : la tige (feuilles fragiles qui tombent une fois quittées, le vide, les paliers), les nuages, le château du
 // géant endormi (le plancher qui grince le réveille), la poule aux œufs d'or.
 // Pinocchio : la gorge de la baleine (son souffle repousse qui n'est pas à l'abri), l'estomac (les épaves s'enfoncent
 // si l'on s'y arrête), l'épave (des matelots de bois, un menteur, la clé), la cabine de Geppetto (le grand feu).
-import { T, walkable } from '../../../odyssee/js/world/tiles.js';
+import { T, walkable, DIRS } from '../../../odyssee/js/world/tiles.js';
 import { BUILDINGS } from '../../../odyssee/js/world/mapgen.js';
 import { SPECIES } from '../../../odyssee/js/data/species.js';
 import { monName } from '../../../odyssee/js/core/mon.js';
 import { dessinerZzz } from '../rendu.js';
 import { battu } from './etat.js';
+import { PUITS, ORDRE_SOUFFLETS } from './meubles.js';
+import { jouerCasseTete } from './jeux-tombeau-ecran.js';
 
 const cle = (x, y) => x + ',' + y;
 const estContes = (d) => !!d?.contes;
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
-/** ce que la sorcière demande */
-const SERVICES = ['grimoire', 'lunettes', 'louche', 'sucre'];
+/** le Pokémon niché dans le tas de bois */
+const NICHE_BOIS = [168, 43];
 /** l'épave : le menteur et le coffre de la clé */
 const MATELOTS = [
   { dit: 'La clé de la cabine ? Elle n\'est pas dans mon coffre, ça je peux te le jurer.', ment: false },
@@ -67,18 +72,19 @@ export const Contes = {
         else if (o.type === 'abri') m.contes.abris.add(cle(x, y));
         else if (o.type === 'epave') m.contes.epaves.add(cle(x, y));
         else if (o.type === 'grince') m.contes.grince.add(cle(x, y));
-        else if (o.type === 'service') m.object(x, y, { use: () => this.service(d, o) });
-        else if (o.type === 'cage') m.object(x, y, { use: () => this.cage(d) });
+        else if (o.type === 'meuble') { m.set(x, y, T.BOULDER); (m.blocs0 ||= new Map()).set(cle(x, y), o.sprite); }
+        else if (['bois', 'puits', 'chaudron', 'four', 'soufflet', 'note'].includes(o.type)) m.object(x, y, { use: () => this.mission(d, o) });
         else if (o.type === 'poule') m.object(x, y, { use: () => this.poule(d) });
         else if (o.type === 'coffrePn') m.object(x, y, { use: () => this.coffrePn(d, o.n) });
         else if (o.type === 'bucher') m.object(x, y, { use: () => this.bucher(d) });
       }
     }
+    if (m.blocs0) m.blocs = new Map(m.blocs0);
     // passages : en plein air, un chemin ; dedans, une sortie ou un escalier ; la cabine de Geppetto est fermée à clé
     for (const [c, l] of Object.entries(P.objets)) {
       const o = d.objets[c]; if (o.type !== 'lien') continue;
       const [x, y] = l[0];
-      if (o.bloque) { m.set(x, y, T.CAVE); m.prop('porte_hall', x, y); m.object(x, y, { use: () => this.porteCabine(d, c) }); continue; }
+      if (o.bloque) { m.set(x, y, T.CAVE); m.prop('porte_hall', x, y); m.object(x, y, { use: () => (o.bloque === 'grenier' ? this.porteGrenier(d) : this.porteCabine(d, c)) }); continue; }
       if (m.outdoor) {
         m.set(x, y, T.PATH);
         if (o.liane) m.deco.push({ k: 'liane', x, y });
@@ -110,8 +116,7 @@ export const Contes = {
     // les PNJ des contes
     for (const n of m.npcs) {
       const k = Object.keys(d.pnj).find((q) => `${d.id}:${d.pnj[q].id}` === n.id), Q = k && d.pnj[k]; if (!Q) continue;
-      if (Q.sorciere === 'hall') { n.talk = () => this.sorciereHall(d); n.when = () => !this.dContes(d, 'hg1').cuisine; }
-      else if (Q.sorciere === 'cuisine') { n.talk = () => this.sorciereCuisine(d); n.when = () => !!this.dContes(d, 'hg1').cuisine && !this.dContes(d, 'hg1').battue; }
+      if (Q.sorciere === 'hall') n.talk = () => this.sorciereHall(d);
       else if (Q.enfant) n.talk = () => this.enfants(d);
       else if (Q.chaperon) n.talk = () => this.chaperon(d);
       else if (Q.loup) { n.talk = () => this.loup(d); n.when = () => !this.dContes(d, 'cr4').loup; }
@@ -161,11 +166,6 @@ export const Contes = {
       if (C.abris.has(ici) || (s.id === 'pn1' && p.x === m.donjon.plan.depart[0] && p.y === m.donjon.plan.depart[1])) this.abri = [m.id, p.x, p.y];
       // le château : le plancher qui grince
       if (C.grince.has(ici) && !this.dContes(d, 'jk3').poule) await this.grincement(d);
-      // la cuisine de la sorcière : elle t'attend
-      if (s.id === 'hg1' && this.dContes(d, 'hg1').cuisine && !this.dContes(d, 'hg1').battue) {
-        const n = g.npcs.find((q) => q.id === `${d.id}:sorciere-cuisine`);
-        if (n && Math.abs(n.x - p.x) + Math.abs(n.y - p.y) <= 3) await this.sorciereCuisine(d);
-      }
     } finally { g.busy = false; }
   },
   tickContes(dt) {
@@ -192,65 +192,131 @@ export const Contes = {
   },
 
   /* ---------------- Hansel et Gretel ---------------- */
+  /** la vague en cours (null avant d'avoir parlé à la sorcière, ou quand il n'y en a plus) et ce qu'il y reste à faire */
+  vagueContes(d) {
+    const H = this.dContes(d, 'hg1'), v = H.accepte ? d.vagues[H.vague || 0] : null;
+    return v ? { v, n: H.vague || 0, reste: v.missions.filter((q) => !H['m_' + q.id]) } : null;
+  },
+  missionActive(d, id) { return !!this.vagueContes(d)?.reste.some((q) => q.id === id); },
+  missionFaite(d, id) { return !!this.dContes(d, 'hg1')['m_' + id]; },
+  async finMission(d, id) {
+    this.game.sound.sfx('item');
+    await this.majContes(d, 'hg1', { ['m_' + id]: true });
+    const V = this.vagueContes(d);
+    if (V && !V.reste.length) this.game.ui.toast('Tout est prêt : retourne voir la vieille dame.', 2600);
+  },
   async sorciereHall(d) {
-    const g = this.game, ui = g.ui, H = this.dContes(d, 'hg1'), qui = { speaker: 'Vieille dame' };
+    const ui = this.game.ui, H = this.dContes(d, 'hg1'), qui = { speaker: 'Vieille dame' };
     if (!H.accepte) {
-      // le scénario de l'entrée dans la maison viendra ici
       await ui.say(['Oh ! De la visite ! Ça faisait si longtemps...', 'Entre, entre, mon petit. N\'aie pas peur d\'une pauvre vieille.',
-        'Ma vue baisse, mes jambes ne me portent plus, et j\'ai perdu tant de choses dans cette grande maison.',
-        'Tu voudrais bien m\'aider ? Il me faut mon grimoire de recettes, mes lunettes, ma louche d\'argent et un sac de sucre.',
-        'Ils sont quelque part dans la maison : à l\'étage, au grenier, à la cave...'], qui);
-      await this.majContes(d, 'hg1', { accepte: true, trouves: [] });
-      await ui.say('Rapporte-moi tout ça, et je te ferai un gâteau comme tu n\'en as jamais mangé. Hi hi hi...', qui);
+        'Je suis bien vieille, tu sais. Mes jambes ne me portent plus, et cette maison est si grande...',
+        'Ce soir, je voudrais préparer un bon repas. Un vrai festin ! Mais toute seule, je n\'y arriverai jamais.',
+        'Aide-moi, et tu seras récompensé. Parole de grand-mère.'], qui);
+      await this.majContes(d, 'hg1', { accepte: true, vague: 0 });
+      await ui.say(['Commençons par le feu. Il me faut du bois, de l\'eau, mon grand chaudron, et que le four soit allumé.',
+        'Le bûcher et le puits sont au jardin : la porte est au fond de la cuisine. Le chaudron est au débarras, au premier étage.',
+        'Tiens, je t\'ai tout noté. Hi hi hi...'], qui);
       return;
     }
-    const t = H.trouves || [], reste = SERVICES.filter((k) => !t.includes(k));
-    if (reste.length) {
-      const nom = (k) => d.objets[Object.keys(d.objets).find((c) => d.objets[c].objet === k)].nom;
-      await ui.say([`Il me manque encore ${reste.map(nom).join(', ')}.`, 'Cherche bien, mon petit. Cette maison a plus de recoins qu\'on ne croit.'], qui);
+    const V = this.vagueContes(d);
+    if (!V) { await ui.say(['Laisse-moi réfléchir à la suite du repas, mon petit.', 'Reviens me voir un peu plus tard.'], qui); return; }
+    if (V.reste.length) {
+      await ui.say([`Il me manque encore : ${V.reste.map((q) => q.nom.toLowerCase()).join(', ')}.`, 'Dépêche-toi, mon petit. J\'ai si faim...'], qui);
       return;
     }
-    await ui.say(['Tout ! Tu as tout retrouvé ! Quel enfant serviable...', 'Viens, viens dans la cuisine. Le four est déjà chaud.'], qui);
-    await this.majContes(d, 'hg1', { cuisine: true });
+    if (V.n === 0) await ui.say(['Du bois, de l\'eau, mon chaudron, et le four qui ronfle... Parfait, parfait !',
+      'Tu es bien serviable, mon petit. Bien plus que les deux derniers...', 'Hum ! Rien, rien. Je parlais toute seule.'], qui);
+    await this.majContes(d, 'hg1', { vague: V.n + 1 });
+    if (!d.vagues[V.n + 1]) await ui.say('Repose-toi un instant. Je réfléchis à la suite du repas.', qui);
   },
-  async service(d, o) {
-    const g = this.game, ui = g.ui, H = this.dContes(d, 'hg1');
-    const t = H.trouves || [];
-    if (!H.accepte) { await ui.say('Rien d\'intéressant... pour l\'instant.'); return; }
-    if (t.includes(o.objet)) { await ui.say('Il n\'y a plus rien ici.'); return; }
-    await ui.say(o.trouve);
-    g.sound.sfx('item');
-    await this.majContes(d, 'hg1', { trouves: [...t, o.objet] });
-    await ui.say(`Tu prends ${o.nom}. (${t.length + 1}/${SERVICES.length})`);
+  /** un objet d'une mission */
+  async mission(d, o) {
+    const g = this.game, ui = g.ui;
+    if (o.type === 'note') { await ui.say(['Une recette, de la main de la vieille dame : « Pour un bon feu ».', '« Le soufflet du milieu, toujours en dernier. Celui de gauche, jamais en premier. »']); return; }
+    if (o.type === 'bois') {
+      if (this.missionFaite(d, 'bois')) { await ui.say('Un grand tas de bûches bien sèches.'); return; }
+      if (!this.missionActive(d, 'bois')) { await ui.say(['Un grand tas de bûches bien sèches.', 'Quelque chose remue dessous...']); return; }
+      await ui.say(['Tu tends la main vers une bûche...', 'Le tas de bois remue. Quelque chose y a fait son nid !']);
+      const res = await g.wildBattle([[NICHE_BOIS[0], NICHE_BOIS[1], NICHE_BOIS[1], 1]], { fixed: true });
+      g.busy = true;
+      if (res === 'lose') { await this.defaite(d); return; }
+      if (res !== 'win' && res !== 'caught') { await ui.say('Le Pokémon retourne se cacher sous les bûches.'); return; }
+      await ui.say('Le tas de bois est libre. Tu prends une belle brassée de bûches.');
+      await this.finMission(d, 'bois');
+      return;
+    }
+    if (o.type === 'puits') {
+      if (this.missionFaite(d, 'eau')) { await ui.say('La manivelle tourne sans peine, maintenant.'); return; }
+      if (!this.missionActive(d, 'eau')) { await ui.say('Un vieux puits. La manivelle refuse de tourner.'); return; }
+      await ui.say(['La manivelle refuse de tourner : des cales de bois coincent le seau au fond du puits.', 'Il faut faire glisser le seau jusqu\'à l\'ouverture.']);
+      if (!(await jouerCasseTete(g, PUITS))) return;
+      await ui.say('Le seau remonte enfin, plein d\'une eau glacée.');
+      await this.finMission(d, 'eau');
+      return;
+    }
+    if (o.type === 'chaudron') {
+      if (this.missionFaite(d, 'chaudron')) { await ui.say('Il ne reste que la trace ronde du chaudron dans la poussière.'); return; }
+      if (!this.missionActive(d, 'chaudron')) { await ui.say('Un énorme chaudron de fonte, noir de suie.'); return; }
+      await ui.say(['Un énorme chaudron de fonte, noir de suie.', 'Il est assez grand pour qu\'on s\'y tienne assis... Tu le hisses sur ton dos.']);
+      await this.finMission(d, 'chaudron');
+      return;
+    }
+    const pret = this.missionActive(d, 'four') && this.missionFaite(d, 'bois');
+    if (o.type === 'four') {
+      if (this.missionFaite(d, 'four')) { await ui.say('Le four ronfle. Il y fait une chaleur d\'enfer.'); return; }
+      if (!this.missionActive(d, 'four')) { await ui.say('Un grand four de briques, froid. Bien assez grand pour un rôti... ou deux.'); return; }
+      if (!pret) { await ui.say('Le four est vide. Il faut d\'abord du bois.'); return; }
+      await ui.say(['Tu charges le four de bûches. Une petite flamme tremble.', 'Il faut l\'attiser avec les trois soufflets, dans le bon ordre.']);
+      return;
+    }
+    if (o.type === 'soufflet') {
+      if (!pret) { await ui.say('Un gros soufflet de cuir.'); return; }
+      const l = (this.soufflets ||= []); l.push(o.n);
+      g.sound.sfx('ledge');
+      if (ORDRE_SOUFFLETS[l.length - 1] !== o.n) {
+        this.soufflets = []; g.view.shake = 0.15;
+        await ui.say('Pfff... Un nuage de cendres te saute au visage. La flamme s\'étouffe : il faut tout recommencer.');
+        return;
+      }
+      if (l.length < ORDRE_SOUFFLETS.length) { await ui.say('La flamme grandit un peu.'); return; }
+      this.soufflets = []; g.view.shake = 0.3; g.sound.sfx('bang');
+      await ui.say('Le feu prend d\'un coup ! Le four se met à ronfler.');
+      await this.finMission(d, 'four');
+    }
   },
-  async sorciereCuisine(d) {
-    const g = this.game, ui = g.ui, H = this.dContes(d, 'hg1'), qui = { speaker: 'Grisemine' };
-    if (H.battue) return;
-    // le scénario entre la fin des services et l'attaque viendra ici
-    await ui.say(['Pose tout ça sur la table, mon petit. Là. Parfait.', 'Tu sais ce qui manque encore à ma recette ?', '...', 'Un enfant bien dodu.'], qui);
-    g.sound.sfx('encounter'); g.view.shake = 0.3;
-    await ui.say(['HI HI HI ! Ces deux-là dans la cage ne sont pas encore assez gras...', 'Mais toi, tu feras très bien l\'affaire !'], qui);
-    const P = d.pnj['ŵ'];
-    const res = await this.combat({ ...P, perd: 'Non... mon four... mon beau four...' }, this.equipeContes(P.equipe));
-    if (res !== 'win') { await this.defaite(d); return; }
-    await this.majContes(d, 'hg1', { battue: true });
-    g.view.shake = 0.4; g.sound.sfx('bang');
-    await ui.say(['La sorcière recule, trébuche... et bascule dans son propre four !', 'Un nuage de suie noire envahit la cuisine. Quand il retombe, il ne reste d\'elle qu\'un chapeau fumant.']);
+  /* les meubles lourds : Force les pousse ; tout revient en place quand on entre dans la salle, ou à la demande */
+  remiseContes(to) {
+    const g = this.game, m = g.world.maps[to?.map];
+    if (!m?.blocs0 || !g.state) return;
+    delete g.state.tiles?.[m.id];
+    if (m === g.mapObj) g.applyTiles(m);
+    m.blocs = new Map(m.blocs0);
   },
-  async cage(d) {
-    const g = this.game, ui = g.ui, H = this.dContes(d, 'hg1');
-    if (H.liberes) { await ui.say('La cage est vide, sa porte grande ouverte.'); return; }
-    if (!H.battue) { await ui.say(['Une cage de fer, fermée par un gros cadenas.', 'La clé doit être sur la sorcière.']); return; }
-    g.sound.sfx('door');
-    await this.majContes(d, 'hg1', { liberes: true });
-    await ui.say(['Dans le chapeau fumant, une grosse clé noire.', 'Le cadenas cède. La porte de la cage s\'ouvre !']);
-    await ui.say(['Merci ! Merci ! Elle voulait nous manger, tu sais. Gretel d\'abord, puis moi.', 'On rentre à la maison. Par le chemin, cette fois. Pas par la forêt.'], { speaker: 'Hansel' });
+  async forceMeuble() {
+    const g = this.game, ui = g.ui, m = g.mapObj, p = g.player;
+    if (!m?.blocs) return false;
+    const [dx, dy] = DIRS[p.dir];
+    if (!m.blocs.has(cle(p.x + dx, p.y + dy))) return false;
+    const vu = 'Un meuble bien lourd. Un Pokémon costaud pourrait le pousser.';
+    if (!g.hasField('force')) { await ui.say(vu); return true; }
+    if (g.strengthOn === m.id) {
+      if (await ui.yesNo('Force est active : marche contre un meuble pour le pousser.\nRemettre tous les meubles à leur place ?')) {
+        const [x, y] = m.donjon.plan.depart;
+        await g.warp({ map: m.id, x, y, dir: 'up' }, 'exit');
+      }
+      return true;
+    }
+    if (!(await ui.yesNo(`${vu}\nUtiliser Force ?`))) return true;
+    const mon = g.fieldUser();
+    g.strengthOn = m.id; g.sound.sfx('ledge');
+    await ui.say(`${monName(mon)} utilise Force !\nIl peut désormais pousser les meubles.`);
+    return true;
+  },
+  async porteGrenier(d) {
+    await this.game.ui.say(['La porte du grenier est fermée à clé.', 'Derrière, on croirait entendre chuchoter...']);
   },
   async enfants(d) {
-    const ui = this.game.ui, H = this.dContes(d, 'hg1');
-    if (H.liberes) { await ui.say('On n\'oubliera jamais ce que tu as fait pour nous.', { speaker: 'Gretel' }); return; }
-    await ui.say(['Chut ! Elle va t\'entendre !', 'Elle nous donne des gâteaux toute la journée pour nous engraisser... Et après, elle allume le four.'], { speaker: 'Gretel' });
-    await ui.say('Ne fais pas confiance à la vieille ! Ne lui rapporte rien !', { speaker: 'Hansel' });
+    await this.game.ui.say(['Chut ! Elle va t\'entendre !', 'Ne fais pas confiance à la vieille !'], { speaker: 'Gretel' });
   },
 
   /* ---------------- le Petit Chaperon rouge ---------------- */
@@ -438,10 +504,16 @@ export const Contes = {
   equipeContes(l) { return this.equipe(l); },
 
   /* ---------------- encadré ---------------- */
+  /** le journal : les missions de la vague en cours */
+  panneauContes(d) {
+    if (!estContes(d)) return '';
+    const s = this.salleContes(d), V = s?.conte === 'hg' ? this.vagueContes(d) : null; if (!V) return '';
+    const H = this.dContes(d, 'hg1'), esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    return V.v.missions.map((q) => `<div class="dj-l${H['m_' + q.id] ? ' ok' : ''}"><span>${esc(q.nom)}</span><b>${H['m_' + q.id] ? '✔' : esc(q.ou)}</b></div>`).join('');
+  },
   texteContes(d, s) {
     if (!estContes(d)) return null;
-    const H = this.dContes(d, 'hg1');
-    if (s.conte === 'hg') return H.liberes ? 'conte terminé' : H.battue ? 'libère les enfants' : H.cuisine ? 'la cuisine' : H.accepte ? `services ${(H.trouves || []).length}/${SERVICES.length}` : 'frappe à la porte';
+    if (s.conte === 'hg') { const V = this.vagueContes(d); return !this.dContes(d, 'hg1').accepte ? (s.id === 'hg0' ? 'frappe à la porte' : 'parle à la vieille dame') : !V ? 'la suite se prépare' : V.reste.length ? `${V.v.nom} : ${V.v.missions.length - V.reste.length}/${V.v.missions.length}` : 'retourne voir la vieille dame'; }
     if (s.conte === 'cr') return this.dContes(d, 'cr4').loup ? 'conte terminé' : 'trouve la maison de Mère-Grand';
     if (s.conte === 'jk') return this.dContes(d, 'jk3').poule ? 'conte terminé' : s.id === 'jk3' ? `bruit ${this.bruit || 0}/3` : 'monte jusqu\'au géant';
     if (s.conte === 'pn') { const E3 = this.dContes(d, 'pn3'); return this.dContes(d, 'pn4').sortis ? 'conte terminé' : s.id === 'pn1' ? (this.alerteSouffle ? 'elle inspire : à l\'abri !' : 'avance entre deux souffles') : E3.cle ? 'la cabine de Geppetto' : 'trouve la clé'; }

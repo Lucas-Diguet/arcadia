@@ -1,5 +1,6 @@
 // testodyssee/js/donjons/contes.js — le Bois des Contes : un grand labyrinthe de haies et, au bout de ses cinq sorties,
-// cinq contes. Hansel et Gretel (la maison de la sorcière), le Petit Chaperon rouge (la forêt sombre et la maison de
+// cinq contes. Hansel et Gretel (la maison de la sorcière : salon, cuisine, jardin, trois étages, grenier fermé ;
+// des missions par vagues, `vagues`), le Petit Chaperon rouge (la forêt sombre et la maison de
 // Mère-Grand), Jack et le haricot magique (la tige, les nuages, le château du géant), Pinocchio (le ventre de la baleine)
 // et Boucle d'or (la maison des trois ours, pas encore ouverte). Seul ou à plusieurs, sans mécanique de groupe.
 // Mécaniques dans donjon/contes.js. Les salles se relient par des passages (`lien` : vers la salle, cible la marque
@@ -165,9 +166,8 @@ function exterieur() {
 const dres = (cls, nom, sprite, dir, defi, equipe, o = {}) => ({ cls, nom, sprite, dir, vue: 4, prix: 1200, defi, equipe, ...o });
 
 const pnj = {
-  // Hansel et Gretel : la sorcière (dans le hall, puis à la cuisine), les enfants dans la cage
+  // Hansel et Gretel : la sorcière au salon, les enfants enfermés au grenier
   'ŝ': { id: 'sorciere-hall', cls: 'Vieille dame', nom: 'Grisemine', sprite: 'medium', dir: 'down', toujours: true, sorciere: 'hall' },
-  'ŵ': { id: 'sorciere-cuisine', cls: 'Sorcière', nom: 'Grisemine', sprite: 'medium', dir: 'down', toujours: true, sorciere: 'cuisine', boss: true, prix: 5000, equipe: [[429, 45], [430, 44], [711, 44], [426, 43]] },
   'ĥ': { id: 'hansel', cls: '', nom: 'Hansel', sprite: 'gamin', dir: 'down', toujours: true, enfant: 'hansel' },
   'ĝ': { id: 'gretel', cls: '', nom: 'Gretel', sprite: 'fillette', dir: 'down', toujours: true, enfant: 'gretel' },
   // le Petit Chaperon rouge, Mère-Grand (le loup), les dresseurs de la forêt
@@ -232,17 +232,25 @@ const CONTES = {
     'γ': { type: 'lien', sol: true, vers: 'pn0', cible: 'Γ', conte: 'Pinocchio' }, 'Γ': { type: 'lien', sol: true, vers: 'lab', cible: 'γ' },
     'δ': { type: 'lien', sol: true, vers: 'jk0', cible: 'Δ', conte: 'Jack et le haricot magique' }, 'Δ': { type: 'lien', sol: true, vers: 'lab', cible: 'δ' },
     'ε': { type: 'lien', sol: true, vers: 'bo0', cible: 'Ε', conte: 'Boucle d\'or' }, 'Ε': { type: 'lien', sol: true, vers: 'lab', cible: 'ε' },
-    // Hansel et Gretel : la maison, ses étages, les services, la cage
+    // Hansel et Gretel : la maison (salon et cuisine, jardin, trois étages, grenier fermé à clé), le débarras
     'ħ': { type: 'maison', sol: true, batiment: 'bighouse', toit: 'purple', nom: 'Maison en pain d\'épice', vers: 'hg1', cible: 'ƕ' },
     'ƕ': { type: 'lien', sol: true, vers: 'hg0', cible: 'ħ' },
+    'ρ': { type: 'lien', sol: true, vers: 'hgj', cible: 'Ρ' }, 'Ρ': { type: 'lien', sol: true, vers: 'hg1', cible: 'ρ' },
     'ζ': { type: 'lien', sol: true, vers: 'hg2', cible: 'Ζ', escalier: true }, 'Ζ': { type: 'lien', sol: true, vers: 'hg1', cible: 'ζ', escalier: true },
     'η': { type: 'lien', sol: true, vers: 'hg3', cible: 'Η', escalier: true }, 'Η': { type: 'lien', sol: true, vers: 'hg2', cible: 'η', escalier: true },
-    'θ': { type: 'lien', sol: true, vers: 'hg4', cible: 'Θ', escalier: true }, 'Θ': { type: 'lien', sol: true, vers: 'hg1', cible: 'θ', escalier: true },
-    '①': { type: 'service', decor: 'books', objet: 'grimoire', nom: 'le grimoire', trouve: 'Entre deux livres de recettes, un vieux grimoire relié de cuir noir.' },
-    '②': { type: 'service', decor: 'armoire', objet: 'lunettes', nom: 'les lunettes', trouve: 'Au fond de l\'armoire, une paire de lunettes aux verres épais comme des fonds de bouteille.' },
-    '③': { type: 'service', decor: 'boxes', objet: 'louche', nom: 'la louche d\'argent', trouve: 'Dans une caisse, sous des os bien blancs, une grande louche en argent.' },
-    '④': { type: 'service', decor: 'caisse', objet: 'sucre', nom: 'le sac de sucre', trouve: 'Un gros sac de sucre, assez pour un gâteau... ou pour un enfant entier.' },
-    '⊠': { type: 'cage', decor: 'cage' },
+    'θ': { type: 'lien', sol: true, vers: 'hg4', cible: 'Θ', escalier: true }, 'Θ': { type: 'lien', sol: true, vers: 'hg3', cible: 'θ', escalier: true },
+    'σ': { type: 'lien', sol: true, vers: 'hg5', cible: 'Σ', bloque: 'grenier' }, 'Σ': { type: 'lien', sol: true, vers: 'hg4', cible: 'σ' },
+    'φ': { type: 'lien', sol: true, vers: 'hgd', cible: 'Φ' }, 'Φ': { type: 'lien', sol: true, vers: 'hg2', cible: 'φ' },
+    // les meubles lourds : ils se poussent avec Force (donjon/meubles.js)
+    'Ⓐ': { type: 'meuble', sol: true, sprite: 'armoire' }, 'Ⓛ': { type: 'meuble', sol: true, sprite: 'bed' }, 'Ⓣ': { type: 'meuble', sol: true, sprite: 'table' },
+    'Ⓧ': { type: 'meuble', sol: true, sprite: 'boxes' }, 'Ⓢ': { type: 'meuble', sol: true, sprite: 'chair' },
+    // les missions de la sorcière
+    'Ⓑ': { type: 'bois', decor: 'buches' },
+    'Ⓦ': { type: 'puits', decor: 'puits' },
+    'Ⓗ': { type: 'chaudron', decor: 'chaudron' },
+    'Ⓞ': { type: 'four', decor: 'fireplace' },
+    '❶': { type: 'soufflet', decor: 'soufflet', n: 0 }, '❷': { type: 'soufflet', decor: 'soufflet', n: 1 }, '❸': { type: 'soufflet', decor: 'soufflet', n: 2 },
+    'Ⓝ': { type: 'note', decor: 'livres' },
     // le Petit Chaperon rouge
     'ι': { type: 'lien', sol: true, vers: 'cr2', cible: 'Ι' }, 'Ι': { type: 'lien', sol: true, vers: 'cr1', cible: 'ι' },
     'κ': { type: 'lien', sol: true, vers: 'cr3', cible: 'Κ' }, 'Κ': { type: 'lien', sol: true, vers: 'cr2', cible: 'κ' },
@@ -271,11 +279,20 @@ const CONTES = {
     // Boucle d'or : la maison des trois ours, fermée pour l'instant
     'ƀ': { type: 'maison', sol: true, batiment: 'house2', toit: 'brown', nom: 'Maison des Trois Ours', ferme: true },
   },
+  // les missions de la sorcière, par vagues (les vagues 2 et 3 viendront)
+  vagues: [
+    { nom: 'Préparer le feu', missions: [
+      { id: 'bois', nom: 'Du bois du bûcher', ou: 'jardin' },
+      { id: 'eau', nom: 'De l\'eau du puits', ou: 'jardin' },
+      { id: 'chaudron', nom: 'Le grand chaudron', ou: 'débarras, 1er étage' },
+      { id: 'four', nom: 'Allumer le four', ou: 'cuisine' },
+    ] },
+  ],
   pnj,
   salles: [
     // le labyrinthe de haies (plein air) : l'entrée en bas, cinq sorties
     { id: 'lab', nom: 'Labyrinthe des Haies', type: 'libre', dehors: true, mur: 'BUSH', haies: true, style: null, musique: 'forest', plan: labyrinthe() },
-    // Hansel et Gretel : la clairière, puis la maison (rez-de-chaussée, étage, grenier, cave)
+    // Hansel et Gretel : la clairière, puis la maison (salon et cuisine, jardin, trois étages, débarras, grenier)
     { id: 'hg0', nom: 'Clairière de la Maison en Pain d\'Épice', type: 'libre', dehors: true, style: null, conte: 'hg', plan: [
       "############################",
       "##..f...hhhh......hhh...f.##",
@@ -290,60 +307,98 @@ const CONTES = {
       "##............S...........##",
       "##############Α#############",
     ] },
-    { id: 'hg1', nom: 'Maison de la Sorcière — Rez-de-chaussée', type: 'libre', conte: 'hg', plan: [
-      "##################################",
-      "##################################",
-      "##ƒ...k..ş##.......ζ##ḱḱḱ..ṽ...ç##",
-      "##.........|................ŵ...##",
-      "##..ç.p.ç..#....p..p.##.........##",
-      "##.........#....p..p.##.......⊠.##",
-      "##...ŝ.....#.........##..ĥĝ.....##",
-      "##.##################.#########.##",
-      "##..............................##",
-      "##.############.###############.##",
-      "##.#ṽ......ş.##.##k.k.k...ş..ą#.##",
-      "##.#.........##.##...........#θ.##",
-      "##.#....ʙ....##.##...........##.##",
-      "##.##.########..####.########...##",
-      "##.............S..............ƕ.##",
-      "##################################",
+    { id: 'hg1', nom: 'Maison de la Sorcière — Salon et cuisine', type: 'libre', conte: 'hg', plan: [
+      "####################################",
+      "####################################",
+      "##ƒ...k..ş...ṽ...ζ.##ḱḱ..Ⓞ..❶❷❸...##",
+      "##.................##.............##",
+      "##....ç.p.ç.......................##",
+      "##......ŝ..........##...p.p...Ⓝ...##",
+      "##....ç.p.ç........##.............##",
+      "##.................##.............##",
+      "##.......S.........############ρ####",
+      "#########ƕ##########################",
     ] },
-    { id: 'hg2', nom: 'Maison de la Sorcière — Étage', type: 'libre', conte: 'hg', plan: [
+    { id: 'hgj', nom: 'Jardin de la Sorcière', type: 'libre', dehors: true, style: null, conte: 'hg', zoneOpts: { theme: 'forest' }, plan: [
+      "############Ρ###############",
+      "##Y.....f...S.......f....Y##",
+      "##......................hh##",
+      "##..Ⓑ.......::.....%%%%%%%##",
+      "##..........::.....%hhhhh%##",
+      "##f.........::.....%hhhhh%##",
+      "##......Ⓦ...::.....%%%%%%%##",
+      "##Y.................f....Y##",
+      "############################",
+    ] },
+    { id: 'hg2', nom: 'Maison de la Sorcière — Premier étage', type: 'libre', conte: 'hg', plan: [
       "##################################",
       "##################################",
-      "##ʙ...ą..##k.k.k.①.##ʙ..ʙ..ṽ...η##",
+      "##ʙ...ą..##k.k.k...##ʙ..ʙ..ṽ...η##",
       "##.......##........##..........##",
       "##.ç.p...##..p..p..##..ç....p..##",
       "####.######.######.#######.######",
       "##..............................##",
       "##.############################.##",
-      "##.##ʙ..②...ş##...........ą..##.##",
+      "##.##ʙ......ş##...........ą..##.##",
       "##.##........##.....ʙ........##.##",
       "##.##.ç..p...##..............##.##",
       "##.####.####.#####.####.#######.##",
       "##.ΖS...........................##",
+      "####################φ#############",
+    ] },
+    // le débarras : des meubles à pousser pour atteindre le chaudron (9 poussées au mieux, vérifié par les tests)
+    { id: 'hgd', nom: 'Maison de la Sorcière — Débarras', type: 'libre', conte: 'hg', meubles: true, plan: [
+      "#################",
+      "#################",
+      "##Ⓛ...ⓉⓉ..c...Ⓗ##",
+      "##cn.n.n.n.w.w.##",
+      "##.Ⓐ...Ⓛ.......##",
+      "##.wⓉwⓉw.w.n.n.##",
+      "##Ⓐ.....ⓉⒶ.Ⓐ..Ⓐ##",
+      "##.w.n.ncw.wcnc##",
+      "##S.c..Ⓢ...Ⓣ...##",
+      "##Φ##############",
+    ] },
+    { id: 'hg3', nom: 'Maison de la Sorcière — Deuxième étage', type: 'libre', conte: 'hg', plan: [
+      "##################################",
+      "##################################",
+      "##k.k.k.k##p.ç..ç.p##n.n.c..w..θ##",
+      "##.......##........##..........##",
+      "##.ç..p..##..p..p..##..ɓ....c..##",
+      "####.######.######.#######.######",
+      "##..............................##",
+      "##.############################.##",
+      "##.##ʙ..ą...ş##....ṽ......ą..##.##",
+      "##.##........##.....p........##.##",
+      "##.##.ç..p...##..ç........ç..##.##",
+      "##.####.####.#####.####.#######.##",
+      "##.ΗS...........................##",
       "##################################",
     ] },
-    { id: 'hg3', nom: 'Maison de la Sorcière — Grenier', type: 'libre', conte: 'hg', plan: [
-      "############################",
-      "############################",
-      "##ɓɓ..n..c.....w...ɓ...④..##",
-      "##..........|.......|.....##",
-      "##.ɓ..w.......n.n.......c.##",
-      "######.##########.#########",
-      "##......................SΗ##",
-      "############################",
+    { id: 'hg4', nom: 'Maison de la Sorcière — Troisième étage', type: 'libre', conte: 'hg', plan: [
+      "##################################",
+      "##################################",
+      "##ʙ...ą.ş##ʙ.ą.....##ɓ.ɓ.n..w..σ##",
+      "##.......##........##..........##",
+      "##.ç..p..##..ç..ṽ..##.......c..##",
+      "####.######.######.#######.######",
+      "##..............................##",
+      "##.############################.##",
+      "##.##k.k.k..ş##ʙ...ą...ṽ..ą..##.##",
+      "##.##........##..............##.##",
+      "##.##.ç..p...##..ç..p.....ç..##.##",
+      "##.####.####.#####.####.#######.##",
+      "##.ΘS...........................##",
+      "##################################",
     ] },
-    { id: 'hg4', nom: 'Maison de la Sorcière — Cave', type: 'libre', conte: 'hg', plan: [
-      "##########################",
-      "##########################",
-      "##n.n.n...##....c..③..ɓ.##",
-      "##........##............##",
-      "##.ɓ..w...|#....n.n.....##",
-      "##........##............##",
-      "####.########.###########",
+    { id: 'hg5', nom: 'Maison de la Sorcière — Grenier', type: 'libre', conte: 'hg', plan: [
+      "############################",
+      "############################",
+      "##ɓɓ..n..c.....w...ɓ......##",
+      "##..........|.......|.....##",
+      "##.ɓ..w.....ĥ.ĝ.........c.##",
       "##........................##",
-      "##ΘS......................##",
+      "##......................SΣ##",
       "############################",
     ] },
     // le Petit Chaperon rouge : deux salles de forêt sombre, puis la clairière et la maison de Mère-Grand

@@ -1607,7 +1607,20 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   const sorties = ['α', 'β', 'γ', 'δ', 'ε'].filter((c) => M.lab.donjon.plan.objets[c]);
   ok(sorties.length === 5 && sorties.every((c) => d.objets[c].conte), 'contes : le labyrinthe a cinq sorties, une par conte');
   ok(M.lab.w >= 49 && M.cr1.w >= 60 && M.cr1.h >= 45 && M.cr2.w >= 60, 'contes : un grand labyrinthe, deux salles de forêt de la taille d\'une voie du Temple');
-  ok(['hg1', 'hg2', 'hg3', 'hg4'].every((id) => M[id]) && ['①', '②', '③', '④'].every((c) => cartes.some((m) => m.donjon.plan.objets[c])), 'contes : la maison de la sorcière a quatre niveaux et quatre services à rendre');
+  ok(['hg1', 'hgj', 'hg2', 'hgd', 'hg3', 'hg4', 'hg5'].every((id) => M[id]) && d.objets['σ'].bloque === 'grenier', 'contes : la maison de la sorcière a un salon, un jardin, trois étages, un débarras et un grenier fermé à clé');
+  {
+    const { lireSalle, resoudreMeubles, PUITS, ORDRE_SOUFFLETS } = await import('../testodyssee/js/donjon/meubles.js');
+    const types = new Set(Object.values(d.objets).map((o) => o.type)), ids = d.vagues.flatMap((v) => v.missions.map((q) => q.id));
+    ok(d.vagues[0].missions.length === 4 && ['bois', 'puits', 'chaudron', 'four', 'soufflet', 'note'].every((t) => types.has(t)) && new Set(ids).size === ids.length, 'contes : la première vague de la sorcière a quatre missions, chacune a son objet dans la maison');
+    const sd = d.salles.find((q) => q.id === 'hgd'), meubles = Object.keys(d.objets).filter((c) => d.objets[c].type === 'meuble').join('');
+    const S = lireSalle(sd.plan, { meubles, plein: Object.keys(d.decor).join('') + 'Ⓗ', interdit: 'ΦS' });
+    const n = resoudreMeubles(S, S.marques.S[0], S.marques['Ⓗ'][0]);
+    const sans = resoudreMeubles({ ...S, interdit: new Set([...S.interdit, ...[...Array(S.w * S.h).keys()].map((i) => (i % S.w) + ',' + Math.floor(i / S.w))]) }, S.marques.S[0], S.marques['Ⓗ'][0]);
+    ok(n >= 5 && n <= 20 && sans === -1, `contes : le débarras se traverse en poussant les meubles (${n} poussées au mieux), pas sans les pousser`);
+    const sol = PUITS.jeu.solution();
+    ok(sol >= 8 && sol <= 20 && PUITS.jeu.nouveau().blocs.length === PUITS.jeu.NIVEAU.length, `contes : le seau du puits se dégage (${sol} glissements au mieux)`);
+    ok(ORDRE_SOUFFLETS.length === 3 && new Set(ORDRE_SOUFFLETS).size === 3 && ORDRE_SOUFFLETS[2] === 1 && ORDRE_SOUFFLETS[0] !== 0, 'contes : l\'ordre des soufflets suit la recette (le milieu en dernier, la gauche jamais en premier)');
+  }
   // de l'arrivée de chaque salle, on atteint ses passages, ses PNJ et ses objets (le vide de la tige et le suc de l'estomac ne se traversent pas)
   for (const m of cartes) {
     const P = m.donjon.plan;
@@ -1617,7 +1630,7 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = x + dx, b = y + dy, k = a + ',' + b; if (v.has(k) || bloc.has(k) || !walkable(m.get(a, b))) continue; v.add(k); f.push([a, b]); } }
     const pres = ([x, y]) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => v.has((x + dx) + ',' + (y + dy)));
     const manque = [];
-    for (const [c, l] of Object.entries(P.objets)) { const o = d.objets[c]; if (['lien', 'maison', 'service', 'cage', 'poule', 'coffrePn', 'bucher', 'ramasser'].includes(o.type)) for (const p of l) if (!pres(p)) manque.push(c); }
+    for (const [c, l] of Object.entries(P.objets)) { const o = d.objets[c]; if (['lien', 'maison', 'bois', 'puits', 'chaudron', 'four', 'soufflet', 'note', 'poule', 'coffrePn', 'bucher', 'ramasser'].includes(o.type)) for (const p of l) if (!pres(p)) manque.push(c); }
     for (const [k, l] of Object.entries(P.pnj)) if (!pres(l[0])) manque.push(k);
     ok(!manque.length, `contes : ${m.salle}, tout est atteignable${manque.length ? ' (manque ' + manque.join(' ') + ')' : ''}`);
   }

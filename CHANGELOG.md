@@ -1,5 +1,12 @@
 # Journal des versions — Arcadia
 
+## 5.55 — 15 novembre 2026
+- **TestOdyssée** — Bois des Contes, Hansel et Gretel : la maison de la sorcière est refaite. Un grand salon et sa cuisine, un jardin, trois étages de couloirs et de pièces, et un grenier fermé à clé.
+  - La vieille dame demande de l'aide pour préparer son repas. Sa liste de missions s'affiche dans le journal, et chacun peut aller en chercher une de son côté.
+  - Première liste, « Préparer le feu » : du bois, de l'eau du puits, le grand chaudron et le four à allumer. Chaque mission a sa petite épreuve.
+  - Au débarras, on pousse les meubles avec Force pour se frayer un passage. En examinant un meuble, on peut tout remettre en place.
+  - La suite du repas et le grenier arriveront plus tard.
+
 ## 5.54 — 15 novembre 2026
 - **TestOdyssée** — Temple des Éléments : le Gardien demande maintenant si l'on veut vraiment retourner au Grand Hall, et redemande si la récompense n'a pas été prise sur la table.
   - Nouvelle musique pour le combat contre le Gardien.

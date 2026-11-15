@@ -774,10 +774,17 @@ sont prises en charge par `donjon/plan.js`. Passages (`lien`, comme au Tombeau) 
 d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
 - Labyrinthe des Haies (`lab`, 49 × 49, généré ; `haies: true` : les buissons deviennent de hautes haies, `img/contes/haie0-2.png`) : entrée en bas depuis l'Orée des Contes, clairière vide au centre, cinq
   sorties avec leur pancarte (Hansel et Gretel, Chaperon rouge, Pinocchio, Jack, Boucle d'or).
-- Hansel et Gretel (`hg0` à `hg4`) : la clairière et la maison en pain d'épice (rez-de-chaussée, étage, grenier, cave).
-  La vieille dame demande quatre services (`service` : grimoire, lunettes, louche, sucre), puis attend à la cuisine,
-  attaque (`sorciere` : hall, cuisine) ; battue, sa clé ouvre la cage des enfants. Le scénario entre l'entrée et
-  l'attaque est à écrire (dialogues provisoires).
+- Hansel et Gretel : la clairière (`hg0`), le salon et la cuisine (`hg1`), le jardin (`hgj`), trois étages (`hg2` à
+  `hg4` : un couloir et des pièces), le débarras (`hgd`), le grenier fermé à clé (`hg5`, Hansel et Gretel). La vieille
+  dame demande de l'aide pour son repas par vagues de missions (`vagues` du donjon ; état dans la salle `hg1` :
+  `accepte`, `vague`, `m_<mission>` ; la liste s'affiche dans le journal, `panneauContes`). Vague 1, « Préparer le
+  feu » : le bois (un Pokémon niché dans le bûcher), l'eau (le seau coincé du puits, casse-tête `PUITS`), le chaudron
+  (au débarras), le four (du bois, puis trois soufflets dans l'ordre de la recette, `ORDRE_SOUFFLETS`). Les vagues 2
+  et 3, la clé du grenier et le combat contre la sorcière restent à faire.
+  Meubles à pousser (`type: 'meuble'`, `sprite`) : des rochers de Force dessinés en meubles (`m.blocs`, suivis par
+  `setTile` de `js/jeu.js`) ; ils reviennent en place quand on entre dans la salle ou en examinant un meuble une fois
+  Force active. `js/donjon/meubles.js` (sans DOM) : solveur des salles à meubles pour les tests. Images du puits, des
+  bûches, du chaudron et du soufflet : `python3 tools/contes-images.py`.
 - Le Petit Chaperon rouge (`cr1` à `cr4`) : deux salles de forêt sombre (60 × 45, générées : allées, clairières, hautes
   herbes, dresseurs qui restent après leur défaite), la clairière, la maison de Mère-Grand (le loup dans le lit,
   combat ; Mère-Grand dans l'armoire).

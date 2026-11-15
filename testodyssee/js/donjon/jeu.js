@@ -397,7 +397,7 @@ export class Donjons {
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
     }
     const html = this.journalCache ? `<button type="button" class="dj-montrer" tabindex="-1">Journal (N)</button>`
-      : `<button type="button" class="dj-cacher" tabindex="-1" title="Cacher le journal (N)">–</button><div class="dj-t">${esc(d.nom)}</div>${this.panneauTombeau(d)}${lignes.join('')}<button type="button" class="dj-quitter" tabindex="-1">Quitter le donjon</button>`;
+      : `<button type="button" class="dj-cacher" tabindex="-1" title="Cacher le journal (N)">–</button><div class="dj-t">${esc(d.nom)}</div>${this.panneauTombeau(d)}${this.panneauContes(d)}${lignes.join('')}<button type="button" class="dj-quitter" tabindex="-1">Quitter le donjon</button>`;
     this.panel.classList.toggle('cache', !!this.journalCache);
     if (html !== this.panelHtml) { this.panelHtml = html; this.panel.innerHTML = html; }
     this.panel.style.display = '';
