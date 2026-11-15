@@ -72,7 +72,8 @@ export const Contes = {
         else if (o.type === 'abri') m.contes.abris.add(cle(x, y));
         else if (o.type === 'epave') m.contes.epaves.add(cle(x, y));
         else if (o.type === 'grince') m.contes.grince.add(cle(x, y));
-        else if (o.type === 'legume') { m.set(x, y, T.SAND); m.prop(o.legume, x, y); }
+        else if (o.type === 'terre') (m.terre ||= new Set()).add(cle(x, y));   // terre brune (rendu.js)
+        else if (o.type === 'legume') { (m.terre ||= new Set()).add(cle(x, y)); m.prop(o.legume, x, y); }
         else if (o.type === 'meuble') { m.set(x, y, T.BOULDER); (m.blocs0 ||= new Map()).set(cle(x, y), o.sprite); }
         else if (['bois', 'puits', 'chaudron', 'four', 'soufflet', 'note'].includes(o.type)) m.object(x, y, { use: () => this.mission(d, o) });
         else if (o.type === 'poule') m.object(x, y, { use: () => this.poule(d) });

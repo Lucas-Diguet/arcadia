@@ -40,6 +40,12 @@ const TUILES = {
     x.fillStyle = '#3a2214'; x.fillRect(0, 0, 32, 32);
     for (let k = 0; k < 60; k++) { x.fillStyle = r() < 0.5 ? '#46291a' : '#2c180c'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 2); }
   },
+  sol_terre(x, r) {
+    // terre retournée du potager (Bois des Contes) : brune, avec quelques mottes
+    x.fillStyle = '#6a4326'; x.fillRect(0, 0, 32, 32);
+    for (let k = 0; k < 70; k++) { x.fillStyle = r() < 0.5 ? '#7b5130' : '#573619'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 1); }
+    for (let k = 0; k < 8; k++) { x.fillStyle = '#4a2d14'; x.fillRect(r() * 30 | 0, r() * 30 | 0, 2, 2); }
+  },
   sol_reflet(x) {
     // sol de la salle du Reflet : dalles bleu pâle, assez foncées pour que le haut blanc des murs s'en détache
     x.fillStyle = '#a9c9ee'; x.fillRect(0, 0, 32, 32);
@@ -126,7 +132,8 @@ export function brancherRendu() {
   // ponts sur la lave : le jeu dessine la lave et les planches (pas les pontons sur l'eau du sol généré) ;
   // barrières des grottes : le sol de grotte dessous
   Sol.prototype.pump = function () {
-    const m = this.map, nus = m?.deco ? new Set(m.deco.filter((d) => SOUS.has(d.k)).map((d) => d.x + ',' + d.y)) : null;
+    const m = this.map; let nus = m?.deco ? new Set(m.deco.filter((d) => SOUS.has(d.k)).map((d) => d.x + ',' + d.y)) : null;
+    if (m?.terre?.size) { nus ||= new Set(); for (const k of m.terre) nus.add(k); }   // la terre du potager
     const vide = m?.tomb ? new Set(m.deco.filter((d) => d.k === 'gouffre' || d.k === 'revele').map((d) => d.x + ',' + d.y)) : null;
     const lave = m?.biome === 'magma' && !m.outdoor, grotte = m && !m.outdoor && m.floor === 'cave', neige = m?.mont && m.outdoor;
     if (!nus?.size && !lave && !grotte && !neige) return pompe.call(this);
@@ -145,6 +152,7 @@ export function brancherRendu() {
   P.groundCell = function (x, y) {
     const m = this.map, A = this.A.cells;
     if (m.glace?.has(x + ',' + y)) return { c: A[CLAIR.glace] };
+    if (m.terre?.has(x + ',' + y) && A.sol_terre) return { c: A.sol_terre };
     // arènes du labo : un sol par case (fourmis, toile, vase…)
     { const k = m.solArene?.get(x + ',' + y); if (k && A[k]) return { c: A[k] }; }
     // rebords dans une grotte : une marche de roche (pas de l'herbe)

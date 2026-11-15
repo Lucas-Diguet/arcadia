@@ -780,7 +780,8 @@ d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
   - un étage = un long couloir droit, de haut en bas, cinq portes à gauche et cinq à droite ; chaque porte mène à une
     pièce qui a sa carte. Les escaliers alternent : celui du haut arrive en haut du couloir du dessus, celui du bas en
     bas (1er : on arrive en bas, on monte en haut ; 2e : l'inverse ; 3e : la porte du grenier est en haut) ;
-  - les pièces décidées sont dans `PIECES` (étage, côté `g` ou `d`, rang depuis le haut, plan avec `◘` pour la porte) :
+  - les pièces décidées sont dans `PIECES` (étage, côté `g` ou `d`, rang depuis le haut, plan avec `◘` pour la porte, écrit pour une pièce à gauche du couloir : la porte est sur son mur de droite, on y entre
+    en marchant vers la gauche ; à droite du couloir le plan est retourné, sauf `natif`) :
     chambre de la vieille dame et débarras au 1er, chambres de garçon et de fille au 2e, bibliothèque au 3e ; les
     autres sont de petites pièces vides (`VIDE`) ;
   - le débarras : immense et dans la pénombre (`sombre`, classe `penombre`), un labyrinthe de piles de vieilleries tiré
@@ -788,7 +789,7 @@ d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
     fond, le casse-tête `NOEUD_DEBARRAS` et le chaudron ;
   - le potager du jardin : deux blocs séparés par cinq colonnes d'herbe ; dans chacun, trois rangs de dix légumes
     séparés par un rang de terre, trois rangs d'herbe, trois autres rangs (carottes et citrouilles, pommes de terre et
-    oignons ; `type: 'legume'`).
+    oignons ; `type: 'legume'`), sur de la terre brune (`type: 'terre'`, `m.terre`, tuile `sol_terre` de `js/rendu.js`).
   La vieille dame demande de l'aide pour son repas par vagues de missions (`vagues` du donjon ; état dans la salle
   `hg1` : `accepte`, `vague`, `m_<mission>` ; la liste s'affiche dans le journal, `panneauContes`). Vague 1, « Préparer
   le feu » : le bois (un Pokémon niché dans le bûcher), l'eau (le seau coincé du puits, casse-tête `PUITS`), le

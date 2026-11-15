@@ -244,6 +244,7 @@ const CONTES = {
     'σ': { type: 'lien', sol: true, vers: 'hg5', cible: 'Σ', bloque: 'grenier' }, 'Σ': { type: 'lien', sol: true, vers: 'hg4', cible: 'σ' },
     ...MAISON.objets,   // les portes des couloirs et des pièces
     // le potager
+    '⁚': { type: 'terre', sol: true },
     'ⓒ': { type: 'legume', sol: true, legume: 'carotte' }, 'ⓘ': { type: 'legume', sol: true, legume: 'citrouille' },
     'ⓟ': { type: 'legume', sol: true, legume: 'patate' }, 'ⓞ': { type: 'legume', sol: true, legume: 'oignon' },
     // les meubles lourds : ils se poussent avec Force (donjon/meubles.js)

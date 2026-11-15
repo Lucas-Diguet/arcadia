@@ -56,14 +56,14 @@ function debarras() {
     garde.forEach(({ X, Y }, k) => { g[Y][X] = 'ⒶⓁⓉⓍ'[k % 4]; });
     // les piles de vieilleries
     for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '#') g[y][x] = PILES[Math.floor(R() * PILES.length)];
-    g[H - 2][1] = 'S';
+    g[H - 2][1] = 'S'; g[H - 2][0] = 'Φ';   // la porte : sur le mur de gauche (la pièce est à droite du couloir)
     // le casse-tête du fond, au-dessus de la case d'arrivée
     const ox = but[0] * 2 + 1, large = NOEUD_DEBARRAS[0].length;
     const haut = NOEUD_DEBARRAS.map((r) => '#'.repeat(ox) + r.replace('S', '.') + '#'.repeat(W - ox - large));
     // (pour les tests : chaque verrou et la case où on le pousse, dans les coordonnées du plan)
     const dy0 = 2 + NOEUD_DEBARRAS.length;
     DEBARRAS.graine = graine; DEBARRAS.verrous = garde.map(({ X, Y, vers }) => [X, Y + dy0, vers[0], vers[1] + dy0]); DEBARRAS.arrivee = [ox, 2 + NOEUD_DEBARRAS.length];
-    return ['#'.repeat(W), '#'.repeat(W), ...haut, '#'.repeat(ox) + '.' + '#'.repeat(W - ox - 1), ...g.slice(1, H - 1).map((r) => r.join('')), '#Φ' + '#'.repeat(W - 2)];
+    return ['#'.repeat(W), '#'.repeat(W), ...haut, '#'.repeat(ox) + '.' + '#'.repeat(W - ox - 1), ...g.slice(1, H - 1).map((r) => r.join('')), '#'.repeat(W)];
   }
   throw new Error('débarras : pas de labyrinthe');
 }
@@ -73,13 +73,13 @@ function jardin() {
   const W = 48, H = 24, g = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => (y === 0 || y === H - 1 || x < 2 || x >= W - 2 ? '#' : '.')));
   const pose = (x, y, c) => { g[y][x] = c; };
   pose(10, 0, 'Ρ'); pose(10, 1, 'S');
-  for (let y = 2; y < 10; y++) { pose(10, y, ':'); pose(11, y, ':'); }
+  for (let y = 2; y < 10; y++) { pose(10, y, '⁚'); pose(11, y, '⁚'); }
   pose(4, 5, 'Ⓑ'); pose(6, 12, 'Ⓦ');
   for (const [x, y] of [[2, 1], [45, 1], [2, 22], [45, 22], [3, 16], [14, 20]]) pose(x, y, 'Y');
   for (const [x, y] of [[6, 2], [15, 3], [3, 9], [9, 16], [13, 13], [5, 20], [16, 8]]) pose(x, y, 'f');
   // le potager : deux blocs séparés par cinq colonnes d'herbe ; dans chacun, trois rangs de dix légumes séparés par un rang de
   // terre, trois rangs d'herbe, puis trois autres rangs
-  const champ = (x0, y0, c) => { for (let r = 0; r < 5; r++) for (let x = 0; x < 10; x++) pose(x0 + x, y0 + r, r % 2 ? ':' : c); };
+  const champ = (x0, y0, c) => { for (let r = 0; r < 5; r++) for (let x = 0; x < 10; x++) pose(x0 + x, y0 + r, r % 2 ? '⁚' : c); };
   champ(20, 5, 'ⓒ'); champ(20, 13, 'ⓘ');
   champ(35, 5, 'ⓟ'); champ(35, 13, 'ⓞ');
   return g.map((r) => r.join(''));
@@ -93,7 +93,9 @@ function couloir(haut, bas, portes) {
   return r;
 }
 
-const VIDE = ['#########', '#########', '##.....##', '##.....##', '##.....##', '##..S..##', '####◘####'];
+// (plans écrits pour une pièce à gauche du couloir : la porte ◘ est sur son mur de droite, on y entre en marchant vers la
+// gauche ; à droite du couloir, le plan est retourné, sauf `natif`)
+const VIDE = ['#########', '#########', '##.....##', '##.....##', '##....S◘#', '##.....##', '#########'];
 /** les pièces décidées : étage, côté (g ou d), rang depuis le haut du couloir (0 à 4) */
 const PIECES = [
   { etage: 1, cote: 'g', rang: 4, id: 'gm', nom: 'Chambre de la vieille dame', plan: [
@@ -101,29 +103,29 @@ const PIECES = [
     '##ƒ.ą..ʙ..ṽ.k##',
     '##...........##',
     '##.ç.p.......##',
-    '##.........ç.##',
-    '##ṽ.......p.ş##',
-    '##.....S.....##',
-    '#######◘#######',
+    '##..........S◘#',
+    '##ṽ.......p..##',
+    '##.ş.........##',
+    '###############',
   ] },
-  { etage: 1, cote: 'd', rang: 4, id: 'd', nom: 'Débarras', meubles: true, sombre: true, plan: debarras() },
+  { etage: 1, cote: 'd', rang: 4, id: 'd', nom: 'Débarras', meubles: true, sombre: true, natif: true, plan: debarras() },
   { etage: 2, cote: 'g', rang: 0, id: 'eg', nom: 'Chambre de garçon', plan: [
     '#############', '#############',
     '##ʙ..ş..ʗ.k##',
     '##.........##',
-    '##.ʘ.....p.##',
-    '##.....ʘ...##',
-    '##....S....##',
-    '######◘######',
+    '##.ʘ......S◘#',
+    '##.....ʘ.p.##',
+    '##.........##',
+    '#############',
   ] },
   { etage: 2, cote: 'd', rang: 0, id: 'ef', nom: 'Chambre de fille', plan: [
     '#############', '#############',
     '##ʙ..ą..ṽ.ʚ##',
     '##.........##',
-    '##.ʞ.....p.##',
-    '##......ʚ..##',
-    '##....S....##',
-    '######◘######',
+    '##.ʞ......S◘#',
+    '##....ʚ..p.##',
+    '##.........##',
+    '#############',
   ] },
   { etage: 3, cote: 'g', rang: 2, id: 'bib', nom: 'Bibliothèque', plan: [
     '#############################', '#############################',
@@ -132,13 +134,13 @@ const PIECES = [
     '##.kkkk.kkkk.....kkkk.kkkk.##',
     '##.........................##',
     '##.kkkk.kkkk..p..kkkk.kkkk.##',
-    '##...........ç.ç...........##',
+    '##...........ç.ç..........S◘#',
     '##.kkkk.kkkk..p..kkkk.kkkk.##',
     '##.........................##',
     '##.kkkk.kkkk.....kkkk.kkkk.##',
     '##.........................##',
-    '##ş...........S...........ş##',
-    '##############◘##############',
+    '##ş.......................ş##',
+    '#############################',
   ] },
 ];
 
@@ -155,7 +157,7 @@ export function maison() {
       portes.push(a);
       objets[a] = { type: 'lien', sol: true, vers: id, cible: b }; objets[b] = { type: 'lien', sol: true, vers: `hg${e + 1}`, cible: a };
       pieces.push({ id, nom: `${NOM} — ${P ? P.nom : 'Petite pièce'}`, type: 'libre', conte: 'hg', ...(P?.meubles ? { meubles: true } : {}), ...(P?.sombre ? { sombre: true } : {}),
-        plan: (P ? P.plan : VIDE).map((r) => r.replace('◘', b).replace('Φ', b)) });
+        plan: (P ? P.plan : VIDE).map((r) => (cote === 'd' && !P?.natif ? [...r].reverse().join('') : r).replace('◘', b).replace('Φ', b)) });
     }
     salles.push({ id: `hg${e + 1}`, nom: `${NOM} — ${RANG[e - 1]} étage`, type: 'libre', conte: 'hg', plan: couloir(HAUT[e], BAS[e], portes) }, ...pieces);
   }

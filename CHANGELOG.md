@@ -1,5 +1,9 @@
 # Journal des versions — Arcadia
 
+## 5.57 — 15 novembre 2026
+- **TestOdyssée** — Bois des Contes, la maison de la vieille dame : en entrant dans une pièce par la gauche ou la droite du couloir, on arrive maintenant du bon côté de la pièce, dans le sens où l'on marchait.
+  - Au jardin, la terre du potager et du chemin est brune.
+
 ## 5.56 — 15 novembre 2026
 - **TestOdyssée** — Bois des Contes, la maison de la vieille dame : chaque étage est maintenant un long couloir droit, avec cinq portes à gauche et cinq à droite, et une pièce derrière chaque porte.
   - Les escaliers alternent : celui du haut d'un couloir arrive en haut du couloir du dessus, celui du bas en bas.

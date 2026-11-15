@@ -1628,8 +1628,8 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     ok(n >= 5 && n <= 20 && sans === -1, `contes : le fond du débarras se traverse en poussant les meubles (${n} poussées au mieux), pas sans les pousser`);
     // le labyrinthe : fermé tant qu'on n'a rien poussé, ouvert une fois chaque meuble poussé dans l'allée d'en face
     const sd = d.salles.find((q) => q.id === 'hgd'), L = lireSalle(sd.plan, { meubles, plein, interdit: '' });
-    const porte = Object.keys(L.marques).find((c) => d.objets[c]?.type === 'lien'), [px, py] = L.marques[porte][0], dep = (px) + ',' + (py - 1);
-    const va = (bloques) => { const vu = new Set([dep]), f = [dep]; while (f.length) { const [x, y] = f.pop().split(',').map(Number); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + dx) + ',' + (y + dy); if (vu.has(k) || L.murs.has(k) || bloques.has(k) || y + dy < 0 || y + dy >= L.h) continue; vu.add(k); f.push(k); } } return vu.has(DEBARRAS.arrivee.join()); };
+    const porte = Object.keys(L.marques).find((c) => d.objets[c]?.type === 'lien'), [px, py] = L.marques[porte][0], dep = (px + 1) + ',' + py;
+    const va = (bloques) => { const vu = new Set([dep]), f = [dep]; while (f.length) { const [x, y] = f.pop().split(',').map(Number); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + dx) + ',' + (y + dy); if (vu.has(k) || L.murs.has(k) || bloques.has(k) || y + dy < 0 || y + dy >= L.h || x + dx < 0 || x + dx >= L.w) continue; vu.add(k); f.push(k); } } return vu.has(DEBARRAS.arrivee.join()); };
     const avant = new Set(L.meubles), apres = new Set(L.meubles);
     for (const [x, y, u, v] of DEBARRAS.verrous) { apres.delete(x + ',' + y); apres.add(u + ',' + v); }
     ok(DEBARRAS.verrous.length >= 6 && DEBARRAS.verrous.every(([x, y]) => avant.has(x + ',' + y)) && !va(avant) && va(apres) && sd.plan.length >= 35 && sd.sombre,
