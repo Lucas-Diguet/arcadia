@@ -775,16 +775,29 @@ d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
 - Labyrinthe des Haies (`lab`, 49 × 49, généré ; `haies: true` : les buissons deviennent de hautes haies, `img/contes/haie0-2.png`) : entrée en bas depuis l'Orée des Contes, clairière vide au centre, cinq
   sorties avec leur pancarte (Hansel et Gretel, Chaperon rouge, Pinocchio, Jack, Boucle d'or).
 - Hansel et Gretel : la clairière (`hg0`), le salon et la cuisine (`hg1`), le jardin (`hgj`), trois étages (`hg2` à
-  `hg4` : un couloir et des pièces), le débarras (`hgd`), le grenier fermé à clé (`hg5`, Hansel et Gretel). La vieille
-  dame demande de l'aide pour son repas par vagues de missions (`vagues` du donjon ; état dans la salle `hg1` :
-  `accepte`, `vague`, `m_<mission>` ; la liste s'affiche dans le journal, `panneauContes`). Vague 1, « Préparer le
-  feu » : le bois (un Pokémon niché dans le bûcher), l'eau (le seau coincé du puits, casse-tête `PUITS`), le chaudron
-  (au débarras), le four (du bois, puis trois soufflets dans l'ordre de la recette, `ORDRE_SOUFFLETS`). Les vagues 2
-  et 3, la clé du grenier et le combat contre la sorcière restent à faire.
+  `hg4`), le grenier fermé à clé (`hg5`, Hansel et Gretel). Rien de ce que lit le joueur ne dit « sorcière » : c'est
+  la vieille dame. Étages, pièces, débarras et jardin sont écrits par `js/donjons/contes-maison.js` :
+  - un étage = un long couloir droit, de haut en bas, cinq portes à gauche et cinq à droite ; chaque porte mène à une
+    pièce qui a sa carte. Les escaliers alternent : celui du haut arrive en haut du couloir du dessus, celui du bas en
+    bas (1er : on arrive en bas, on monte en haut ; 2e : l'inverse ; 3e : la porte du grenier est en haut) ;
+  - les pièces décidées sont dans `PIECES` (étage, côté `g` ou `d`, rang depuis le haut, plan avec `◘` pour la porte) :
+    chambre de la vieille dame et débarras au 1er, chambres de garçon et de fille au 2e, bibliothèque au 3e ; les
+    autres sont de petites pièces vides (`VIDE`) ;
+  - le débarras : immense et dans la pénombre (`sombre`, classe `penombre`), un labyrinthe de piles de vieilleries tiré
+    d'une graine ; aux carrefours du bon chemin, un meuble à pousser dans l'allée d'en face (`DEBARRAS.verrous`) ; au
+    fond, le casse-tête `NOEUD_DEBARRAS` et le chaudron ;
+  - le potager du jardin : deux blocs séparés par cinq colonnes d'herbe ; dans chacun, trois rangs de dix légumes
+    séparés par un rang de terre, trois rangs d'herbe, trois autres rangs (carottes et citrouilles, pommes de terre et
+    oignons ; `type: 'legume'`).
+  La vieille dame demande de l'aide pour son repas par vagues de missions (`vagues` du donjon ; état dans la salle
+  `hg1` : `accepte`, `vague`, `m_<mission>` ; la liste s'affiche dans le journal, `panneauContes`). Vague 1, « Préparer
+  le feu » : le bois (un Pokémon niché dans le bûcher), l'eau (le seau coincé du puits, casse-tête `PUITS`), le
+  chaudron (au débarras), le four (du bois, puis trois soufflets dans l'ordre de la recette, `ORDRE_SOUFFLETS`). Les
+  vagues 2 et 3, la clé du grenier et le combat restent à faire.
   Meubles à pousser (`type: 'meuble'`, `sprite`) : des rochers de Force dessinés en meubles (`m.blocs`, suivis par
   `setTile` de `js/jeu.js`) ; ils reviennent en place quand on entre dans la salle ou en examinant un meuble une fois
-  Force active. `js/donjon/meubles.js` (sans DOM) : solveur des salles à meubles pour les tests. Images du puits, des
-  bûches, du chaudron et du soufflet : `python3 tools/contes-images.py`.
+  Force active. `js/donjon/meubles.js` (sans DOM) : solveur des salles à meubles pour les tests. Images (puits,
+  bûches, chaudron, soufflet, légumes, jouets) : `python3 tools/contes-images.py`.
 - Le Petit Chaperon rouge (`cr1` à `cr4`) : deux salles de forêt sombre (60 × 45, générées : allées, clairières, hautes
   herbes, dresseurs qui restent après leur défaite), la clairière, la maison de Mère-Grand (le loup dans le lit,
   combat ; Mère-Grand dans l'armoire).

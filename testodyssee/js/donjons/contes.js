@@ -17,6 +17,8 @@ const melanger = (l, r) => { for (let i = l.length - 1; i > 0; i--) { const j = 
 /* ---------------- le labyrinthe de haies ---------------- */
 // 49 × 49 cases, des couloirs d'une case entre des haies ; une clairière au centre ; l'entrée en bas, cinq sorties
 // sur les bords (en haut à gauche, en haut, en haut à droite, à gauche, à droite)
+import { maison } from './contes-maison.js';
+const MAISON = maison();
 export const LABYRINTHE = { w: 49, h: 49, centre: [24, 24] };
 function labyrinthe() {
   const { w, h } = LABYRINTHE, g = grille(w, h), r = graine(1704);
@@ -212,7 +214,7 @@ const CONTES = {
   contes: true,
   exterieur,
   textes: { perdu: 'Tes Pokémon n\'en peuvent plus... Tu te réveilles un peu plus loin, ton équipe soignée.' },
-  decor: { '|': 'colonne', p: 'table', n: 'tonneau', c: 'caisse', y: 'coffre', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter', k: 'books', 'ş': 'shelf', 'ḱ': 'kitchen', 'ƒ': 'fireplace', 'ą': 'armoire', 'ç': 'chair', 'ɓ': 'boxes', 'ṽ': 'vase', 'ŀ': 'lanterne', 'ḅ': 'bateau', 'ḟ': 'fontaine' },
+  decor: { '|': 'colonne', p: 'table', n: 'tonneau', c: 'caisse', y: 'coffre', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter', k: 'books', 'ş': 'shelf', 'ḱ': 'kitchen', 'ƒ': 'fireplace', 'ą': 'armoire', 'ç': 'chair', 'ɓ': 'boxes', 'ṽ': 'vase', 'ŀ': 'lanterne', 'ḅ': 'bateau', 'ḟ': 'fontaine', 'ʗ': 'cheval', 'ʘ': 'cubes', 'ʚ': 'peluche', 'ʞ': 'poupee' },
   objets: {
     // le décor en plein air
     Y: { type: 'tuile', sol: true, t: 'TREE' },
@@ -240,7 +242,10 @@ const CONTES = {
     'η': { type: 'lien', sol: true, vers: 'hg3', cible: 'Η', escalier: true }, 'Η': { type: 'lien', sol: true, vers: 'hg2', cible: 'η', escalier: true },
     'θ': { type: 'lien', sol: true, vers: 'hg4', cible: 'Θ', escalier: true }, 'Θ': { type: 'lien', sol: true, vers: 'hg3', cible: 'θ', escalier: true },
     'σ': { type: 'lien', sol: true, vers: 'hg5', cible: 'Σ', bloque: 'grenier' }, 'Σ': { type: 'lien', sol: true, vers: 'hg4', cible: 'σ' },
-    'φ': { type: 'lien', sol: true, vers: 'hgd', cible: 'Φ' }, 'Φ': { type: 'lien', sol: true, vers: 'hg2', cible: 'φ' },
+    ...MAISON.objets,   // les portes des couloirs et des pièces
+    // le potager
+    'ⓒ': { type: 'legume', sol: true, legume: 'carotte' }, 'ⓘ': { type: 'legume', sol: true, legume: 'citrouille' },
+    'ⓟ': { type: 'legume', sol: true, legume: 'patate' }, 'ⓞ': { type: 'legume', sol: true, legume: 'oignon' },
     // les meubles lourds : ils se poussent avec Force (donjon/meubles.js)
     'Ⓐ': { type: 'meuble', sol: true, sprite: 'armoire' }, 'Ⓛ': { type: 'meuble', sol: true, sprite: 'bed' }, 'Ⓣ': { type: 'meuble', sol: true, sprite: 'table' },
     'Ⓧ': { type: 'meuble', sol: true, sprite: 'boxes' }, 'Ⓢ': { type: 'meuble', sol: true, sprite: 'chair' },
@@ -292,7 +297,7 @@ const CONTES = {
   salles: [
     // le labyrinthe de haies (plein air) : l'entrée en bas, cinq sorties
     { id: 'lab', nom: 'Labyrinthe des Haies', type: 'libre', dehors: true, mur: 'BUSH', haies: true, style: null, musique: 'forest', plan: labyrinthe() },
-    // Hansel et Gretel : la clairière, puis la maison (salon et cuisine, jardin, trois étages, débarras, grenier)
+    // Hansel et Gretel : la clairière, puis la maison (salon et cuisine, jardin, trois étages de dix pièces, grenier)
     { id: 'hg0', nom: 'Clairière de la Maison en Pain d\'Épice', type: 'libre', dehors: true, style: null, conte: 'hg', plan: [
       "############################",
       "##..f...hhhh......hhh...f.##",
@@ -307,7 +312,7 @@ const CONTES = {
       "##............S...........##",
       "##############Α#############",
     ] },
-    { id: 'hg1', nom: 'Maison de la Sorcière — Salon et cuisine', type: 'libre', conte: 'hg', plan: [
+    { id: 'hg1', nom: 'Maison de la vieille dame — Salon et cuisine', type: 'libre', conte: 'hg', plan: [
       "####################################",
       "####################################",
       "##ƒ...k..ş...ṽ...ζ.##ḱḱ..Ⓞ..❶❷❸...##",
@@ -319,79 +324,10 @@ const CONTES = {
       "##.......S.........############ρ####",
       "#########ƕ##########################",
     ] },
-    { id: 'hgj', nom: 'Jardin de la Sorcière', type: 'libre', dehors: true, style: null, conte: 'hg', zoneOpts: { theme: 'forest' }, plan: [
-      "############Ρ###############",
-      "##Y.....f...S.......f....Y##",
-      "##......................hh##",
-      "##..Ⓑ.......::.....%%%%%%%##",
-      "##..........::.....%hhhhh%##",
-      "##f.........::.....%hhhhh%##",
-      "##......Ⓦ...::.....%%%%%%%##",
-      "##Y.................f....Y##",
-      "############################",
-    ] },
-    { id: 'hg2', nom: 'Maison de la Sorcière — Premier étage', type: 'libre', conte: 'hg', plan: [
-      "##################################",
-      "##################################",
-      "##ʙ...ą..##k.k.k...##ʙ..ʙ..ṽ...η##",
-      "##.......##........##..........##",
-      "##.ç.p...##..p..p..##..ç....p..##",
-      "####.######.######.#######.######",
-      "##..............................##",
-      "##.############################.##",
-      "##.##ʙ......ş##...........ą..##.##",
-      "##.##........##.....ʙ........##.##",
-      "##.##.ç..p...##..............##.##",
-      "##.####.####.#####.####.#######.##",
-      "##.ΖS...........................##",
-      "####################φ#############",
-    ] },
-    // le débarras : des meubles à pousser pour atteindre le chaudron (9 poussées au mieux, vérifié par les tests)
-    { id: 'hgd', nom: 'Maison de la Sorcière — Débarras', type: 'libre', conte: 'hg', meubles: true, plan: [
-      "#################",
-      "#################",
-      "##Ⓛ...ⓉⓉ..c...Ⓗ##",
-      "##cn.n.n.n.w.w.##",
-      "##.Ⓐ...Ⓛ.......##",
-      "##.wⓉwⓉw.w.n.n.##",
-      "##Ⓐ.....ⓉⒶ.Ⓐ..Ⓐ##",
-      "##.w.n.ncw.wcnc##",
-      "##S.c..Ⓢ...Ⓣ...##",
-      "##Φ##############",
-    ] },
-    { id: 'hg3', nom: 'Maison de la Sorcière — Deuxième étage', type: 'libre', conte: 'hg', plan: [
-      "##################################",
-      "##################################",
-      "##k.k.k.k##p.ç..ç.p##n.n.c..w..θ##",
-      "##.......##........##..........##",
-      "##.ç..p..##..p..p..##..ɓ....c..##",
-      "####.######.######.#######.######",
-      "##..............................##",
-      "##.############################.##",
-      "##.##ʙ..ą...ş##....ṽ......ą..##.##",
-      "##.##........##.....p........##.##",
-      "##.##.ç..p...##..ç........ç..##.##",
-      "##.####.####.#####.####.#######.##",
-      "##.ΗS...........................##",
-      "##################################",
-    ] },
-    { id: 'hg4', nom: 'Maison de la Sorcière — Troisième étage', type: 'libre', conte: 'hg', plan: [
-      "##################################",
-      "##################################",
-      "##ʙ...ą.ş##ʙ.ą.....##ɓ.ɓ.n..w..σ##",
-      "##.......##........##..........##",
-      "##.ç..p..##..ç..ṽ..##.......c..##",
-      "####.######.######.#######.######",
-      "##..............................##",
-      "##.############################.##",
-      "##.##k.k.k..ş##ʙ...ą...ṽ..ą..##.##",
-      "##.##........##..............##.##",
-      "##.##.ç..p...##..ç..p.....ç..##.##",
-      "##.####.####.#####.####.#######.##",
-      "##.ΘS...........................##",
-      "##################################",
-    ] },
-    { id: 'hg5', nom: 'Maison de la Sorcière — Grenier', type: 'libre', conte: 'hg', plan: [
+    { id: 'hgj', nom: 'Jardin de la vieille dame', type: 'libre', dehors: true, style: null, conte: 'hg', zoneOpts: { theme: 'forest' }, plan: MAISON.jardin },
+    // les trois étages (un couloir, dix pièces chacun) : donjons/contes-maison.js
+    ...MAISON.salles,
+    { id: 'hg5', nom: 'Maison de la vieille dame — Grenier', type: 'libre', conte: 'hg', plan: [
       "############################",
       "############################",
       "##ɓɓ..n..c.....w...ɓ......##",

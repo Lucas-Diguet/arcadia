@@ -1,7 +1,14 @@
 # Journal des versions — Arcadia
 
+## 5.56 — 15 novembre 2026
+- **TestOdyssée** — Bois des Contes, la maison de la vieille dame : chaque étage est maintenant un long couloir droit, avec cinq portes à gauche et cinq à droite, et une pièce derrière chaque porte.
+  - Les escaliers alternent : celui du haut d'un couloir arrive en haut du couloir du dessus, celui du bas en bas.
+  - Nouvelles pièces : la chambre de la vieille dame, une chambre de garçon, une chambre de fille et une grande bibliothèque. Les autres pièces sont encore vides.
+  - Le débarras est devenu immense et plongé dans la pénombre : un labyrinthe de vieilleries, avec des meubles à pousser pour passer.
+  - Au jardin, un vrai potager : des rangs de carottes, de citrouilles, de pommes de terre et d'oignons.
+
 ## 5.55 — 15 novembre 2026
-- **TestOdyssée** — Bois des Contes, Hansel et Gretel : la maison de la sorcière est refaite. Un grand salon et sa cuisine, un jardin, trois étages de couloirs et de pièces, et un grenier fermé à clé.
+- **TestOdyssée** — Bois des Contes, Hansel et Gretel : la maison en pain d'épice est refaite. Un grand salon et sa cuisine, un jardin, trois étages de couloirs et de pièces, et un grenier fermé à clé.
   - La vieille dame demande de l'aide pour préparer son repas. Sa liste de missions s'affiche dans le journal, et chacun peut aller en chercher une de son côté.
   - Première liste, « Préparer le feu » : du bois, de l'eau du puits, le grand chaudron et le four à allumer. Chaque mission a sa petite épreuve.
   - Au débarras, on pousse les meubles avec Force pour se frayer un passage. En examinant un meuble, on peut tout remettre en place.

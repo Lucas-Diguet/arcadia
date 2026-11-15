@@ -72,6 +72,7 @@ export const Contes = {
         else if (o.type === 'abri') m.contes.abris.add(cle(x, y));
         else if (o.type === 'epave') m.contes.epaves.add(cle(x, y));
         else if (o.type === 'grince') m.contes.grince.add(cle(x, y));
+        else if (o.type === 'legume') { m.set(x, y, T.SAND); m.prop(o.legume, x, y); }
         else if (o.type === 'meuble') { m.set(x, y, T.BOULDER); (m.blocs0 ||= new Map()).set(cle(x, y), o.sprite); }
         else if (['bois', 'puits', 'chaudron', 'four', 'soufflet', 'note'].includes(o.type)) m.object(x, y, { use: () => this.mission(d, o) });
         else if (o.type === 'poule') m.object(x, y, { use: () => this.poule(d) });
@@ -170,6 +171,7 @@ export const Contes = {
   },
   tickContes(dt) {
     const g = this.game, d = this.contesIci(), m = g.mapObj, s = d && this.salleContes(d);
+    g.ui.root.classList.toggle('penombre', !!s?.sombre);   // le débarras : on voit à quelques cases, pas plus
     if (!s) { if (this.zzzGeant) { dessinerZzz(g.view, []); this.zzzGeant = false; } this.bruit = 0; return; }
     // le géant ronfle
     const geant = s.id === 'jk3' ? g.npcs.filter((n) => n.id === `${d.id}:geant`) : [];
