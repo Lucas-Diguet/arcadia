@@ -166,8 +166,8 @@ export const Tombeau = {
     const s = d.salles.find((q) => q.id === 'g11'), m = s && this.game.world.maps[s.carte]; if (!m?.tomb || this.cinematique) return;
     const E = this.dTombeau(d, 'g11'), feux = E.feux || [], O = m.donjon.plan.objets, c = O['ǂ'][0];
     for (const [x, y] of O['Ϙ'] || []) this.propTombeau(m, x, y, feux[numeroCercle(x, y, c)] ? 'brasier_on' : 'brasier');
-    for (const [x, y] of O['ȶ'] || []) this.propTombeau(m, x, y, E.torches ? 'torche' : 'torche_off');
-    for (const [x, y] of O['ǂ'] || []) this.propTombeau(m, x, y, E.ouvert ? 'sarcophage_ouvert' : 'sarcophage');
+    for (const [x, y] of O['ȶ'] || []) this.propTombeau(m, x, y, E.torches ? 'brasier_autel' : 'brasier_autel_off');
+    for (const [x, y] of O['ǂ'] || []) this.propTombeau(m, x, y, !E.ouvert ? 'sarcophage_roi' : this.roiDebout ? 'sarcophage_roi_vide' : 'sarcophage_roi_ouvert');
   },
   porteG10(d) { const m = this.game.world.maps[d.salles.find((q) => q.id === 'g10').carte]; return m.donjon.plan.objets['Ж'][0]; },
   /** un décor qui bloque (le socle) : change de dessin */
@@ -449,12 +449,12 @@ export const Tombeau = {
     if (!E.ouvert) { await ui.say(['Le sarcophage du Roi Sans Nom.', 'Il est scellé par une magie très puissante. Impossible de l\'ouvrir.']); return; }
     if (E.battu) { await ui.say(['Le sarcophage est vide.', 'Le Roi Sans Nom a retrouvé le sommeil.']); return; }
     await ui.say(['Le couvercle a glissé sur le côté.', 'Dans le noir du sarcophage, quelque chose bouge...', 'Une silhouette couronnée se redresse lentement.']);
-    this.roiDebout = true; g.refreshNpcs(); g.sound.sfx('encounter'); g.view.shake = 0.3;
+    this.roiDebout = true; g.refreshNpcs(); this.appliquerSepulture(d); g.sound.sfx('encounter'); g.view.shake = 0.3;
     await attendre(700);
     await ui.say(['Qui...', 'Qui ose rallumer les feux de mon tombeau ?'], { speaker: 'Roi Sans Nom' });
-    const R = { cls: 'Roi', nom: 'Roi Sans Nom', sprite: 'roi_sans_nom', prix: 0, boss: true, perd: 'Le sommeil... enfin...' };
+    const R = { cls: 'Roi', nom: 'Sans Nom', sprite: 'pharaon', prix: 0, boss: true, perd: 'Le sommeil... enfin...' };
     let res;
-    try { res = await this.combat(R, equipeRoi(g.state.name)); } finally { this.roiDebout = false; g.refreshNpcs(); }
+    try { res = await this.combat(R, equipeRoi(g.state.name)); } finally { this.roiDebout = false; g.refreshNpcs(); this.appliquerSepulture(d); }
     if (res !== 'win') { await this.defaite(d); return; }
     await this.demande(d.id, { a: 'maj', salle: 'g11', donnees: { battu: true } });
     await ui.say(['Le Roi Sans Nom s\'effondre dans son sarcophage.', 'Les flammes des brasiers vacillent, puis se calment.']);
@@ -593,10 +593,10 @@ export const Tombeau = {
       await this.camera(cx, cy + 1, 1200);
       await attendre(500);
       const torches = (O['ȶ'] || []).slice().sort((a, b) => numeroCercle(...a, O['ǂ'][0]) - numeroCercle(...b, O['ǂ'][0]));
-      for (const [x, y] of torches) { this.propTombeau(m, x, y, 'torche'); g.sound.sfx('select'); await attendre(650); }
+      for (const [x, y] of torches) { this.propTombeau(m, x, y, 'brasier_autel'); g.sound.sfx('select'); await attendre(650); }
       await attendre(400);
       g.view.shake = 0.5; g.sound.sfx('bang');
-      for (const [x, y] of O['ǂ'] || []) this.propTombeau(m, x, y, 'sarcophage_ouvert');
+      for (const [x, y] of O['ǂ'] || []) this.propTombeau(m, x, y, 'sarcophage_roi_ouvert');
       await attendre(700);
       await ui.say(['Les torches de l\'autel s\'allument d\'elles-mêmes...', 'Dans un raclement de pierre, le couvercle du sarcophage glisse.']);
       await this.camera(g.player.x, g.player.y, 900);
@@ -886,9 +886,9 @@ export const Tombeau = {
     };
     const px = g.player, a = proj(px.x, px.y, 0), b = proj(px.x + 1, px.y, 0), case_ = Math.hypot(b[0] - a[0], b[1] - a[1]) || 32 * dpr;
     const E11 = s.sepulture && this.dTombeau(this.tombeauIci(), 'g11'), x = cv.getContext('2d'), t = performance.now() / 1000;
-    const L = E11 ? lumiereSepulture((E11.feux || []).filter(Boolean).length, (m.deco || []).filter((q) => q.k === 'torche').length) : LUMIERE[s.lumiere] || LUMIERE.normale;
+    const L = E11 ? lumiereSepulture((E11.feux || []).filter(Boolean).length, (m.deco || []).filter((q) => q.k === 'brasier_autel').length) : LUMIERE[s.lumiere] || LUMIERE.normale;
     x.globalCompositeOperation = 'source-over'; x.fillStyle = `rgb(${L.fond.join(',')})`; x.fillRect(0, 0, W, H);
-    const feux = (m.deco || []).filter((q) => q.k === 'torche' || q.k === 'brasero' || q.k === 'lanterne' || q.k === 'brasier_on'), lum = [];
+    const feux = (m.deco || []).filter((q) => q.k === 'torche' || q.k === 'brasier_autel' || q.k === 'brasero' || q.k === 'lanterne' || q.k === 'brasier_on'), lum = [];
     feux.forEach((q, i) => lum.push([...proj(q.x, q.y, 6), case_ * L.r * (q.k === 'brasier_on' ? 1.15 : 1) * (1 + 0.035 * Math.sin(t * 7.3 + i * 1.7) + 0.02 * Math.sin(t * 13.1 + i)), L.feu]));
     lum.push([...proj(v.focus.x - 0.5, v.focus.z - 0.5, 10), case_ * L.soi, [70, 50, 36]]);
     // la lanterne d'un moine : un halo sur lui, et la lumière jaune de son regard

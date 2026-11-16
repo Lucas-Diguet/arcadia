@@ -257,10 +257,10 @@ const TOMBEAU = {
     '¤': { type: 'verrou', decor: 'porte_grille' },
     'Ж': { type: 'porte_scellee', decor: 'porte_grande' },
     // la sépulture du -11 : le sarcophage du roi, les brasiers et leurs inscriptions, les torches de l'autel
-    'ǂ': { type: 'sarcophage_roi', decor: 'sarcophage' },
+    'ǂ': { type: 'sarcophage_roi', decor: 'sarcophage_roi' },
     'Ϙ': { type: 'brasier_roi', decor: 'brasier' },
     'Ϟ': { type: 'inscription_roi', decor: 'stele' },
-    'ȶ': { type: 'torche_autel', decor: 'torche_off' },
+    'ȶ': { type: 'torche_autel', decor: 'brasier_autel_off' },
     // passages entre les étages (vers : la salle, cible : la marque du passage d'en face) ; porte : fermée à clé
     'α': { type: 'lien', vers: 's2', cible: 'β', porte: true }, 'β': { type: 'lien', vers: 'b3', cible: 'α', porte: true },
     'γ': { type: 'lien', vers: 's1', cible: 'δ', sol: true }, 'δ': { type: 'lien', vers: 's2', cible: 'γ', sol: true },

@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.0 — 16 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : la sépulture change de visage.
+  - Le sarcophage d'or et les grands brasiers de l'autel ont de nouveaux dessins ; le sarcophage est vide quand le roi se dresse.
+  - En combat, le roi a un nouveau portrait, et son nom ne s'écrit plus « Roi Roi Sans Nom ».
+
 ## 5.99 — 16 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la roche fissurée roule du côté où tu la pousses avec Force (si la place est prise, elle part sur le côté).
 

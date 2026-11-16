@@ -775,7 +775,7 @@ porte de fer, ouverte par la Clé Antique dans les deux sens) :
   il doit en rester une), les tours de Hanoï (4 disques), le blocage façon Rush Hour (sortir le sarcophage d'or,
   31 glissements au moins) et les dalles-soleils façon Lights Out (5 × 5). Chacun est résolu par les tests.
   Images provisoires : `sarcophage`, `sarcophage_ouvert`, `torche_off`, `brasier` et `brasier_on` (ceux des Miroirs).
-  L'image du roi en combat (`img/tombeau/roi_sans_nom.png`) vient d'une illustration fournie par l'auteur, détourée et réduite.
+  En combat, le roi a le portrait du pharaon d'Odyssée ; son sarcophage (fermé, ouvert avec sa momie, vide quand il est debout) et les brasiers de l'autel viennent de PixelForge (`tools/pixelforge/donjon.py`, 32 pixels par case, liste `DENSITE_2` de `contenu.js`).
 
 Dessins d'Odyssée repris : les morts-vivants sont la goule et la momie, le Roi Sans Nom se dresse hors du sarcophage
 sous les traits du pharaon (`roiDebout`, le combat garde son image), le tombeau vu de dehors est le temple du pharaon

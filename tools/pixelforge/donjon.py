@@ -224,8 +224,8 @@ def flamme(T, cx, base, largeur, hauteur, phase, graine=3):
         if f < 0.5: T.p(sx + 1, sy, FEU[4])
 
 
-def brasier(phase):
-    """grand brasier : vasque de bronze sur un fût de pierre sculptée, deux cases de large (64 × 96)"""
+def brasier(phase, eteint=False):
+    """grand brasier : vasque de bronze sur un fût de pierre sculptée, deux cases de large (64 × 96) ; éteint : cendres froides"""
     T = Toile(64, 96)
     cx = 32
     # socle à degrés
@@ -262,16 +262,17 @@ def brasier(phase):
     for y in range(30, 38):
         for x in range(cx - 22, cx + 22):
             if ((x + .5 - cx) / 22) ** 2 + ((y + .5 - 34) / 4) ** 2 <= 1:
-                T.p(x, y, nuance(FEU, 0.35 + bruit(x, y + int(phase), 9) * 0.45, x, y))
+                T.p(x, y, nuance(PIERRE, 0.08 + bruit(x, y, 9) * 0.2, x, y) if eteint else nuance(FEU, 0.35 + bruit(x, y + int(phase), 9) * 0.45, x, y))
     for x in range(cx - 25, cx + 25):                     # lèvre de la vasque
         y = 34 - int(round(5 * math.sqrt(max(0, 1 - ((x + .5 - cx) / 25) ** 2))))
         T.p(x, y, OR[5] if x < cx else OR[4])
         y2 = 34 + int(round(5 * math.sqrt(max(0, 1 - ((x + .5 - cx) / 25) ** 2))))
         T.p(x, y2, OR[3])
     # flammes : trois langues
-    flamme(T, cx - 10, 33, 8, 20, phase + 1.3, 11)
-    flamme(T, cx + 11, 33, 7, 17, phase + 2.6, 17)
-    flamme(T, cx, 34, 13, 34, phase, 3)
+    if not eteint:
+      flamme(T, cx - 10, 33, 8, 20, phase + 1.3, 11)
+      flamme(T, cx + 11, 33, 7, 17, phase + 2.6, 17)
+      flamme(T, cx, 34, 13, 34, phase, 3)
     contour_couleur(T, '#22100a')
     return T
 
@@ -555,7 +556,7 @@ def couvercle(T, ox, oy):
     T.rect(cx - 4, oy + 50, cx + 4, oy + 53, OR[3]); T.hline(cx - 4, cx + 4, oy + 50, OR[5])
 
 
-def sarcophage(ouvert=False):
+def sarcophage(ouvert=False, vide=False):
     """sarcophage sur sa cuve de granit, couché nord-sud (tête en haut) ; 32 × 64. Ouvert : la cuve sans son couvercle,
     une momie dedans"""
     T = Toile(32, 64)
@@ -574,13 +575,13 @@ def sarcophage(ouvert=False):
             for x in range(5, 27):
                 t = 0.12 + 0.1 * (y - 7) / 49 + (0.25 if x == 5 or y == 7 else 0)
                 T.p(x, y, nuance(OBSI, t * 2, x, y))
-        for y in range(11, 54):                          # momie couchée : bandelettes croisées
+        for y in range(11, 54 if not vide else 11):      # momie couchée : bandelettes croisées
             w = 4 if y < 17 else 5 if y < 40 else 5 - (y - 40) // 5
             for x in range(16 - w, 16 + w + 1):
                 t = 0.55 + 0.25 * (16 - x) / 5
                 if (y * 2 + x) % 5 == 0 or (y * 2 - x) % 7 == 0: t -= 0.22
                 T.p(x, y, nuance(OS, t, x, y))
-        T.hline(14, 15, 14, OBSI[0]); T.hline(17, 18, 14, OBSI[0])
+        if not vide: T.hline(14, 15, 14, OBSI[0]); T.hline(17, 18, 14, OBSI[0])
     else:
         couvercle(T, 3, 3)
     T.contour(hexa('#140c10'))
@@ -838,6 +839,8 @@ def main():
     out['tombeau'] = tombeau()
     out['sarcophage'] = sarcophage(False)
     out['sarcophage_ouvert'] = sarcophage(True)
+    out['sarcophage_vide'] = sarcophage(True, True)
+    out['brasier_eteint'] = brasier(0, True)
     for k, f in PORTES.items():
         out['porte_' + k] = f(False); out['porte_' + k + '_ouverte'] = f(True)
     for k, T in out.items(): T.save(os.path.join(OUT, k + '.png'))

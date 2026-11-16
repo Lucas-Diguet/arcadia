@@ -16,7 +16,7 @@ import { listerLieux } from './lieux.js';
 import { Musee } from './musee.js';
 import { EQUIPES, partieTest } from './equipes.js';
 import { Ile } from './ile/jeu.js';
-import { installerContenu, DECOR } from './contenu.js';
+import { installerContenu, DECOR, DENSITE_2 } from './contenu.js';
 import { brancherObjets } from './objets.js';
 import { brancherRendu } from './rendu.js';
 import { brancherResume } from './resume.js';
@@ -49,7 +49,7 @@ async function boot() {
   const art = await loadArt();
   // décor du labo, dessiné comme le décor du tileset (16 pixels par case)
   Object.assign(art.sprites, await loadAll(Object.fromEntries(DECOR)));
-  for (const [k] of DECOR) art.dens[k] = 1;
+  for (const [k] of DECOR) art.dens[k] = DENSITE_2.includes(k) ? 2 : 1;
   setArt({ kits: art.kits, sols: art.sols, sol32: art.sol32, hgss: art.hgss, relief: art.relief, pack: art.pack });
   const view = new WorldView(renderer, art.chars, { sprites: art.sprites, dens: art.dens, suiveurs: art.suiveurs, batiments: art.batiments });
   const game = new TestGame({ view, ui, input, sound, world });
