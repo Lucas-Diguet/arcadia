@@ -22,10 +22,10 @@ const SALLES = [
   { id: MUSEE + ':fossiles', nom: 'Galerie des Fossiles', w: 34, h: 9 },
   { id: MUSEE + ':caravanes', nom: 'Galerie des Caravanes', w: 30, h: 9 },
   { id: MUSEE + ':ecrits', nom: 'Salle des Écrits', w: 24, h: 9 },
-  { id: MUSEE + ':roi', nom: 'Salle du Roi Sans Nom', w: 22, h: 11 },
+  { id: MUSEE + ':roi', nom: 'Salle du Roi Sans Nom', w: 12, h: 8 },   // une petite salle, rien que pour le sceptre
 ];
 export const SALLE_ROI = MUSEE + ':roi', SALLE_FOSSILES = MUSEE + ':fossiles';
-const VITRINE = [15, 4], KHAMSIN = [15, 5];
+const VITRINE = [7, 3], KHAMSIN = [7, 4];
 // les statues de Pokémon fossiles, sur leur socle contre le mur du fond de la galerie
 const FOSSILES = [[142, 4], [141, 8], [139, 12], [409, 16], [567, 20], [565, 24], [697, 28], [699, 31]];
 
@@ -122,22 +122,20 @@ export function construireMusee(world) {
   pose(ecr, 'table', 12, 5, 'Une carte des routes des caravanes, dessinée sur une peau de Tauros.');
   pose(ecr, 'table', 18, 5, 'Une tablette d\'argile. Le guide dit que c\'est une facture. Cinq mille ans plus tard, elle n\'est toujours pas payée.');
 
-  // la salle du Roi Sans Nom : la vitrine au fond, des colonnes, deux gardiens ; rangées 2 et 3 dégagées (Khamsin y passe)
+  // la salle du Roi Sans Nom : petite, la vitrine au milieu, un gardien, deux braseros ; rangées 2 et 3 dégagées (Khamsin y passe)
   roi.prop('vitrine', ...VITRINE, true);
   roi.object(...VITRINE, { use: (api) => api.game.ui.say(api.game.state.flags['musee:vol']
     ? ['La vitrine est vide. Le verre n\'a même pas été brisé.']
     : ['Le Sceptre du Roi Sans Nom. Or et turquoise, cinq mille ans.', 'Une plaque : « Prêté par les moines du Tombeau du Roi Sans Nom, gardiens de sa sépulture. »']) });
-  colonnes(roi, [11, 19], 5); colonnes(roi, [11, 19], 9);
-  pose(roi, 'statue', 18, 3, 'Un gardien de pierre, la main tendue vers la vitrine.');
-  pose(roi, 'statue', 20, 3, 'Un autre gardien. Ses yeux ont été martelés, comme ceux de la galerie.');
-  pose(roi, 'brasero', 6, 9); pose(roi, 'brasero', 15, 9);
+  pose(roi, 'statue', 10, 3, 'Un gardien de pierre, la main tendue vers la vitrine. Ses yeux ont été martelés, comme ceux de la galerie.');
+  pose(roi, 'brasero', 4, 7); pose(roi, 'brasero', 10, 7);
   roi.npc({ id: 'musee:khamsin', x: KHAMSIN[0], y: KHAMSIN[1], dir: 'up', sprite: 'nox', when: (f) => !f['musee:scene'], text: ['...'] });
 
   // après le vol : la salle du sceptre bouclée, le hall plein de policiers et de journalistes
   const pol = (m, id, x, y, dir, ...t) => m.npc({ id: 'musee:' + id, x, y, dir, sprite: 'garde', when: apres, talk: (api) => api.game.ui.say(t, { speaker: 'Policier' }) });
-  pol(roi, 'cordon1', 14, 5, 'down', 'Zone bouclée. On ne passe pas.');
-  pol(roi, 'cordon2', 15, 5, 'down', 'Personne n\'approche de la vitrine tant que les relevés ne sont pas finis.');
-  pol(roi, 'cordon3', 16, 5, 'down', 'Circulez, il n\'y a rien à voir. Enfin... plus rien.');
+  pol(roi, 'cordon1', 6, 4, 'down', 'Zone bouclée. On ne passe pas.');
+  pol(roi, 'cordon2', 7, 4, 'down', 'Personne n\'approche de la vitrine tant que les relevés ne sont pas finis.');
+  pol(roi, 'cordon3', 8, 4, 'down', 'Circulez, il n\'y a rien à voir. Enfin... plus rien.');
   pol(hall, 'hall1', 7, 5, 'right', 'Aucune trace d\'effraction. Le voleur avait une clé, ou alors c\'est un magicien.');
   pol(hall, 'hall2', 13, 5, 'left', 'On a interrogé tous les visiteurs de la journée. Vous y êtes passé, vous aussi.');
   pol(hall, 'hall3', 15, 7, 'left', 'La salle du fond est ouverte, mais restez derrière mes collègues.');
@@ -191,7 +189,7 @@ export class Musee {
   /** quelques pas dans la salle du Roi Sans Nom : la scène */
   async apresPas() {
     const g = this.game, p = g.player;
-    if (g.busy || g.mapObj?.id !== SALLE_ROI || this.f['musee:scene'] || p.x < 6) return;
+    if (g.busy || g.mapObj?.id !== SALLE_ROI || this.f['musee:scene'] || p.x < 3) return;
     g.busy = true;
     try { await this.scene(); } finally { g.busy = false; }
   }
@@ -231,9 +229,9 @@ export class Musee {
       'Des histoires de vieux conteurs, sans doute.', 'Allez, je te laisse admirer. Bonne visite, petit.'], qui);
     // il s'en va vers l'entrée, par le fond de la salle (rangée 2 ou 3, celle où le joueur n'est pas)
     if (n) {
-      const r = p.y === 3 ? 2 : 3;
+      const r = p.y === 2 ? 3 : 2;
       await g.npcWalk(n, 'left', 1); await g.npcWalk(n, 'up', KHAMSIN[1] - r);
-      await g.npcWalk(n, 'left', n.x - 2); await g.npcWalk(n, 'down', 8 - r); await g.npcWalk(n, 'left', 2);
+      await g.npcWalk(n, 'left', n.x - 2); await g.npcWalk(n, 'down', 4 - r); await g.npcWalk(n, 'left', 2);
     }
     this.f['musee:scene'] = true;
     g.refreshNpcs();

@@ -1190,7 +1190,7 @@ for (const l of Object.values(lieux).flat()) {
     return vu;
   };
   const avant = va({ 'musee:scene': true }), apres = va({ 'musee:scene': true, 'musee:vol': true });
-  ok(ids.every((id) => [...avant].some((k) => k.startsWith(id + '|'))) && avant.has('labo:musee:roi|15,5') && !apres.has('labo:musee:roi|15,5') && apres.has('labo:musee:roi|15,8'), 'musée : on traverse les galeries jusqu\'à la vitrine, tout au bout ; après le vol, elle est bouclée');
+  ok(ids.every((id) => [...avant].some((k) => k.startsWith(id + '|'))) && avant.has('labo:musee:roi|7,4') && !apres.has('labo:musee:roi|7,4') && apres.has('labo:musee:roi|4,6'), 'musée : on traverse les galeries jusqu\'à la vitrine, tout au bout ; après le vol, elle est bouclée');
   const roi = world.maps['labo:musee:roi'], G = world.maps[L.gym.map], chef = G.npcs.find((n) => /:leader$/.test(n.id));
   ok(roi.npcs.some((n) => n.id === 'musee:khamsin' && n.sprite === 'nox' && n.when({}) && !n.when({ 'musee:scene': true })) && ids.flatMap((id) => world.maps[id].npcs).filter((n) => n.sprite === 'garde' && n.when({ 'musee:vol': true }) && !n.when({})).length >= 7
     && !M.npcs.some((n) => n.id === 'musee:garde') && chef && !chef.when({}) && chef.when({ 'musee:scene': true })

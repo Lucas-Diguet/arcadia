@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.4 — 16 novembre 2026
+- **TestOdyssée** — Musée des Dunes : le sceptre est exposé dans une petite salle, rien que pour lui.
+
 ## 6.3 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : un caillou posé juste derrière une haie est caché par elle, au lieu d'apparaître devant.
 
