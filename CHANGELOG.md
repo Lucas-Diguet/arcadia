@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.7 — 16 novembre 2026
+- **TestOdyssée** — Nouvelles musiques :
+  - Tombeau du Roi Sans Nom : le combat contre le roi.
+  - Bois des Contes : le labyrinthe de haies, la forêt du Chaperon rouge, la clairière et le jardin de la maison en pain d'épice.
+
 ## 6.6 — 16 novembre 2026
 - **TestOdyssée** — Temple des Éléments : un panneau à côté de chaque porte des trois voies (Voie du Feu, de l'Eau, de la Forêt). Les portes de la Salle des Clés reprennent leur ancien dessin.
 

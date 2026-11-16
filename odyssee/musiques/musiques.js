@@ -19,4 +19,10 @@ export const MUSIQUES = {
   // TestOdyssée, Tombeau du Roi Sans Nom : la vallée dehors ; toutes les salles
   yghdesert: { fichier: 'yghdesert.mp3' },
   yghtombeau: { fichier: 'yghtombeau.mp3' },
+  // TestOdyssée : le combat contre le Roi Sans Nom ; Bois des Contes : le labyrinthe, la forêt du Chaperon rouge,
+  // la clairière et le jardin de la maison de Hansel et Gretel
+  chop: { fichier: 'chop.mp3' },
+  neyla: { fichier: 'neyla.mp3' },
+  prague: { fichier: 'prague.mp3' },
+  alley: { fichier: 'alley.mp3' },
 };

@@ -11,3 +11,4 @@ et la licence de chaque fichier.
 Origine des fichiers :
 - yghbosselt, routevictoirerse, templedeleau, templedelaforet, templedufeu, yghdesert, yghtombeau : fournies par Lucas,
   libres de droits ou utilisables avec l'accord de leur auteur (13 novembre 2026).
+- chop, neyla, prague, alley : fournies par Lucas, aux mêmes conditions (16 novembre 2026).

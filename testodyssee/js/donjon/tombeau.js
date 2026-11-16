@@ -455,7 +455,7 @@ export const Tombeau = {
     this.roiDebout = true; g.refreshNpcs(); this.appliquerSepulture(d); g.sound.sfx('encounter'); g.view.shake = 0.3;
     await attendre(700);
     await ui.say(['Qui...', 'Qui ose rallumer les feux de mon tombeau ?'], { speaker: 'Roi Sans Nom' });
-    const R = { cls: 'Roi', nom: 'Sans Nom', sprite: 'pharaon', prix: 0, boss: true, perd: 'Le sommeil... enfin...' };
+    const R = { cls: 'Roi', nom: 'Sans Nom', sprite: 'pharaon', musique: 'chop', prix: 0, boss: true, perd: 'Le sommeil... enfin...' };
     let res;
     try { res = await this.combat(R, equipeRoi(g.state.name)); } finally { this.roiDebout = false; g.refreshNpcs(); this.appliquerSepulture(d); }
     if (res !== 'win') { await this.defaite(d); return; }

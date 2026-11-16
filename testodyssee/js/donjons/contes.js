@@ -309,9 +309,9 @@ const CONTES = {
   pnj,
   salles: [
     // le labyrinthe de haies (plein air) : l'entrée en bas, cinq sorties
-    { id: 'lab', nom: 'Labyrinthe des Haies', type: 'libre', dehors: true, mur: 'BUSH', haies: true, nuit: true, style: null, musique: 'forest', plan: labyrinthe() },
+    { id: 'lab', nom: 'Labyrinthe des Haies', type: 'libre', dehors: true, mur: 'BUSH', haies: true, nuit: true, style: null, musique: 'neyla', plan: labyrinthe() },
     // Hansel et Gretel : la clairière, puis la maison (salon et cuisine, jardin, trois étages de dix pièces, grenier)
-    { id: 'hg0', nom: 'Clairière de la Maison en Pain d\'Épice', type: 'libre', dehors: true, style: null, conte: 'hg', plan: [
+    { id: 'hg0', nom: 'Clairière de la Maison en Pain d\'Épice', type: 'libre', dehors: true, style: null, musique: 'alley', conte: 'hg', plan: [
       "############################",
       "##..f...hhhh......hhh...f.##",
       "##.......................Y##",
@@ -337,7 +337,7 @@ const CONTES = {
       "##.......S.........############ρ####",
       "#########ƕ##########################",
     ] },
-    { id: 'hgj', nom: 'Jardin de la vieille dame', type: 'libre', dehors: true, style: null, conte: 'hg', zoneOpts: { theme: 'forest' }, plan: MAISON.jardin },
+    { id: 'hgj', nom: 'Jardin de la vieille dame', type: 'libre', dehors: true, style: null, musique: 'alley', conte: 'hg', zoneOpts: { theme: 'forest' }, plan: MAISON.jardin },
     // les trois étages (un couloir, dix pièces chacun) : donjons/contes-maison.js
     ...MAISON.salles,
     { id: 'hg5', nom: 'Maison de la vieille dame — Grenier', type: 'libre', conte: 'hg', plan: [
@@ -351,11 +351,11 @@ const CONTES = {
       "############################",
     ] },
     // le Petit Chaperon rouge : deux salles de forêt sombre, puis la clairière et la maison de Mère-Grand
-    { id: 'cr1', nom: 'Forêt Sombre', type: 'libre', dehors: true, style: null, conte: 'cr', zoneOpts: { theme: 'forest', ombre: 0.85, enc: ENC_FORET() },
+    { id: 'cr1', musique: 'prague', nom: 'Forêt Sombre', type: 'libre', dehors: true, style: null, conte: 'cr', zoneOpts: { theme: 'forest', ombre: 0.85, enc: ENC_FORET() },
       plan: foret(3101, 'ι', 'Β', [['ĉ', 7, 8], ['ā', 2, 6], ['ē', 11, 7], ['ī', 4, 2], ['ō', 9, 3], ['ū', 13, 1]]) },
-    { id: 'cr2', nom: 'Cœur de la Forêt', type: 'libre', dehors: true, style: null, conte: 'cr', zoneOpts: { theme: 'forest', ombre: 0.9, enc: ENC_FORET() },
+    { id: 'cr2', musique: 'prague', nom: 'Cœur de la Forêt', type: 'libre', dehors: true, style: null, conte: 'cr', zoneOpts: { theme: 'forest', ombre: 0.9, enc: ENC_FORET() },
       plan: foret(3202, 'κ', 'Ι', [['ǎ', 1, 7], ['ě', 12, 6], ['ǐ', 5, 3], ['ǒ', 10, 2], ['ǔ', 3, 0]]) },
-    { id: 'cr3', nom: 'Clairière de Mère-Grand', type: 'libre', dehors: true, style: null, conte: 'cr', zoneOpts: { theme: 'forest', ombre: 0.6 },
+    { id: 'cr3', musique: 'prague', nom: 'Clairière de Mère-Grand', type: 'libre', dehors: true, style: null, conte: 'cr', zoneOpts: { theme: 'forest', ombre: 0.6 },
       plan: [
         "##########################",
         "##YY..f.....f......f..YY##",
