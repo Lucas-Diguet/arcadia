@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.11 — 16 novembre 2026
+- **TestOdyssée** — Bois des Contes : la vieille dame a enfin une vraie maison en pain d'épice, en volumes et bien plus grande.
+  - Toit en tablettes de chocolat couvert de boules de gomme, glaçage qui coule, fenêtres en sucre filé, sucres d'orge et sucettes.
+  - Dans son jardin, un puits couvert et une cabane à outils, eux aussi en volumes.
+
 ## 6.10 — 16 novembre 2026
 - **TestOdyssée** — Nouveau donjon : la Grande Course, de 1 à 4 joueurs.
   - Tout le monde part en même temps, affronte les mêmes dresseurs et résout les mêmes énigmes. Le premier à franchir la ligne gagne.

@@ -245,7 +245,7 @@ const CONTES = {
     'δ': { type: 'lien', sol: true, vers: 'jk0', cible: 'Δ', conte: 'Jack et le haricot magique' }, 'Δ': { type: 'lien', sol: true, vers: 'lab', cible: 'δ' },
     'ε': { type: 'lien', sol: true, vers: 'bo0', cible: 'Ε', conte: 'Boucle d\'or' }, 'Ε': { type: 'lien', sol: true, vers: 'lab', cible: 'ε' },
     // Hansel et Gretel : la maison (salon et cuisine, jardin, trois étages, grenier fermé à clé), le débarras
-    'ħ': { type: 'maison', sol: true, batiment: 'bighouse', toit: 'purple', nom: 'Maison en pain d\'épice', vers: 'hg1', cible: 'ƕ' },
+    'ħ': { type: 'maison', sol: true, batiment: 'bighouse', modele: 'painEpice', w: 9, d: 6, door: 4, nom: 'Maison en pain d\'épice', vers: 'hg1', cible: 'ƕ' },
     'ƕ': { type: 'lien', sol: true, vers: 'hg0', cible: 'ħ' },
     'ρ': { type: 'lien', sol: true, vers: 'hgj', cible: 'Ρ' }, 'Ρ': { type: 'lien', sol: true, vers: 'hg1', cible: 'ρ' },
     'ζ': { type: 'lien', sol: true, vers: 'hg2', cible: 'Ζ', escalier: true }, 'Ζ': { type: 'lien', sol: true, vers: 'hg1', cible: 'ζ', escalier: true },
@@ -264,7 +264,7 @@ const CONTES = {
     'Ⓧ': { type: 'meuble', sol: true, sprite: 'boxes' }, 'Ⓢ': { type: 'meuble', sol: true, sprite: 'chair' },
     // les missions de la sorcière
     'Ⓑ': { type: 'bois', decor: 'buches' },
-    'Ⓦ': { type: 'puits', decor: 'puits' },
+    'Ⓦ': { type: 'puits', decor: 'porte_vide' },   // le puits lui-même est un volume (batiments de la salle hgj)
     'Ⓗ': { type: 'chaudron', decor: 'chaudron' },
     'Ⓞ': { type: 'four', decor: 'fireplace' },
     '❶': { type: 'soufflet', decor: 'soufflet', n: 0 }, '❷': { type: 'soufflet', decor: 'soufflet', n: 1 }, '❸': { type: 'soufflet', decor: 'soufflet', n: 2 },
@@ -313,11 +313,14 @@ const CONTES = {
     // Hansel et Gretel : la clairière, puis la maison (salon et cuisine, jardin, trois étages de dix pièces, grenier)
     { id: 'hg0', nom: 'Clairière de la Maison en Pain d\'Épice', type: 'libre', dehors: true, style: null, musique: 'alley', conte: 'hg', plan: [
       "############################",
-      "##..f...hhhh......hhh...f.##",
+      "##..f...hh.........hh...f.##",
       "##.......................Y##",
-      "##..Y.............f......###",
+      "##..Y.....................##",
       "##........................##",
-      "##.f.........ħ.........f..##",
+      "##.f......................##",
+      "##.....................f..##",
+      "##........................##",
+      "##..f........ħ............##",
       "##........................##",
       "##.....hh.........hh......##",
       "##........................##",
@@ -337,7 +340,10 @@ const CONTES = {
       "##.......S.........############ρ####",
       "#########ƕ##########################",
     ] },
-    { id: 'hgj', nom: 'Jardin de la vieille dame', type: 'libre', dehors: true, style: null, musique: 'alley', conte: 'hg', zoneOpts: { theme: 'forest' }, plan: MAISON.jardin },
+    { id: 'hgj', nom: 'Jardin de la vieille dame', type: 'libre', batiments: [
+      { modele: 'puitsJardin', x: 5, y: 11, w: 2, d: 2 },
+      { modele: 'cabaneOutils', x: 13, y: 16, w: 3, d: 3, nom: 'Cabane à outils', texte: ['Une cabane à outils. La porte bâille.', 'Des râteaux, des pelles, des pots... et une drôle d\'odeur de pain d\'épice.'] },
+    ],  dehors: true, style: null, musique: 'alley', conte: 'hg', zoneOpts: { theme: 'forest' }, plan: MAISON.jardin },
     // les trois étages (un couloir, dix pièces chacun) : donjons/contes-maison.js
     ...MAISON.salles,
     { id: 'hg5', nom: 'Maison de la vieille dame — Grenier', type: 'libre', conte: 'hg', plan: [

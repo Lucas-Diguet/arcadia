@@ -860,6 +860,9 @@ d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
   son dessus (`haiev`, et `haien` pour le bout du fond), pour qu'une haie verticale soit une barre continue.
 - Hansel et Gretel : la clairière (`hg0`), le salon et la cuisine (`hg1`), le jardin (`hgj`), trois étages (`hg2` à
   `hg4`), le grenier fermé à clé (`hg5`, Hansel et Gretel). Rien de ce que lit le joueur ne dit « sorcière » : c'est
+  la vieille dame. La maison en pain d'épice (9 × 6), le puits et la cabane à outils du jardin sont des modèles en
+  volumes de PixelForge (`odyssee/js/render/contes3d.js` : `painEpice`, `puitsJardin`, `cabaneOutils`) ; une salle
+  pose ses décors en volumes par `batiments` (modèle, coin, emprise, texte), une maison par `modele`, `w`, `d`, `door`.
   la vieille dame. Étages, pièces, débarras et jardin sont écrits par `js/donjons/contes-maison.js` :
   - un étage = un long couloir droit, de haut en bas, cinq portes à gauche et cinq à droite ; chaque porte mène à une
     pièce qui a sa carte. Les escaliers alternent : celui du haut arrive en haut du couloir du dessus, celui du bas en

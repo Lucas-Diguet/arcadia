@@ -101,11 +101,16 @@ export const Contes = {
       // le labyrinthe : une pancarte dans la haie, à côté de chaque sortie
       if (o.conte) this.pancarteSortie(m, x, y, o.conte);
     }
+    // décors en volumes posés sur une salle (`batiments` : modèle, coin haut gauche, emprise, texte sur la case devant)
+    for (const b of s?.batiments || []) {
+      m.building('house', b.x, b.y, { modele: b.modele, w: b.w, d: b.d, door: -1, name: b.nom });
+      if (b.texte) m.object(b.x + (b.w >> 1), b.y + b.d - 1, { use: () => this.game.ui.say(b.texte) });
+    }
     // maisons : le bâtiment posé sur la marque (sa porte), qui mène à la salle `vers`
     for (const [c, l] of Object.entries(P.objets)) {
       const o = d.objets[c]; if (o.type !== 'maison') continue;
-      const [x, y] = l[0], B = BUILDINGS[o.batiment];
-      m.building(o.batiment, x - B.door, y - (B.d - 1), { roof: o.toit, name: o.nom });
+      const [x, y] = l[0], B = o.modele ? { door: o.door, d: o.d } : BUILDINGS[o.batiment];
+      m.building(o.batiment, x - B.door, y - (B.d - 1), { roof: o.toit, name: o.nom, ...(o.modele ? { modele: o.modele, w: o.w, d: o.d, door: o.door } : {}) });
       if (o.ferme) { m.set(x, y, T.BUILD); m.object(x, y, { use: () => this.game.ui.say(['La porte est fermée.', 'Derrière, on entend trois grosses voix qui se disputent à propos d\'une soupe trop chaude.']) }); continue; }
       m.warp(x, y, { ...this.arriveeContes(d, c), dir: 'up' });
     }

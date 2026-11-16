@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { STATUES } from './statues-data.js';
 import { maisonsVilles } from './maisons-villes.js';
 import { monumentsDesert } from './desert3d.js';
+import { batimentsContes } from './contes3d.js';
 
 export function atelier(D) {
   /* -------------------------------------------------------------- textures ------------------------------------------ */
@@ -2943,6 +2944,9 @@ export function atelier(D) {
   // monuments du désert : pyramide, temple du pharaon
   monumentsDesert({ B, tex, hash, mix, S, D, boite, at, M, COL, LUM, cyl, brasero, reperePorte, OR });
 
+  // Bois des Contes (labo) : maison en pain d'épice, puits du jardin, cabane à outils
+  batimentsContes({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, LUM, cyl, toit2, porte, fenetre2, reperePorte });
+
   return { B, boite, at, M, COL, TX };
 }
 
@@ -2955,4 +2959,5 @@ export const EMPRISES = {
   pagode: [11, 11], tourCendree: [11, 11], pavillon: [8, 7], tour: [8, 5], tourVerre: [10, 7], tourDeco: [8, 8], bourse: [12, 8], casino: [14, 8], ligue: [30, 14], usinePokeball: [32, 10],
   escalierMontant: [1, 2], escalierDescendant: [1, 2],
   pyramide: [12, 12], temple: [11, 8],
+  painEpice: [9, 6], puitsJardin: [2, 2], cabaneOutils: [3, 3],
 };
