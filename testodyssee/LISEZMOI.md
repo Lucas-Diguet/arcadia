@@ -202,6 +202,22 @@ quête du joueur (les clés). Tout ce qui est dans le journal reste dans le donj
 L'encadré du donjon (en bas à droite) se cache et revient avec la touche N ou son petit bouton (`journalCache`, gardé
 dans le navigateur pour tous les donjons) ; caché, il n'en reste qu'un onglet « Journal (N) ».
 
+### La Salle de l'Horloge (prototype)
+
+Une seule salle, pour essayer le principe du futur donjon de l'Horloge : une horloge gigantesque (la taille de la
+sépulture du Tombeau) suspendue dans le vide, dont les deux aiguilles sont des passerelles. Les leviers du quai font
+tourner la petite ou la grande aiguille d'une heure ; le grand mécanisme du pivot fait tourner la vis : les deux
+aiguilles tournent ensemble d'une heure et montent (ou descendent) d'un niveau, et le joueur posé sur le pivot monte
+avec elles. Autour, des plateformes flottantes à quatre hauteurs : on ne passe d'une aiguille à une plateforme que s'ils
+sont au même niveau. Le joueur qui se tient sur une aiguille qui tourne est emporté avec elle. Le coffre, tout en haut
+à midi, se mérite : petite aiguille vers l'îlot de quatre heures, trois tours de grande aiguille depuis l'îlot, trois
+tours de vis.
+
+`js/horloge.js` (sans DOM : plan, plateformes, cases des aiguilles, niveaux, `passage`), `js/horloge-jeu.js` (pas,
+leviers, vis, joueur emporté, joueur et caméra à la hauteur de sa case), `js/horloge-vue.js` (tout en volumes : cadran au
+fond, vis, pivot, aiguilles, plateformes ; le sol et les murs de la carte ne sont pas dessinés). Lieu « Salle de
+l'Horloge (prototype) » de la liste ; vérifiée par `test-testodyssee.mjs`.
+
 ### Le Musée des Dunes (scène du sceptre)
 
 `js/musee.js` ajoute un musée aux Dunes d'Ocre, dans le labo seulement (le vrai jeu n'est pas touché) : le bâtiment se

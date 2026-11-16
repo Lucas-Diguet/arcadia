@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.8 — 16 novembre 2026
+- **TestOdyssée** — Salle de l'Horloge (prototype) : une horloge gigantesque suspendue dans le vide, dont les aiguilles sont des passerelles.
+  - Des leviers font tourner chaque aiguille ; la vis du centre fait tourner les deux et les fait monter ou descendre d'un étage, en emportant ceux qui sont dessus.
+  - On ne passe d'une aiguille à une plateforme qu'à la même hauteur. Un coffre attend tout en haut, à midi.
+
 ## 6.7 — 16 novembre 2026
 - **TestOdyssée** — Nouvelles musiques :
   - Tombeau du Roi Sans Nom : le combat contre le roi.

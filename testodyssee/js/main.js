@@ -14,6 +14,7 @@ import { Donjons } from './donjon/jeu.js';
 import { DONJONS } from './donjons/index.js';
 import { listerLieux } from './lieux.js';
 import { Musee } from './musee.js';
+import { Horloge } from './horloge-jeu.js';
 import { EQUIPES, partieTest } from './equipes.js';
 import { Ile } from './ile/jeu.js';
 import { installerContenu, DECOR, DENSITE_2 } from './contenu.js';
@@ -56,6 +57,7 @@ async function boot() {
   brancherResume(game, ASSETS);
   const donjons = game.donjons = new Donjons(game, DONJONS, H);
   game.musee = new Musee(game);
+  game.horloge = new Horloge(game);
   game.ile = new Ile(game);
   const lieux = listerLieux(world, DONJONS);
   window.__testody = { game, world, view, donjons, lieux };
@@ -82,6 +84,7 @@ async function boot() {
     donjons.tick(dt);
     if (mode === 'game') game.ile.tick(dt);
     if (mode === 'game') game.musee.tick();
+    if (mode === 'game') game.horloge.tick(dt);
     requestAnimationFrame(loop);
   };
   const premier = world.maps[DONJONS[0].carte];

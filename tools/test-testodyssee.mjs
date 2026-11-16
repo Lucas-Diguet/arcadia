@@ -1156,7 +1156,7 @@ const world = buildWorld();
 for (const dd of DONJONS) { const cs = dd.plan ? [construireCarte(dd)] : construireSalles(dd); for (const c of cs) world.maps[c.id] = c; const e = relierExterieur(dd, cs[0]); if (e) world.maps[e.id] = e; }
 construireIle(world.maps, nouvelleIle('Test'));
 const lieux = listerLieux(world, DONJONS);
-ok(lieux.labo.length === DONJONS.length + 1 + ROUTES.length + 1 + 1 + 1 && lieux.labo.some((l) => l.nom === 'Mont Givrécime') && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
+ok(lieux.labo.length === DONJONS.length + 1 + ROUTES.length + 1 + 1 + 1 + 1 && lieux.labo.some((l) => l.nom === 'Mont Givrécime') && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
 for (const l of Object.values(lieux).flat()) {
   const m = world.maps[l.map];
   ok(m && walkable(m.get(l.x, l.y)) && !m.warpAt(l.x, l.y), `on apparaît sur une case libre : ${l.nom}`);
@@ -1170,6 +1170,31 @@ for (const l of Object.values(lieux).flat()) {
     return false; };
   const B = SIMPLIFIES.billes.nouveau(), S = SIMPLIFIES.soleils.nouveau();
   ok(B.billes.size < BILLES.depart().size && gagne(B.billes) && S.allume.filter((v) => !v).length <= 10 && !SOLEILS.resolu(S), 'tombeau : Khamsin simplifie les billes (7 billes, toujours faisable) et les dalles-soleils (mélangées de 2 coups)');
+}
+
+/* ---------------- la Salle de l'Horloge (prototype) ---------------- */
+{
+  const Hm = await import('../testodyssee/js/horloge.js'), m = world.maps[Hm.HORLOGE];
+  // ce qu'on atteint à pied depuis une case, l'horloge à l'état E (jamais d'une hauteur à l'autre)
+  const atteint = (E, x0, y0) => {
+    Hm.appliquer(m, E);
+    const vu = new Set([x0 + ',' + y0]), f = [[x0, y0]];
+    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = x + dx, b = y + dy, k = a + ',' + b; if (!vu.has(k) && walkable(m.get(a, b)) && Hm.passage(E, x, y, a, b)) { vu.add(k); f.push([a, b]); } } }
+    return vu;
+  };
+  const pres = (vu, [x, y]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vu.has((x + dx) + ',' + (y + dy)));
+  const L = (q, pf) => Hm.placeLevier(Hm.LEVIERS.find((l) => l.quoi === q && (pf ? l.pf === pf : !l.pf)));
+  let E = Hm.depart();
+  const a0 = atteint(E, Hm.C[0], 42);
+  ok(m && pres(a0, L('petite')) && pres(a0, L('grande')) && pres(a0, L('vis')) && !pres(a0, L('grande', 'ilot4')), 'horloge : du quai, la grande aiguille mène au pivot et à sa vis ; l\'îlot n\'est pas encore à portée');
+  E = { ...E, petite: 4 };
+  const a1 = atteint(E, Hm.C[0], 42);
+  E = { ...E, grande: 9 };
+  const a2 = atteint(E, ...L('grande', 'ilot4').map((v, i) => v + (i ? 0 : -1)));
+  E = { grande: 0, petite: 7, niv: 3 };
+  const a3 = atteint(E, Hm.C[0] + 2, Hm.C[1]);
+  ok(pres(a1, L('grande', 'ilot4')) && pres(a2, L('vis')) && pres(a3, Hm.milieu(Hm.COFFRE.pf)) && !pres(atteint(Hm.depart(), Hm.C[0], 42), Hm.milieu(Hm.COFFRE.pf)), 'horloge : petite aiguille vers l\'îlot, trois tours de grande aiguille, trois tours de vis : le coffre de midi');
+  Hm.appliquer(m, m.horloge);
 }
 
 /* ---------------- le Musée des Dunes ---------------- */
