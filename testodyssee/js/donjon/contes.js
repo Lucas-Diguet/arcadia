@@ -242,7 +242,10 @@ export const Contes = {
     if (this.tCailloux > 0 && this.caillouxVus && v.__caillouxRoot === v.root) return;
     this.tCailloux = 0.25;
     const L = this.dContes(d, 'lab'), liste = [];
-    for (const k in L) if (k[0] === 'k' && L[k] > 0) { const [x, y] = k.slice(1).split('_').map(Number); liste.push({ x, y, c: CAILLOUX[L[k] - 1][1] }); }
+    // un caillou juste derrière une haie (la case du dessous est une haie) est caché par elle : on ne le dessine pas
+    // (les cailloux sont dessinés par-dessus tout le reste, la haie ne pourrait pas les masquer d'elle-même)
+    const m = g.mapObj;
+    for (const k in L) if (k[0] === 'k' && L[k] > 0) { const [x, y] = k.slice(1).split('_').map(Number); if (m && !walkable(m.get(x, y + 1))) continue; liste.push({ x, y, c: CAILLOUX[L[k] - 1][1] }); }
     const cle2 = liste.map((q) => `${q.x},${q.y},${q.c}`).join(';');
     if (cle2 === this.caillouxVus && v.__caillouxRoot === v.root) return;
     this.caillouxVus = cle2; dessinerCailloux(v, liste);

@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.3 — 16 novembre 2026
+- **TestOdyssée** — Bois des Contes : un caillou posé juste derrière une haie est caché par elle, au lieu d'apparaître devant.
+
 ## 6.2 — 16 novembre 2026
 - **TestOdyssée** — Musée des Dunes : un vrai musée à l'antique.
   - Tout en longueur : on passe d'une salle à l'autre, du hall à la Galerie des Fossiles (avec les statues de Ptéra, Kabutops, Amonistar, Charkos…), puis aux caravanes et aux écrits anciens. Le sceptre est tout au bout.
