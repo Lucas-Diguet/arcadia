@@ -1,5 +1,12 @@
 # Journal des versions — Arcadia
 
+## 6.10 — 16 novembre 2026
+- **TestOdyssée** — Nouveau donjon : la Grande Course, de 1 à 4 joueurs.
+  - Tout le monde part en même temps, affronte les mêmes dresseurs et résout les mêmes énigmes. Le premier à franchir la ligne gagne.
+  - On ne voit pas les autres coureurs. Perdre un combat coûte dix secondes.
+- **TestOdyssée** — Poussière-Ville (prototype) : une rue de western et le stand de tir du shérif.
+  - Chacun choisit sa touche de tir en arrivant. On tire droit devant soi sur dix cibles, chronomètre en main.
+
 ## 6.9 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : le labyrinthe de haies n'est plus plongé dans le noir.
 

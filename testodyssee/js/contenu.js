@@ -157,6 +157,7 @@ export const OBJETS = {
 export const DRESSEURS = { roi_sans_nom: 'tombeau/roi_sans_nom.png', robot_combat: 'miroirs/robot_combat.png', copycat_combat: 'miroirs/copycat_combat.png', miroir_piege: 'miroirs/miroir_piege.png' };
 // décor du labo ajouté aux images d'Odyssée (dessiné à 16 pixels par case)
 export const DECOR = [
+  ...['cible', 'cible_tombee'].map((k) => [k, IMG + 'farwest/' + k + '.png']),
   ...['miroir_mur', 'miroir_mur_jaune', 'miroir_mur_rouge', 'miroir_mur_bleu', 'miroir_mur_noir', 'miroir_mur_vert', 'miroir_brise', 'miroir_d', 'miroir_g', 'miroir_poche', 'socle', 'brasier', 'brasier_on', 'soleil', 'soleil_on', 'porte_miroirs', 'robot', 'porte_miroir', 'miroir_poche2', 'miroir_pied_d', 'miroir_pied_g', 'fourneau', 'fourneau_on'].map((k) => [k, IMG + 'miroirs/' + k + '.png']),
   ...['train_quai', 'marchepied', 'traverse', 'comptoir'].map((k) => [k, IMG + 'train/' + k + '.png']),
   ...['barriere', 'cage', 'fissure', 'wagonnet', 'poste', 'entree_mine'].map((k) => [k, IMG + 'mine/' + k + '.png']),
@@ -168,7 +169,7 @@ export const DECOR = [
   ...['porte_sagesse', 'porte_force', 'porte_courage', 'porte_sagesse_f', 'porte_force_f', 'porte_courage_f', 'porte_code', 'porte_grille', 'coffre', 'coffre_ouvert', 'interrupteur', 'interrupteur_on', 'socle_statue'].map((k) => [k, IMG + 'voies/' + k + '.png']),
 ];
 /** décors dessinés à 32 pixels par case (PixelForge) */
-export const DENSITE_2 = ['porte_feu_pf', 'porte_feu_pf_f', 'porte_eau_pf', 'porte_eau_pf_f', 'porte_plante_pf', 'porte_plante_pf_f', 'montagne_or', 'tas_or', 'coffre_or', 'pile_or', 'jarre_or', 'brasier_stele', 'brasier_stele_off', 'torchere', 'torchere_off', 'porte_egypte', 'porte_egypte_o', 'porte_miroir', 'miroir_poche2', 'miroir_pied_d', 'miroir_pied_g', 'fourneau', 'fourneau_on', 'sarcophage_roi', 'sarcophage_roi_ouvert', 'sarcophage_roi_vide', 'brasier_autel', 'brasier_autel_off'];
+export const DENSITE_2 = ['cible', 'cible_tombee', 'porte_feu_pf', 'porte_feu_pf_f', 'porte_eau_pf', 'porte_eau_pf_f', 'porte_plante_pf', 'porte_plante_pf_f', 'montagne_or', 'tas_or', 'coffre_or', 'pile_or', 'jarre_or', 'brasier_stele', 'brasier_stele_off', 'torchere', 'torchere_off', 'porte_egypte', 'porte_egypte_o', 'porte_miroir', 'miroir_poche2', 'miroir_pied_d', 'miroir_pied_g', 'fourneau', 'fourneau_on', 'sarcophage_roi', 'sarcophage_roi_ouvert', 'sarcophage_roi_vide', 'brasier_autel', 'brasier_autel_off'];
 export const IMAGES = { copycat: IMG + 'miroirs/copycat.png', ...Object.fromEntries([['down', 'bas'], ['left', 'gauche'], ['right', 'droite'], ['up', 'haut']].map(([s, f]) => ['copycat_' + s, IMG + 'miroirs/copieur_' + f + '.png'])), horloge: IMG + 'miroirs/horloge.png' };
 
 let fait = false;

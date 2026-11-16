@@ -202,6 +202,27 @@ quête du joueur (les clés). Tout ce qui est dans le journal reste dans le donj
 L'encadré du donjon (en bas à droite) se cache et revient avec la touche N ou son petit bouton (`journalCache`, gardé
 dans le navigateur pour tous les donjons) ; caché, il n'en reste qu'un onglet « Journal (N) ».
 
+### La Grande Course (donjon, 1 à 4 joueurs)
+
+`js/donjons/course.js`, mécaniques dans `js/donjon/course.js`. Un stade dehors, puis cinq salles : la ligne de départ
+(l'arbitre lance une course pour tous : compte à rebours, la grille du départ se lève), le Défilé (deux dresseurs qui
+barrent un couloir), la Salle des Urnes (Hanoï), la Salle de la Fresque (un dresseur et le puzzle), l'Arrivée (une ligne
+à franchir). Tout le monde a les mêmes dresseurs et les mêmes casse-têtes (tirés de la même graine, `alea`), mais chacun
+avance pour lui : dresseurs battus, casse-têtes résolus et grilles ouvertes ne comptent que chez soi (`this.course`,
+remis à zéro à chaque course). On ne voit pas les autres coureurs (ni leur nom, ni leur personnage). Une défaite :
+équipe soignée et dix secondes de pénalité. Partagé par le groupe (salle `c0`) : `depart` (la graine) et les arrivées
+`fin:<graine>:<joueur>` ; le premier arrivé gagne, les autres sont prévenus. Le tableau du départ et de l'arrivée montre
+les résultats de la course en cours.
+
+### Poussière-Ville (prototype du Far West)
+
+`js/farwest.js` (sans DOM : la rue, l'enclos, les cibles, `trajet` d'une balle) et `js/farwest-jeu.js`. En arrivant, on
+choisit sa touche de tir (gardée dans le navigateur ; le shérif permet d'en changer) ; si elle sert aussi à parler
+(Espace, F…), elle parle quand il y a quelqu'un devant. On tire droit devant soi : la balle file jusqu'à la première
+cible debout ou au premier obstacle. Hors épreuve, une cible tombée se relève au bout de 3 s ; l'épreuve du shérif
+chronomètre les dix cibles (départ à l'entrée de l'enclos) et garde le record. Cibles dessinées par PixelForge
+(`tools/pixelforge/contes_jardin.py`, dans `img/farwest/`). La suite prévue : des PNJ, des PNJ qui bougent, puis les joueurs.
+
 ### La Salle de l'Horloge (prototype)
 
 Une seule salle, pour essayer le principe du futur donjon de l'Horloge : une horloge gigantesque (la taille de la

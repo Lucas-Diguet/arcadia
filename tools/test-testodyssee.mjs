@@ -1156,7 +1156,7 @@ const world = buildWorld();
 for (const dd of DONJONS) { const cs = dd.plan ? [construireCarte(dd)] : construireSalles(dd); for (const c of cs) world.maps[c.id] = c; const e = relierExterieur(dd, cs[0]); if (e) world.maps[e.id] = e; }
 construireIle(world.maps, nouvelleIle('Test'));
 const lieux = listerLieux(world, DONJONS);
-ok(lieux.labo.length === DONJONS.length + 1 + ROUTES.length + 1 + 1 + 1 + 1 && lieux.labo.some((l) => l.nom === 'Mont Givrécime') && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
+ok(lieux.labo.length === DONJONS.length + 1 + ROUTES.length + 1 + 1 + 1 + 1 + 1 && lieux.labo.some((l) => l.nom === 'Mont Givrécime') && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
 for (const l of Object.values(lieux).flat()) {
   const m = world.maps[l.map];
   ok(m && walkable(m.get(l.x, l.y)) && !m.warpAt(l.x, l.y), `on apparaît sur une case libre : ${l.nom}`);
@@ -1195,6 +1195,20 @@ for (const l of Object.values(lieux).flat()) {
   const a3 = atteint(E, Hm.C[0] + 2, Hm.C[1]);
   ok(pres(a1, L('grande', 'ilot4')) && pres(a2, L('vis')) && pres(a3, Hm.milieu(Hm.COFFRE.pf)) && !pres(atteint(Hm.depart(), Hm.C[0], 42), Hm.milieu(Hm.COFFRE.pf)), 'horloge : petite aiguille vers l\'îlot, trois tours de grande aiguille, trois tours de vis : le coffre de midi');
   Hm.appliquer(m, m.horloge);
+}
+
+/* ---------------- Poussière-Ville (prototype du Far West) et la Grande Course ---------------- */
+{
+  const F = await import('../testodyssee/js/farwest.js'), m = world.maps[F.FARWEST];
+  const debout = new Set(F.CIBLES.map(([x, y]) => x + ',' + y));
+  // depuis l'entrée de l'enclos, tirer vers le bas : la balle file jusqu'à la cible (19, 20)
+  const t = F.trajet(m, 19, 13, [0, 1], debout);
+  ok(m && F.CIBLES.every(([x, y]) => m.deco.some((q) => q.x === x && q.y === y && q.k === 'cible')) && t.touche?.join() === '19,20' && F.trajet(m, 19, 13, [0, -1], debout).arret,
+    'far west : dix cibles dans l\'enclos ; une balle va droit jusqu\'à la première cible ou au premier obstacle');
+  const C = await import('../testodyssee/js/donjon/course.js'), a1 = C.alea(42), a2 = C.alea(42);
+  const course = DONJONS.find((q) => q.id === 'course');
+  ok(course && [0, 1, 2, 3].every(() => a1() === a2()) && course.salles.length === 5 && Object.values(course.objets).filter((o) => o.type === 'steleCourse').length === 2,
+    'course : cinq salles, deux casse-têtes tirés de la même graine pour tous');
 }
 
 /* ---------------- le Musée des Dunes ---------------- */

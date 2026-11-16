@@ -26,6 +26,7 @@ import { Classement } from './classement.js';
 import { Fonderie } from './fonderie.js';
 import { Cristal } from './cristal.js';
 import { Arenes } from './arenes.js';
+import { Course } from './course.js';
 import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 
@@ -48,7 +49,7 @@ export class Donjons {
       for (const c of cartes) game.world.maps[c.id] = c;
       const dehors = relierExterieur(d, m);
       if (dehors) game.world.maps[dehors.id] = dehors;
-      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); this.poserObjetsContes(d, c); this.poserClassements(d, c); this.poserObjetsFonderie(d, c); this.poserObjetsCristal(d, c); this.poserObjetsArenes(d, c); }
+      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); this.poserObjetsContes(d, c); this.poserClassements(d, c); this.poserObjetsFonderie(d, c); this.poserObjetsCristal(d, c); this.poserObjetsArenes(d, c); this.poserObjetsCourse(d, c); }
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -327,6 +328,7 @@ export class Donjons {
     this.tickContes(dt);
     for (const d of this.defs.values()) if (d.classements && this.estDans(d)) this.chronoDonjon(d);
     this.tickFonderie(dt);
+    this.tickCourse(dt);
     this.tickCristal(dt);
     this.tickArenes(dt);
     this.panT = (this.panT || 0) - dt;
@@ -392,6 +394,7 @@ export class Donjons {
       if (this.texteContes(d, s)) txt = this.texteContes(d, s);
       if (this.texteFonderie(d, s)) txt = this.texteFonderie(d, s);
       if (this.texteCristal(d, s)) txt = this.texteCristal(d, s);
+      if (this.texteCourse(d, s)) txt = this.texteCourse(d, s);
       if (s.type === 'voies' && !voie) { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       if (s.type === 'libre') { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
@@ -483,4 +486,4 @@ export class Donjons {
   }
 }
 
-Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau, Contes, Classement, Fonderie, Cristal, Arenes);
+Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau, Contes, Classement, Fonderie, Cristal, Arenes, Course);

@@ -34,7 +34,7 @@ const DONJONS_NOMS = { crypte: 'la Crypte', didier: 'le Donjon de Didier', miroi
 /** une statue par arène d'Odyssée (badge) et par donjon du labo, avec ce qui l'a rapportée */
 export const TROPHEES = [
   ...VILLES.map((v, i) => ({ id: `badge${i}`, nom: `Statue de l'arène ${de(v)}`, sp: [212, 130, 135, 3, 65, 76, 6, 149][i], badge: i, origine: `En récompense pour avoir triomphé de l'arène ${de(v)}.` })),
-  ...Object.entries({ crypte: 92, didier: 2001, miroirs: 122, voies: 482, pyramide: 563, mine: 306, train: 94, temple: 493, tombeau: 302, contes: 711, fonderie: 485, cristal: 248 }).map(([id, sp]) => ({ id, sp, donjon: id, nom: NOMS_STATUES[id], origine: `En récompense pour avoir terminé ${DONJONS_NOMS[id]}.` })),
+  ...Object.entries({ crypte: 92, didier: 2001, miroirs: 122, voies: 482, pyramide: 563, mine: 306, train: 94, temple: 493, tombeau: 302, contes: 711, fonderie: 485, cristal: 248, course: 78 }).map(([id, sp]) => ({ id, sp, donjon: id, nom: NOMS_STATUES[id], origine: `En récompense pour avoir terminé ${DONJONS_NOMS[id]}.` })),
 ];
 export const TROPHEE = Object.fromEntries(TROPHEES.map((t) => [t.id, t]));
 

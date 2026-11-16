@@ -25,4 +25,6 @@ export const MUSIQUES = {
   neyla: { fichier: 'neyla.mp3' },
   prague: { fichier: 'prague.mp3' },
   alley: { fichier: 'alley.mp3' },
+  // en réserve (pas encore utilisée)
+  toon: { fichier: 'toon.mp3' },
 };
