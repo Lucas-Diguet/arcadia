@@ -1606,7 +1606,8 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   ok(liens.filter(([, o]) => o.type === 'lien').every(([c, o]) => d.objets[o.cible].cible === c), 'contes : chaque passage a son pendant de l\'autre côté');
   const sorties = ['α', 'β', 'γ', 'δ', 'ε'].filter((c) => M.lab.donjon.plan.objets[c]);
   ok(sorties.length === 5 && sorties.every((c) => d.objets[c].conte), 'contes : le labyrinthe a cinq sorties, une par conte');
-  ok(M.lab.w >= 49 && M.cr1.w >= 60 && M.cr1.h >= 45 && M.cr2.w >= 60, 'contes : un grand labyrinthe, deux salles de forêt de la taille d\'une voie du Temple');
+  ok(d.salles.find((q) => q.id === 'lab').nuit && Object.keys(M.lab.donjon.plan.objets).filter((c) => d.objets[c].type === 'sac').length === 5, 'contes : le labyrinthe est dans la pénombre, cinq sacs de cailloux attendent à l\'entrée');
+  ok(M.lab.w >= 97 && M.cr1.w >= 60 && M.cr1.h >= 45 && M.cr2.w >= 60, 'contes : un grand labyrinthe, deux salles de forêt de la taille d\'une voie du Temple');
   ok(['hg1', 'hgj', 'hg2', 'hgd', 'hg3', 'hg4', 'hg5', 'hggm', 'hgeg', 'hgef', 'hgbib'].every((id) => M[id]) && d.objets['σ'].bloque === 'grenier'
     && [2, 3, 4].every((e) => { const P = M['hg' + e].donjon.plan, portes = Object.keys(P.objets).filter((c) => d.objets[c].type === 'lien' && !d.objets[c].escalier && !d.objets[c].bloque); return portes.length === 10 && new Set(P.sol.map(([x]) => x)).size === 5; }),
     'contes : la maison a un salon, un jardin, un grenier fermé à clé et trois étages : un couloir droit et dix pièces chacun');

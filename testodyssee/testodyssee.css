@@ -87,3 +87,6 @@
 
 /* Bois des Contes, le débarras : dans la pénombre, on voit à quelques cases autour de soi */
 .penombre .dark-ov.cave { background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0 20%, rgba(0,0,0,.5) 32%, rgba(0,0,0,.93) 48%); }
+/* Bois des Contes, le labyrinthe : la nuit, on ne voit que la moitié de l'écran, en cercle */
+.demi-nuit .dark-ov.cave { background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0 22%, rgba(0,0,0,.55) 32%, rgba(0,0,0,.95) 44%); }
+.dj-caillou { margin-top: 4px; }

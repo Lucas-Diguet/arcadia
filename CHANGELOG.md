@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 5.59 — 16 novembre 2026
+- **TestOdyssée** — Bois des Contes : le labyrinthe est quatre fois plus grand, et on y avance dans la pénombre. On ne voit qu'un cercle autour de soi.
+  - À l'entrée, cinq sacs de cailloux de couleur, un par joueur. Touche W (ou le bouton du journal) : on pose un caillou à ses pieds pour retrouver son chemin, et tout le groupe le voit.
+  - Devant chaque sortie, la grande haie qui entoure le labyrinthe s'ouvre enfin : on voit le chemin continuer.
+
 ## 5.58 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : dans le labyrinthe, les haies verticales forment maintenant une vraie barre continue, au lieu de blocs posés les uns derrière les autres.
 

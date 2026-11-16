@@ -157,10 +157,28 @@ def haies_verticales():
             im.save(OUT / f'{nom}{i}.png')
 
 
+SACS = [(226, 74, 74), (74, 138, 226), (242, 210, 60), (244, 244, 244), (192, 90, 224)]
+
+
+def sac(i):
+    """Un sac de toile ouvert, plein de cailloux d'une couleur (labyrinthe)."""
+    im, d = toile(16, 16)
+    c = SACS[i] + (255,)
+    d.polygon([(3, 6), (12, 6), (14, 15), (1, 15)], fill=(176, 140, 92, 255), outline=NOIR)
+    d.line([(4, 9), (11, 9)], fill=(140, 106, 66, 255))
+    d.ellipse([3, 3, 12, 8], fill=(120, 90, 56, 255), outline=NOIR)
+    for x, y in [(5, 4), (8, 3), (10, 5), (7, 6)]:
+        d.rectangle([x, y, x + 1, y + 1], fill=c)
+    d.rectangle([6, 11, 9, 13], fill=c, outline=NOIR)
+    return im
+
+
 if __name__ == '__main__':
     OUT.mkdir(parents=True, exist_ok=True)
     for nom, f in [('puits', puits), ('buches', buches), ('chaudron', chaudron), ('soufflet', soufflet), ('carotte', carotte), ('citrouille', citrouille),
                    ('patate', patate), ('oignon', oignon), ('cheval', cheval), ('cubes', cubes), ('peluche', peluche), ('poupee', poupee)]:
         f().save(OUT / f'{nom}.png')
         print('écrit', nom)
+    for i in range(5):
+        sac(i).save(OUT / f'sac{i}.png')
     haies_verticales()

@@ -774,6 +774,12 @@ sont prises en charge par `donjon/plan.js`. Passages (`lien`, comme au Tombeau) 
 d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
 - Labyrinthe des Haies (`lab`, 49 × 49, généré ; `haies: true` : les buissons deviennent de hautes haies, `img/contes/haie0-2.png`) : entrée en bas depuis l'Orée des Contes, clairière vide au centre, cinq
   sorties avec leur pancarte (Hansel et Gretel, Chaperon rouge, Pinocchio, Jack, Boucle d'or).
+- Le labyrinthe (`lab`, 97 × 97, `LABYRINTHE`) : dans la pénombre (`nuit` : on ne voit qu'un cercle, la moitié de
+  l'écran ; classe `demi-nuit`). À l'entrée, cinq sacs de cailloux de couleur (`CAILLOUX`, `type: 'sac'`), un par joueur.
+  Touche W (code `KeyZ`, libre dans Odyssée) ou bouton du journal : poser un caillou à ses pieds, ou reprendre le sien.
+  État dans la salle `lab` : `sac_<joueur>`, `k<x>_<y>` (n° de couleur + 1, 0 = repris) ; tout le groupe voit les cailloux
+  (`dessinerCailloux` de `js/rendu.js`, dessinés par-dessus les haies, qui cachent le sol des allées horizontales).
+  La haie d'enceinte s'ouvre devant chaque sortie.
 - Haies du labyrinthe (`haies: true`) : `haie0` à `haie2` de face ; une haie qui en a une autre devant elle ne montre que
   son dessus (`haiev`, et `haien` pour le bout du fond), pour qu'une haie verticale soit une barre continue.
 - Hansel et Gretel : la clairière (`hg0`), le salon et la cuisine (`hg1`), le jardin (`hgj`), trois étages (`hg2` à

@@ -15,7 +15,8 @@ import { T, walkable, DIRS } from '../../../odyssee/js/world/tiles.js';
 import { BUILDINGS } from '../../../odyssee/js/world/mapgen.js';
 import { SPECIES } from '../../../odyssee/js/data/species.js';
 import { monName } from '../../../odyssee/js/core/mon.js';
-import { dessinerZzz } from '../rendu.js';
+import { dessinerZzz, dessinerCailloux } from '../rendu.js';
+import { CAILLOUX } from '../donjons/contes.js';
 import { battu } from './etat.js';
 import { PUITS, ORDRE_SOUFFLETS } from './meubles.js';
 import { jouerCasseTete } from './jeux-tombeau-ecran.js';
@@ -72,6 +73,7 @@ export const Contes = {
         else if (o.type === 'abri') m.contes.abris.add(cle(x, y));
         else if (o.type === 'epave') m.contes.epaves.add(cle(x, y));
         else if (o.type === 'grince') m.contes.grince.add(cle(x, y));
+        else if (o.type === 'sac') m.object(x, y, { use: () => this.sacCailloux(d, o) });
         else if (o.type === 'terre') (m.terre ||= new Set()).add(cle(x, y));   // terre brune (rendu.js)
         else if (o.type === 'legume') { (m.terre ||= new Set()).add(cle(x, y)); m.prop(o.legume, x, y); }
         else if (o.type === 'meuble') { m.set(x, y, T.BOULDER); (m.blocs0 ||= new Map()).set(cle(x, y), o.sprite); }
@@ -89,6 +91,8 @@ export const Contes = {
       if (o.bloque) { m.set(x, y, T.CAVE); m.prop('porte_hall', x, y); m.object(x, y, { use: () => (o.bloque === 'grenier' ? this.porteGrenier(d) : this.porteCabine(d, c)) }); continue; }
       if (m.outdoor) {
         m.set(x, y, T.PATH);
+        // labyrinthe : la haie d'enceinte s'ouvre devant la sortie (on voit le chemin continuer dehors)
+        if (s?.haies) { const [ox, oy] = x === 1 ? [0, y] : x === m.w - 2 ? [m.w - 1, y] : y === 1 ? [x, 0] : [-1, -1]; if (ox >= 0) m.set(ox, oy, T.PATH); }
         if (o.liane) m.deco.push({ k: 'liane', x, y });
         if (o.gueule) m.deco.push({ k: 'entree_mine', x, y });
       } else if (o.escalier) { m.set(x, y, T.CAVE); m.deco.push({ k: 'ladder', x, y }); }
@@ -111,6 +115,7 @@ export const Contes = {
       if (P.sortie) { m.set(...P.sortie, T.PATH); m.deco = m.deco.filter((q) => !(q.k === 'exitlight' && q.x === P.sortie[0] && q.y === P.sortie[1])); const ws = m.warpAt(...P.sortie); if (ws) ws.step = true; }
     }
     // le labyrinthe : de vraies haies, hautes, à la place des buissons
+    if (s?.nuit) m.dark = 'arene';
     // (une haie qui en a une autre devant elle ne montre que son dessus : une haie verticale est une barre, pas des blocs)
     if (s.haies) {
       const H = new Set();
@@ -177,7 +182,9 @@ export const Contes = {
   },
   tickContes(dt) {
     const g = this.game, d = this.contesIci(), m = g.mapObj, s = d && this.salleContes(d);
-    g.ui.root.classList.toggle('penombre', !!s?.sombre);   // le débarras : on voit à quelques cases, pas plus
+    g.ui.root.classList.toggle('penombre', !!s?.sombre);
+    g.ui.root.classList.toggle('demi-nuit', !!s?.nuit);
+    this.tickCailloux(d, s, dt);   // le débarras : on voit à quelques cases, pas plus
     if (!s) { if (this.zzzGeant) { dessinerZzz(g.view, []); this.zzzGeant = false; } this.bruit = 0; return; }
     // le géant ronfle
     const geant = s.id === 'jk3' ? g.npcs.filter((n) => n.id === `${d.id}:geant`) : [];
@@ -197,6 +204,48 @@ export const Contes = {
       if (m.contes.epaves.has(cle(p.x, p.y)) && !p.move) { this.surEpave = (this.surEpave || 0) + dt; if (this.surEpave > ENFONCE) { this.surEpave = 0; this.coulerEpave(d, m); } }
       else this.surEpave = 0;
     }
+  },
+
+  /* ---------------- les cailloux du labyrinthe ---------------- */
+  // état (salle lab) : sac_<joueur> = n° de couleur + 1 ; k<x>_<y> = n° de couleur + 1 du caillou posé là (0 : repris)
+  monSac(d) { return (this.dContes(d, 'lab')['sac_' + this.moi] || 0) - 1; },
+  async sacCailloux(d, o) {
+    const ui = this.game.ui, L = this.dContes(d, 'lab'), nom = CAILLOUX[o.n][0];
+    const pris = Object.keys(L).find((k) => k.startsWith('sac_') && L[k] === o.n + 1);
+    if (pris === 'sac_' + this.moi) { await ui.say(`Ton sac de cailloux ${nom}.\nTouche W (ou le bouton du journal) : poser un caillou à tes pieds, ou reprendre le tien.`); return; }
+    if (pris) { await ui.say(`Un sac de cailloux ${nom}. ${this.nomDe(pris.slice(4))} l'a déjà pris.`); return; }
+    if (!(await ui.yesNo(`Un sac de petits cailloux ${nom}.\nLe prendre ?`))) return;
+    await this.majContes(d, 'lab', { ['sac_' + this.moi]: o.n + 1 });
+    this.game.sound.sfx('item');
+    await ui.say(['Tu passes le sac à ta ceinture.', 'Touche W (ou le bouton du journal) : poser un caillou à tes pieds. Sème-les pour retrouver ton chemin... et pour que tes amis suivent le tien.']);
+  },
+  async poserCaillou() {
+    const g = this.game, d = this.contesIci(), s = d && this.salleContes(d);
+    if (!s?.nuit || g.busy || g.bv?.alive || g.player.move) return;
+    const n = this.monSac(d);
+    if (n < 0) { g.ui.toast('Il te faut un sac de cailloux : il y en a à l\'entrée du labyrinthe.', 2400); return; }
+    const k = `k${g.player.x}_${g.player.y}`, la = this.dContes(d, 'lab')[k] || 0;
+    if (la && la !== n + 1) { g.ui.toast('Il y a déjà un caillou ici.', 1500); return; }
+    g.sound.sfx('ledge');
+    await this.majContes(d, 'lab', { [k]: la ? 0 : n + 1 });
+    this.caillouxVus = null;
+  },
+  tickCailloux(d, s, dt) {
+    const g = this.game, v = g.view;
+    if (!this.ecouteCailloux) {
+      this.ecouteCailloux = true;
+      window.addEventListener('keydown', (ev) => { if (ev.code === 'KeyZ' && !ev.repeat && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.target?.closest?.('input, textarea, [contenteditable]')) this.poserCaillou(); });
+      this.panel.addEventListener('click', (ev) => { if (ev.target.closest('.dj-caillou')) { ev.stopPropagation(); this.poserCaillou(); } });
+    }
+    if (!s?.nuit) { if (this.caillouxVus) { this.caillouxVus = null; dessinerCailloux(v, []); } return; }
+    this.tCailloux = (this.tCailloux || 0) - dt;
+    if (this.tCailloux > 0 && this.caillouxVus && v.__caillouxRoot === v.root) return;
+    this.tCailloux = 0.25;
+    const L = this.dContes(d, 'lab'), liste = [];
+    for (const k in L) if (k[0] === 'k' && L[k] > 0) { const [x, y] = k.slice(1).split('_').map(Number); liste.push({ x, y, c: CAILLOUX[L[k] - 1][1] }); }
+    const cle2 = liste.map((q) => `${q.x},${q.y},${q.c}`).join(';');
+    if (cle2 === this.caillouxVus && v.__caillouxRoot === v.root) return;
+    this.caillouxVus = cle2; dessinerCailloux(v, liste);
   },
 
   /* ---------------- Hansel et Gretel ---------------- */
@@ -515,7 +564,9 @@ export const Contes = {
   /** le journal : les missions de la vague en cours */
   panneauContes(d) {
     if (!estContes(d)) return '';
-    const s = this.salleContes(d), V = s?.conte === 'hg' ? this.vagueContes(d) : null; if (!V) return '';
+    const s = this.salleContes(d);
+    if (s?.nuit) { const n = this.monSac(d); return n < 0 ? '' : `<div class="dj-l"><span>Cailloux ${CAILLOUX[n][0]}</span><b>touche W</b></div><button type="button" class="dj-caillou" tabindex="-1">Poser un caillou</button>`; }
+    const V = s?.conte === 'hg' ? this.vagueContes(d) : null; if (!V) return '';
     const H = this.dContes(d, 'hg1'), esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
     return V.v.missions.map((q) => `<div class="dj-l${H['m_' + q.id] ? ' ok' : ''}"><span>${esc(q.nom)}</span><b>${H['m_' + q.id] ? '✔' : esc(q.ou)}</b></div>`).join('');
   },

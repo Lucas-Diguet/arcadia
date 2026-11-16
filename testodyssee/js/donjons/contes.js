@@ -15,11 +15,13 @@ const texte = (g) => g.map((r) => r.join(''));
 const melanger = (l, r) => { for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } return l; };
 
 /* ---------------- le labyrinthe de haies ---------------- */
-// 49 × 49 cases, des couloirs d'une case entre des haies ; une clairière au centre ; l'entrée en bas, cinq sorties
-// sur les bords (en haut à gauche, en haut, en haut à droite, à gauche, à droite)
+// 97 × 97 cases, des couloirs d'une case entre des haies ; une clairière au centre ; l'entrée en bas, cinq sorties
+// sur les bords (en haut à gauche, en haut, en haut à droite, à gauche, à droite). On y est dans la pénombre (`nuit`) :
+// à l'entrée, cinq sacs de cailloux de couleur (un par joueur), qu'on sème derrière soi pour se repérer
 import { maison } from './contes-maison.js';
 const MAISON = maison();
-export const LABYRINTHE = { w: 49, h: 49, centre: [24, 24] };
+export const LABYRINTHE = { w: 97, h: 97, centre: [48, 48] };
+export const CAILLOUX = [['rouges', '#e24a4a'], ['bleus', '#4a8ae2'], ['jaunes', '#f2d23c'], ['blancs', '#f4f4f4'], ['violets', '#c05ae0']];
 function labyrinthe() {
   const { w, h } = LABYRINTHE, g = grille(w, h), r = graine(1704);
   const cw = (w - 1) / 2, ch = (h - 1) / 2, vu = new Set(), pile = [[cw >> 1, ch - 1]];
@@ -32,7 +34,7 @@ function labyrinthe() {
     vu.add(x + ',' + y); g[2 * cy + 1 + dy][2 * cx + 1 + dx] = '.'; g[2 * y + 1][2 * x + 1] = '.'; pile.push([x, y]);
   }
   // quelques raccourcis : un labyrinthe à boucles, où l'on peut se perdre sans être coincé
-  for (let k = 0; k < 40; k++) {
+  for (let k = 0; k < 110; k++) {
     const x = 1 + Math.floor(r() * (w - 2)), y = 1 + Math.floor(r() * (h - 2));
     if (g[y][x] !== '#' || (x % 2) === (y % 2)) continue;
     if ((g[y][x - 1] === '.' && g[y][x + 1] === '.') || (g[y - 1][x] === '.' && g[y + 1][x] === '.')) g[y][x] = '.';
@@ -42,14 +44,18 @@ function labyrinthe() {
   for (let y = cy - 4; y <= cy + 4; y++) for (let x = cx - 4; x <= cx + 4; x++) g[y][x] = '.';
   for (const [x, y] of [[cx - 4, cy - 4], [cx + 4, cy - 4], [cx - 4, cy + 4], [cx + 4, cy + 4]]) g[y][x] = 'f';
   // les sorties : une case de bord, ouverte sur le couloir d'à côté ; une pancarte devant
-  const sorties = { 'α': [9, 0], 'γ': [25, 0], 'δ': [39, 0], 'β': [0, 25], 'ε': [48, 23] };
+  const sorties = { 'α': [17, 0], 'γ': [49, 0], 'δ': [79, 0], 'β': [0, 49], 'ε': [w - 1, 47] };
   for (const [c, [x, y]] of Object.entries(sorties)) {
     g[y][x] = c;
     const [ix, iy] = x === 0 ? [1, y] : x === w - 1 ? [w - 2, y] : [x, 1];
     g[iy][ix] = '.';
   }
   // l'entrée, en bas
-  g[h - 1][25] = 'D'; g[h - 2][25] = 'S';
+  const ex = 2 * (cw >> 1) + 1;
+  for (let x = ex - 6; x <= ex + 6; x++) g[h - 2][x] = '.';
+  g[h - 1][ex] = 'D'; g[h - 2][ex] = 'S';
+  // les sacs de cailloux : dans la haie, de part et d'autre de l'entrée
+  '❍❎❏❐❑'.split('').forEach((c, i) => { g[h - 3][ex - 5 + i * 2] = c; });
   return texte(g);
 }
 
@@ -243,6 +249,8 @@ const CONTES = {
     'θ': { type: 'lien', sol: true, vers: 'hg4', cible: 'Θ', escalier: true }, 'Θ': { type: 'lien', sol: true, vers: 'hg3', cible: 'θ', escalier: true },
     'σ': { type: 'lien', sol: true, vers: 'hg5', cible: 'Σ', bloque: 'grenier' }, 'Σ': { type: 'lien', sol: true, vers: 'hg4', cible: 'σ' },
     ...MAISON.objets,   // les portes des couloirs et des pièces
+    // les sacs de cailloux du labyrinthe
+    '❍': { type: 'sac', decor: 'sac0', n: 0 }, '❎': { type: 'sac', decor: 'sac1', n: 1 }, '❏': { type: 'sac', decor: 'sac2', n: 2 }, '❐': { type: 'sac', decor: 'sac3', n: 3 }, '❑': { type: 'sac', decor: 'sac4', n: 4 },
     // le potager
     '⁚': { type: 'terre', sol: true },
     'ⓒ': { type: 'legume', sol: true, legume: 'carotte' }, 'ⓘ': { type: 'legume', sol: true, legume: 'citrouille' },
@@ -297,7 +305,7 @@ const CONTES = {
   pnj,
   salles: [
     // le labyrinthe de haies (plein air) : l'entrée en bas, cinq sorties
-    { id: 'lab', nom: 'Labyrinthe des Haies', type: 'libre', dehors: true, mur: 'BUSH', haies: true, style: null, musique: 'forest', plan: labyrinthe() },
+    { id: 'lab', nom: 'Labyrinthe des Haies', type: 'libre', dehors: true, mur: 'BUSH', haies: true, nuit: true, style: null, musique: 'forest', plan: labyrinthe() },
     // Hansel et Gretel : la clairière, puis la maison (salon et cuisine, jardin, trois étages de dix pièces, grenier)
     { id: 'hg0', nom: 'Clairière de la Maison en Pain d\'Épice', type: 'libre', dehors: true, style: null, conte: 'hg', plan: [
       "############################",

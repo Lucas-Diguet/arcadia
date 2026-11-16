@@ -327,6 +327,21 @@ export function dessinerCases(view, liste) {
   view.root.add(g); view.__cases = g; view.__casesRoot = view.root;
 }
 
+/** les cailloux semés dans le labyrinthe (Bois des Contes) : des pastilles de couleur cerclées de noir, dessinées
+ *  par-dessus tout (les hautes haies cachent le sol des allées horizontales) ; liste vide : efface */
+export function dessinerCailloux(view, liste) {
+  if (view.__cailloux) { view.__caillouxRoot?.remove(view.__cailloux); view.__cailloux.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); view.__cailloux = null; view.__caillouxRoot = null; }
+  if (!liste.length || !view.root) return;
+  const g = new THREE.Group();
+  const disque = (q, r, c, ordre) => {
+    const geo = new THREE.CircleGeometry(r, 12); geo.rotateX(-Math.PI / 2); geo.translate(q.x + 0.5, 0.04, q.y + 0.5);
+    const me = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: c, depthTest: false, depthWrite: false, transparent: true }));
+    me.renderOrder = ordre; me.frustumCulled = false; g.add(me);
+  };
+  for (const q of liste) { disque(q, 0.2, '#141414', 60); disque(q, 0.14, q.c, 61); }
+  view.root.add(g); view.__cailloux = g; view.__caillouxRoot = view.root;
+}
+
 /** les rivières du chemin de l'Eau : des chevrons blancs qui défilent dans le sens du courant (m absent : efface) */
 export function dessinerCourants(view, m, t) {
   if (view.__courants && (view.__courantsRoot !== view.root || view.__courantsMap !== m)) {
