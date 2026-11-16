@@ -777,6 +777,16 @@ porte de fer, ouverte par la Clé Antique dans les deux sens) :
   Images provisoires : `sarcophage`, `sarcophage_ouvert`, `torche_off`, `brasier` et `brasier_on` (ceux des Miroirs).
   L'image du roi en combat (`img/tombeau/roi_sans_nom.png`) vient d'une illustration fournie par l'auteur, détourée et réduite.
 
+Dessins d'Odyssée repris : les morts-vivants sont la goule et la momie, le Roi Sans Nom se dresse hors du sarcophage
+sous les traits du pharaon (`roiDebout`, le combat garde son image), le tombeau vu de dehors est le temple du pharaon
+(modèle `temple`, porte fermée) et la Pyramide de l'Ascension le modèle `pyramide` (porte de deux cases, `portes2`).
+
+L'aide de Khamsin (-11) : battu au -10, il demande à voir le trésor. Au troisième brasier, il arrive par l'entrée
+(`arriveeKhamsin`) et se poste à côté du sarcophage (`khamsinPlace`, drapeau `khamsin` de g11). On lui demande de
+simplifier ou de résoudre les billes ou les dalles-soleils (`aide` : `simple` ou `resout`) ; à la stèle suivante de ces
+deux-là, un instant de noir, il est à côté (`khamsinStele`). Simplifié : `SIMPLIFIES` de `jeux-tombeau.js` (7 billes,
+dalles mélangées de 2 coups), gardé pour cette stèle (`simples`). En mode test, chaque casse-tête peut être passé.
+
 Les salles du -4 au -9 viennent de `python3 tools/tombeau.py [graine]` (`js/donjons/tombeau-salles.js`, ne pas le
 modifier à la main). Images :
 `python3 tools/tombeau-images.py` (`img/tombeau/`). Le Pendentif Maudit et le Monocle de Vérité (objets de

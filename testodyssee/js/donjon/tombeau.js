@@ -16,7 +16,7 @@ import { dessinerZones, dessinerZzz } from '../rendu.js';
 import { HPX } from '../../../odyssee/js/render/world3d.js';
 import { prisPar, battu } from './etat.js';
 import { equipeRoi } from '../champions.js';
-import { JEUX_SEPULTURE } from './jeux-tombeau.js';
+import { JEUX_SEPULTURE, SIMPLIFIES } from './jeux-tombeau.js';
 import { jouerCasseTete } from './jeux-tombeau-ecran.js';
 
 /** les salles que montre la carte du ruinemaniac (du -1 au -4 ; plus tard, un peu plus bas) */
@@ -82,7 +82,7 @@ export const Tombeau = {
       else if (Q.pilleur) { n.talk = () => this.parlerPilleur(d, k); n.when = () => true; }
       else if (Q.mortvivant) n.talk = () => this.attaqueMort(d, k);
       else if (Q.lutteur) n.talk = () => this.parlerLutteur(d, k);
-      else if (Q.chef) n.talk = () => this.chef(d);
+      else if (Q.chef) { n.talk = () => this.chef(d); n.when = () => !this.dTombeau(d, 'g11').khamsin; }   // parti voir le trésor
       // ce qui n'arrive qu'après le vol du sceptre (la lutte du -6 et du -7)
       if (Q.apres) { const w = n.when; n.when = () => this.etape(d) >= 2 && (!w || w()); }
     }
@@ -106,6 +106,16 @@ export const Tombeau = {
     if (s.id === 'g11' && P.sortie) {
       const s10 = d.salles.find((q) => q.id === 'g10'), [sx, sy] = P.sortie, [px, py] = this.porteG10(d);
       m.set(sx, sy, T.CAVEDOOR); m.warp(sx, sy, { map: s10.carte, x: px, y: py + 1, dir: 'down' }); m.deco.push({ k: 'exitlight', x: sx, y: sy });
+    }
+    // la sépulture : Khamsin, qui vient aider après le troisième brasier (sa place : à côté du sarcophage), et le roi
+    // qui se dresse hors du sarcophage le temps de sa colère
+    if (s.id === 'g11') {
+      const [cx, cy] = P.objets['ǂ'][0], pris = new Set(m.deco.map((q) => cle(q.x, q.y)));
+      const place = [[cx - 1, cy], [cx + 1, cy], [cx, cy + 1], [cx - 1, cy + 1], [cx + 1, cy + 1]].find(([x, y]) => walkable(m.get(x, y)) && !pris.has(cle(x, y))) || [cx, cy + 1];
+      m.khamsinPlace = place;
+      m.npc({ id: `${d.id}:khamsin-11`, x: place[0], y: place[1], dir: 'down', sprite: 'nox', move: 'static', name: 'Khamsin',
+        when: () => !!this.sceneKhamsin || !!this.dTombeau(d, 'g11').khamsin, talk: () => this.aideKhamsin(d) });
+      m.npc({ id: `${d.id}:roi-11`, x: cx, y: cy, dir: 'down', sprite: 'pharaon', move: 'static', name: 'Roi Sans Nom', when: () => !!this.roiDebout, talk: () => {} });
     }
     // le sous-chef : au -7 pour la scène du vol, puis au -4, devant l'éboulement
     if (s.id === 'p4') {
@@ -411,7 +421,7 @@ export const Tombeau = {
     const P = d.pnj['Ѡ'];
     const res = await this.combat({ ...P, perd: 'C\'est... impossible...' }, this.equipe(P.equipe));
     if (res !== 'win') { await this.defaite(d); return; }
-    await ui.say(['C\'est fini.', 'Je n\'ai plus d\'hommes, plus de forces. Fais ce que tu veux.', 'Ouvre-la, cette porte.'], qui);
+    await ui.say(['C\'est fini.', 'Je n\'ai plus d\'hommes, plus de forces. Fais ce que tu veux.', 'Ouvre-la, cette porte.', '... Mais je t\'en prie, une seule chose.', 'Le trésor du roi... Laisse-moi le voir. De mes yeux, au moins une fois.', 'Après tout ce que ça m\'a coûté, je ne peux pas repartir sans l\'avoir vu.'], qui);
     await this.demande(d.id, { a: 'maj', salle: 'g10', donnees: { battu: true, jumeau: true } });
     g.sound.sfx('item');
     await ui.say(['Le chef laisse tomber son sceptre à tes pieds.', `${g.state.name} ramasse le Sceptre Jumeau !`]);
@@ -439,9 +449,12 @@ export const Tombeau = {
     if (!E.ouvert) { await ui.say(['Le sarcophage du Roi Sans Nom.', 'Il est scellé par une magie très puissante. Impossible de l\'ouvrir.']); return; }
     if (E.battu) { await ui.say(['Le sarcophage est vide.', 'Le Roi Sans Nom a retrouvé le sommeil.']); return; }
     await ui.say(['Le couvercle a glissé sur le côté.', 'Dans le noir du sarcophage, quelque chose bouge...', 'Une silhouette couronnée se redresse lentement.']);
+    this.roiDebout = true; g.refreshNpcs(); g.sound.sfx('encounter'); g.view.shake = 0.3;
+    await attendre(700);
     await ui.say(['Qui...', 'Qui ose rallumer les feux de mon tombeau ?'], { speaker: 'Roi Sans Nom' });
     const R = { cls: 'Roi', nom: 'Roi Sans Nom', sprite: 'roi_sans_nom', prix: 0, boss: true, perd: 'Le sommeil... enfin...' };
-    const res = await this.combat(R, equipeRoi(g.state.name));
+    let res;
+    try { res = await this.combat(R, equipeRoi(g.state.name)); } finally { this.roiDebout = false; g.refreshNpcs(); }
     if (res !== 'win') { await this.defaite(d); return; }
     await this.demande(d.id, { a: 'maj', salle: 'g11', donnees: { battu: true } });
     await ui.say(['Le Roi Sans Nom s\'effondre dans son sarcophage.', 'Les flammes des brasiers vacillent, puis se calment.']);
@@ -455,8 +468,15 @@ export const Tombeau = {
     const g = this.game, ui = g.ui, E = this.dTombeau(d, 'g11'), feux = (E.feux || []).slice();
     if (feux[k]) { await ui.say(['L\'inscription brille faiblement.', INSCRIPTIONS[k]]); return; }
     await ui.say(['Une inscription gravée dans la pierre :', INSCRIPTIONS[k]]);
-    if (!(await ui.yesNo(`${JEUX_SEPULTURE[k].nom} : tenter le casse-tête ?`))) return;
-    if (!(await jouerCasseTete(g, JEUX_SEPULTURE[k]))) { await ui.say('Tu t\'éloignes de l\'inscription. Le brasier reste éteint.'); return; }
+    const id = JEUX_SEPULTURE[k].id, aide = SIMPLIFIES[id] && E.aide;
+    let reussi = false;
+    if (aide) reussi = await this.khamsinStele(d, k, aide);
+    else if (g.modeTest && await ui.yesNo('Mode test : passer ce casse-tête (compté comme réussi) ?')) reussi = true;
+    else {
+      if (!(await ui.yesNo(`${JEUX_SEPULTURE[k].nom} : tenter le casse-tête ?`))) return;
+      reussi = await jouerCasseTete(g, this.casseTete(d, k));
+    }
+    if (!reussi) { await ui.say('Tu t\'éloignes de l\'inscription. Le brasier reste éteint.'); return; }
     feux[k] = true;
     for (let i = 0; i < 5; i++) feux[i] = !!feux[i];
     g.sound.sfx('select');
@@ -465,6 +485,105 @@ export const Tombeau = {
     const n = feux.filter(Boolean).length;
     await ui.say(n < 5 ? ['Le brasier s\'embrase dans un grondement !', 'La salle s\'éclaire un peu.'] : ['Le dernier brasier s\'embrase !']);
     if (n === 5 && !E.ouvert) await this.cinematiqueSepulture(d);
+    else if (n >= 3 && !this.dTombeau(d, 'g11').khamsin) await this.arriveeKhamsin(d);
+  },
+  /** le casse-tête d'une inscription : simplifié s'il l'a été par Khamsin */
+  casseTete(d, k) {
+    const J = JEUX_SEPULTURE[k], S = SIMPLIFIES[J.id];
+    return S && (this.dTombeau(d, 'g11').simples || {})[J.id] ? { ...J, jeu: S, nom: `${J.nom} (simplifié)` } : J;
+  },
+
+  /* ---------------- -11 : l'aide de Khamsin ---------------- */
+  // il arrive après le troisième brasier (par le chemin de l'entrée), se poste près du sarcophage ; on lui demande de
+  // simplifier un des deux casse-têtes qu'il connaît (les billes, les dalles-soleils) ou de le résoudre ; à la stèle
+  // suivante de ces deux-là, il apparaît à côté et fait ce qu'on lui a demandé
+  khamsinDef(m) { return m.npcs.find((q) => q.id.endsWith(':khamsin-11')); },
+  async arriveeKhamsin(d) {
+    const g = this.game, ui = g.ui, m = g.mapObj, p = g.player, qui = { speaker: 'Khamsin' }, def = this.khamsinDef(m);
+    if (!def) return;
+    // il entre par où l'on est arrivé : on le voit sortir du bord de l'écran, sur le chemin de l'entrée
+    const chemin = this.chemin(m, p.x, p.y, ...m.donjon.plan.depart), dep = chemin[Math.min(chemin.length - 1, 7)] || m.donjon.plan.depart;
+    [def.x, def.y] = dep;
+    this.sceneKhamsin = true; g.refreshNpcs();
+    const n = g.npcs.find((q) => q.id === def.id);
+    try {
+      g.sound.sfx('door');
+      if (n) await this.marcherVers(n, m, p.x, p.y, 1);
+      p.dir = n ? (n.x > p.x ? 'right' : n.x < p.x ? 'left' : n.y > p.y ? 'down' : 'up') : p.dir;
+      await ui.say(['Trois brasiers... Le tombeau s\'éveille.', 'Je t\'ai suivi. Je voulais seulement voir le trésor, je te le jure.',
+        'Mais ces deux énigmes, je les connais : les billes du scribe, et les dalles-soleils.', 'J\'ai passé des années à étudier ce tombeau sur de vieux papyrus.',
+        'Si tu bloques, viens me voir près du sarcophage. Je peux te les simplifier... ou les résoudre à ta place.'], qui);
+      if (n) await this.marcherVers(n, m, ...m.khamsinPlace, 0);
+      if (n) n.dir = 'down';
+    } finally {
+      [def.x, def.y] = m.khamsinPlace;
+      await this.demande(d.id, { a: 'maj', salle: 'g11', donnees: { khamsin: true } });
+      this.sceneKhamsin = false; g.refreshNpcs();
+    }
+  },
+  /** le plus court chemin à pied de (x0, y0) à (x1, y1), départ compris */
+  chemin(m, x0, y0, x1, y1) {
+    const prev = new Map([[cle(x0, y0), null]]), f = [[x0, y0]];
+    while (f.length) {
+      const [x, y] = f.shift();
+      if (x === x1 && y === y1) break;
+      for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = cle(x + a, y + b); if (!prev.has(k) && walkable(m.get(x + a, y + b))) { prev.set(k, [x, y]); f.push([x + a, y + b]); } }
+    }
+    if (!prev.has(cle(x1, y1))) return [];
+    const out = []; for (let c = [x1, y1]; c; c = prev.get(cle(...c))) out.unshift(c);
+    return out;
+  },
+  async aideKhamsin(d) {
+    const g = this.game, ui = g.ui, E = this.dTombeau(d, 'g11'), qui = { speaker: 'Khamsin' }, feux = E.feux || [];
+    const restent = JEUX_SEPULTURE.map((J, k) => (SIMPLIFIES[J.id] && !feux[k] ? J.nom : null)).filter(Boolean);
+    if (E.battu) { await ui.say(['Le roi... Je l\'ai vu. De mes yeux.', 'Ça me suffit. Va, maintenant.'], qui); return; }
+    if (!restent.length) { await ui.say(['Les deux énigmes que je connaissais brûlent déjà.', 'Je n\'ai plus rien à t\'apprendre.'], qui); return; }
+    if (E.aide) { await ui.say(['Va devant la stèle des billes ou celle des dalles-soleils.', 'Je te rejoins.'], qui); return; }
+    const r = await ui.ask(`Je connais ${restent.join(' et ')}. Que veux-tu ?`, ['Simplifier le casse-tête', 'Le résoudre pour moi', 'Rien pour l\'instant'], qui);
+    if (r !== 0 && r !== 1) { await ui.say('Comme tu veux. Je reste là.', qui); return; }
+    await this.demande(d.id, { a: 'maj', salle: 'g11', donnees: { aide: r === 0 ? 'simple' : 'resout' } });
+    await ui.say(['Bien. Va devant la stèle du casse-tête qui te pose problème.', 'Je te rejoins.'], qui);
+  },
+  /** à la stèle : un instant de noir, Khamsin est là, il simplifie ou résout ; puis il retourne près du sarcophage */
+  async khamsinStele(d, k, aide) {
+    const g = this.game, ui = g.ui, m = g.mapObj, p = g.player, qui = { speaker: 'Khamsin' }, def = this.khamsinDef(m), J = JEUX_SEPULTURE[k];
+    if (!def) return false;
+    const [sx, sy] = this.ciblesStele(m, k), ici = cle(p.x, p.y);
+    const autour = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]].map(([a, b]) => [p.x + a, p.y + b])
+      .filter(([x, y]) => walkable(m.get(x, y)) && cle(x, y) !== ici && !(x === sx && y === sy))
+      .sort((a, b) => Math.hypot(a[0] - sx, a[1] - sy) - Math.hypot(b[0] - sx, b[1] - sy));
+    const place = autour[0] || m.khamsinPlace;
+    let reussi = false;
+    await ui.fade(true, 400); await attendre(700);
+    [def.x, def.y] = place; g.refreshNpcs();
+    const n = g.npcs.find((q) => q.id === def.id); if (n) n.dir = sx > n.x ? 'right' : sx < n.x ? 'left' : sy > n.y ? 'down' : 'up';
+    await ui.fade(false, 400);
+    try {
+      await this.demande(d.id, { a: 'maj', salle: 'g11', donnees: { aide: null } });
+      if (aide === 'resout') {
+        await ui.say(['Laisse-moi faire.', '...'], qui);
+        g.sound.sfx('select'); await attendre(450); g.sound.sfx('select'); await attendre(450); g.sound.sfx('select');
+        await ui.say(['Voilà. Exactement comme sur les papyrus.'], qui);
+        reussi = true;
+      } else {
+        const simples = { ...(this.dTombeau(d, 'g11').simples || {}), [J.id]: true };
+        await this.demande(d.id, { a: 'maj', salle: 'g11', donnees: { simples } });
+        await ui.say(J.id === 'billes' ? ['J\'ai retiré quelques billes, et avancé les premiers sauts.', 'Il n\'en reste que sept. À toi de jouer.'] : ['J\'ai retourné la plupart des dalles comme il faut.', 'Il n\'en reste que deux ou trois à remettre. À toi de jouer.'], qui);
+        reussi = await jouerCasseTete(g, this.casseTete(d, k));
+        if (reussi) await ui.say('Tu vois ? Ce n\'était pas si terrible.', qui);
+      }
+    } finally {
+      await ui.fade(true, 400); await attendre(400);
+      [def.x, def.y] = m.khamsinPlace; g.refreshNpcs();
+      const n2 = g.npcs.find((q) => q.id === def.id); if (n2) n2.dir = 'down';
+      await ui.fade(false, 400);
+    }
+    return reussi;
+  },
+  /** la case de la stèle (inscription) k */
+  ciblesStele(m, k) {
+    const O = m.donjon.plan.objets, c = O['ǂ'][0];
+    return (O['Ϟ'] || []).find(([x, y]) => numeroCercle(x, y, c) === k) || [m.player?.x || 0, 0];
   },
   /** les cinq brasiers brûlent : la caméra regarde l'autel, les torches s'allument une à une, le sarcophage s'ouvre */
   async cinematiqueSepulture(d) {

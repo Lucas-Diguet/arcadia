@@ -1161,6 +1161,17 @@ for (const l of Object.values(lieux).flat()) {
   const m = world.maps[l.map];
   ok(m && walkable(m.get(l.x, l.y)) && !m.warpAt(l.x, l.y), `on apparaît sur une case libre : ${l.nom}`);
 }
+/* ---------------- la sépulture : l'aide de Khamsin ---------------- */
+{
+  const { SIMPLIFIES, BILLES, SOLEILS } = await import('../testodyssee/js/donjon/jeux-tombeau.js');
+  const D = [[1, 0], [-1, 0], [0, 1], [0, -1]], vus = new Set();
+  const gagne = (s) => { if (s.size === 1) return true; const k = [...s].sort().join(';'); if (vus.has(k)) return false; vus.add(k);
+    for (const b of s) { const [x, y] = b.split(',').map(Number); for (const [dx, dy] of D) if (BILLES.saut({ billes: s }, [x, y], [x + 2 * dx, y + 2 * dy])) { const n = new Set(s); n.delete(b); n.delete((x + dx) + ',' + (y + dy)); n.add((x + 2 * dx) + ',' + (y + 2 * dy)); if (gagne(n)) return true; } }
+    return false; };
+  const B = SIMPLIFIES.billes.nouveau(), S = SIMPLIFIES.soleils.nouveau();
+  ok(B.billes.size < BILLES.depart().size && gagne(B.billes) && S.allume.filter((v) => !v).length <= 10 && !SOLEILS.resolu(S), 'tombeau : Khamsin simplifie les billes (7 billes, toujours faisable) et les dalles-soleils (mélangées de 2 coups)');
+}
+
 /* ---------------- le Musée des Dunes ---------------- */
 {
   const L = world.musee, M = world.maps.monde, m = world.maps['labo:musee'];
@@ -1318,7 +1329,7 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     ok(['p6', 'p7'].every((id) => lettres(id, (p) => p.lutteur).length >= 3 && lettres(id, (p) => p.mortvivant).length >= 4 && lettres(id, (p) => p.mortvivant || p.lutteur).every((k) => d.pnj[k].apres)) && ['p4', 'p5'].every((id) => !lettres(id, (p) => p.mortvivant).length), 'tombeau : au -6 et au -7, la lutte contre les morts-vivants (après le vol du sceptre)');
     const gis = (id) => (M[id].donjon.plan.objets['ɠ'] || []).length + (M[id].donjon.plan.objets['ɑ'] || []).length;
     ok(['m8', 'm9'].every((id) => lettres(id, (p) => p.mortvivant).length >= 6 && gis(id) >= 14 && (M[id].donjon.plan.objets['ɑ'] || []).length >= 3), 'tombeau : au -8 et au -9, l\'hécatombe (morts-vivants, corps, mourants)');
-    ok(Object.values(d.pnj).filter((p) => p.mortvivant).every((p) => p.sprite === 'spectrel' && SPECIES[p.mortvivant.sp]?.nonCapturable && p.mortvivant.lvl >= 38 && p.mortvivant.lvl <= 46) && Object.values(d.pnj).filter((p) => p.pilleur || p.lutteur || p.brigand || p.portier != null).every((p) => p.sprite !== 'spectrel'), 'tombeau : les abominations, créées pour le tombeau, ne se capturent pas');
+    ok(Object.values(d.pnj).filter((p) => p.mortvivant).every((p) => ['goule', 'momie'].includes(p.sprite) && SPECIES[p.mortvivant.sp]?.nonCapturable && p.mortvivant.lvl >= 38 && p.mortvivant.lvl <= 46) && Object.values(d.pnj).filter((p) => p.pilleur || p.lutteur || p.brigand || p.portier != null).every((p) => p.sprite !== 'spectrel'), 'tombeau : les abominations, créées pour le tombeau, ne se capturent pas');
     const P7 = M.p7.donjon.plan, [nx, ny] = P7.suivante;
     ok(S('p7').piege && P7.objets['¤']?.[0][0] === nx && P7.objets['¤'][0][1] === ny + 1, 'tombeau : au -7, le piège, et la grille fermée à clé sous la sortie');
     const P10 = M.g10.donjon.plan;

@@ -43,10 +43,10 @@ function exterieur() {
   const W = 48, H = 40, m = new GameMap('labo:tombeau:dehors', W, H, { outdoor: true, fill: T.ROCK, name: 'Vallée des Rois Oubliés', music: 'yghdesert' });
   m.blob(24, 21, 21, 17, T.SAND, rng(9191));
   m.rect(4, 4, 43, 36, T.SAND, [T.ROCK]);
-  // la façade du tombeau, au nord : la porte officielle est fermée
-  const fx = 19, fw = 9, fy = 2, fh = 4, px = fx + 4, py = fy + fh - 1;
-  for (let y = fy; y < fy + fh; y++) for (let x = fx; x < fx + fw; x++) { m.under.set(x + ',' + y, T.SAND); m.set(x, y, T.BLOCK); }
-  m.prop('entree_tombeau', fx, py, false, { w: fw, dz: 0.95 });
+  // le tombeau, au nord : le temple du pharaon d'Odyssée (11 × 8, fausse 3D) ; la porte officielle est fermée
+  const fx = 19, fw = 9, fy = 0, fh = 8, px = fx + 4, py = fy + fh - 1;
+  m.rect(fx - 1, fy, fx + fw, py, T.SAND);
+  m.building('lab', fx - 1, fy, { modele: 'temple', w: 11, d: 8, door: -1, name: 'Tombeau du Roi Sans Nom' });
   m.edge = T.ROCK;
   // le cordon (des bornes) et les gardiens : on ne passe pas
   for (let x = fx - 2; x <= fx + fw + 1; x++) m.prop('cordon', x, py + 3);
@@ -163,7 +163,7 @@ function profondeur(sid, gen, pnj, apres) {
   let k = 0;
   const mort = (x, y, extra) => {
     const l = MORTS[nMort++], sp = ESPECES_MORTS[(k + y) % 3];
-    pnj[l] = { id: `${sid}-m${k}`, cls: '', nom: 'Abomination', sprite: 'spectrel', dir: 'down', mortvivant: { sp, lvl: l0 + (k % (l1 - l0 + 1)) }, apres, ...extra };
+    pnj[l] = { id: `${sid}-m${k}`, cls: '', nom: 'Abomination', sprite: k % 2 ? 'momie' : 'goule', dir: 'down', mortvivant: { sp, lvl: l0 + (k % (l1 - l0 + 1)) }, apres, ...extra };
     plan[y][x] = l; lettres.push(l); k++;
   };
   for (let y = 0; y < plan.length; y++) for (let x = 0; x < plan[y].length; x++) {

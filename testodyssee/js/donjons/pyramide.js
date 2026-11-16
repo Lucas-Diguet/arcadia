@@ -26,17 +26,16 @@ function exterieur() {
   const m = new GameMap('labo:pyramide:dehors', 36, 30, { outdoor: true, fill: T.ROCK, name: 'Dunes de l\'Ascension', music: 'route' });
   m.blob(18, 15, 15, 12.5, T.SAND, rng(4141));
   m.rect(4, 3, 31, 26, T.SAND, [T.ROCK]);
-  // la pyramide : 11 cases de large, porte au milieu de la rangée du bas ; tout son pied est bloqué
-  const x0 = 12, yb = 12, porte = [x0 + 5, yb];
-  for (let y = yb - 6; y <= yb; y++) for (let x = x0; x <= x0 + 10; x++) { if (x === porte[0] && y === yb) continue; m.under.set(x + ',' + y, T.SAND); m.set(x, y, T.BLOCK); }
-  m.prop('pyramide', x0, yb, false, { w: 11, dz: 0.95 });
-  m.set(...porte, T.DOOR);
-  for (let y = yb + 1; y <= 26; y++) m.set(porte[0], y, T.PATH);
+  // la pyramide : le monument à degrés d'Odyssée (12 × 12, fausse 3D), porte de deux cases au milieu de la face sud
+  const x0 = 12, yb = 12, porte = [x0 + 5, yb], porte2 = [x0 + 6, yb];
+  m.rect(x0, yb - 11, x0 + 11, yb, T.SAND);
+  m.building('lab', x0, yb - 11, { modele: 'pyramide', w: 12, d: 12, door: 5, door2: 6, name: 'Pyramide de l\'Ascension' });
+  for (let y = yb + 1; y <= 26; y++) { m.set(porte[0], y, T.PATH); m.set(porte2[0], y, T.PATH); }
   for (const [x, y] of [[porte[0] - 3, yb + 3], [porte[0] + 3, yb + 3], [porte[0] - 3, yb + 8], [porte[0] + 3, yb + 8]]) m.prop('obelisque', x, y);
   for (const [x, y] of [[6, 6], [29, 7], [7, 20], [28, 21], [9, 25], [26, 25]]) m.prop('palm', x, y);
   for (const [x, y] of [[8, 13], [27, 15], [11, 22]]) m.prop('rocher_grand', x, y);
   m.zone(0, 0, 35, 29, { name: 'Dunes de l\'Ascension', music: 'route' });
-  return { carte: m, porte };
+  return { carte: m, porte, portes2: [porte2] };
 }
 
 // grottes des salles 5 à 7 : une par porte (a, b, c, d), mêmes plans (dessinés par tools/pyramide-grottes.py),

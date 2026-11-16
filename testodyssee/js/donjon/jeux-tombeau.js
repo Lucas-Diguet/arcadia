@@ -172,6 +172,14 @@ export const SOLEILS = {
   },
 };
 
+/** les versions simplifiées par Khamsin (les billes et les dalles-soleils) : le solitaire repart d'une position prise au
+ *  milieu de sa solution (7 billes, 6 sauts), les dalles ne sont mélangées que de 2 coups. Recommencer (Menu) repart
+ *  de la version simplifiée. */
+export const SIMPLIFIES = {
+  billes: { ...BILLES, depart() { return new Set(['3,1', '2,2', '5,2', '0,2', '3,2', '3,4', '3,3']); } },
+  soleils: { ...SOLEILS, nouveau(alea = Math.random) { return SOLEILS.nouveau.call(this, alea, 2); } },
+};
+
 /** un brasier, un casse-tête : dans l'ordre des brasiers autour de l'autel (en partant du haut) */
 export const JEUX_SEPULTURE = [
   { id: 'puzzle', nom: 'La fresque brisée', jeu: PUZZLE, aide: 'Flèches : bouger · A : prendre / poser une pièce · B : reposer / quitter' },

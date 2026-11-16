@@ -1,5 +1,14 @@
 # Journal des versions — Arcadia
 
+## 5.98 — 16 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : une aide pour les casse-têtes de la sépulture.
+  - Battu, le chef de Sable-Noir demande à voir le trésor. Au troisième brasier rallumé, il te rejoint et se poste près du sarcophage.
+  - Il peut simplifier les billes du scribe ou les dalles-soleils, ou les résoudre à ta place : demande-lui, puis va devant la stèle.
+  - Les morts-vivants ont de nouveaux dessins (goule et momie), et le Roi Sans Nom se dresse hors de son sarcophage avant le combat.
+  - Dehors, le tombeau est un grand temple de pharaon.
+  - En mode test, chaque casse-tête de la sépulture peut être passé.
+- **TestOdyssée** — Pyramide de l'Ascension : une vraie pyramide à degrés, avec son portail, ses obélisques et ses brasiers.
+
 ## 5.97 — 16 novembre 2026
 - **TestOdyssée** — Le labo reprend les nouveautés d'Arcadia jusqu'à la 5.96 (sprites, textures et décors d'Odyssée, espèces, objets, CT, Backrooms, Hub), sans rien perdre de ses donjons.
 - **TestOdyssée** — Un musée ouvre aux Dunes d'Ocre (nouveau lieu « Musée des Dunes »). On y admire des fossiles, des antiquités, et le Sceptre du Roi Sans Nom sous sa vitrine.

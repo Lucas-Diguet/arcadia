@@ -210,6 +210,7 @@ export function relierExterieur(def, m) {
   if (def.entree) { if (E.panneau) carte.sign(...E.panneau, textePanneau(def)); else poserPanneau(def, carte, porte); }
   const P = m.donjon.plan, [px, py] = porte;
   carte.warp(px, py, { map: m.id, x: P.depart[0], y: P.depart[1], dir: 'up' });
+  for (const [x, y] of E.portes2 || []) carte.warp(x, y, { map: m.id, x: P.depart[0], y: P.depart[1], dir: 'up' });   // porte de deux cases
   if (P.sortie) {
     const [sx, sy] = P.sortie;
     m.set(sx, sy, T.CAVEDOOR);
