@@ -111,9 +111,14 @@ export const Contes = {
       if (P.sortie) { m.set(...P.sortie, T.PATH); m.deco = m.deco.filter((q) => !(q.k === 'exitlight' && q.x === P.sortie[0] && q.y === P.sortie[1])); const ws = m.warpAt(...P.sortie); if (ws) ws.step = true; }
     }
     // le labyrinthe : de vraies haies, hautes, à la place des buissons
-    if (s.haies) for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
-      if (m.get(x, y) !== T.BUSH) continue;
-      m.set(x, y, T.BLOCK); m.deco.push({ k: 'haie' + ((x * 7 + y * 13) % 3), x, y });
+    // (une haie qui en a une autre devant elle ne montre que son dessus : une haie verticale est une barre, pas des blocs)
+    if (s.haies) {
+      const H = new Set();
+      for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) if (m.get(x, y) === T.BUSH) H.add(cle(x, y));
+      for (const k of H) {
+        const [x, y] = k.split(',').map(Number), forme = !H.has(cle(x, y + 1)) ? 'haie' : H.has(cle(x, y - 1)) ? 'haiev' : 'haien';
+        m.set(x, y, T.BLOCK); m.deco.push({ k: forme + ((x * 7 + y * 13) % 3), x, y });
+      }
     }
     // les PNJ des contes
     for (const n of m.npcs) {

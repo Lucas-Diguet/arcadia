@@ -774,6 +774,8 @@ sont prises en charge par `donjon/plan.js`. Passages (`lien`, comme au Tombeau) 
 d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
 - Labyrinthe des Haies (`lab`, 49 × 49, généré ; `haies: true` : les buissons deviennent de hautes haies, `img/contes/haie0-2.png`) : entrée en bas depuis l'Orée des Contes, clairière vide au centre, cinq
   sorties avec leur pancarte (Hansel et Gretel, Chaperon rouge, Pinocchio, Jack, Boucle d'or).
+- Haies du labyrinthe (`haies: true`) : `haie0` à `haie2` de face ; une haie qui en a une autre devant elle ne montre que
+  son dessus (`haiev`, et `haien` pour le bout du fond), pour qu'une haie verticale soit une barre continue.
 - Hansel et Gretel : la clairière (`hg0`), le salon et la cuisine (`hg1`), le jardin (`hgj`), trois étages (`hg2` à
   `hg4`), le grenier fermé à clé (`hg5`, Hansel et Gretel). Rien de ce que lit le joueur ne dit « sorcière » : c'est
   la vieille dame. Étages, pièces, débarras et jardin sont écrits par `js/donjons/contes-maison.js` :

@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 5.58 — 16 novembre 2026
+- **TestOdyssée** — Bois des Contes : dans le labyrinthe, les haies verticales forment maintenant une vraie barre continue, au lieu de blocs posés les uns derrière les autres.
+
 ## 5.57 — 15 novembre 2026
 - **TestOdyssée** — Bois des Contes, la maison de la vieille dame : en entrant dans une pièce par la gauche ou la droite du couloir, on arrive maintenant du bon côté de la pièce, dans le sens où l'on marchait.
   - Au jardin, la terre du potager et du chemin est brune.

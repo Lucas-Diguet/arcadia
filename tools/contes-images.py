@@ -140,9 +140,27 @@ def poupee():
     return im
 
 
+def haies_verticales():
+    """Les haies qui en ont une autre devant elles (une haie verticale) : on n'en voit que le dessus, qui doit se
+    prolonger d'une case à l'autre. haiev : dessus seul ; haien : le bout du fond, avec son liseré."""
+    for i in range(3):
+        src = Image.open(OUT / f'haie{i}.png').convert('RGBA')
+        dessus = src.crop((0, 1, 16, 10))
+        for nom, lisere in (('haiev', False), ('haien', True)):
+            im = src.copy()
+            y = 0
+            if lisere:
+                im.paste(src.crop((0, 0, 16, 1)), (0, 0)); y = 1
+            while y < 17:
+                im.paste(dessus, (0, y)); y += 9
+            im.paste(src.crop((0, 12, 16, 25)), (0, 17))
+            im.save(OUT / f'{nom}{i}.png')
+
+
 if __name__ == '__main__':
     OUT.mkdir(parents=True, exist_ok=True)
     for nom, f in [('puits', puits), ('buches', buches), ('chaudron', chaudron), ('soufflet', soufflet), ('carotte', carotte), ('citrouille', citrouille),
                    ('patate', patate), ('oignon', oignon), ('cheval', cheval), ('cubes', cubes), ('peluche', peluche), ('poupee', poupee)]:
         f().save(OUT / f'{nom}.png')
         print('écrit', nom)
+    haies_verticales()
