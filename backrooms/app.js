@@ -1,15 +1,21 @@
 // The Backrooms - Logique applicative principale, entrées clavier/souris et boucle de jeu
-import { BackroomsSim, DT, DEPART_T, PIPES_LEVEL, ARRIVE_T, INV_SIZE, HOTEL_LEVEL, DOCK_OPEN_T, DOCK_CLOSE_T, ALARM_T, DUCT_LAND } from './engine/sim.js';
+import { BackroomsSim, DT, DEPART_T, PIPES_LEVEL, ARRIVE_T, INV_SIZE, HOTEL_LEVEL, MALL_LEVEL, DOCK_OPEN_T, DOCK_CLOSE_T, ALARM_T, DUCT_LAND, startLevel } from './engine/sim.js';
+import { createStairRide } from './view/stairwell.js';
+import { installMallSfx } from './view/mallAudio.js';
+import { floorKey as mallFloorKey } from './view/mall.js';
 import { hasLineOfSight } from './engine/nav.js';
 import { bfs, CELL_SIZE, cellsOnSeg, T } from './engine/map.js';
-import { createBackroomsScene, setMonsterMode, setSceneOptions } from './view/scene.js';
+import { createBackroomsScene, setMonsterMode, setSceneOptions, onGlContext, sceneGl } from './view/scene.js';
+import { createSlideRide } from './view/slide.js';
+import { MOUTH, SLIDES } from './engine/poolrooms.js';
 import { BackroomsSfx } from './view/sfx.js';
+import { hotelUi } from './view/hotelExit.js';
 import { createVoice } from './view/voice.js';
+import { createCloner } from './view/clone.js';
+import { createHearer } from './view/hear.js';
 import { BackroomsHUD, levelName, levelSub, LORE, loreOf, hearTape, tapesHeard, store, NOTES, readNote, loreComplete, FINAL_LORE } from './view/hud.js';
 import { parseWords } from './engine/hotel.js';
-import { vaultReady } from './view/vault.js';
-// les photos des monstres sont décodées avant de construire la scène et l'interface
-await vaultReady;
+import { vault, vaultOpen, vaultKey, openVault, storedKey, rememberKey, keyFromPhrase } from './view/vault.js';
 
 // Level 5, version VIP : les mots du fichier backrooms/password_level5/mots.txt (6 lettres, un par ligne) ; sans
 // fichier (ou sans mot valide), la liste standard
@@ -29,10 +35,16 @@ const hudEl = document.getElementById('hud');
 
 let sim = null;
 let scene = null;
+// la descente en toboggan des Poolrooms (slide.js) : avant l'écran de chargement, puis après ; rideDelay : le temps
+// de s'asseoir au bord et de s'y glisser (dans la scène) avant que le tube prenne l'image
+let ride = null;
+let rideDelay = 0;
+let boardedAt = -1; // quand ce joueur-ci s'est glissé dans un toboggan (temps de la partie)
+const ENTRY_T = 1.1;
 let sfx = null;
 let hud = null;
 let stepDist = 0;
-let khaoulaT = 6; // prochaine fois que Khaoula se fait entendre (Level 1)
+let callT = 6; // prochaine fois que la voix qui appelle se fait entendre (Level 1, mode VIP)
 let letterN = 0; // lettres ramassées à l'hôtel (pour le registre)
 let monsterStepT = 0; // sans entité animée (mode VIP du Level 1) : le prochain pas, à la minuterie
 // l'entité entendue comme un joueur : ce qui la sépare de l'oreille (occ, détour par les couloirs) et l'espace autour
@@ -147,6 +159,7 @@ let useRequested = null; // (tests) une case d'objet précise à utiliser
 const act = { use: false, pick: false, drop: false, whistle: false, jump: false, struggle: 0 };
 let crouchOn = false; // C : s'accroupir / se relever (bascule)
 let camOn = false; // V : sortir / ranger le caméscope
+let tapeShown = false; // « tout au caméscope » : ce qui a été dit à la scène
 let airborne = false; // en plein saut (pour le bruit de la réception)
 let selRequested = 0; // touches 2 et 3 : choisir la case d'objet (1 à INV_SIZE)
 let codeRequested = null; // Level 5 : le code tapé sur le clavier de la porte de secours
@@ -154,16 +167,28 @@ let kbMode = false;
 let paused = true; // la partie attend qu'on prenne le contrôle
 let started = false; // la première prise en main (avant : l'écran titre)
 let padCrouch = false; // accroupi à la manette (stick droit enfoncé : bascule)
+// L'image perdue (le contexte WebGL repris par le système ou le pilote) : le navigateur la rend en général en quelques
+// secondes. En attendant, on le dit au lieu de laisser une image figée, et seul, le monde attend (voir la boucle)
+let glLost = 0; // l'heure de la perte (ms) ; 0 : l'image est là
+let glWarned = false; // « recharge la page » déjà dit (l'image ne revient pas)
+onGlContext((ok) => {
+  glLost = ok ? 0 : performance.now();
+  glWarned = false;
+  if (hud) hud.toast(ok ? 'VIDEO SIGNAL RESTORED' : 'VIDEO SIGNAL LOST · RECOVERING', ok ? 2.5 : 600);
+});
 
 // Réglages du joueur (sur cet appareil) : souris, image, accessibilité
-const OPT_DEFAULT = { sens: 1, invertY: false, fov: 72, motion: 1, bright: 1, reduceFlashes: false, subs: false, layout: 'auto', quality: 'auto', mic: 'on', voiceVol: 1 };
+// (tape : « tout au caméscope », l'image entière en 4:3 avec la seule incrustation du caméscope : 'auto' = au Level 17
+// seulement, 'on' = partout, 'off' = jamais)
+const OPT_DEFAULT = { sens: 1, invertY: false, fov: 72, motion: 1, bright: 1, reduceFlashes: false, subs: false, layout: 'auto', quality: 'auto', mic: 'on', voiceVol: 1, clone: 'off', cloneAsked: false, tape: 'auto' };
 const OPTS = { ...OPT_DEFAULT, ...store.get('backrooms_opts', {}) };
 // anciens réglages : « appuyer pour parler » et « micro ouvert » ne font plus qu'un (la voix de proximité est toujours ouverte)
 if (OPTS.mic !== 'off') OPTS.mic = 'on';
 let detectedQwerty = false;
 const qwerty = () => OPTS.layout === 'qwerty' || (OPTS.layout === 'auto' && detectedQwerty);
+const tapeOn = () => OPTS.tape === 'on' || (OPTS.tape === 'auto' && !!sim && sim.level === MALL_LEVEL);
 function applyOpts() {
-  setSceneOptions({ fov: OPTS.fov, motion: OPTS.motion, brightness: OPTS.bright, reduceFlashes: OPTS.reduceFlashes, quality: OPTS.quality });
+  setSceneOptions({ fov: OPTS.fov, motion: OPTS.motion, brightness: OPTS.bright, reduceFlashes: OPTS.reduceFlashes, quality: OPTS.quality, tape: tapeOn() });
   if (hud) {
     hud.qwerty = qwerty();
     hud.reduceFlashes = OPTS.reduceFlashes;
@@ -178,12 +203,84 @@ function applyOpts() {
 let voice = null;
 let micWarned = false;
 const sfxRef = { get ctx() { return sfx && sfx.ctx; }, get verb() { return sfx && sfx.verb; }, get level() { return sfx ? sfx.roomLevel || 0 : 0; }, moveTo: (...a) => sfx && sfx.moveTo(...a), caption: (...a) => sfx && sfx.caption(...a) };
+// Les règles qu'on apprend en jouant : la première fois (et encore une seconde fois) qu'une règle joue contre ou pour
+// le joueur, une ligne la dit, juste après. Gardé d'une partie à l'autre.
+const LEARN = {
+  stare: 'It charged because you stared at it · look away and keep moving',
+  light: "It won't step into the bright light · until the power goes out",
+};
+function learn(k) {
+  if (!LEARN[k] || !hud) return;
+  let seen = {};
+  try {
+    seen = JSON.parse(localStorage.getItem('backrooms.learned') || '{}') || {};
+  } catch (e) {
+    seen = {};
+  }
+  if ((seen[k] || 0) >= 2) return;
+  seen[k] = (seen[k] || 0) + 1;
+  try {
+    localStorage.setItem('backrooms.learned', JSON.stringify(seen));
+  } catch (e) {
+    /* stockage plein ou interdit : on le redira */
+  }
+  setTimeout(() => hud && hud.toast(LEARN[k], 5.5), 1200);
+}
+
+// la voix qui ne passe pas en direct avec quelqu'un : on le dit (une fois par joueur et par état)
+const voiceSaid = new Map();
+function voiceTrouble(id, kind) {
+  if (voiceSaid.get(id) === kind || (kind === 'direct' && !voiceSaid.has(id))) return;
+  voiceSaid.set(id, kind);
+  const p = sim && sim.players.find((q) => q.id === id);
+  const name = ((p && p.name) || 'a player').toUpperCase();
+  if (!hud) return;
+  if (kind === 'relay') hud.toast(`Voice · no direct link with ${name} · going through the server (lower quality)`);
+  else if (kind === 'failed') hud.toast(`Voice · can't reach ${name} · this browser can't send through the server`);
+  else hud.toast(`Voice · direct link with ${name} restored`);
+}
 function ensureVoice() {
   if (!voice) {
-    voice = createVoice({ send: (to, m) => send(to, m), myId: NET.myId, sfx: sfxRef });
+    voice = createVoice({ send: (to, m, vol) => send(to, m, vol), myId: NET.myId, sfx: sfxRef, onTrouble: voiceTrouble });
     voice.setVolume(OPTS.voiceVol);
+    voice.setClone(OPTS.clone === 'on');
   }
   return voice;
+}
+// La voix clonée (view/clone.js) : seulement si le joueur l'a autorisée dans les réglages. Le modèle se charge dès le
+// début de la partie (tout le Level 0 pour télécharger et préparer les voix), à plusieurs seulement
+let cloner = null;
+let clonerT = 0;
+let hearer = null; // la transcription de ses propres phrases (view/hear.js)
+let cloneAsking = false;
+const cloneLang = () => (/^fr/i.test(navigator.language || '') ? 'fr' : 'en');
+function cloneStep(dt) {
+  // la question, une seule fois, à la première partie à plusieurs (sur l'écran titre si on y est encore)
+  if (multi() && !OPTS.cloneAsked && !cloneAsking && hud && hud.askClone && OPTS.mic !== 'off') {
+    cloneAsking = true;
+    if (document.pointerLockElement) document.exitPointerLock();
+    hud.askClone(cloneLang()).then((ok) => {
+      cloneAsking = false;
+      setOpt('cloneAsked', true);
+      setOpt('clone', ok ? 'on' : 'off');
+      if (voice) voice.setClone(ok);
+    });
+  }
+  const on = OPTS.clone === 'on' && multi() && started;
+  if (!on) {
+    if (cloner) { cloner.dispose(); cloner = null; }
+    if (hearer) { hearer.dispose(); hearer = null; voice.setOnSaid(null); }
+    return;
+  }
+  clonerT -= dt;
+  if (clonerT > 0) return;
+  clonerT = 1;
+  if (!cloner) cloner = createCloner({ voice, lang: cloneLang(), names: () => (sim ? sim.players.map((q) => ({ id: q.id, name: q.name })) : []) });
+  if (!hearer) {
+    hearer = createHearer({ lang: cloneLang(), onText: (n, text) => voice && voice.sendText(n, text) });
+    voice.setOnSaid((n, audio) => hearer && hearer.push(n, audio));
+  }
+  cloner.tick();
 }
 // le micro : demandé au lancement, même seul (la voix fait du bruit : l'entité l'entend), sinon à la première touche R
 function askMic(force = false) {
@@ -216,7 +313,7 @@ try {
   kbMode = localStorage.getItem('backrooms_kb') === '1';
 } catch (e) {}
 
-// L'intro, au premier lancement d'une partie au Level 0 : le vlog d'urbex au caméscope où Safia tombe dans une trappe,
+// L'intro, au premier lancement d'une partie au Level 0 : le vlog d'urbex au caméscope où l'exploratrice tombe dans une trappe,
 // et le groupe saute le rejoindre. La partie reste en pause derrière ; Espace ou Entrée la passe.
 let intro = null; // { el, video, pending } pendant qu'elle passe
 let introRun = -1; // la partie dont on a déjà vu l'intro
@@ -224,8 +321,8 @@ function playIntro() {
   introRun = NET.run;
   const el = document.createElement('div');
   el.id = 'intro';
-  // le mode VIP a la version sous-titrée ; le mode normal, l'image seule
-  el.innerHTML = `<video src="video/${monstersVip ? 'intro_vip' : 'intro'}.mp4" playsinline preload="auto"></video><div class="skip">SPACE · SKIP</div>`;
+  // le mode VIP a la version sous-titrée (déchiffrée du coffre) ; le mode normal, l'image seule
+  el.innerHTML = `<video src="${monstersVip && vault.intro ? vault.intro : 'video/intro.mp4'}" playsinline preload="auto"></video><div class="skip">SPACE · SKIP</div>`;
   document.body.appendChild(el);
   const video = el.querySelector('video');
   intro = { el, video, pending: false };
@@ -260,7 +357,10 @@ function setPaused(on) {
   }
   if (intro) intro.pending = false; // la souris lâchée pendant l'intro : on retrouvera l'écran de pause
   paused = on;
-  if (!on) started = true;
+  if (!on && !started) {
+    started = true;
+    if (entry) enterLevel(); // la première prise en main d'une partie qui commence plus loin : son arrivée
+  }
   if (on) for (const k in keys) keys[k] = false;
   if (hud) hud.showPause(on, kbMode, !started, resumeLevel());
   // seul, la pause fige l'image comme un magnétoscope
@@ -611,22 +711,212 @@ function onRedStart() {
   sfx.redStart();
 }
 
+// Poolrooms : un carreau gravé dans chaque local technique, lu en y entrant (rien d'obligatoire : la sortie, ce sont
+// les toboggans)
+const techRead = new Set();
+function poolNotes() {
+  const P = sim.player;
+  const r = P && P.status === 'alive' && sim.map.roomAt ? sim.map.roomAt(P.x, P.z) : null;
+  if (!r || r.type !== 'tech') return;
+  const k = `${sim.seed}:${r.id}`;
+  if (techRead.has(k)) return;
+  techRead.add(k);
+  showNote(2, [...techRead].filter((x) => x.startsWith(`${sim.seed}:`)).length - 1);
+}
+
+// Poolrooms : le bord d'eau le plus proche du joueur (quatre fois par seconde) ; les gouttelettes y tombent
+let lapT = 0;
+function poolLap(dt) {
+  if ((lapT -= dt) > 0 || !sim || !sim.player) return;
+  lapT = 0.25;
+  const P = sim.player;
+  const m = sim.fm(P.floor || 0);
+  if (!m.depthAt) return;
+  let best = m.depthAt(P.x, P.z) > 0 ? { x: P.x, z: P.z, r: 0 } : null;
+  for (const r of [0.7, 1.5, 2.6, 4, 5.5]) {
+    if (best) break;
+    for (let k = 0; k < 8 && !best; k++) {
+      const x = P.x + Math.cos((k * Math.PI) / 4) * r;
+      const z = P.z + Math.sin((k * Math.PI) / 4) * r;
+      if (m.depthAt(x, z) > 0) best = { x, z, r };
+    }
+  }
+  sfx.setLap(best || { x: P.x, z: P.z }, best ? 1 - best.r / 6.5 : 0);
+}
+
 function stepKind(P) {
   if (!sim || !P) return false;
   if (sim.level === 2) {
     const m = sim.fm(P.floor || 0);
-    return m.depthAt && m.depthAt(P.x, P.z) > 0 ? 'water' : true;
+    return m.depthAt && m.depthAt(P.x, P.z) > 0 ? 'water' : 'tile';
   }
   // Level 0 : dans la pellicule d'eau des grosses taches de la moquette, des pas mouillés
   if (sim.level === 0 && scene && scene.filmAt && scene.filmAt(P.x, P.z) > 0.35) return 'soak';
+  // Level 17 : le grès poli des mails qui sonne, la moquette du cinéma et des bureaux, le béton et le lino des coulisses
+  if (sim.level === MALL_LEVEL) {
+    const m = sim.fm(P.floor || 0);
+    const k = mallFloorKey(m.roomAt(P.x, P.z), P.floor || 0, m.shops, Math.floor(P.x / CELL_SIZE), Math.floor(P.z / CELL_SIZE));
+    return k === 'cine' ? 'hotelCarpet' : /carpet/.test(k) ? false : /terrazzo|checker|quarry|annexTile|faience/.test(k) ? 'marble' : true;
+  }
+  // Level 5 : le marbre du hall, la moquette épaisse partout ailleurs
+  if (sim.level === HOTEL_LEVEL) {
+    const L = sim.fm(0).lobby;
+    const cx = Math.floor(P.x / CELL_SIZE);
+    const cz = Math.floor(P.z / CELL_SIZE);
+    return L && cx >= L.x0 && cx <= L.x1 && cz >= L.z0 && cz <= L.z1 ? 'marble' : 'hotelCarpet';
+  }
   return sim.level === 1;
 }
 
+// Tuyauteries : les six machines les plus proches de l'oreille (à moins de 24 m), pour sfx.machines. Un brûleur se tait
+// quand la vanne de sa chaufferie est fermée ; une pompe ou une armoire, quand son secteur n'a plus de courant. Un mur
+// entre elle et l'oreille étouffe le son (occ). La liste des machines de la carte est faite une fois.
+const NO_MACHINES = [];
+let machineList = null;
+function pipeMachines(V) {
+  const m = sim.map;
+  if (!machineList || machineList.map !== m) {
+    const valves = m.valves || [];
+    const nearest = (x, z) => {
+      let best = -1;
+      let bd = 20;
+      valves.forEach((v, i) => {
+        const d = Math.hypot(v.x - x, v.z - z);
+        if (d < bd) [best, bd] = [i, d];
+      });
+      return best;
+    };
+    const L = [];
+    (m.boilers || []).forEach((b, i) => L.push({ key: 'b' + i, kind: 'burner', x: b.x, z: b.z, valve: b.valve }));
+    (m.plant || []).forEach((p, i) => p.kind !== 'lockers' && p.kind !== 'bench' && L.push({ key: 'p' + i, kind: p.kind, x: p.x, z: p.z, valve: nearest(p.x, p.z) }));
+    machineList = { map: m, L };
+  }
+  const out = [];
+  for (const q of machineList.L) {
+    const d = Math.hypot(q.x - V.x, q.z - V.z);
+    if (d > 24) continue;
+    const v = m.valves && m.valves[q.valve];
+    const on = q.kind === 'burner' ? !(v && v.closed) : !(v && v.power === 2);
+    // un mur sur le trajet (on s'arrête 1,4 m avant la machine : une chaudière occupe sa case)
+    let occ = false;
+    const n = Math.floor((d - 1.4) / 0.6);
+    for (let k = 1; k <= n && !occ; k++) {
+      const f = (k * 0.6) / d;
+      if (!m.isWalkableWorld(V.x + (q.x - V.x) * f, V.z + (q.z - V.z) * f)) occ = true;
+    }
+    out.push({ key: q.key, kind: q.kind, x: q.x, z: q.z, on, occ, d });
+  }
+  return out.sort((a, b) => a.d - b.d).slice(0, 6);
+}
+
+// Level 5 : l'endroit d'un bruit d'ambiance de l'hôtel, choisi sur la carte à partir du joueur tiré par l'hôte et de ses
+// tirages (tout le monde choisit le même) : slot 'a', un radiateur à moins de 22 m ; slot 'b', le téléphone d'une chambre
+// à 8-26 m (w < 0.35) ou la sonnette de la réception (w < 0.6)
+function hotelSpot(ev) {
+  const m = sim.fm(0);
+  const solids = m.solids || [];
+  const pick = (list) => (list.length ? list[Math.min(list.length - 1, Math.floor(ev.u * list.length))] : null);
+  const d = (s) => Math.hypot(s.x - ev.x, s.z - ev.z);
+  if (ev.s === 'a') {
+    const r = pick(solids.filter((s) => s.radiator && d(s) < 22));
+    return r && { x: r.x, z: r.z };
+  }
+  if (ev.s !== 'b') return null;
+  if (ev.w < 0.35) {
+    const n = pick(solids.filter((s) => s.phone && d(s) > 8 && d(s) < 26));
+    if (!n) return null;
+    const room = (m.rooms || []).find((r) => n.x >= r.x0 * CELL_SIZE && n.x <= (r.x1 + 1) * CELL_SIZE && n.z >= r.z0 * CELL_SIZE && n.z <= (r.z1 + 1) * CELL_SIZE);
+    const door = room && { x: (room.door.x + 0.5) * CELL_SIZE, z: (room.door.z + 0.5) * CELL_SIZE };
+    return { x: n.x, z: n.z, phone: true, door };
+  }
+  if (ev.w < 0.6) {
+    const desk = solids.find((s) => s.reception);
+    return desk && { x: desk.x, z: desk.z, bell: true };
+  }
+  return null;
+}
+
 let lastSettings = {};
+// Mode VIP : les monstres d'origine sont dans un coffre chiffré (view/vault.js). Avant la première partie VIP, l'hôte
+// l'ouvre sans rien taper : avec la clé gardée par son navigateur, sinon avec celle que le relais donne à son compte
+// Arcadia s'il est VIP (HubAccount.vipKey du Hub). Si le relais ne l'a pas encore, la phrase secrète est demandée :
+// tapée une fois (par Amiel), elle ouvre le coffre et le navigateur apprend la clé au relais (HubAccount.vipSeed, qui
+// ne l'accepte que si elle ouvre le coffre) ; ensuite, tous les comptes VIP l'ont sans rien taper. Un navigateur qui a
+// la clé la réapprend aussi au relais s'il l'a perdue. Une seule fois par page ; sans clé (ou « PLAY CLASSIC »), les
+// parties gardent les monstres, la voix et l'intro classiques.
+let vipGate = null; // null : pas encore essayé ; une promesse pendant l'ouverture ; true une fois tranché
+async function hubVipKey() {
+  try {
+    const A = window.parent !== window ? window.parent.HubAccount : null;
+    if (!A || !A.vipKey) return null;
+    return await Promise.race([A.vipKey(), new Promise((r) => setTimeout(() => r(null), 50000))]);
+  } catch (e) {
+    return null; // pas dans le Hub (ou pas le même site)
+  }
+}
+function hubVipSeed(key) {
+  try {
+    const A = window.parent !== window ? window.parent.HubAccount : null;
+    if (A && A.vipSeed) A.vipSeed(key).catch(() => {});
+  } catch (e) {}
+}
+async function unlockVip(ask = {}) {
+  const kept = storedKey();
+  if (kept) {
+    const r = await openVault(kept);
+    if (r === 'ok') {
+      hubVipSeed(kept);
+      return true;
+    }
+    if (r === 'wrong') rememberKey(''); // une clé qui n'ouvre plus le coffre (il a été rechiffré)
+  }
+  if (hud) hud.toast('OPENING THE VIP VAULT…', 4);
+  const k = await hubVipKey();
+  if (k && (await openVault(k)) === 'ok') {
+    rememberKey(k);
+    return true;
+  }
+  // le relais n'a pas (encore) la clé : la phrase, une fois, et le relais l'apprend pour tous les VIP
+  if (!hud) return false;
+  if (document.pointerLockElement) document.exitPointerLock?.();
+  return hud.askPhrase(async (phrase) => {
+    const key = await keyFromPhrase(phrase);
+    if (!key) return key === '' ? false : null; // '' : pas la bonne phrase ; null : coffre introuvable
+    const r = await openVault(key);
+    if (r !== 'ok') return r === 'wrong' ? false : null;
+    rememberKey(key);
+    hubVipSeed(key);
+    return true;
+  }, ask);
+}
 // Nouvelle partie (solo ou hôte) : l'hôte l'annonce aux invités, qui construisent la même carte avec la même graine
 function initGame(settings = lastSettings, forceLevel = null) {
   lastSettings = settings;
+  endRide();
   if (NET.role === 'guest') return; // l'invité attend le « go » de l'hôte
+  // ?vip (seul) : le mode VIP sans passer par le salon (la clé gardée par ce navigateur, sinon la phrase est demandée)
+  if (NET.role === 'solo' && /[?&]vip(&|=|$)/.test(location.search)) settings = { ...settings, monsters: 'vip' };
+  // ⭐ le niveau de départ : choisi au salon par un hôte VIP (réglage caché aux autres), ou ?level1, ?level37, ?level2,
+  // ?level5, ?level17 (seul). Il ne compte que pour un compte VIP (hors du Hub : celui qui a la clé) qui a le coffre VIP ouvert :
+  // le même test que le mode VIP. Sinon (réglage glissé par un autre joueur, adresse tapée par un non-VIP), le Level 0
+  const lvm = NET.role === 'solo' && location.search.match(/[?&]level(17|1|2|37|5)(&|=|$)/);
+  const asked = forceLevel == null ? (lvm ? lvm[1] : settings.start) : null;
+  const vipHere = !(H && H.embedded) || H.info.vip === true;
+  const wants = !!startLevel(asked, { vip: vipHere, vault: true });
+  if ((settings.monsters === 'vip' || wants) && !vaultOpen() && vipGate !== true) {
+    if (!vipGate) {
+      // (le niveau de départ seul : la phrase le dit, et sans elle on part du Level 0)
+      const ask = settings.monsters === 'vip' ? (wants ? { sub: 'ENTER THE PASSPHRASE TO UNLOCK THE ORIGINAL MONSTERS AND YOUR STARTING LEVEL' } : {}) : { sub: 'ENTER THE PASSPHRASE TO START AT THE LEVEL YOU PICKED', skip: 'START AT LEVEL 0' };
+      vipGate = unlockVip(ask)
+        .catch(() => false)
+        .then((ok) => {
+          vipGate = true;
+          if (!ok && hud && settings.monsters === 'vip') hud.toast('VIP MODE LOCKED · CLASSIC MONSTERS', 6);
+          if (NET.role !== 'guest') initGame(lastSettings, forceLevel);
+        });
+    }
+    return;
+  }
   // ?seed=1234 (seul) : toujours la même carte, pour comparer deux réglages
   const sm = NET.role === 'solo' && location.search.match(/[?&]seed=(\d+)/);
   const daily = settings.map === 'daily' && !sm ? dailyOf() : null;
@@ -636,9 +926,10 @@ function initGame(settings = lastSettings, forceLevel = null) {
   // tout le salon, sauf ceux revenus au salon pendant la partie d'avant (ceux qui chargent encore arrivent vivants)
   const players = NET.role === 'host' ? H.players.filter((p) => p.id === NET.myId || !NET.quit.has(p.id)).map((p) => ({ id: p.id, name: p.name || 'Player' })) : [{ id: 0, name: 'Player' }];
   NET.run = Date.now();
-  // ?level1, ?level37, ?level2 ou ?level5 (seul) : on commence directement au Level 1, aux Poolrooms ou aux Tuyauteries
-  const lvm = NET.role === 'solo' && location.search.match(/[?&]level(1|2|37|5)(&|=|$)/);
-  const lv = forceLevel != null ? forceLevel : lvm ? { 1: 1, 37: 2, 2: PIPES_LEVEL, 5: HOTEL_LEVEL }[lvm[1]] : 0;
+  // (forceLevel : « continuer » depuis l'écran titre, au dernier niveau atteint seul : pour tout le monde)
+  const lv = forceLevel != null ? forceLevel : startLevel(asked, { vip: vipHere, vault: vaultOpen() });
+  if (wants && !lv && hud) hud.toast(settings.monsters === 'vip' && !vaultOpen() ? 'VIP MODE LOCKED · CLASSIC MONSTERS · LEVEL 0' : 'LEVEL SELECT LOCKED (VIP ONLY) · LEVEL 0', 6);
+  else if (asked && String(asked) !== '0' && !vipHere && hud) hud.toast('LEVEL SELECT IS FOR VIP ACCOUNTS · LEVEL 0', 6);
   startRun({ seed, difficulty, players, run: NET.run, level: lv, vip: settings.monsters === 'vip' });
   // ?parkour (seul) : on commence devant le couloir piégé, tourné vers les trous
   const trap = sim.map.trap;
@@ -711,9 +1002,11 @@ function checkPrint(fp) {
   send(H.info.hostId, { t: 'fp', v: GAME_V, tried: triedUpdate(GAME_V) ? 1 : 0 });
 }
 
-const goMessage = () => ({ t: 'go', v: GAME_V, run: NET.run, seed: sim.seed, diff: sim.difficulty, players: sim.roster, lv: sim.level, vip: monstersVip, dy: dailyLabel });
+// en mode VIP, la clé du coffre part avec la partie : les invités l'ouvrent avant de la commencer
+const goMessage = () => ({ t: 'go', v: GAME_V, run: NET.run, seed: sim.seed, diff: sim.difficulty, players: sim.roster, lv: sim.level, l0: runFrom, vip: monstersVip, k: monstersVip ? vaultKey : undefined, dy: dailyLabel });
 
 let monstersVip = false;
+let runFrom = 0; // le niveau où la partie a commencé (l'écran de fin ne compte que les niveaux traversés)
 const TEST_BOT = 99;
 let testBot = false;
 // le bot de test : posé à 20-30 m du joueur, l'entité tout près de lui et déjà lancée sur lui (il ne se débat pas)
@@ -733,11 +1026,12 @@ function placeTestBot() {
   Object.assign(M, { x: near.x, z: near.z, dormantT: 0, mode: 'chase', target: TEST_BOT, unseenT: 0, lastSeenX: B.x, lastSeenZ: B.z, lastSeenF: 0, path: [], repathT: 0, away: false });
 }
 
-function startRun({ seed, difficulty, players, run, level, vip = false }) {
+function startRun({ seed, difficulty, players, run, level, vip = false, from = level }) {
   NET.run = run;
+  runFrom = from || 0;
   camPrev.ok = false;
   trackSeq.clear();
-  monstersVip = !!vip;
+  monstersVip = !!vip && vaultOpen(); // sans coffre ouvert, les monstres classiques
   setMonsterMode(monstersVip); // les monstres VIP pour toute la partie si l'hôte les a choisis
   if (hud) hud.applyMonsters();
   if (sfx) sfx.setVoiceMode(monstersVip);
@@ -761,6 +1055,8 @@ function startRun({ seed, difficulty, players, run, level, vip = false }) {
   hauntAt = 0;
   if (level && sim.level !== level) sim.loadLevel(level);
   if (testBot) placeTestBot();
+  // une partie qui commence plus loin : son arrivée, quand on prend la main (tout de suite si on joue déjà)
+  entry = level ? { run, level } : null;
   // un invité qui arrive en cours de partie regarde les autres jusqu'au prochain étage (l'hôte le dira)
   if (scene) {
     scene.dispose();
@@ -806,6 +1102,7 @@ function startRun({ seed, difficulty, players, run, level, vip = false }) {
   otState.level = -1;
   otState.last = false;
   setPaused(kbMode ? paused : !isPointerLocked);
+  if (started && entry) enterLevel(); // une nouvelle partie, alors qu'on joue déjà
 }
 
 // l'écran titre : reprendre au dernier niveau atteint (seul)
@@ -843,13 +1140,17 @@ function guestInputs() {
 }
 
 const num = (v, a, b) => (Number.isFinite(+v) ? Math.max(a, Math.min(b, +v)) : 0);
+// les actions qu'un invité envoie à l'hôte (t: 'a') : lampe, utiliser, poser, ramasser, siffler, sauter, tomber de la
+// barre, brûlure, se débattre, code. Une action absente d'ici est jetée par l'hôte (le saut l'a été jusqu'en 5.24 :
+// l'hôte voyait l'invité marcher dans le trou qu'il venait de sauter)
+const GUEST_ACTS = ['f', 'e', 'd', 'p', 't', 'j', 'b', 'h', 'g', 'c'];
 const slotOf = (s) => (Number.isInteger(s) && s >= 1 && s <= INV_SIZE ? s : 1); // une case d'objet annoncée par un invité
 
 // Messages du réseau (from : l'identifiant donné par le salon, la seule identité fiable)
 function onMsg(from, m) {
   if (!m || typeof m !== 'object') return;
   // la voix : d'un joueur à l'autre, sans passer par l'hôte
-  if (m.t === 'rtc' || m.t === 'vx') {
+  if (m.t === 'rtc' || m.t === 'vx' || m.t === 'va') {
     ensureVoice().onMessage(from, m);
     return;
   }
@@ -881,7 +1182,7 @@ function onMsg(from, m) {
           ? `MAPS DON'T MATCH · ${who} HAS ${verLabel(gv)}, YOU HAVE ${verLabel(GAME_V)} · RELOAD THE PAGE (CTRL+SHIFT+R)`
           : `MAPS DON'T MATCH · ${who} HAS ${verLabel(gv)} · ${who} IS UPDATING`, 14);
       }
-    } else if (m.t === 'a' && m.run === NET.run && ['f', 'e', 'd', 'p', 't', 'b', 'h', 'g', 'c'].includes(m.k)) {
+    } else if (m.t === 'a' && m.run === NET.run && GUEST_ACTS.includes(m.k)) {
       const q = NET.actions[from] || (NET.actions[from] = []);
       if (q.length < 8) q.push({ k: m.k, sel: slotOf(m.s), side: m.side > 0 ? 1 : -1, n: Math.max(1, Math.min(4, m.n | 0)), v: String(m.v || '').replace(/\D/g, '').slice(0, 4) });
     }
@@ -891,9 +1192,22 @@ function onMsg(from, m) {
   NET.lastHost = performance.now();
   if (m.t === 'go') {
     hostV = typeof m.v === 'string' ? m.v.slice(0, 8) : '';
-    if (m.run !== NET.run || !sim) {
-      dailyLabel = typeof m.dy === 'string' ? m.dy.slice(0, 12) : null;
-      startRun({ seed: m.seed, difficulty: m.diff, players: m.players || [], run: m.run, level: m.lv || 0, vip: !!m.vip });
+    if ((m.run !== NET.run || !sim) && !(NET.goWait && NET.goRun === m.run)) {
+      // en mode VIP, on ouvre d'abord le coffre avec la clé de l'hôte (sans elle, ou si elle n'ouvre rien : les monstres
+      // classiques) ; les « go » répétés de la même partie attendent pendant ce temps
+      NET.goRun = m.run;
+      const go = (vip) => {
+        if (NET.goRun !== m.run) return; // une autre partie est arrivée entre-temps
+        NET.goWait = false;
+        if (m.run === NET.run && sim) return;
+        dailyLabel = typeof m.dy === 'string' ? m.dy.slice(0, 12) : null;
+        startRun({ seed: m.seed, difficulty: m.diff, players: m.players || [], run: m.run, level: m.lv || 0, vip, from: Number.isInteger(m.l0) ? m.l0 : m.lv || 0 });
+      };
+      if (!m.vip) go(false);
+      else {
+        NET.goWait = true;
+        openVault(typeof m.k === 'string' ? m.k.slice(0, 64) : '').then((r) => go(r === 'ok'), () => go(false));
+      }
     }
   } else if (m.t === 's' && m.run !== NET.run) {
     // une partie que l'on n'a pas (le « go » de l'hôte s'est perdu, une nouvelle partie a commencé sans nous) : on la
@@ -1022,6 +1336,13 @@ const OLD_TIMER = {
     "Room thirteen is yours. It's been yours for a long time. They kept it clean for you.",
     "If someone knocks on your door and says room service… there is no room service.",
   ],
+  mall: [
+    // (il ne dit plus la règle : il se souvient mal, il met mal à l'aise ; le reste se comprend en jouant)
+    "A shopping mall. Closed for the night… it's been that night for a long time. There was a film they never got to show. Five reels.",
+    "I walked that place once. Kept feeling like something had just been moved. Never once saw it move.",
+    "They had a mascot. For the parades. Tall thing, big smile. I didn't like having my back to it. I couldn't tell you why.",
+    "When it went quiet I used to duck into the little shops. Felt better with a ceiling close over my head. Silly, isn't it.",
+  ],
   rare: [
     "…sorry. Wrong channel. I wasn't talking to you. …Who were you talking to?",
     "How long have you been down there? …No. No, that's not possible. Check your watch again.",
@@ -1079,7 +1400,7 @@ function oldTimerVoice() {
 if (window.speechSynthesis) try { speechSynthesis.getVoices(); } catch (e) {} // lance le chargement de la liste
 function oldTimerTick() {
   if (!sim || sim.state !== 'playing' || paused) return;
-  const key = sim.level === PIPES_LEVEL ? 'pipes' : sim.level === HOTEL_LEVEL ? 'hotel' : sim.level;
+  const key = sim.level === PIPES_LEVEL ? 'pipes' : sim.level === HOTEL_LEVEL ? 'hotel' : sim.level === MALL_LEVEL ? 'mall' : sim.level;
   if (otState.level !== sim.level) {
     Object.assign(otState, { level: sim.level, t0: sim.time, said: 0, last: otState.last });
     otState.next = 25 + otRand(sim.seed, sim.level, 0) * 20;
@@ -1101,6 +1422,29 @@ function oldTimerTick() {
   oldTimerSay(line);
 }
 
+// Poolrooms : la descente dans le toboggan sl. Celui qui vient d'y entrer s'assoit au bord et s'y laisse glisser
+// (dans la scène), puis le tube prend l'image ; les autres (qui regardaient, ou y attendaient) y sont déjà
+function startRide(sl) {
+  endRide();
+  const entering = sim.player.status === 'elevator' && boardedAt >= 0 && sim.time - boardedAt < 0.5;
+  ride = createSlideRide({ gl: sceneGl(), hex: sl.hex, side: sl.id % 2 ? -1 : 1, sfx });
+  if (entering && scene && scene.slideIn) {
+    scene.slideIn(sl, MOUTH.y);
+    rideDelay = ENTRY_T;
+  } else {
+    rideDelay = 0;
+    ride.start();
+  }
+  document.body.classList.add('riding');
+}
+
+function endRide() {
+  if (ride) ride.dispose();
+  ride = null;
+  rideDelay = 0;
+  document.body.classList.remove('riding');
+}
+
 // Construit la scène d'un nouvel étage derrière l'écran de chargement (levelTok : seul le dernier demandé compte)
 let levelTok = 0;
 function buildLevel(level) {
@@ -1117,24 +1461,77 @@ function buildLevel(level) {
     sc.onRedStart = onRedStart;
     sc.onMonsterStep = onMonsterStep;
     scene = sc;
-    // au plus 8 s d'attente : une texture qui ne vient pas ne doit pas bloquer la partie
-    Promise.race([sc.ready, new Promise((r) => setTimeout(r, 8000))]).then(() => {
-      if (tok !== levelTok || scene !== sc) return;
-      requestAnimationFrame(() => {
-        if (tok !== levelTok || scene !== sc) return;
-        if (hud) {
-          hud.loading(false);
-          hud.fade(`LEVEL ${levelName(level)}`, levelSub(level), 2.2);
-        }
-        sc.tape('bars', 0.8);
-        sc.tape('splice', 1.2);
-        if (sfx) sfx.tapeSplice();
-        // on arrive dans la cabine qui finit de descendre (portes fermées)
-        if (sfx && sim.arriveT > 0) sfx.elevator(ARRIVE_T + 0.4, true);
-      });
-    });
+    whenReady(sc, () => tok === levelTok, () => arrive(level, sc));
   }));
 }
+
+// au plus 8 s d'attente : une texture qui ne vient pas ne doit pas bloquer la partie (still : la demande compte encore)
+// puis les matériaux compilés (sc.compiled, qui se borne lui-même) : le niveau ne se montre que prêt à être dessiné
+function whenReady(sc, still, fn) {
+  Promise.all([Promise.race([sc.ready, new Promise((r) => setTimeout(r, 8000))]), sc.compiled]).then(() => {
+    if (!still() || scene !== sc) return;
+    requestAnimationFrame(() => {
+      if (still() && scene === sc) fn();
+    });
+  });
+}
+
+// L'arrivée dans un étage dont la scène est prête : au bout du toboggan (tenu pendant le chargement), la fin de la
+// descente et la chute dedans ; sinon, après l'ascenseur, le titre sur la bande qui saute, et au Level 1 la cabine qui
+// finit de descendre
+function arrive(level, sc) {
+  if (ride && ride.held) {
+    // arrivé par un toboggan : la fin de la descente (dans le noir, puis la lumière du bout), et on tombe dedans
+    if (hud) {
+      hud.loading(false);
+      hud.unfade();
+    }
+    // (Level 17 : arrivé par l'escalier de secours ; sa dernière porte s'ouvre sur la cour ouest du mall, où l'on est
+    // déjà debout : pas de chute)
+    const stairs = ride.kind === 'stairs';
+    ride.finish(stairs ? 'mall' : level === HOTEL_LEVEL ? 'hotel' : 'pipes', () => {
+      endRide();
+      if (scene === sc && !stairs) sc.dropIn(level === HOTEL_LEVEL ? 2.3 : 1.4); // (le hall de l'hôtel est haut de plafond)
+      if (hud) hud.fade(`LEVEL ${levelName(level)}`, levelSub(level), 2.4, false, true);
+    });
+    return;
+  }
+  if (hud) {
+    hud.loading(false);
+    hud.fade(`LEVEL ${levelName(level)}`, levelSub(level), 2.2);
+  }
+  sc.tape('bars', 0.8);
+  sc.tape('splice', 1.2);
+  if (sfx) sfx.tapeSplice();
+  // on arrive dans la cabine qui finit de descendre (portes fermées)
+  if (sfx && sim.arriveT > 0) sfx.elevator(ARRIVE_T + 0.4, true);
+}
+
+// Une partie qui commence plus loin que le Level 0 (niveau de départ d'un VIP, « continuer », ?levelN) : quand on prend
+// la main, on y arrive comme en jouant, par la fin du passage qui y mène. Les Tuyauteries et le Terror Hotel : la fin
+// de la descente dans le toboggan des Poolrooms qui y mène (de sa couleur) ; le Level 1 et les Poolrooms : le titre
+// sur la bande qui saute, et au Level 1 la cabine qui finit de descendre. (Le Level 0 a son intro.) Pas pour celui qui
+// arrive en cours de partie : il regarde les autres jusqu'au prochain étage.
+let entry = null; // { run, level } : l'arrivée qui attend la prise en main
+function enterLevel() {
+  const e = entry;
+  entry = null;
+  if (!e || !sim || !scene || e.run !== NET.run || sim.level !== e.level || sim.player.status !== 'alive') return;
+  const sc = scene;
+  const i = SLIDES.findIndex((s) => s.to === e.level);
+  if (i >= 0 || e.level === MALL_LEVEL) {
+    endRide();
+    // (le Mall : la fin de la descente de l'escalier de secours du Terror Hotel)
+    ride = i >= 0 ? createSlideRide({ gl: sceneGl(), hex: SLIDES[i].hex, side: i % 2 ? -1 : 1, sfx }) : createStairRide({ gl: sceneGl(), sfx });
+    ride.hold(); // le noir, le temps que le niveau finisse de se charger
+    document.body.classList.add('riding');
+    if (hud) hud.blackNow();
+  }
+  whenReady(sc, () => NET.run === e.run && sim.level === e.level, () => arrive(e.level, sc));
+}
+
+// le son du Level 17 (view/mallAudio.js), posé une fois sur le son du jeu
+const mallAudio = () => sfx.mallAudio || (sfx.mallAudio = installMallSfx(sfx));
 
 // Événements de la partie : sons, messages, changement d'étage, fin
 function handleEvent(ev, me) {
@@ -1152,6 +1549,34 @@ function handleEvent(ev, me) {
       if (sfx) setTimeout(() => sfx && sfx.loreTape(4 + LORE[n].length / 16), 700);
       break;
     }
+    // Level 17 : une bobine du film trouvée ; les bobines montées sur le projecteur ; le journal du projectionniste (où
+    // sont celles qui manquent) ; le film qui démarre
+    case 'reel':
+      if (sfx) mallAudio().reel();
+      // (ce que dit l'étiquette de la boîte, pas une consigne : le reste est dans le journal du projectionniste)
+      if (hud) hud.toast(ev.by === me ? `Film reel ${ev.count}/${ev.total} · the label reads “Stardust 8 · Screen 1 · return to projection”` : `${who(ev.by)} found a film reel (${ev.count}/${ev.total})`, 4);
+      break;
+    case 'reelMount':
+      if (sfx) mallAudio().thread(ev.count >= ev.total);
+      if (hud) hud.toast(ev.count >= ev.total ? 'The last reel is threaded: the projector rattles to life' : `${ev.by === me ? 'You thread' : `${who(ev.by)} threads`} ${ev.n > 1 ? `${ev.n} reels` : 'a reel'} on the projector (${ev.count}/${ev.total})`, 4);
+      break;
+    // la poupée s'est replacée ailleurs : quelques notes de boîte à musique, de là où elle est
+    case 'dollMoved':
+      if (sfx) mallAudio().chime(ev, sim.viewPlayer(sim.spectate || 0));
+      break;
+    // … ou elle a changé d'étage : on entend le monte-charge (son moteur, puis ses portes)
+    case 'dollLift': {
+      const ear = sim.viewPlayer(sim.spectate || 0);
+      if (sfx && ear) mallAudio().lift(ev, ear, sim.fm(ear.floor || 0).elevator);
+      break;
+    }
+    case 'benchEmpty':
+      if (ev.id === me && sfx) mallAudio().paper();
+      if (ev.id === me && hud) hud.toast(ev.left.length ? `Projectionist's log · “bring all five back to this bench” · lent to: ${ev.left.map(([, fi, where]) => `${where} (${fi ? 'lower' : 'upper'} level)`).join(' · ')}` : 'Every reel is on the projector', 7);
+      break;
+    case 'filmStart':
+      if (hud && sim.player.status === 'alive') setTimeout(() => hud && hud.toast('The feature is starting in Screen 1…', 4), 1500);
+      break;
     case 'letter':
       if (sfx) sfx.cassette();
       if (ev.by === me) showNote('hotel', (letterN = (letterN || 0) + 1) - 1);
@@ -1185,16 +1610,14 @@ function handleEvent(ev, me) {
       }
       break;
     case 'fuse': {
-      if (sfx) sfx.cassette(sim.level === 2 ? 'valve' : 'fuse');
-      if (sim.level === 2) {
-        if (hud) hud.toast(ev.by === me ? `Valve wheel ${ev.count}/${ev.total}` : `${who(ev.by)} found a valve wheel (${ev.count}/${ev.total})`);
-      } else if (hud) hud.toast(ev.by === me ? 'Fuse in your pocket · bring it to the freight elevator panel' : `${who(ev.by)} picked up a fuse`);
-      if (ev.by === me && (sim.level === 1 || sim.level === 2)) showNote(sim.level, (ev.count || 1) - 1);
+      if (sfx) sfx.cassette('fuse');
+      if (hud) hud.toast(ev.by === me ? (ev.locker ? 'A fuse, at the back of the locker · bring it to the freight elevator panel' : 'Fuse in your pocket · bring it to the freight elevator panel') : `${who(ev.by)} picked up a fuse`);
+      if (ev.by === me && sim.level === 1) showNote(1, (ev.count || 1) - 1);
       break;
     }
     case 'fuseIn':
       if (sfx) sfx.cassette('fuse');
-      if (hud) hud.toast(ev.count >= ev.total ? 'All 3 fuses are in · now restart the freight elevator: stay at the panel' : `${ev.id === me ? 'Fuse' : `${who(ev.id)}'s fuse`} in the panel · ${ev.count}/${ev.total}`);
+      if (hud) hud.toast(ev.count >= ev.total ? (sim.mains ? 'All 3 fuses are in · now restart the freight elevator: stay at the panel' : 'All 3 fuses are in · but the main breakers are off') : `${ev.id === me ? 'Fuse' : `${who(ev.id)}'s fuse`} in the panel · ${ev.count}/${ev.total}`);
       break;
     case 'fuseDrop':
       if (hud) hud.toast(`${ev.name} dropped ${ev.n > 1 ? `${ev.n} fuses` : 'a fuse'} where they fell…`);
@@ -1217,8 +1640,8 @@ function handleEvent(ev, me) {
     case 'release':
       if (ev.id === me) {
         if (sfx) sfx.release(true);
-        if (hud) hud.toast(ev.blinded ? 'The light blinded it · RUN' : 'You broke free · RUN · it will not let go twice');
-      } else if (hud) hud.toast(ev.blinded ? 'Your light blinded it!' : `${who(ev.id)} broke free`);
+        if (hud) hud.toast(ev.doors ? 'The doors tore you free' : ev.blinded ? 'The light blinded it · RUN' : 'You broke free · RUN · it will not let go twice');
+      } else if (hud) hud.toast(ev.doors ? `The doors tore ${who(ev.id)} free` : ev.blinded ? 'Your light blinded it!' : `${who(ev.id)} broke free`);
       break;
     case 'hurt':
       if (ev.id === me) {
@@ -1277,8 +1700,8 @@ function handleEvent(ev, me) {
       if (sfx) sfx.silence(4);
       break;
     case 'powered':
-      if (hud) hud.toast(sim.level === HOTEL_LEVEL ? 'The keypad beeps: the fire escape door is unlocked' : sim.level === 2 ? 'Valves closed: the pumps stop, the three slides open' : 'Fuses in place: the freight elevator is starting up');
-      if (sfx && sim.level === 2) sfx.setPool(false); // le silence d'un coup : les pompes s'arrêtent
+      if (hud) hud.toast(sim.level === HOTEL_LEVEL ? 'The keypad beeps: the fire escape door is unlocked' : 'The motor catches: the freight elevator is starting up');
+      if (sfx && sim.level === HOTEL_LEVEL && sim.map.elevator) sfx.maglock({ x: sim.map.elevator.x - sim.map.elevator.dx * 1.25, z: sim.map.elevator.z - sim.map.elevator.dz * 1.25 });
       break;
     case 'exitUnlocked': {
       const X = sim.map.exit;
@@ -1384,6 +1807,41 @@ function handleEvent(ev, me) {
     case 'power':
       if (sfx) sfx.power();
       break;
+    // Level 1 : la baisse de tension (tout grésille) et le délestage (un tiers de l'entrepôt après l'autre)
+    case 'cut':
+      if (ev.kind === 'brown') {
+        if (sfx) sfx.neonSurge({ x: sim.player.x, z: sim.player.z }, 5);
+        if (sfx) sfx.brownSag(Math.min(9, ev.len || 5));
+        if (hud) hud.toast('The lights sag and buzz… the power is failing');
+      } else if (hud) hud.toast('Somewhere, the breakers are shedding the load…');
+      break;
+    case 'sectorOut':
+      if (sfx) sfx.sectorThunk({ x: ev.x, z: ev.z });
+      break;
+    // Level 1 : les disjoncteurs généraux, le monte-charge qui descend
+    case 'relay':
+      if (sfx) sfx.relayTimer(ev.id, { x: ev.x, z: ev.z }, ev.desk ? 0 : ev.t || 0);
+      if (hud && ev.by === me) hud.toast(ev.desk ? 'The console is armed · stay seated, it holds while you do' : `Main breaker on · it holds ${Math.round(ev.t || 0)} s${(ev.t || 0) > 10 ? ' · run to the next one' : ' · the others must be on now'}`);
+      else if (hud) hud.toast(`${who(ev.by)} threw a main breaker`);
+      break;
+    case 'relayOff':
+      if (sfx) sfx.relayStop(ev.id);
+      if (sfx) sfx.breakerTrip({ x: ev.x, z: ev.z });
+      if (hud) hud.toast('A main breaker tripped back off…');
+      break;
+    case 'mains':
+      if (sfx) for (let i = 0; i < 3; i++) sfx.relayStop(i);
+      if (sfx) sfx.neonSurge({ x: ev.x, z: ev.z }, 4.5);
+      if (hud) hud.toast('Power reaches the freight elevator panel · go restart it');
+      break;
+    case 'liftCall':
+      if (sfx) sfx.elevator(4, false);
+      if (sfx && ev.x != null) sfx.liftDescend({ x: ev.x, z: ev.z }, ev.t || 40);
+      break;
+    case 'liftArrive':
+      if (sfx) sfx.liftDescend(null);
+      if (hud) hud.toast('The freight elevator is here · everyone get in');
+      break;
     case 'spotted':
       if (sfx) sfx.spotted();
       if (ev.id === me) runStats.seen++;
@@ -1399,7 +1857,7 @@ function handleEvent(ev, me) {
       if (!sfx || paused || !sim) break;
       const V = sim.viewPlayer(sim.spectate || 0);
       if (ev.s !== 'rec' && (ev.floor || 0) !== (V.floor || 0)) break; // à un autre étage : la dalle l'étouffe
-      sfx.ambCue(ev.s, { x: ev.x, z: ev.z }, ev.a, ev.u, ev.v, ev.w);
+      sfx.ambCue(ev.s, { x: ev.x, z: ev.z }, ev.a, ev.u, ev.v, ev.w, sim.level === HOTEL_LEVEL ? hotelSpot(ev) : null);
       break;
     }
     case 'lampCut': {
@@ -1500,12 +1958,13 @@ function handleEvent(ev, me) {
       break;
     case 'mimic':
       // (rien pour les vivants : ils ne savent pas encore que ce n'est plus lui)
-      if (ev.id === me && hud) setTimeout(() => hud && hud.toast('It is wearing your face now. It speaks with your voice'), 2600);
+      if (ev.kill && ev.id === me && hud) setTimeout(() => hud && hud.toast('It is wearing your face now. It speaks with your voice'), 2600);
       break;
     case 'mimicCall':
       // l'imposteur appelle avec la voix volée (de vive voix, là où il est, ou au talkie) ; chacun la rejoue chez soi
       // (au talkie : pas pendant une coupure, le talkie est mort)
-      if (voice && sim.player.status === 'alive' && !(ev.radio && sim.radioDead)) voice.mimic(ev.id, { x: ev.x, z: ev.z }, !!ev.radio, who(ev.id));
+      // (celui qu'elle imite ne l'entend pas : il est loin, et au talkie il se reconnaîtrait)
+      if (voice && sim.player.status === 'alive' && !(ev.radio && sim.radioDead) && (ev.id !== me || sim.players.length < 2)) voice.mimic(ev.id, { x: ev.x, z: ev.z }, !!ev.radio, who(ev.id), ev.kind, ev.seed, ev.to, ev.ctx);
       break;
     case 'unmask':
       if (sfx) sfx.rush({ x: ev.x, z: ev.z });
@@ -1519,7 +1978,7 @@ function handleEvent(ev, me) {
       if (sfx) sfx.guardDoor({ x: ev.x, z: ev.z }, !!ev.open);
       break;
     case 'desk':
-      if (sfx) sfx.creak({ x: ev.x, z: ev.z }, 0.6);
+      if (sfx) sfx.creak({ x: ev.x, z: ev.z }, 0.6, '[chair creaks]');
       if (ev.id === me && ev.on && hud) {
         const k = hud.keyNames(hud.qwerty);
         hud.toast(document.body.classList.contains('touch') ? 'Guard post · slide left or right to switch cameras · tell the others what you see' : `Guard post · ${k.l} / ${k.r} to switch cameras · tell the others what you see`);
@@ -1569,7 +2028,11 @@ function handleEvent(ev, me) {
       if (ev.id === me) {
         runStats.rushes++;
         runStats.seen++;
+        if (ev.why === 'stare') learn('stare');
       }
+      break;
+    case 'spared':
+      if (ev.id === me) learn(ev.why);
       break;
     case 'lost':
       if (sfx) sfx.heartbeat(0);
@@ -1583,6 +2046,7 @@ function handleEvent(ev, me) {
         break;
       }
       if (sfx) sfx.splashDown();
+      if (ev.id === me) boardedAt = sim.time;
       if (hud && ev.id !== me) hud.toast(`${ev.name} slid into the ${sl.name.toLowerCase()} slide`);
       break;
     }
@@ -1626,7 +2090,7 @@ function handleEvent(ev, me) {
     case 'finalHunt':
       // la phase finale : elle sait où l'on est. Un cri, au loin, puis plus rien que l'alarme
       if (sfx && (ev.floor || 0) === (sim.viewPlayer(sim.spectate || 0).floor || 0)) sfx.distant('drag', { x: ev.x, z: ev.z }, 1.2);
-      if (hud && sim.player.status === 'alive') hud.toast('It knows where you are. RUN to the elevator', 4);
+      if (hud && sim.player.status === 'alive') hud.toast(sim.level === 1 ? 'It knows where you are. Keep moving until the freight elevator comes' : 'It knows where you are. RUN to the elevator', 4);
       break;
     case 'boardCount':
       // les portes vont se fermer : la cabine sonne, et à 10 s un second coup plus pressant
@@ -1637,12 +2101,31 @@ function handleEvent(ev, me) {
       if (hud) hud.toast(ev.id === me ? 'The doors closed without you' : `${ev.name} was left behind`);
       break;
     case 'depart':
+      // Poolrooms : la descente dans le toboggan (celui qui vient d'y entrer s'y glisse d'abord, sous nos yeux)
+      if (ev.level === 2 && sim.map.slides && sim.slide >= 0 && scene) {
+        startRide(sim.map.slides[sim.slide]);
+        break;
+      }
+      // Level 5 : la porte coupe-feu passée, on dévale l'escalier de secours (view/stairwell.js) jusqu'au Level 17
+      if (ev.level === HOTEL_LEVEL && scene) {
+        endRide();
+        ride = createStairRide({ gl: sceneGl(), sfx });
+        ride.start();
+        document.body.classList.add('riding');
+        break;
+      }
       if (sfx && ev.level === 2) sfx.splashDown();
       else if (sfx && ev.level !== HOTEL_LEVEL) { sfx.ding(); setTimeout(() => sfx && sfx.elevator(DEPART_T + 1.5), 400); }
-      if (hud) setTimeout(() => hud && sim.departT > 0 && hud.fade(ev.level === 0 ? 'THE ELEVATOR IS GOING DOWN…' : ev.level === 1 ? 'THE FREIGHT ELEVATOR IS GOING DOWN… THE AIR SMELLS OF CHLORINE' : ev.level === HOTEL_LEVEL ? 'YOU RUN DOWN THE FIRE ESCAPE, FLOOR AFTER FLOOR…' : 'YOU SLIDE DOWN INTO THE DARK, FASTER AND FASTER…', '', 0, true), 700);
+      if (hud) setTimeout(() => hud && sim.departT > 0 && hud.fade(ev.level === 0 ? 'THE ELEVATOR IS GOING DOWN…' : ev.level === 1 ? 'THE FREIGHT ELEVATOR IS GOING DOWN… THE AIR SMELLS OF CHLORINE' : ev.level === MALL_LEVEL ? 'THE STAGE FREIGHT ELEVATOR IS GOING DOWN… THE FILM KEEPS PLAYING ABOVE YOU' : ev.level === HOTEL_LEVEL ? 'YOU RUN DOWN THE FIRE ESCAPE, FLOOR AFTER FLOOR…' : ev.level === PIPES_LEVEL ? 'THE SERVICE ELEVATOR IS CLIMBING… AND CLIMBING…' : 'YOU SLIDE DOWN INTO THE DARK, FASTER AND FASTER…', '', 0, true), 700);
       break;
     case 'level':
       if (hud) hud.closeKeypad();
+      // la descente s'interrompt le temps du chargement (elle reprend une fois le niveau prêt) : le noir d'un coup,
+      // sinon le nouveau niveau se voyait un instant à travers le fondu
+      if (ride) {
+        ride.hold();
+        if (hud) hud.blackNow();
+      }
       // un nouvel étage s'allume : le bourdonnement des néons revient (même si on est parti pendant une coupure)
       if (sfx) sfx.dark = false;
       // un étage de plus : elle s'enhardit un peu pour la prochaine partie
@@ -1657,8 +2140,9 @@ function handleEvent(ev, me) {
       sim.spectate = 0;
       stepDist = 0;
       if (hud) {
-        hud.fade(`LEVEL ${levelName(ev.level)}`, 'LOADING THE TAPE…', 0);
-        hud.loading(true);
+        // (au milieu d'un toboggan : pas de titre, le seul est celui de l'arrivée ; « LOADING » seulement si ça dure)
+        hud.fade(ride ? '' : `LEVEL ${levelName(ev.level)}`, 'LOADING THE TAPE…', 0);
+        hud.loading(true, !!ride);
       }
       buildLevel(ev.level);
       // seul, on pourra reprendre à ce niveau-ci
@@ -1772,6 +2256,15 @@ function handleEvent(ev, me) {
       break;
     case 'gameover':
     case 'win':
+      // le toboggan bleu sort des Poolrooms : la fin de la descente, les néons du Level 0 au bout, puis l'écran de fin
+      if (ev.type === 'win' && ride && !ev.rode) {
+        const done = { ...ev, rode: true };
+        ride.finish('out', () => {
+          endRide();
+          handleEvent(done, me);
+        });
+        break;
+      }
       // rendre le curseur pour le bouton Rejouer (Entrée marche aussi)
       if (document.pointerLockElement) document.exitPointerLock();
       if (ev.type === 'win' && sfx) sfx.win();
@@ -1794,12 +2287,12 @@ function handleEvent(ev, me) {
         best = Math.max(rec.key === key ? rec.best || 0 : 0, sim.time);
         store.set('backrooms_daily', { key, best });
       }
-      if (hud) hud.showEnd(sim, NET.role === 'guest' ? null : () => initGame(), { stats: runStats, daily: dailyLabel, best, abyss: lastAbyss && ev.type === 'gameover', thirst: lastThirst && ev.type === 'gameover' });
+      if (hud) hud.showEnd(sim, NET.role === 'guest' ? null : () => initGame(), { stats: runStats, from: runFrom, daily: dailyLabel, best, abyss: lastAbyss && ev.type === 'gameover', thirst: lastThirst && ev.type === 'gameover' });
       if (H && H.embedded && NET.role !== 'guest') {
         const won = ev.type === 'win';
         // la vraie fin vaut bien plus qu'une fausse sortie, qui vaut plus que de mourir loin (Level 2 compris)
-        const trueEnd = won && (sim.level === PIPES_LEVEL || sim.level === HOTEL_LEVEL); // sortir par les Tuyauteries ou par l'hôtel
-        const depth = { 0: 0, 1: 1, 2: 2, [PIPES_LEVEL]: 3, [HOTEL_LEVEL]: 3 }[sim.level] || 0;
+        const trueEnd = won && (sim.level === PIPES_LEVEL || sim.level === HOTEL_LEVEL || sim.level === MALL_LEVEL); // sortir par les Tuyauteries, l'hôtel ou le mall
+        const depth = { 0: 0, 1: 1, 2: 2, [PIPES_LEVEL]: 3, [HOTEL_LEVEL]: 3, [MALL_LEVEL]: 4 }[sim.level] || 0;
         H.report({
           id: `backrooms-${Date.now()}`,
           mode: dailyLabel ? 'Carte du jour' : 'Survie',
@@ -1817,14 +2310,20 @@ const trackSeq = new Map(); // hôte : dernière position d'invité entrée dans
 const camPrev = { x: 0, z: 0, f: 0, ok: false }; // sa position avant le dernier pas (la caméra interpole jusqu'à la suivante)
 const lookIn = { yaw: NaN, pitch: NaN }; // le dernier regard donné à la simulation
 
+// Clavier ou souris utilisés : les touches affichées redeviennent celles du clavier
+addEventListener('keydown', () => hud && hud.pad && hud.setPad(false), true);
+addEventListener('mousedown', () => hud && hud.pad && hud.setPad(false), true);
+addEventListener('mousemove', (e) => hud && hud.pad && Math.abs(e.movementX) + Math.abs(e.movementY) > 6 && hud.setPad(false), true);
+
 // Manette (disposition standard) : A ramasser, X utiliser l'objet, Y lampe, RB (ou croix gauche / droite) changer
-// d'objet, croix bas le poser par terre, B siffler, LB / LT / stick gauche enfoncé courir, Menu pause ; A relance la
+// d'objet, croix bas le poser par terre, B siffler, RT maintenu le talkie, LB / LT / stick gauche enfoncé courir, Menu pause ; A relance la
 // partie en pause
 let padPrev = [];
+let padRadio = false; // RT maintenu : le talkie, comme R au clavier
 function readPad() {
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   const p = [...pads].find((x) => x && x.connected);
-  if (!p) { padPrev = []; return null; }
+  if (!p) { padPrev = []; padRadio = false; return null; }
   const b = (i) => !!(p.buttons[i] && (p.buttons[i].pressed || p.buttons[i].value > 0.5));
   const edge = (i) => b(i) && !padPrev[i];
   let hubMenu = false;
@@ -1849,8 +2348,16 @@ function readPad() {
       if (edge(13)) act.drop = true;
       if (edge(1)) act.whistle = true;
       if (edge(9)) setPaused(true);
+      // RT : le talkie (maintenir)
+      if (edge(7)) {
+        askMic(true);
+        if (!multi() && hud) hud.toast('The radio only hisses · no one else is out there');
+      }
     }
   }
+  // on joue à la manette : les touches affichées deviennent ses boutons (le clavier ou la souris les rendent)
+  if (hud && !hud.pad && (p.buttons.some((_, i) => b(i)) || p.axes.some((a) => Math.abs(a) > 0.45))) hud.setPad(true);
+  padRadio = !hubMenu && !paused && b(7);
   padPrev = p.buttons.map((_, i) => b(i));
   if (hubMenu || paused) return null;
   return { lx: p.axes[0] || 0, ly: p.axes[1] || 0, rx: p.axes[2] || 0, ry: p.axes[3] || 0, run: b(4) || b(6) || b(10) };
@@ -1872,7 +2379,12 @@ function frame(currentTime) {
   if (NET.role === 'guest') watchHost();
   // en pause, le monde est figé (seul) ; à plusieurs, il continue sans toi. Le trajet en ascenseur, lui, va
   // toujours jusqu'au bout : sinon une pause pendant la descente laissait l'écran noir pour toujours
-  if (paused && !multi() && !(sim.departT > 0)) accumulator = 0;
+  if ((paused || glLost) && !multi() && !(sim.departT > 0)) accumulator = 0;
+  // l'image ne revient pas : le navigateur ne rendra plus le contexte, il n'y a plus qu'à recharger
+  if (glLost && !glWarned && currentTime - glLost > 8000) {
+    glWarned = true;
+    if (hud) hud.toast('VIDEO SIGNAL LOST · RELOAD THE PAGE', 600);
+  }
 
   // Lecture des entrées utilisateur (en mode sans souris, les flèches tournent la vue)
   const arrows = !kbMode;
@@ -1939,7 +2451,7 @@ function frame(currentTime) {
     camPrev.f = sim.player.floor || 0;
     camPrev.ok = true;
 
-    const live = !paused;
+    const live = !paused && !ride; // (pendant la descente en toboggan, on ne se dirige pas)
     const input = {
       mx: live ? mx : 0,
       my: live ? my : 0,
@@ -2103,23 +2615,28 @@ function frame(currentTime) {
     // Level 2 : pas de bourdonnement d'entité, les sabots du troupeau
     sfx.updateMonsterSound(sim.goats || M.away ? 0 : M.danger, M, sim.level === 1 || sim.level === 2, occl); // Poolrooms : la voix de l'entité du Level 1
     sfx.updateChase(chasing, M.danger, M, occl);
-    // Level 1 : Khaoula se fait entendre quand elle est proche (de temps en temps) et pendant la poursuite (plus souvent)
-    if (sim.level === 1 && !M.away && !paused) {
-      khaoulaT -= delta;
-      if (khaoulaT <= 0 && (chasing || M.danger > 0.35)) {
-        sfx.khaoula();
-        khaoulaT = chasing ? 7 + Math.random() * 6 : 18 + Math.random() * 20;
-      } else if (khaoulaT <= 0) khaoulaT = 2;
+    // Level 1, mode VIP : la voix qui appelle se fait entendre quand l'entité est proche (de temps en temps) et pendant
+    // la poursuite (plus souvent)
+    if (sim.level === 1 && monstersVip && !M.away && !paused) {
+      callT -= delta;
+      if (callT <= 0 && (chasing || M.danger > 0.35)) {
+        sfx.level1Voice();
+        callT = chasing ? 7 + Math.random() * 6 : 18 + Math.random() * 20;
+      } else if (callT <= 0) callT = 2;
     }
     // la musique de tension suit le directeur (la peur de l'équipe) et ce que fait l'entité
     const D = sim.director;
+    const me0 = sim.player;
     const charging = sim.goats ? sim.goats.some((g) => g.mode === 'charge' || g.mode === 'windup') : false;
     const mode = D && D.phase === 'relax' ? 'relief' : chasing || charging ? 'chase' : M.mode === 'search' ? 'search' : M.mode === 'stalk' || M.mode === 'watch' || M.mode === 'ambush' ? 'stalk' : 'calm';
-    sfx.setTension(paused ? 0 : Math.max(M.danger, D ? D.stress : 0), mode);
+    // ce qu'on perçoit d'elle : derrière des murs (un long détour), sa présence ne se devine plus. La musique et le cœur
+    // suivent ce qu'on entend, pas sa distance à vol d'oiseau (ils trahissaient où elle était, à travers les murs)
+    const heard = chasing || me0.grabT > 0 ? M.danger : M.danger * (1 - 0.7 * entEar.occ);
+    sfx.setTension(paused ? 0 : Math.max(heard, D ? D.stress : 0), mode);
     if (sim.goats) sfx.setChase(charging && !paused);
     // le cœur : la peur, la prise, et l'entité qui passe devant le casier
-    const me = sim.player;
-    const near = me.status === 'alive' ? Math.max(M.danger, me.grabT > 0 ? 1 : 0) : 0;
+    const me = me0;
+    const near = me.status === 'alive' ? Math.max(heard, me.grabT > 0 ? 1 : 0) : 0;
     const bpm = paused || near < 0.4 ? 0 : Math.round((70 + near * 75 + (me.hidden >= 0 ? 15 : 0)) / 5) * 5;
     if (bpm !== heartShown) {
       heartShown = bpm;
@@ -2163,6 +2680,10 @@ function frame(currentTime) {
     if (M.danger < 0.25 && sim.player.status === 'alive') sfx.stopDeath(); // échappé : la mort s'éloigne
     sfx.ambience(delta, !paused && !chasing && M.danger < 0.4);
     sfx.drips(paused ? 0 : delta);
+    if (sim.level === 2) {
+      poolLap(paused ? 0 : delta);
+      if (!paused) poolNotes();
+    }
   } else if (sfx) {
     sfx.updateMonsterSound(0, 0); // partie finie : l'entité se tait
     sfx.updateChase(false, 0, null);
@@ -2221,6 +2742,9 @@ function frame(currentTime) {
     sfx.setCalm(paused || sim.state !== 'playing' || sim.open ? 0 : calm, wear, radio);
   } else if (sfx && sfx.calm) sfx.setCalm(0);
 
+  // la descente en toboggan démarre une fois glissé dans la bouche
+  if (ride && rideDelay > 0 && (rideDelay -= delta) <= 0) ride.start();
+
   // Rendu graphique et HUD
   if (scene) {
     if (!document.hidden) {
@@ -2236,7 +2760,9 @@ function frame(currentTime) {
         Pl.z = camPrev.z + (cz - camPrev.z) * a;
       }
       try {
-        scene.render(sim, currentTime / 1000); // en arrière-plan : la partie tourne, sans image
+        // la descente en toboggan prend l'image (le moteur est le même) ; sinon, la scène du niveau
+        if (ride && ride.active) ride.render(delta, currentTime / 1000, sim.departT > 0 ? sim.departT : null);
+        else scene.render(sim, currentTime / 1000); // en arrière-plan : la partie tourne, sans image
       } finally {
         if (lerp) {
           Pl.x = cx;
@@ -2245,11 +2771,21 @@ function frame(currentTime) {
       }
     }
     if (sfx) sfx.setHum(scene.lightHere); // le grésillement des néons autour de soi
+    // le clavier de la porte de secours montre ce qu'on tape (view/hotelExit.js)
+    if (hud && sim.level === HOTEL_LEVEL) {
+      hotelUi.code = hud.keypadOpen ? hud.keypadCode : null;
+      hotelUi.wrongAt = hud.keypadWrongAt || 0;
+    }
     if (sfx) {
       // l'oreille suit la caméra (le joueur, ou celui qu'on regarde) ; l'écho change avec le niveau
       const V = sim.viewPlayer(sim.spectate || 0);
       sfx.setListener(V.x, V.z, V.yaw);
       sfx.setRoom(sim.level);
+      // Level 17 : les roulettes de la poupée, le projecteur et la bande-son du film, l'écho de la salle où l'on est
+      // (installé dès que le son existe : la descente de l'escalier de secours s'en sert depuis le Level 5)
+      mallAudio().update(sim.level === MALL_LEVEL ? sim : null, V, delta, { occ: entEar.occ, paused });
+      // Tuyauteries : les machines qui tournent autour de toi (brûleurs, pompes, armoires électriques)
+      sfx.machines(sim.level === PIPES_LEVEL ? pipeMachines(V) : NO_MACHINES);
       // le final du Level 0 : toutes les cassettes trouvées, une alarme au loin jusqu'à l'ascenseur
       sfx.finale(sim.level === 0 && !!sim.open && sim.state === 'playing' && (!scene || scene.redOn));
       // les pas des autres joueurs, là où ils marchent (plus rapprochés quand ils courent)
@@ -2262,13 +2798,7 @@ function frame(currentTime) {
         if (left <= 0) sfx.step(stepKind(O), { x: O.x, z: O.z, muffled: (O.floor || 0) !== (V.floor || 0) }, O.running ? 1 : 0.7);
         otherStepT.set(O.id, left <= 0 ? (O.running ? 0.32 : 0.5) : left);
       }
-      // l'imposteur : les pas d'un joueur qui marche (pas les siens, lourds)
-      const Mm = sim.hasMonster ? sim.monster : null;
-      if (Mm && Mm.mimic != null && (Mm.v || 0) > 0.3 && !paused) {
-        const left = (otherStepT.get('M') ?? 0.2) - delta;
-        if (left <= 0) sfx.step(stepKind(Mm), { x: Mm.x, z: Mm.z, muffled: (Mm.floor || 0) !== (V.floor || 0) }, 0.7);
-        otherStepT.set('M', left <= 0 ? 0.52 : left);
-      } else otherStepT.delete('M');
+      // l'imposteur, lui, marche sans un bruit : un indice pour qui tend l'oreille (ni ses pas lourds, ni ceux d'un joueur)
     }
     if (sfx) {
       // le souffle : sprint, puis halètement le temps de récupérer, et la peur quand l'entité est là
@@ -2290,15 +2820,22 @@ function frame(currentTime) {
     // V : parler autour de soi ; R : dans le talkie (à plusieurs) ; micro ouvert : la voix passe sans touche
     const me = sim.player;
     // la voix part toute seule dès qu'on parle (proximité) ; le talkie, seulement en maintenant R
-    const want = OPTS.mic !== 'off' && keys['KeyR'] && multi() ? 2 : 0;
+    const want = OPTS.mic !== 'off' && (keys['KeyR'] || padRadio) && multi() ? 2 : 0;
     // le talkie grésille tout seul de temps en temps (plus souvent quand elle rôde) ; en coupure, il est mort
     const radioOk = !sim.radioDead;
     voice.update(sim, sim.viewPlayer(sim.spectate || 0), delta, want, OPTS.mic !== 'off' && !paused, me.status === 'alive', { ok: radioOk, danger: me.danger || 0, live: !paused && sim.state === 'playing' && !sim.prelude });
-    if (hud) hud.voice(voice, sim, multi(), !!keys['KeyR'] && !radioOk && multi());
+    if (NET.role !== 'guest') sim.voiceBank = voice.bank(); // (l'entité imite de préférence quelqu'un dont on a des phrases)
+    cloneStep(delta);
+    if (hud) hud.voice(voice, sim, multi(), !!(keys['KeyR'] || padRadio) && !radioOk && multi());
   }
   if (hud) {
     hud.update(sim, sim.time, delta);
     if (scene && scene.cam) hud.camera(scene.cam, sim, delta);
+  }
+  // « tout au caméscope » : selon le réglage et le niveau où l'on est (il change en cours de partie)
+  if (tapeOn() !== tapeShown) {
+    tapeShown = tapeOn();
+    setSceneOptions({ tape: tapeShown });
   }
 }
 
@@ -2328,15 +2865,17 @@ if (window.DDVolume && btnSet) {
         { label: 'Clavier', get: () => OPTS.layout, set: (v) => setOpt('layout', v), options: [['auto', 'Auto'], ['azerty', 'ZQSD'], ['qwerty', 'WASD']] },
       ] },
       { title: 'Image', items: [
+        { label: 'Tout au caméscope', get: () => OPTS.tape, set: (v) => setOpt('tape', v), options: [['auto', 'Level 17'], ['on', 'Partout'], ['off', 'Non']] },
         { label: 'Champ de vision', get: () => OPTS.fov, set: (v) => setOpt('fov', +v), range: [60, 100, 2], format: (v) => `${v}°` },
         { label: 'Luminosité', get: () => OPTS.bright, set: (v) => setOpt('bright', +v), range: [0.6, 1.6, 0.05], format: (v) => `${Math.round(v * 100)} %` },
         { label: 'Caméra à l\'épaule', get: () => OPTS.motion, set: (v) => setOpt('motion', +v), range: [0, 1, 0.1], format: (v) => (+v === 0 ? 'stable' : `${Math.round(v * 100)} %`) },
         { label: 'Qualité', get: () => OPTS.quality, set: (v) => setOpt('quality', v), options: [['auto', 'Auto'], ['low', 'Basse'], ['medium', 'Moyenne'], ['high', 'Haute']] },
-      ], hint: 'Luminosité : réglez-la pour que le carré de gauche soit à peine visible.' },
+      ], hint: 'Luminosité : réglez-la pour que le carré de gauche soit à peine visible. « Tout au caméscope » : toute la partie est filmée (image 4:3, champ plus serré), l\'interface s\'efface quand rien ne change ; V sort le viseur (zoom, mode nuit).' },
       { title: 'Voix', items: [
         { label: 'Micro', get: () => OPTS.mic, set: (v) => { setOpt('mic', v); if (v !== 'off' && started) askMic(true); }, options: [['on', 'Activé'], ['off', 'Coupé']] },
         { label: 'Volume des voix', get: () => OPTS.voiceVol, set: (v) => setOpt('voiceVol', +v), range: [0, 2, 0.1], format: (v) => `${Math.round(v * 100)} %` },
-      ], hint: "Votre voix porte toute seule jusqu'aux joueurs proches (on vous entend à travers les murs, mal). R maintenu : parler dans le talkie, à toute l'équipe. Attention : l'entité entend aussi, et plus vous parlez, plus elle devient agressive. Le talkie grésille aussi chez ceux qui le reçoivent." },
+        { label: 'Voix clonée par l\'entité (IA)', get: () => OPTS.clone, set: (v) => { setOpt('clone', v); setOpt('cloneAsked', true); if (voice) voice.setClone(v === 'on'); }, options: [['off', 'Refusée'], ['on', 'Autorisée']] },
+      ], hint: "Voix clonée : au Level 1, l'entité peut dire des phrases que vous n'avez jamais dites, avec votre voix, fabriquée par une IA à partir de ce que vous dites en partie. Seulement entre joueurs qui l'ont tous autorisé. Votre voix n'est envoyée à aucun serveur : tout se calcule dans les navigateurs des joueurs, qui reçoivent aussi le texte de vos phrases, et rien n'est gardé après la partie. Premier chargement : environ 250 Mo. Votre voix porte toute seule jusqu'aux joueurs proches (on vous entend à travers les murs, mal). R maintenu : parler dans le talkie, à toute l'équipe. Attention : l'entité entend aussi, et plus vous parlez, plus elle devient agressive. Le talkie grésille aussi chez ceux qui le reçoivent." },
       { title: 'Accessibilité', items: [
         { label: 'Réduire les flashs', get: () => OPTS.reduceFlashes, set: (v) => setOpt('reduceFlashes', v), options: [[false, 'Non'], [true, 'Oui']] },
         { label: 'Sous-titres', get: () => OPTS.subs, set: (v) => setOpt('subs', v), options: [[false, 'Non'], [true, 'Oui']] },

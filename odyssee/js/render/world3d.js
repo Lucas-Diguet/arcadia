@@ -16,7 +16,7 @@ import { Ambiance } from './ambiance.js';
 import { densifier } from './densite.js';
 import { styleInterieur } from './interieurs.js';
 import { teinteHeure, nuitHeure, VITRE_NUIT, Lumieres } from './lumieres.js';
-import { choisirModele, geometriesModele, couleurBase, EMPRISES } from './bati-jeu.js';
+import { choisirModele, geometriesModele, couleurBase, EMPRISES, materiauTerrasse } from './bati-jeu.js';
 import { variantesArbres, variante, miroir, teinte } from './arbres.js';
 import { dessinHerbe, imageHerbe, NIMAGES, MARGE as HERBE_M, HAUTEUR as HERBE_H } from './herbes.js';
 import { Relief3D, relief3dActif, matParoi, matFacettes, facettesActives, matPente, matsPente, LV as R3LV } from './relief3d.js';
@@ -43,7 +43,9 @@ const SW = (r) => r.w * WPX / (r.d || 1), SH = (r) => r.h * HPX / (r.d || 1);
  * personnage devant un autre, sans jamais être déformé par la perspective, en haut comme en bas de l'écran.
  */
 // uEch : les sprites rapetissent quand l'éditeur de carte voit de plus haut (1 en jeu : pixel pour pixel)
-export const SPRITE_UNIFORMS = { uRes: { value: new THREE.Vector2(400, 240) }, uEch: { value: 1 } };
+// uPx : pixels d'écran par pixel du jeu (1 : rendu basse résolution agrandi ; k en rendu natif, où la géométrie est tracée
+// à la résolution de l'écran et où sprites, trames et particules gardent leurs gros pixels)
+export const SPRITE_UNIFORMS = { uRes: { value: new THREE.Vector2(400, 240) }, uEch: { value: 1 }, uPx: { value: 1 } };
 /**
  * Bâtiments : leur profondeur est celle de leur façade (comme un grand sprite posé sur sa rangée de devant). Un arbre
  * ou un personnage dont les pieds sont derrière la façade passe derrière toute la maison, toit compris ; devant la
@@ -54,32 +56,37 @@ export const SPRITE_UNIFORMS = { uRes: { value: new THREE.Vector2(400, 240) }, u
  *  ordonnée de 4 × 4, pixel du jeu par pixel du jeu, comme sur les consoles portables. uTrame : part gardée (1 : plein) */
 const TRAME_GLSL = `
       if ( uTrame < 0.999 ) {
-        ivec2 tp = ivec2( mod( floor( gl_FragCoord.xy ), 4.0 ) );
+        ivec2 tp = ivec2( mod( floor( gl_FragCoord.xy / uPxT ), 4.0 ) );
         int tb[16] = int[16]( 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 );
         if ( ( float( tb[ tp.y * 4 + tp.x ] ) + 0.5 ) / 16.0 > uTrame ) discard;
       }`;
 function trame(mat, sh) {
   mat.userData.uTrame ||= { value: 1 };
-  sh.uniforms.uTrame = mat.userData.uTrame;
+  sh.uniforms.uTrame = mat.userData.uTrame; sh.uniforms.uPxT = SPRITE_UNIFORMS.uPx;
   sh.fragmentShader = sh.fragmentShader
-    .replace('#include <common>', '#include <common>\nuniform float uTrame;')
+    .replace('#include <common>', '#include <common>\nuniform float uTrame;\nuniform float uPxT;')
     .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>' + TRAME_GLSL);
 }
-function frontDepth(mat, zFront) {
+/** pied : une ligne d'ombre au pied des murs (trois pixels du jeu), là où le bâtiment touche le sol — il est posé, pas collé */
+function frontDepth(mat, zFront, pied = false) {
   mat.userData.uTrame = { value: 1 };
   mat.onBeforeCompile = (sh) => {
     trame(mat, sh);
     sh.uniforms.uZFront = { value: zFront };
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uZFront;')
+      .replace('#include <common>', '#include <common>\nuniform float uZFront;\nvarying float vPiedB;')
       .replace('#include <project_vertex>', `
         vec4 fW = modelMatrix * vec4( transformed, 1.0 );
+        vPiedB = transformed.y;
         vec4 mvPosition = viewMatrix * fW;
         vec4 fC = projectionMatrix * mvPosition;
         vec4 fF = projectionMatrix * viewMatrix * vec4( fW.x, fW.y, max( fW.z, uZFront ), 1.0 );
         gl_Position = vec4( fC.xy * ( fF.w / fC.w ), fF.z, fF.w );`);
+    if (pied) sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vPiedB;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n  if ( vPiedB < 0.11 ) diffuseColor.rgb *= vec3( 0.66, 0.68, 0.80 ); else if ( vPiedB < 0.22 ) diffuseColor.rgb *= vec3( 0.86, 0.87, 0.93 );');
   };
-  mat.customProgramCacheKey = () => 'frontDepth';
+  mat.customProgramCacheKey = () => 'frontDepth' + (pied ? 'P' : '');
   return mat;
 }
 /** profondeur d'un bâtiment à parties ouvertes (terrasse, porche, galerie : `b.libres`) : chaque morceau prend la profondeur
@@ -114,10 +121,13 @@ function profondeurGrille(mat, b) {
   return mat;
 }
 const DECALS = new Set(['fleche', 'vent', 'courant', 'dalle', 'tp', 'socle', 'pollen', 'alveole', 'interrupteur', 'estrade', 'tapis']);
+const AVANCE_PERSO = 0.38;
 const WIDE_DECO = new Set(['healer', 'sofa', 'bench', 'startertable', 'fireplace', 'rug']);
 /** décor du dehors posé avec une ombre au sol (leur ombre violette, dessinée dans le sprite, a été retirée) */
 const OMBRE_DECO = new Set(['banc', 'parasol', 'tonneau', 'caisse', 'panneau_bois', 'borne', 'lanterne', 'stele']);
-function screenSprite(mat) {
+/** avance : le sprite est rangé comme s'il se tenait `avance` case plus au sud (personnages : leurs pieds passent devant
+ *  le perron, les marches et le socle du bâtiment qui dépassent sur leur case, sans changer l'ordre entre personnages) */
+function screenSprite(mat, avance = 0) {
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uRes = SPRITE_UNIFORMS.uRes; sh.uniforms.uEch = SPRITE_UNIFORMS.uEch;
     sh.vertexShader = sh.vertexShader
@@ -134,9 +144,10 @@ function screenSprite(mat) {
         // celui de gauche passe devant celui de droite (léger décalage selon la colonne, bien plus petit qu'une rangée).
         // Le décalage rapproche le sprite de la caméra : s'il l'éloignait, le sol passerait devant le bas du dessin (les pieds)
         float sBias = - ( 64.0 - mod( sA.x, 64.0 ) ) * 2.0e-6;
+        ${avance ? `vec4 sAv = projectionMatrix * viewMatrix * ( sW + vec4( 0.0, 0.0, ${avance.toFixed(3)}, 0.0 ) ); sPC.z = sAv.z / sAv.w * sPC.w;` : ''}
         gl_Position = vec4( ( sPx / uRes * 2.0 - 1.0 ) * sPC.w, sPC.z + sBias * sPC.w, sPC.w );`);
   };
-  mat.customProgramCacheKey = () => 'screenSprite';
+  mat.customProgramCacheKey = () => 'screenSprite' + avance;
   return mat;
 }
 /**
@@ -439,6 +450,16 @@ class Geo {
     return g;
   }
 }
+/** barrière nord-sud : bord gauche du poteau dans la case (pixels de la planche), comme les poteaux
+ *  des rangées de tools/pixelforge/barrieres.py (32 par case) ; une colonne s'aligne sur le coin de la rangée qu'elle rejoint */
+const BARR_POT = { g: 0, d: 27, c: 13 };
+function coteBarriere(m, x, y) {
+  for (const s of [-1, 1]) for (let k = 1, yy = y + s; k < 40 && m.get(x, yy) === T.FENCE; k++, yy += s) {
+    const a = m.get(x + 1, yy) === T.FENCE, b = m.get(x - 1, yy) === T.FENCE;
+    if (a || b) return a && !b ? 'g' : b && !a ? 'd' : 'c';
+  }
+  return 'c';
+}
 /** sprite vertical, pieds en (cx, cz) */
 function billboard(G, cx, cz, w, h, r, y0 = 0, flip = false, shade = 1) {
   const u0 = flip ? r.u1 : r.u0, u1 = flip ? r.u0 : r.u1;
@@ -535,13 +556,14 @@ export class WorldView {
     if (art.sprites) { const dens = art.dens || (art.dens = {}); densifier(art.sprites, dens); variantesArbres(art.sprites, dens); applySpriteImages(S, art.sprites, dens); }
     this.A = A; this.N = N; this.S = S;
     // ?arbres=0 : un seul dessin par essence, sans teinte (comparaison)
-    this.arbresUnis = /[?&]arbres=0/.test(globalThis.location?.search || '');
+    this.packDecor = !!art.packDecor;   // pack de graphismes : ses arbres ont un seul dessin, avec leur ombre
+    this.arbresUnis = this.packDecor || /[?&]arbres=0/.test(globalThis.location?.search || '');
     this.charRows = charsImg ? Math.round(charsImg.height / CHH) : 10;
     this.texA = tex(A.canvas); this.texN = tex(N.canvas); this.texS = tex(S.canvas); this.texC = tex(this.packChars());
     const mk = (map, o = {}) => new THREE.MeshBasicMaterial({ map, vertexColors: true, ...o });
     this.mat = {
       ground: mk(this.texA), anim: mk(this.texN), sprite: screenSprite(mk(this.texS, { alphaTest: 0.5, side: THREE.DoubleSide })),
-      chars: screenSprite(new THREE.MeshBasicMaterial({ map: this.texC, alphaTest: 0.5, side: THREE.DoubleSide })),
+      chars: screenSprite(new THREE.MeshBasicMaterial({ map: this.texC, alphaTest: 0.5, side: THREE.DoubleSide }), AVANCE_PERSO),
       // sprites isolés (objets, bulle « ! », herbes qui bougent) : pas de couleurs de sommets
       actorSprite: screenSprite(new THREE.MeshBasicMaterial({ map: this.texS, alphaTest: 0.5, side: THREE.DoubleSide })),
       // sprite couché au sol (sillage du surf)
@@ -578,13 +600,16 @@ export class WorldView {
     try { this.weather = new WeatherSystem(this.scene, this.renderer.domElement, SPRITE_UNIFORMS); } catch (e) { this.weather = null; }
   }
 
-  resize(w, h) {
+  /** w × h : taille de l'image calculée ; k : pixels de cette image par pixel du jeu (1, ou l'agrandissement en rendu natif) */
+  resize(w, h, k) {
+    this.kPx = k ?? this.kPx ?? 1;
+    SPRITE_UNIFORMS.uPx.value = this.kPx; SPRITE_UNIFORMS.uEch.value = (this.zoom || 1) / this.kPx;
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
     // tuiles carrées à l'écran : la projection est resserrée en largeur (16 px de large comme de haut au centre)
     this.camera.projectionMatrix.elements[0] *= Math.sin(EL); this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
     SPRITE_UNIFORMS.uRes.value.set(w, h);
     // distance pour qu'une tuile fasse 16 pixels de haut à l'écran (rendu basse résolution)
-    this.dist = (Math.sin(EL) * h) / (2 * Math.tan(FOV * Math.PI / 360) * TILE_PX) * (this.zoom || 1);
+    this.dist = (Math.sin(EL) * h) / (2 * Math.tan(FOV * Math.PI / 360) * TILE_PX * this.kPx) * (this.zoom || 1);
   }
 
   /* ---------------- construction d'une carte ---------------- */
@@ -632,9 +657,25 @@ export class WorldView {
 
   groundCell(x, y) {
     const m = this.map, t = m.get(x, y), A = this.A.cells, v = hash(x, y);
-    const g4 = () => 'grass' + (v < 0.55 ? 0 : v < 0.8 ? 1 : v < 0.93 ? 2 : 3);
+    const pg = A.pg_0_0;   // pack de graphismes : herbe à motif de 3 × 2 cases, la même partout (sous les arbres aussi)
+    const g4 = () => (pg ? `pg_${x % 3}_${y % 2}` : 'grass' + (v < 0.55 ? 0 : v < 0.8 ? 1 : v < 0.93 ? 2 : 3));
     const zone = m.outdoor ? m.zoneAt(x, y) : null, theme = zone?.theme;
     const grassKey = theme === 'volcanic' ? 'ash' + (v < 0.5 ? 0 : 1) : theme === 'snow' ? 'snow' + (v < 0.5 ? 0 : 1) : g4();
+    // pack de graphismes : un terrain en cinq tuiles (q_<nom>_<état>) posé par quarts sur l'herbe, selon les huit voisins
+    // (coin sortant, bord, coin rentrant, plein) ; eau = planche animée
+    const quarts = (nom, same, eau) => {
+      const C = eau ? this.N.cells : A, s = (dx, dy) => same(m.get(x + dx, y + dy)), q = [];
+      let pleins = 0;
+      for (let qy = 0; qy < 2; qy++) for (let qx = 0; qx < 2; qx++) {
+        const dx = qx ? 1 : -1, dy = qy ? 1 : -1, H = s(dx, 0), V = s(0, dy);
+        const st = !H && !V ? '0' : V && !H ? 'v' : H && !V ? 'h' : s(dx, dy) ? 'f' : 'i';
+        if (st === 'f') pleins++;
+        const c = C[`q_${nom}_${st}`], hu = (c[2] - c[0]) / 2, hv = (c[3] - c[1]) / 2;
+        q.push([c[0] + qx * hu, c[1] + qy * hv, c[0] + (qx + 1) * hu, c[1] + (qy + 1) * hv]);
+      }
+      if (pleins === 4) return eau ? { anim: C[`q_${nom}_f`] } : { c: C[`q_${nom}_f`] };
+      return { c: A[grassKey], q, qEau: eau };
+    };
     const mask = (same) => { let k = 0; if (same(m.get(x, y - 1))) k |= 1; if (same(m.get(x + 1, y))) k |= 2; if (same(m.get(x, y + 1))) k |= 4; if (same(m.get(x - 1, y))) k |= 8; return k; };
     // sur la neige, pas de bordure d'herbe autour des chemins : on prend la case pleine
     const edge = theme === 'snow' ? () => 15 : mask;
@@ -670,17 +711,22 @@ export class WorldView {
       case T.SMASH: case T.BOULDER: return { c: m.outdoor ? A[grassKey] : A['cave' + (v < 0.5 ? 0 : 1)] };
       // hautes herbes : un tapis dessiné au sol, comme sur DS (les jambes de qui s'y tient sont cachées par view.cover)
       case T.TALL: case T.DARKTALL: {
+        if (A.q_tall0 && theme !== 'snow') return { c: A[grassKey], ov: A[(tt === T.DARKTALL ? 'q_darktall' : 'q_tall') + (v < 0.5 ? 0 : 1)] };
         // tileset : nappe d'herbe avec ses bords et ses coins arrondis (pièce choisie selon les voisins)
         const hk = 'h_' + (tt === T.DARKTALL ? 'bois' : theme === 'snow' ? 'neige' : 'prairie') + '_' + herbePiece(m, x, y, tt, v);
         if (A[hk]) return { c: A[hk] };
         if (tt === T.DARKTALL) return { c: A['darktall' + (v < 0.5 ? 0 : 1)] };
         return { c: A[(theme === 'snow' && A.snowtall0 ? 'snowtall' : 'tall') + (v < 0.5 ? 0 : 1)] };
       }
-      case T.TREE: case T.PINE: return { c: theme === 'volcanic' ? A.ash1 : theme === 'snow' ? A.snow1 : A['forest' + (v < 0.5 ? 0 : 1)] };
-      case T.PATH: return { c: A['path' + edge(isPathish)] };
-      case T.PAVE: case T.DOOR: case T.BUILD: return { c: A['pave' + edge((q) => isPathish(q))] };
-      case T.SAND: return { c: A['sand' + edge((q) => q !== T.GRASS && q !== T.TALL && q !== T.TREE && q !== T.FLOWER && q !== T.PINE)] };
-      case T.WATER: return { anim: this.N.cells['water' + mask((q) => q === T.WATER || q === T.BRIDGE)] };
+      case T.TREE: case T.PINE: return { c: theme === 'volcanic' ? A.ash1 : theme === 'snow' ? A.snow1 : pg ? A[g4()] : A['forest' + (v < 0.5 ? 0 : 1)] };
+      case T.PATH: if (A.q_path_f && theme !== 'snow') return quarts('path', isPathish);
+        return { c: A['path' + edge(isPathish)] };
+      case T.PAVE: case T.DOOR: case T.BUILD: if (A.q_pave_f && theme !== 'snow') return quarts('pave', isPathish);
+        return { c: A['pave' + edge((q) => isPathish(q))] };
+      case T.SAND: if (A.q_sand_f && theme !== 'snow') return quarts('sand', (q) => q !== T.GRASS && q !== T.TALL && q !== T.TREE && q !== T.FLOWER && q !== T.PINE);
+        return { c: A['sand' + edge((q) => q !== T.GRASS && q !== T.TALL && q !== T.TREE && q !== T.FLOWER && q !== T.PINE)] };
+      case T.WATER: if (this.N.cells.q_water_f) return quarts('water', (q) => q === T.WATER || q === T.BRIDGE || q === T.WHIRL, true);
+        return { anim: this.N.cells['water' + mask((q) => q === T.WATER || q === T.BRIDGE)] };
       case T.BRIDGE: { const ns = sensPont(m, x, y) === 'ns'; return { anim: this.N.cells.water15, bridge: ns ? A.bridge : A.bridgeEW || A.bridge }; }
       // une couleur par massif (par carré de 3 × 3 cases), avec parfois une fleur d'une autre couleur
       case T.FLOWER: { const nf = this.N.cells.flower5 ? 6 : 4, pv = hash(Math.floor(x / 3) + 101, Math.floor(y / 3) + 37), k = v < 0.85 ? Math.floor(pv * nf) : Math.floor(v * 97) % nf; return { anim: this.N.cells['flower' + k] || this.N.cells.flower0 }; }
@@ -1001,6 +1047,8 @@ export class WorldView {
       const t = m.get(x, y), g = this.groundCell(x, y), v = hash(x + 7, y + 3);
       if (g.c) flat(G, x, y, x + 1, y + 1, 0, g.c, g.shade);
       if (g.anim) flat(N, x, y, x + 1, y + 1, 0, g.anim);
+      if (g.q) for (let i = 0; i < 4; i++) { const qx = i & 1, qy = i >> 1; flat(g.qEau ? NO : O0, x + qx / 2, y + qy / 2, x + (qx + 1) / 2, y + (qy + 1) / 2, 0.003, g.q[i]); }
+      if (g.ov) flat(O0, x, y, x + 1, y + 1, 0.003, g.ov);
       if (g.bridge && !this.sol.couvre()) flat(G, x - 0.02, y, x + 1.02, y + 1, 0.012, g.bridge);   // le sol généré dessine ses pontons
       if (g.passerelle) flat(r3d ? PB : G, x, y, x + 1, y + 1, 0.012 + (r3d ? r3d.Hmarche(x + 0.5, y + 0.5) : 0), g.passerelle);
       // détails de l'herbe (touffes, trèfles, cailloux, fleurettes…) : une case d'herbe sur six environ, jamais deux
@@ -1040,12 +1088,26 @@ export class WorldView {
           if (!this.arbresUnis) key = variante(S, key, x, y);
           const r = S[key], cx = x + 0.5 + (v - 0.5) * 0.2, cz = y + 0.7;
           billboard(P, cx, cz, SW(r), SH(r), r, 0, this.arbresUnis ? vb > 0.5 : miroir(x, y), this.arbresUnis ? 1 : teinte(x, y, key.startsWith('snowpine') || key.startsWith('deadtree')));
-          this.ombreSol(Sh, cx - 0.75, cz - 0.3, cx + 0.75, cz + 0.3);
+          if (!this.packDecor) this.ombreSol(Sh, cx - 0.75, cz - 0.3, cx + 0.75, cz + 0.3);
         }
       } else if (t === T.FENCE) {
         // barrière : de face (rangée horizontale) ou vue dans l'axe (colonne nord-sud, le long d'un chemin vertical)
-        const vert = S.fence_v && m.get(x - 1, y) !== T.FENCE && m.get(x + 1, y) !== T.FENCE && (m.get(x, y - 1) === T.FENCE || m.get(x, y + 1) === T.FENCE || m.get(x - 1, y) === T.PATH || m.get(x + 1, y) === T.PATH);
-        const r = vert ? (m.get(x, y - 1) === T.FENCE ? S.fence_v : S.fence_v0 || S.fence_v) : S.fence; billboard(P, x + 0.5, y + (vert ? 0.75 : 0.6), SW(r), SH(r), r);
+        const vert = (S.barriere_v || S.fence_v) && m.get(x - 1, y) !== T.FENCE && m.get(x + 1, y) !== T.FENCE && (m.get(x, y - 1) === T.FENCE || m.get(x, y + 1) === T.FENCE || m.get(x - 1, y) === T.PATH || m.get(x + 1, y) === T.PATH);
+        if (S.barriere) {
+          // barrières de PixelForge (tools/pixelforge/barrieres.py) : chaque pièce tient dans la case qu'elle bloque,
+          // pieds des poteaux au bas de la case ; une ombre au sol en marque l'emprise
+          if (vert) {
+            const r = m.get(x, y - 1) === T.FENCE ? S.barriere_v : S.barriere_v0, px = BARR_POT[coteBarriere(m, x, y)];
+            billboard(P, x + px / 32 + SW(r) / 2, y + 0.94, SW(r), SH(r), r);
+            this.ombreSol(Sh, x + px / 32 - 0.08, y + 0.8, x + px / 32 + 0.24, y + 1.0);
+          } else {
+            const r = m.get(x + 1, y) === T.FENCE ? S.barriere : S.barriere_fin;
+            billboard(P, x + 0.5, y + 0.94, SW(r), SH(r), r);
+            this.ombreSol(Sh, x - 0.02, y + 0.8, x + 1.02, y + 1.0, 0.015, 'bande');
+          }
+        } else {
+          const r = vert ? (m.get(x, y - 1) === T.FENCE ? S.fence_v : S.fence_v0 || S.fence_v) : S.fence; billboard(P, x + 0.5, y + (vert ? 0.75 : 0.6), SW(r), SH(r), r);
+        }
       }
       else if (t === T.ROCK) { const r = S.rock; billboard(P, x + 0.5, y + 0.6, SW(r), SH(r), r); this.ombreSol(Sh, x + 0.05, y + 0.4, x + 0.95, y + 0.85); }
       else if (t === T.BUSH) { const r = S[this.arbresUnis ? 'bush' : variante(S, 'bush', x, y)]; billboard(P, x + 0.5, y + 0.6, SW(r), SH(r), r, 0, !this.arbresUnis && miroir(x, y), this.arbresUnis ? 1 : teinte(x, y)); }
@@ -1476,6 +1538,8 @@ export class WorldView {
         const mat = screenSprite(new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.5, side: THREE.DoubleSide }));
         this.tinted.push(mat); mat.color.copy(this.tint);
         const me = new THREE.Mesh(geo, mat); me.position.set(ax, hb, az); g.add(me); g.userData.b = b;
+        // le dessin dépasse l'emprise vers le nord : il s'estompe quand on passe derrière lui (toute sa hauteur, toute sa largeur)
+        g.userData.ecran = { zN: b.d - im.height / 32, x0: ax - W / 2 - b.x, x1: ax + W / 2 - b.x };
         this.root.add(g); this.buildingMeshes.push(g); return;
       }
     }
@@ -1570,7 +1634,7 @@ export class WorldView {
     const poser = (p, parent) => {
       const m0 = p.mat0;
       const mat0 = new THREE.MeshBasicMaterial({ map: m0.map || null, vertexColors: true, transparent: !!m0.transparent, opacity: m0.opacity ?? 1, side: m0.side, alphaTest: m0.alphaTest || 0 });
-      const mat = b.libres?.length && b.w * b.d <= GRILLE_MAX ? profondeurGrille(mat0, b) : frontDepth(mat0, zf);
+      const mat = b.libres?.length && b.w * b.d <= GRILLE_MAX ? profondeurGrille(mat0, b) : frontDepth(mat0, zf, parent === g);
       mat.userData.base = couleurBase(m0); mat.userData.ownTint = true; mat.userData.op0 = m0.transparent ? (m0.opacity ?? 1) : 1;
       const cle = m0.map?.userData?.cle || '';
       if (/^(verre|vr|vt|r#|rs|ev|ed)/.test(cle)) mat.userData.vitre = true;   // vitres : allumées la nuit
@@ -1590,12 +1654,28 @@ export class WorldView {
       for (const p of T.parts) poser(p, W);
       g.add(R); (this.tournants ||= new Set()).add(W);
     }
+    // sol de l'emprise : dalles (ou plancher) sous tout le bâtiment, juste au-dessus du sol généré. Les terrasses où
+    // l'on marche ne montrent plus le pavé bruité de la rue, et là où le modèle est plus étroit que son emprise, on ne
+    // voit plus l'ancienne tuile grise quadrillée
+    {
+      const pos = [], uv = [], col = [], y = 0.009;
+      for (let j = 0; j < b.d; j++) for (let i = 0; i < b.w; i++) {
+        const x0 = i / sx, x1 = (i + 1) / sx, z0 = j / sz, z1 = (j + 1) / sz;
+        pos.push(x0, y, z0, x0, y, z1, x1, y, z1, x0, y, z0, x1, y, z1, x1, y, z0);
+        uv.push(i, -j, i, -j - 1, i + 1, -j - 1, i, -j, i + 1, -j - 1, i + 1, -j);
+        for (let k = 0; k < 6; k++) col.push(1, 1, 1);
+      }
+      const tg = new THREE.BufferGeometry();
+      tg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); tg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); tg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      poser({ geo: tg, mat0: materiauTerrasse(mod.nom) }, g);
+      const me = g.children[g.children.length - 1]; me.userData.partage = false; me.material.depthWrite = false; me.renderOrder = -1;
+    }
     const sh = new Geo();
     this.ombreSol(sh, 0 - 0.1, b.d - 0.3, b.w + 0.1, b.d + 0.3, 0.012, 'bande');
     const ombre = new THREE.Mesh(sh.build(), this.mat.shadow); ombre.scale.set(1 / sx, 1, 1 / sz); g.add(ombre);
     g.userData.b = b; g.userData.modele = mod.nom;
     g.userData.ecran = empriseEcran(parts, mod, sx, sz);
-    g.userData.fumees = parts.fumees; g.userData.fanaux = parts.fanaux;
+    g.userData.fumees = parts.fumees; g.userData.fanaux = parts.fanaux; g.userData.portes = parts.portes; g.userData.ech = [sx, sz];
     return g;
   }
   buildWindowsGroup() { /* les fenêtres de nuit sont posées avec chaque bâtiment (fenetresBat) */ }
@@ -1742,7 +1822,7 @@ export class WorldView {
     const W = Math.round(img.width * scale) * WPX, H = Math.round(img.height * scale) * HPX;
     const geo = new THREE.PlaneGeometry(W, H); geo.translate(0, H / 2 - 3 * HPX * scale, 0);
     geo.setAttribute('anchor', new THREE.Float32BufferAttribute(new Array(12).fill(0), 3));
-    const mat = screenSprite(new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.5, side: THREE.DoubleSide })); this.tinted.push(mat); mat.color.copy(this.tint);
+    const mat = screenSprite(new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.5, side: THREE.DoubleSide }), AVANCE_PERSO); this.tinted.push(mat); mat.color.copy(this.tint);
     const mesh = new THREE.Mesh(geo, mat);
     const S = this.ombres.uv(1.6 * TILE_PX, 0.7 * TILE_PX), sg = new THREE.PlaneGeometry(1.6, 0.7); sg.rotateX(-Math.PI / 2);
     const uv = sg.attributes.uv; for (let i = 0; i < 4; i++) uv.setXY(i, i % 2 ? S[2] : S[0], i < 2 ? S[1] : S[3]);
@@ -1788,6 +1868,31 @@ export class WorldView {
   /** le dresseur par défaut d'un genre (recoloré aux couleurs de la tenue) */
   baseDe(genre) { const r = CHAR_ROWS[genre === 'f' ? 'player_f' : 'player_m']; return r == null ? null : { src: this.charsCanvas, sx: 0, sy: r * CHH }; }
   removeActor(id) { const a = this.actors.get(id); if (a) { a.dispose(); this.actors.delete(id); } }
+  /**
+   * Ouvre (ou referme) la porte du bâtiment dont l'entrée est la case (x, y) : le battant laisse voir le noir de
+   * l'intérieur, en trois crans depuis le milieu. Renvoie false si le bâtiment n'a pas de porte repérée (ancien rendu).
+   * Le repère vient du modèle (batiments3d.js : porte, porte2, portesVitrees).
+   */
+  porte(x, y, ouvert, tout = false) {
+    const g = (this.buildingMeshes || []).find((q) => { const b = q.userData.b; return b && b.doorY === y && (b.doorX === x || b.door2X === x) && q.userData.portes?.length; });
+    if (!g) return false;
+    const b = g.userData.b, [sx, sz] = g.userData.ech || [1, 1];
+    let t = g.userData.trou;
+    if (!t) {
+      // la porte la plus proche du milieu de l'entrée (une entrée de deux cases : entre les deux)
+      const cx = ((b.door2X !== undefined ? (b.doorX + b.door2X) / 2 : b.doorX) + 0.5 - b.x) / sx;
+      const P = g.userData.portes.reduce((a, q) => (Math.abs(q[0] - cx) < Math.abs(a[0] - cx) ? q : a));
+      const geo = new THREE.PlaneGeometry(P[3] * 0.94, P[4] * 0.97); geo.translate(0, P[4] * 0.485, 0);
+      const mat = frontDepth(new THREE.MeshBasicMaterial({ color: 0x16121e }), b.y + b.d + 0.035);
+      t = g.userData.trou = new THREE.Mesh(geo, mat); t.position.set(P[0], P[1], P[2] + 0.05 / sz); t.userData.k = 0; t.visible = false; g.add(t);
+    }
+    t.userData.cible = ouvert ? 1 : 0;
+    if (tout) { t.userData.k = t.userData.cible; t.scale.x = Math.max(0.001, t.userData.k); t.visible = t.userData.k > 0; }
+    (this.portesAnim ||= new Set()).add(t);
+    return true;
+  }
+  /** taille d'un pixel du jeu à l'écran (pixels de la page) : ce qui se dessine par-dessus le décor s'y cale */
+  pixelJeu() { return this.renderer.domElement.clientHeight / SPRITE_UNIFORMS.uRes.value.y / SPRITE_UNIFORMS.uEch.value; }
   /** position à l'écran (pixels de la page) d'un point de la carte, à h pixels au-dessus du sol (noms des autres joueurs) */
   screenPos(x, y, h = 34) {
     const v = new THREE.Vector3(x + 0.5, h * HPX + this.hAt(x + 0.5, y + 0.55), y + 0.55).project(this.camera);
@@ -1866,6 +1971,12 @@ export class WorldView {
       this.focus.set(Math.round((fx + 0.5) * TILE_PX) / TILE_PX, fh, s + fh / tan);
     }
     this.fadeBuildings(fx, fy, dt);
+    if (this.portesAnim?.size) for (const t of this.portesAnim) {
+      const u = t.userData; u.k += Math.sign(u.cible - u.k) * Math.min(Math.abs(u.cible - u.k), dt / 0.2);
+      const cran = Math.ceil(u.k * 3 - 1e-6) / 3;          // trois crans nets, pas un glissement
+      t.visible = cran > 0; t.scale.x = Math.max(0.001, cran);
+      if (u.k === u.cible) this.portesAnim.delete(t);
+    }
     if (this.tournants?.size) {
       const t = performance.now() / 1000, qz = new THREE.Quaternion(), Z = new THREE.Vector3(0, 0, 1);
       for (const W of this.tournants) {
@@ -1884,8 +1995,9 @@ export class WorldView {
       // de la caméra décale toute l'image d'un nombre entier de pixels, le sol ne « nage » pas en marchant
       // (?r3zoom=Z : vue Z fois plus large, pour regarder une montagne entière ; les sprites rapetissent d'autant)
       const z = this.r3zoom ??= Math.max(1, +(new URLSearchParams(globalThis.location?.search || '').get('r3zoom')) || 1);
-      if (z > 1) { SPRITE_UNIFORMS.uEch.value = z; this.rayon = Math.max(this.rayon || 2, Math.ceil(2 * z + 1)); }
-      const u = SPRITE_UNIFORMS.uRes.value, l = -u.x / 64 * z, t = u.y * Math.sin(EL) / 64 * z, n = 1, f = 4000;
+      const ze = z / (this.kPx || 1);
+      if (z > 1) { SPRITE_UNIFORMS.uEch.value = ze; this.rayon = Math.max(this.rayon || 2, Math.ceil(2 * z + 1)); }
+      const u = SPRITE_UNIFORMS.uRes.value, l = -u.x / 64 * ze, t = u.y * Math.sin(EL) / 64 * ze, n = 1, f = 4000;
       this.camera.projectionMatrix.set(2 / (2 * -l), 0, 0, 0, 0, 2 / (2 * t), 0, 0, 0, 0, -2 / (f - n), -(f + n) / (f - n), 0, 0, 0, 1);
       this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
       this._ortho = true;

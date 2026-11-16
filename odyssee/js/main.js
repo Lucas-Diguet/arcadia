@@ -3,6 +3,9 @@
 import * as THREE from 'three';
 import { WorldView } from './render/world3d.js';
 import { setArt } from './render/textures.js';
+import { packActif, solChoix } from './gfx.js';
+import { paletteMurs } from './render/murs-tex.js';
+try { document.documentElement.classList.add('gfx-' + solChoix()); } catch (e) { /* hors navigateur */ }
 import { buildWorld } from './world/region.js';
 import { Input } from './input.js';
 import { brancherManette } from './manette.js';
@@ -44,6 +47,12 @@ function incident(e) {
 addEventListener('error', (e) => incident(e.error || e.message));
 addEventListener('unhandledrejection', (e) => incident(e.reason));
 
+/** rendu natif : ?natif=1 / ?natif=0 dans l'adresse, sinon le choix gardé dans le navigateur (« odyssee-natif ») */
+function renduNatif() {
+  const q = new URLSearchParams(location.search).get('natif');
+  if (q != null) return q !== '0';
+  try { return localStorage.getItem('odyssee-natif') === '1'; } catch (e) { return false; }
+}
 async function boot() {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, stencil: true, powerPreference: 'high-performance' });   // stencil : ombres au sol sans double couche (render/ombres.js)
   renderer.setPixelRatio(1); renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -59,14 +68,16 @@ async function boot() {
   const art = await loadArt();
   prechauffe.length = 0;
   etape('images');
+  for (const [nom, pal] of Object.entries(packActif()?.murs || {})) paletteMurs(nom, pal);
   setArt({ kits: art.kits, sols: art.sols, sol32: art.sol32, hgss: art.hgss, relief: art.relief, pack: art.pack });
-  const view = new WorldView(renderer, art.chars, { sprites: art.sprites, dens: art.dens, suiveurs: art.suiveurs, batiments: art.batiments });
+  const view = new WorldView(renderer, art.chars, { sprites: art.sprites, dens: art.dens, suiveurs: art.suiveurs, batiments: art.batiments, packDecor: !!packActif()?.decor });
   etape('vue');
   const game = new Game({ view, ui, input, sound, world });
   // sauvegarde en ligne (compte du Hub) : chaque sauvegarde part aussi sur le serveur, regroupée
   const cloud = game.cloud = new Cloud();
   game.onSaved = (silent) => { if (silent) cloud.queue(game.state); };
-  const bye = () => { if (game.state && mode === 'game') { game.save(true); cloud.flush(); } };
+  // pas de sauvegarde en plein combat : elle garderait un état à moitié joué (PV, K.O., objets)
+  const bye = () => { if (game.state && mode === 'game' && !game.enCombat) { game.save(true); cloud.flush(); } };
   addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') bye(); });
   addEventListener('pagehide', bye);
   cloud.fetch();
@@ -77,7 +88,10 @@ async function boot() {
     // le monde : une case fait 32 pixels de rendu, environ 12 cases de haut comme sur DS (agrandi d'un facteur entier)
     const scale = Math.max(1, Math.round(innerHeight / 400));
     const iw = Math.ceil(innerWidth / scale), ih = Math.ceil(innerHeight / scale);
-    renderer.setSize(iw, ih, false); view.resize(iw, ih);
+    // rendu natif (?natif=1, ou Options → Graphismes) : même cadrage, mais la géométrie est tracée à la résolution de
+    // l'écran (arêtes des bâtiments et du relief nettes en 4K) ; textures, sprites et particules gardent leurs pixels
+    if (renduNatif()) { renderer.setSize(iw * scale, ih * scale, false); view.resize(iw * scale, ih * scale, scale); }
+    else { renderer.setSize(iw, ih, false); view.resize(iw, ih, 1); }
     // l'interface garde son propre pas de pixel
     const ui = Math.max(2, Math.round(innerHeight / 270));
     document.documentElement.style.setProperty('--px', ui + 'px');
@@ -109,15 +123,16 @@ async function boot() {
   /* ---------------- écran titre ---------------- */
   for (;;) {
     sound.play('title');
-    const title = el('div', 'title-scr', `<canvas class="title-cv" width="256" height="192"></canvas><div class="logo"><div class="logo-main">ODYSSÉE</div></div><div class="press">Appuie sur F ou Entrée</div><div class="title-foot">H : aide des touches</div>`);
+    const title = el('div', 'title-scr', `<canvas class="title-cv" width="256" height="192"></canvas><div class="logo"><div class="logo-main">ODYSSÉE</div></div><div class="press">${matchMedia('(pointer: coarse)').matches ? 'Touche l\'écran' : 'Appuie sur F ou Entrée'}</div><div class="title-foot">H : aide des touches</div>`);
     uiRoot.appendChild(title);
     const stopSea = titleSea(title.querySelector('canvas'), art.title);
-    await new Promise((res) => { const pop = input.push((k) => { if (k === 'a') { pop(); sound.init(); sound.sfx('select'); res(); } }); });
+    // au clavier, à la manette, ou d'un simple toucher (ou clic) sur l'écran titre
+    await new Promise((res) => { let fini = false; const go = () => { if (fini) return; fini = true; pop(); removeEventListener('pointerdown', go); sound.init(); sound.sfx('select'); res(); }; const pop = input.push((k) => { if (k === 'a') go(); }); addEventListener('pointerdown', go); });
     title.querySelector('.press').remove();
     // la sauvegarde en ligne a quelques secondes pour répondre (le serveur peut être en train de se réveiller)
     if (cloud.on && cloud.remote === undefined) await Promise.race([cloud.fetch(), wait(2500)]);
     let info = null;
-    if (Game.hasSave()) { try { info = JSON.parse(localStorage.getItem(Game.SAVE_KEY)); } catch (e) {} }
+    if (Game.hasSave()) info = Game.lireSauvegarde();   // la sauvegarde, ou sa copie de secours si elle est abîmée
     const remote = cloud.remote?.state || null;
     const newer = remote && (!info || (remote.time || 0) > (info.time || 0) + 5);
     const has = !!info || !!remote;
