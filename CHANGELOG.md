@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 5.99 — 16 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : la roche fissurée roule du côté où tu la pousses avec Force (si la place est prise, elle part sur le côté).
+
 ## 5.98 — 16 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : une aide pour les casse-têtes de la sépulture.
   - Battu, le chef de Sable-Noir demande à voir le trésor. Au troisième brasier rallumé, il te rejoint et se poste près du sarcophage.

@@ -751,10 +751,14 @@ export const Tombeau = {
     if (!g.hasField('force')) { await ui.say([look, 'Un Pokémon très costaud pourrait la pousser.']); return; }
     if (!(await ui.yesNo(`${look}\nUtiliser Force ?`))) return;
     const mon = g.fieldUser(); if (mon) g.sound.cry(ASSETS.cry(mon.sp));
-    const r = await this.demande(d.id, { a: 'maj', salle: 's1', donnees: { trou: true } });
+    // la roche roule du côté où l'on pousse (s'il y a de la place), sinon sur le côté prévu (E.decale)
+    const p = g.player, X = E.carte, sens = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[p.dir] || [0, 1];
+    const libre = (u, v) => walkable(X.get(u, v)) && !X.deco.some((q) => q.x === u && q.y === v) && !X.npcs.some((n) => n.x === u && n.y === v) && !(u === p.x && v === p.y);
+    const vers = [[x + sens[0], y + sens[1]], [x + sens[1], y + sens[0]], [x - sens[1], y - sens[0]], E.decale].find(([u, v]) => libre(u, v)) || E.decale;
+    const r = await this.demande(d.id, { a: 'maj', salle: 's1', donnees: { trou: true, roche: vers } });
     if (!r.ok) { await ui.say('L\'hôte du salon ne répond pas...'); return; }
     g.sound.sfx('ledge'); g.view.shake = 0.3;
-    await ui.say([`${mon ? monName(mon) : 'Ton Pokémon'} utilise Force !`, 'La roche roule sur le côté : dessous, un trou ! Une vieille échelle descend dans le noir.']);
+    await ui.say([`${mon ? monName(mon) : 'Ton Pokémon'} utilise Force !`, 'La roche roule plus loin : dessous, un trou ! Une vieille échelle descend dans le noir.']);
   },
   /** le trou des pilleurs : la roche fissurée laisse place à une échelle (on y descend en marchant dessus) */
   ouvrirTrou(d, ouvert) {
@@ -763,7 +767,8 @@ export const Tombeau = {
     const g = this.game, E = g.world.maps[d.carte].donjon.exterieur; if (!E) return;
     const X = E.carte, [x, y] = E.porte;
     // la roche roule d'une case sur le côté (E.decale) et laisse voir l'échelle
-    const [ax, ay] = E.decale, roche = (u, v) => X.deco.some((q) => q.x === u && q.y === v && q.k === 'rocher_grand');
+    // (à la remise à zéro, on rend sa place à la roche là où elle avait roulé)
+    const [ax, ay] = ouvert ? (this.rochePos = this.dTombeau(d, 's1').roche || E.decale) : (this.rochePos || E.decale), roche = (u, v) => X.deco.some((q) => q.x === u && q.y === v && q.k === 'rocher_grand');
     if (ouvert) {
       X.set(x, y, T.SAND); X.under.delete(cle(x, y)); X.deco = X.deco.filter((q) => !(q.x === x && q.y === y)); X.deco.push({ k: 'ladder', x, y });
       if (!roche(ax, ay)) { E.solDecale ??= X.get(ax, ay); X.prop('rocher_grand', ax, ay); }
