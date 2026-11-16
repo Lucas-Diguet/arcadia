@@ -194,7 +194,7 @@ const GARDIEN = (table, boss) => [
 const PORTES = (a, b, c) => [
   '#######################',
   `###${a}#######${b}#######${c}###`,
-  '#.....................#',
+  '#...ⓕ.......ⓔ.......ⓟ..#',   // un panneau à côté de chaque porte
   '#.....................#',
   '#.....................#',
   '#.....................#',
@@ -304,15 +304,16 @@ const DEF_TEMPLE = {
     '{': { type: 'statue', decor: 'socle_statue', sp: 6, grand: true },
     '}': { type: 'statue', decor: 'socle_statue', sp: 3, grand: true },
     // à trois : une porte par joueur
+    'ⓕ': { type: 'panneau', texte: 'VOIE DU FEU' }, 'ⓔ': { type: 'panneau', texte: 'VOIE DE L\'EAU' }, 'ⓟ': { type: 'panneau', texte: 'VOIE DE LA FORÊT' },
     F: { type: 'voie', decor: 'porte_feu_pf', voie: 'f' },
     A: { type: 'voie', decor: 'porte_eau_pf', voie: 'e' },
     H: { type: 'voie', decor: 'porte_plante_pf', voie: 'p' },
     // en solo : les mêmes portes ; celles du Feu et de l'Eau sont scellées tant qu'on n'est pas arrivé derrière
     R: { type: 'porteSolo', decor: 'porte_feu_pf', chemin: 'f' },
     // Salle des Clés du solo : les portes qui ramènent au bout de chaque chemin
-    'Ⓕ': { type: 'retourChemin', decor: 'porte_feu_pf', chemin: 'f' },
-    'Ⓔ': { type: 'retourChemin', decor: 'porte_eau_pf', chemin: 'e' },
-    'Ⓟ': { type: 'retourChemin', decor: 'porte_plante_pf', chemin: 'p' },
+    'Ⓕ': { type: 'retourChemin', decor: 'porte_feu', chemin: 'f' },
+    'Ⓔ': { type: 'retourChemin', decor: 'porte_eau', chemin: 'e' },
+    'Ⓟ': { type: 'retourChemin', decor: 'porte_plante', chemin: 'p' },
     U: { type: 'porteSolo', decor: 'porte_eau_pf', chemin: 'e' },
     W: { type: 'porteSolo', decor: 'porte_plante_pf', chemin: 'p' },
     // le décor des chemins

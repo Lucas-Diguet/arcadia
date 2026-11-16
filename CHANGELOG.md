@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.6 — 16 novembre 2026
+- **TestOdyssée** — Temple des Éléments : un panneau à côté de chaque porte des trois voies (Voie du Feu, de l'Eau, de la Forêt). Les portes de la Salle des Clés reprennent leur ancien dessin.
+
 ## 6.5 — 16 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom, la sépulture :
   - On y voit un peu plus loin autour de soi en entrant.
