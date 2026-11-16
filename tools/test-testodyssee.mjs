@@ -1667,7 +1667,7 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   ok(liens.filter(([, o]) => o.type === 'lien').every(([c, o]) => d.objets[o.cible].cible === c), 'contes : chaque passage a son pendant de l\'autre côté');
   const sorties = ['α', 'β', 'γ', 'δ', 'ε'].filter((c) => M.lab.donjon.plan.objets[c]);
   ok(sorties.length === 5 && sorties.every((c) => d.objets[c].conte), 'contes : le labyrinthe a cinq sorties, une par conte');
-  ok(d.salles.find((q) => q.id === 'lab').nuit && [0, 1, 2, 3, 4].every((n) => world.maps['labo:contes:dehors']?.deco.some((q) => q.k === 'sac' + n)), 'contes : le labyrinthe est dans la pénombre, cinq sacs de cailloux attendent sur la place, devant l\'entrée');
+  ok(d.salles.find((q) => q.id === 'lab').nuit && [0, 1, 2, 3, 4].every((n) => world.maps['labo:contes:dehors']?.deco.some((q) => q.k === 'sac' + n)), 'contes : cinq sacs de cailloux attendent sur la place, devant l\'entrée');
   ok(M.lab.w >= 97 && M.cr1.w >= 60 && M.cr1.h >= 45 && M.cr2.w >= 60, 'contes : un grand labyrinthe, deux salles de forêt de la taille d\'une voie du Temple');
   ok(['hg1', 'hgj', 'hg2', 'hgd', 'hg3', 'hg4', 'hg5', 'hggm', 'hgeg', 'hgef', 'hgbib'].every((id) => M[id]) && d.objets['σ'].bloque === 'grenier'
     && [2, 3, 4].every((e) => { const P = M['hg' + e].donjon.plan, portes = Object.keys(P.objets).filter((c) => d.objets[c].type === 'lien' && !d.objets[c].escalier && !d.objets[c].bloque); return portes.length === 10 && new Set(P.sol.map(([x]) => x)).size === 5; }),

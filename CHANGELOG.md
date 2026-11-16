@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.9 — 16 novembre 2026
+- **TestOdyssée** — Bois des Contes : le labyrinthe de haies n'est plus plongé dans le noir.
+
 ## 6.8 — 16 novembre 2026
 - **TestOdyssée** — Salle de l'Horloge (prototype) : une horloge gigantesque suspendue dans le vide, dont les aiguilles sont des passerelles.
   - Des leviers font tourner chaque aiguille ; la vis du centre fait tourner les deux et les fait monter ou descendre d'un étage, en emportant ceux qui sont dessus.

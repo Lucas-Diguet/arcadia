@@ -115,7 +115,6 @@ export const Contes = {
       if (P.sortie) { m.set(...P.sortie, T.PATH); m.deco = m.deco.filter((q) => !(q.k === 'exitlight' && q.x === P.sortie[0] && q.y === P.sortie[1])); const ws = m.warpAt(...P.sortie); if (ws) ws.step = true; }
     }
     // le labyrinthe : de vraies haies, hautes, à la place des buissons
-    if (s?.nuit) m.dark = 'arene';
     // (une haie qui en a une autre devant elle ne montre que son dessus : une haie verticale est une barre, pas des blocs)
     if (s.haies) {
       const H = new Set();
@@ -183,7 +182,7 @@ export const Contes = {
   tickContes(dt) {
     const g = this.game, d = this.contesIci(), m = g.mapObj, s = d && this.salleContes(d);
     g.ui.root.classList.toggle('penombre', !!s?.sombre);
-    g.ui.root.classList.toggle('demi-nuit', !!s?.nuit || !!m?.vueLarge);
+    g.ui.root.classList.toggle('demi-nuit', !!m?.vueLarge);   // (le labyrinthe des contes n'est plus dans le noir)
     this.tickCailloux(d, s, dt);   // le débarras : on voit à quelques cases, pas plus
     if (!s) { if (this.zzzGeant) { dessinerZzz(g.view, []); this.zzzGeant = false; } this.bruit = 0; return; }
     // le géant ronfle

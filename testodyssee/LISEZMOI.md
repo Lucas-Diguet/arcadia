@@ -830,8 +830,7 @@ sont prises en charge par `donjon/plan.js`. Passages (`lien`, comme au Tombeau) 
 d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
 - Labyrinthe des Haies (`lab`, 49 × 49, généré ; `haies: true` : les buissons deviennent de hautes haies, `img/contes/haie0-2.png`) : entrée en bas depuis l'Orée des Contes, clairière vide au centre, cinq
   sorties avec leur pancarte (Hansel et Gretel, Chaperon rouge, Pinocchio, Jack, Boucle d'or).
-- Le labyrinthe (`lab`, 97 × 97, `LABYRINTHE`) : dans la pénombre (`nuit` : on ne voit qu'un cercle, la moitié de
-  l'écran ; classe `demi-nuit`). Sur la place devant l'entrée (dehors, `SACS_PLACE`), cinq sacs de cailloux de couleur (`CAILLOUX`), un par joueur.
+- Le labyrinthe (`lab`, 97 × 97, `LABYRINTHE`) : en plein jour (`nuit` ne sert plus qu'aux cailloux). Sur la place devant l'entrée (dehors, `SACS_PLACE`), cinq sacs de cailloux de couleur (`CAILLOUX`), un par joueur.
   Touche W (code `KeyZ`, libre dans Odyssée) ou bouton du journal : poser un caillou à ses pieds, ou reprendre le sien.
   État dans la salle `lab` : `sac_<joueur>`, `k<x>_<y>` (n° de couleur + 1, 0 = repris) ; tout le groupe voit les cailloux
   (`dessinerCailloux` de `js/rendu.js`, dessinés par-dessus les haies, qui cachent le sol des allées horizontales).
