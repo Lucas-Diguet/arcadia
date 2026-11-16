@@ -11,6 +11,9 @@ import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { glisser, faisceau, refleter, cle, cheminGlace, reponseJuste } from './casse-tetes.js';
 import { ouvrir } from './plan.js';
 import { IMAGES } from '../contenu.js';
+
+const SENS = ['down', 'left', 'right', 'up'];
+function retirerCopycat(v) { for (const s of SENS) if (v.actors.has('copycat:' + s)) v.removeActor('copycat:' + s); }
 import { dessinerFaisceaux, dessinerMiroir } from '../rendu.js';
 
 const estMiroirs = (d) => d.salles.some((s) => s.type === 'reflet' || s.type === 'lumiere');
@@ -89,10 +92,10 @@ export const Miroirs = {
         const k = cle(x, y);
         if (o.type === 'miroirMural') this.decor(m, x, y, o.juste && faitE ? null : (DE.brises || []).includes(c) ? 'miroir_brise' : o.decor || 'miroir_mur');
         else if (o.type === 'miroirSecret') this.decor(m, x, y, faitE ? null : o.decor || 'miroir_mur');
-        else if (o.type === 'miroirPoche') this.decor(m, x, y, D2.pris?.[k] ? null : 'miroir_poche');
-        else if (o.type === 'miroirFixe') this.decor(m, x, y, (D4.orient?.[k] ?? o.sens) === '/' ? 'miroir_d' : 'miroir_g');
-        else if (o.type === 'socle') { const s = D4.socles?.[k]; this.decor(m, x, y, s ? (s === '/' ? 'miroir_d' : 'miroir_g') : 'socle'); }
-        else if (o.type === 'brasier') this.decor(m, x, y, (D4.feux || 0) >= 5 ? 'brasier_on' : 'brasier');
+        else if (o.type === 'miroirPoche') this.decor(m, x, y, D2.pris?.[k] ? null : 'miroir_poche2');
+        else if (o.type === 'miroirFixe') this.decor(m, x, y, (D4.orient?.[k] ?? o.sens) === '/' ? 'miroir_pied_d' : 'miroir_pied_g');
+        else if (o.type === 'socle') { const s = D4.socles?.[k]; this.decor(m, x, y, s ? (s === '/' ? 'miroir_pied_d' : 'miroir_pied_g') : 'socle'); }
+        else if (o.type === 'brasier') this.decor(m, x, y, (D4.feux || 0) >= 5 ? 'fourneau_on' : 'fourneau');
         else if (o.type === 'soleil') this.decor(m, x, y, (D4.soleils || []).includes(k) ? 'soleil_on' : 'soleil');
       }
     }
@@ -375,11 +378,14 @@ export const Miroirs = {
   async dessinerReflet(dt) {
     const R = this.reflet, g = this.game, v = g.view;
     this.dessinerGlace(R && this.refletActif(R.d) ? R.d : null);
-    if (!R || !this.refletActif(R.d)) { if (v.actors.has('copycat')) v.removeActor('copycat'); return; }
-    if (!this.imgCopycat) { if (!this.chargeCopycat) this.chargeCopycat = loadImg(IMAGES.copycat).then((im) => { this.imgCopycat = im; }); return; }
+    if (!R || !this.refletActif(R.d)) { retirerCopycat(v); return; }
+    // Copycat a le dessin du copieur d'Odyssée, tourné comme il marche (64 pixels par case : échelle 1/2)
+    if (!this.imgCopycat) { if (!this.chargeCopycat) this.chargeCopycat = Promise.all(SENS.map((s) => loadImg(IMAGES['copycat_' + s]))).then((ims) => { this.imgCopycat = Object.fromEntries(SENS.map((s, i) => [s, ims[i]])); }); return; }
     let x = R.x, y = R.y;
     if (R.move) { R.move.t += dt / R.move.dur; const u = Math.min(1, R.move.t); x = R.move.fx + (R.x - R.move.fx) * u; y = R.move.fy + (R.y - R.move.fy) * u; if (R.move.t >= 1) R.move = null; }
-    const a = v.imageActor('copycat', this.imgCopycat, 1.2);
+    const sens = SENS.includes(R.dir) ? R.dir : 'down', id = 'copycat:' + sens;
+    for (const s of SENS) if (s !== sens && v.actors.has('copycat:' + s)) v.removeActor('copycat:' + s);
+    const a = v.imageActor(id, this.imgCopycat[sens], 0.5);
     v.place(a, x, y, R.move ? Math.abs(Math.sin(R.move.t * Math.PI)) * 0.08 : 0);
   },
   /** le grand miroir le long de la ligne du milieu, et le reflet du joueur quand il s'y colle */
@@ -413,7 +419,7 @@ export const Miroirs = {
     if (!this.refletActif(d) || R.x !== p.x + dx || R.y !== p.y + dy || R.move) return false;
     g.busy = true;
     try {
-      const res = await this.combat({ cls: 'Mime', nom: 'Copycat', bs: 'copycat_combat', copie: true }, copieSoignee(g.state.party));
+      const res = await this.combat({ cls: 'Mime', nom: 'Copycat', bs: 'copieur', copie: true }, copieSoignee(g.state.party));
       if (res !== 'win') { await ui.say(d.textes.copycatGagne); this.placerReflet(d); await this.defaite(d); return true; }
       await ui.say(d.textes.copycatBattu, { speaker: 'Copycat' });
       await this.trophee(d);
@@ -510,7 +516,7 @@ export const Miroirs = {
     const vue = d && g.mapObj?.salle ? d.salles.find((s) => s.id === g.mapObj.salle)?.vue || 1 : 1;
     if (g.state && vue !== this.vueVoulue) { this.vueVoulue = vue; g.onVue?.(vue); }
     if (!d && this.errants) this.tickErrants(null, dt);
-    if (!d) { if (g.view.actors.has('copycat')) g.view.removeActor('copycat'); if (g.view.actors.has('reflet-joueur')) g.view.removeActor('reflet-joueur'); dessinerMiroir(g.view, null); return; }
+    if (!d) { retirerCopycat(g.view); if (g.view.actors.has('reflet-joueur')) g.view.removeActor('reflet-joueur'); dessinerMiroir(g.view, null); return; }
     // indice du PC : tracé au sol tant qu'on est dans sa salle
     if (this.indice && g.mapObj.id === this.indice.carte && (!this.indice.dessine || g.view.__faisceauxRoot !== g.view.root)) { dessinerFaisceaux(g.view, this.indice.traits); this.indice.dessine = true; }
     if (this.salleDe(d, 'lumiere')) { this.dessinerLumiere(d); this.tickErrants(d, dt); }

@@ -43,7 +43,7 @@ export default {
   equipe: 'milieu',
   exterieur,
   decor: { X: 'cristal', T: 'colonne' },
-  portesDecor: { 4: 'porte_miroirs' },
+  portesDecor: { 4: 'porte_miroir' },
   objets: {
     M: { type: 'miroirSecret', decor: 'miroir_mur', reponses: ['secret', 'silence'] },
     P: { type: 'enigme', decor: 'sign' },
@@ -56,12 +56,12 @@ export default {
     A: { type: 'miroirMural', decor: 'miroir_mur', juste: true },
     B: { type: 'miroirMural', decor: 'miroir_mur' },
     C: { type: 'miroirMural', decor: 'miroir_mur' },
-    p: { type: 'miroirPoche', decor: 'miroir_poche' },
-    q: { type: 'miroirPoche', decor: 'miroir_poche', piege: true },
-    F: { type: 'brasier', decor: 'brasier' },
+    p: { type: 'miroirPoche', decor: 'miroir_poche2' },
+    q: { type: 'miroirPoche', decor: 'miroir_poche2', piege: true },
+    F: { type: 'brasier', decor: 'fourneau' },
     L: { type: 'soleil', decor: 'soleil' },
-    f: { type: 'miroirFixe', decor: 'miroir_d', sens: '/' },
-    g: { type: 'miroirFixe', decor: 'miroir_g', sens: '\\' },
+    f: { type: 'miroirFixe', decor: 'miroir_pied_d', sens: '/' },
+    g: { type: 'miroirFixe', decor: 'miroir_pied_g', sens: '\\' },
     o: { type: 'socle', decor: 'socle' },
     E: { type: 'plaque', mur: true, affiche: 'Qui se perd dans son reflet peut toujours revenir au début.' },
     K: { type: 'copycat', sol: true },
@@ -70,7 +70,7 @@ export default {
   // une carte par salle : on passe de l'une à l'autre par N (en haut) et on revient par D (en bas)
   // la pancarte de classement : contre le mur de gauche de la première salle
   classements: [{ id: 'solo', nom: 'Donjon des Miroirs' }],
-  pancartesClassement: [{ classement: 'solo', salle: 's1', cote: 'gauche' }],
+  pancartesClassement: [{ classement: 'solo', salle: 's0', cote: 'gauche' }],
   salles: [
     { id: 's0', nom: 'Salle du Secret', type: 'enigme', porteObjet: 'M', suivi: 'parle au miroir', plan: [
       '###########',

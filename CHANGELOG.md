@@ -1,5 +1,12 @@
 # Journal des versions — Arcadia
 
+## 6.1 — 16 novembre 2026
+- **TestOdyssée** — Donjon des Miroirs : nouveaux dessins.
+  - Les miroirs de poche, les miroirs sur pied de la Salle du Brasier et la grande porte de la Salle du Reflet sont redessinés.
+  - Le brasier devient un vieux fourneau à charbon en fonte noire.
+  - Copycat a une nouvelle apparence, sur le terrain comme en combat.
+  - La pancarte du classement est dans la première salle, celle du miroir qui parle.
+
 ## 6.0 — 16 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la sépulture change de visage.
   - Le sarcophage d'or et les grands brasiers de l'autel ont de nouveaux dessins ; le sarcophage est vide quand le roi se dresse.
