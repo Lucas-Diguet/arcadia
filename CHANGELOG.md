@@ -1,5 +1,20 @@
 # Journal des versions — Arcadia
 
+## 6.2 — 16 novembre 2026
+- **TestOdyssée** — Musée des Dunes : un vrai musée à l'antique.
+  - Tout en longueur : on passe d'une salle à l'autre, du hall à la Galerie des Fossiles (avec les statues de Ptéra, Kabutops, Amonistar, Charkos…), puis aux caravanes et aux écrits anciens. Le sceptre est tout au bout.
+  - Plus de garde devant l'arène : c'est le guide, à l'intérieur, qui dit que le champion est parti au musée.
+  - L'homme devant le sceptre parle de la légende du roi et du trésor caché dans son cercueil, sans en dire plus.
+  - En sortant de l'arène, deux policiers discutent déjà devant la porte. Ils parlent d'une relique volée et posent de meilleures questions.
+- **TestOdyssée** — Tombeau du Roi Sans Nom :
+  - La sépulture regorge d'or : montagnes de pièces, coffres pleins, jarres renversées.
+  - Nouvelles torchères dans tout le tombeau, nouveaux brasiers près des stèles, nouvelle porte égyptienne au -10.
+  - Les morts-vivants ressemblent à des zombies, sur le terrain comme en combat.
+  - Au -3, on voit le passage gardé par les deux portiers.
+- **TestOdyssée** — Temple des Éléments : nouvelles portes pour les chemins du Feu, de l'Eau et de la Plante.
+- **TestOdyssée** — Sanctuaire des Trois Voies : on voit plus loin dans les salles sombres.
+- **TestOdyssée** — Bois des Contes : les sacs de cailloux sont sur la place, devant l'entrée du labyrinthe.
+
 ## 6.1 — 16 novembre 2026
 - **TestOdyssée** — Donjon des Miroirs : nouveaux dessins.
   - Les miroirs de poche, les miroirs sur pied de la Salle du Brasier et la grande porte de la Salle du Reflet sont redessinés.

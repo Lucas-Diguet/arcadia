@@ -113,6 +113,7 @@ export default {
   exterieur,
   preparer,
   voies: VOIES,
+  vueLarge: true,   // salles sombres : on y voit comme dans le labyrinthe du Bois des Contes
   portesDecor: { 1: 'porte_grille' },
   decor: { '%': 'caverock', '&': 'stalag', '~': 'fontaine' },
   objets: {

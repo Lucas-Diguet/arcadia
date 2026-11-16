@@ -97,6 +97,7 @@ export function construireSalles(def) {
     m.salle = s.id;
     if (s.sol) m.solSalle = s.sol;   // sol d'une autre couleur que celui du style
     if (s.sombre) m.dark = 'arene';   // dans le noir, même avec Flash
+    if (s.sombre && def.vueLarge) m.vueLarge = true;   // ... mais on y voit sur la moitié de l'écran, en cercle (comme le labyrinthe des contes)
     return m;
   });
   // salle suivante : s.suivante, sinon celle d'après dans la liste (une salle des voies n'a pas de suite directe) ;
@@ -116,9 +117,18 @@ export function construireSalles(def) {
   return cartes;
 }
 /** passage vers la salle suivante : ouvert (case de sortie éclairée) ou muré */
-export function passageSuivant(m, ouvert) {
+export function passageSuivant(m, ouvert, vu = false) {
   const P = m.donjon.plan, w = m.donjon.versSuivante; if (!P.suivante || !w) return false;
-  const [x, y] = P.suivante, deja = m.get(x, y) === T.CAVEDOOR;
+  const [x, y] = P.suivante;
+  // passage « vu » (salle.passageVu) : fermé, on voit quand même l'ouverture dans la roche, sans pouvoir y entrer
+  if (vu) {
+    const deja = m.warps.has(x + ',' + y), creuse = m.get(x, y) !== T.CAVEDOOR;
+    if (ouvert === deja && !creuse) return false;
+    m.set(x, y, T.CAVEDOOR);
+    if (ouvert) { if (!deja) m.warp(x, y, w); } else m.warps.delete(x + ',' + y);
+    return true;
+  }
+  const deja = m.get(x, y) === T.CAVEDOOR;
   if (ouvert === deja) return false;
   if (ouvert) { m.set(x, y, T.CAVEDOOR); m.warp(x, y, w); m.deco.push({ k: 'exitlight', x, y }); }
   else { m.set(x, y, T.CAVEWALL); m.warps.delete(x + ',' + y); m.deco = m.deco.filter((d) => !(d.x === x && d.y === y)); }

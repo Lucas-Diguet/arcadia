@@ -3,7 +3,7 @@
 // latéraux et le mur du bas sont de vrais volumes coiffés d'un chaperon (le dessus du mur, bordé d'une arête claire
 // côté pièce). Fenêtres posées sur le haut du mur du fond, ombre portée des murs sur le sol.
 // Tuiles (atlas du décor) : murh_<style>, murb_<style>, cap_<style>, fen_<style>, plus ombre_n / ombre_o / ombre_e.
-// Styles : in0…in3 (maisons, papier peint tiré de l'identifiant de la carte), center, mart, lab, gym, league, cendre.
+// Styles : in0…in3 (maisons, papier peint tiré de l'identifiant de la carte), center, mart, lab, gym, league, cendre, antique (Musée des Dunes du labo).
 
 const rgba = (h) => { const n = parseInt(h.slice(1, 7), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255, h.length > 7 ? parseInt(h.slice(7, 9), 16) : 255]; };
 function toile(draw, graine = 7) {
@@ -33,6 +33,7 @@ const STYLES = {
   lab: { fond: '#f2f4f6', motif: '#e2e6ea', motifK: 'carreaux', lam: '#b8c0c8', lamC: '#d8dee4', lamS: '#8a929a', cim: '#6a7480', pl: '#4a525c', cap: '#5a6470', capC: '#a8b0bc' },
   gym: { fond: '#c8ccd8', motif: '#b4b8c6', motifK: 'pierres', lam: '#8a8ea0', lamC: '#a8acbe', lamS: '#6a6e80', cim: '#e0e4f0', pl: '#4a4e60', cap: '#4a4e60', capC: '#9a9eb0' },
   league: { fond: '#6c5c9c', motif: '#7c6cac', motifK: 'losanges', lam: '#4c3c7c', lamC: '#6c5c9c', lamS: '#342860', cim: '#e8c860', pl: '#241a44', cap: '#3a2c66', capC: '#a090d8' },
+  antique: { fond: '#dcc48e', motif: '#c8ac72', motifK: 'pierres', lam: '#9a7840', lamC: '#b8945a', lamS: '#76582c', cim: '#d4a838', pl: '#4a3418', cap: '#5a4224', capC: '#c0a060' },
   cendre: { fond: '#5a4a44', motif: '#4a3c36', motifK: 'pierres', lam: '#3e322c', lamC: '#5a4a42', lamS: '#2a201c', cim: '#8a6a50', pl: '#1e1612', cap: '#2e2420', capC: '#6a5444' },
 };
 /** style des murs d'une carte d'intérieur (null : on garde l'ancien rendu) */

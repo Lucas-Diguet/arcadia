@@ -165,7 +165,7 @@ export const Tombeau = {
   appliquerSepulture(d) {
     const s = d.salles.find((q) => q.id === 'g11'), m = s && this.game.world.maps[s.carte]; if (!m?.tomb || this.cinematique) return;
     const E = this.dTombeau(d, 'g11'), feux = E.feux || [], O = m.donjon.plan.objets, c = O['ǂ'][0];
-    for (const [x, y] of O['Ϙ'] || []) this.propTombeau(m, x, y, feux[numeroCercle(x, y, c)] ? 'brasier_on' : 'brasier');
+    for (const [x, y] of O['Ϙ'] || []) this.propTombeau(m, x, y, feux[numeroCercle(x, y, c)] ? 'brasier_stele' : 'brasier_stele_off');
     for (const [x, y] of O['ȶ'] || []) this.propTombeau(m, x, y, E.torches ? 'brasier_autel' : 'brasier_autel_off');
     for (const [x, y] of O['ǂ'] || []) this.propTombeau(m, x, y, !E.ouvert ? 'sarcophage_roi' : this.roiDebout ? 'sarcophage_roi_vide' : 'sarcophage_roi_ouvert');
   },
@@ -203,6 +203,8 @@ export const Tombeau = {
       if (passe && m4.warps.has(k)) { m4.warps.delete(k); m4.deco = m4.deco.filter((q) => !(q.x === x && q.y === y)); }
       if (passe) this.decorTombeau(m4, x, y, 'eboulement');
     }
+    // le passage du -4, derrière les deux portiers : une ouverture de deux cases dans la roche
+    if (m3?.donjon.plan.suivante) { const [x, y] = m3.donjon.plan.suivante; if (m3.get(x + 1, y) !== T.CAVEDOOR) { m3.set(x + 1, y, T.CAVEDOOR); if (g.mapObj === m3) g.view.rebuildAt(x + 1, y); } }
     if (m3?.donjon.plan.suivante && passe) { const [x, y] = m3.donjon.plan.suivante; this.decorTombeau(m3, x, y + 1, 'eboulement'); this.decorTombeau(m3, x + 1, y + 1, 'caverock'); }
     // au -6 et au -7, les corps et les mourants n'apparaissent qu'avec la lutte
     for (const id of ['p6', 'p7']) { const m = M(id); for (const [x, y, k] of m?.tomb?.apres || []) this.decorTombeau(m, x, y, etape >= 2 ? k : null); }
@@ -212,7 +214,7 @@ export const Tombeau = {
     if (m7 && E7.sable && !m7.deco.some((q) => q.k === 'sable_mouvant')) { const [x, y] = E7.sable; m7.deco.push({ k: 'sable_mouvant', x, y }); if (g.mapObj === m7) { g.view.decoAt.set(cle(x, y), m7.deco[m7.deco.length - 1]); g.view.rebuildAt(x, y); } }
     // la porte scellée
     const m10 = M('g10'); for (const [x, y] of m10?.donjon.plan.objets['Ж'] || []) {
-      this.decorTombeau(m10, x, y, E10.ouverte ? 'porte_grande_o' : 'porte_grande');
+      this.decorTombeau(m10, x, y, E10.ouverte ? 'porte_egypte_o' : 'porte_egypte');
       // ouverte : on la franchit en marchant, et l'on descend à la sépulture
       if (E10.ouverte && !m10.warps.has(cle(x, y))) {
         const m11 = M('g11'), [sx, sy] = m11.donjon.plan.depart;
@@ -888,8 +890,8 @@ export const Tombeau = {
     const E11 = s.sepulture && this.dTombeau(this.tombeauIci(), 'g11'), x = cv.getContext('2d'), t = performance.now() / 1000;
     const L = E11 ? lumiereSepulture((E11.feux || []).filter(Boolean).length, (m.deco || []).filter((q) => q.k === 'brasier_autel').length) : LUMIERE[s.lumiere] || LUMIERE.normale;
     x.globalCompositeOperation = 'source-over'; x.fillStyle = `rgb(${L.fond.join(',')})`; x.fillRect(0, 0, W, H);
-    const feux = (m.deco || []).filter((q) => q.k === 'torche' || q.k === 'brasier_autel' || q.k === 'brasero' || q.k === 'lanterne' || q.k === 'brasier_on'), lum = [];
-    feux.forEach((q, i) => lum.push([...proj(q.x, q.y, 6), case_ * L.r * (q.k === 'brasier_on' ? 1.15 : 1) * (1 + 0.035 * Math.sin(t * 7.3 + i * 1.7) + 0.02 * Math.sin(t * 13.1 + i)), L.feu]));
+    const feux = (m.deco || []).filter((q) => q.k === 'torche' || q.k === 'torchere' || q.k === 'brasier_autel' || q.k === 'brasier_stele' || q.k === 'brasero' || q.k === 'lanterne' || q.k === 'brasier_on'), lum = [];
+    feux.forEach((q, i) => lum.push([...proj(q.x, q.y, 6), case_ * L.r * (q.k === 'brasier_on' || q.k === 'brasier_stele' || q.k === 'brasier_autel' ? 1.15 : 1) * (1 + 0.035 * Math.sin(t * 7.3 + i * 1.7) + 0.02 * Math.sin(t * 13.1 + i)), L.feu]));
     lum.push([...proj(v.focus.x - 0.5, v.focus.z - 0.5, 10), case_ * L.soi, [70, 50, 36]]);
     // la lanterne d'un moine : un halo sur lui, et la lumière jaune de son regard
     for (const [n, vue] of moines) {

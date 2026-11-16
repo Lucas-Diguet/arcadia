@@ -205,15 +205,20 @@ dans le navigateur pour tous les donjons) ; caché, il n'en reste qu'un onglet �
 ### Le Musée des Dunes (scène du sceptre)
 
 `js/musee.js` ajoute un musée aux Dunes d'Ocre, dans le labo seulement (le vrai jeu n'est pas touché) : le bâtiment se
-pose sur un rectangle de sable libre, au plus près de l'arène (`place`). Dedans (`labo:musee`), un hall et trois salles :
-fossiles, antiquités, et au milieu la salle du Roi Sans Nom avec le sceptre sous verre (`vitrine`, `vitrine_vide` :
-`python3 tools/musee-images.py`). L'avancée est dans les drapeaux de la partie :
+pose sur un rectangle de sable libre, au plus près de l'arène (`place`). Dedans, un musée à l'antique tout en longueur
+(murs de grès `wall_antique`, style `antique` de `odyssee/js/render/murs-tex.js`, sol de marbre), une carte par salle
+(`SALLES`), de gauche à droite : le hall (`labo:musee`, la porte de la rue), la Galerie des Fossiles (huit statues de
+Pokémon fossiles sur socle, dessinées à chaque image par `Musee.tick` : Ptéra, Kabutops, Amonistar, Charkos…), la
+Galerie des Caravanes, la Salle des Écrits, et tout au bout la Salle du Roi Sans Nom (`labo:musee:roi`) avec le sceptre
+sous verre (`vitrine`, `vitrine_vide` : `python3 tools/musee-images.py`). On passe d'une salle à l'autre par deux cases
+ouvertes dans le mur de côté (`relier`, téléporteurs `step`). L'avancée est dans les drapeaux de la partie :
 
-- `musee:scene` : en entrant dans la salle du Roi, Khamsin (le chef de Sable-Noir du Tombeau) parle seul devant la
-  vitrine, fait son cours d'histoire et s'en va (`Musee.scene`). Avant cela, l'arène est fermée (`bloque`, et un garde
-  devant la porte).
-- `musee:champion` : posé à la remise du badge dans l'arène des Dunes (`badgeScene` de `js/jeu.js`).
-- `musee:vol` : à la sortie de l'arène après la victoire, deux policiers remontent la rue, annoncent le vol et posent
+- `musee:scene` : quelques pas dans la salle du Roi, Khamsin (le chef de Sable-Noir du Tombeau) parle seul devant la
+  vitrine, raconte la légende du roi et de son trésor caché dans son cercueil, et s'en va (`Musee.scene`). Avant cela,
+  le champion n'est pas dans son arène : le guide le dit en entrant (`championAbsent`, branché sur `gymWelcome` de `js/jeu.js`).
+- `musee:champion` : posé à la remise du badge dans l'arène des Dunes (`badgeScene` de `js/jeu.js`) ; deux policiers
+  discutent alors devant l'arène.
+- `musee:vol` : à la sortie de l'arène, les deux policiers parlent du vol d'une « relique inestimable » et posent
   trois questions sans conséquence (`police`). Ensuite la vitrine est vide, trois policiers barrent son accès, le hall
   est plein de policiers et de journalistes (PNJ à condition `when`).
 
@@ -290,6 +295,7 @@ soient les objets déjà pris) et que c'est assez long, que la lumière n'a qu'u
 être terminées avant elle (au lieu de l'ordre de la liste), `suivante` où mène son passage N. Une salle `voies`
 (`voies: { lettre: salle }`) a des portes qui ne laissent passer qu'un joueur chacune (action `voie` d'etat.js), sans
 retour possible.
+Les salles sombres se voient sur la moitié de l'écran, en cercle, comme le labyrinthe du Bois des Contes (`vueLarge`).
 
 1. **Salle des Dalles** : trois dalles, la porte s'ouvre quand chacune est tenue (donjon « à 3 joueurs »).
 2. **Salle des Trois Voies** : le trio des lacs en statues, le panneau, trois portes avec leur inscription.
@@ -779,6 +785,10 @@ porte de fer, ouverte par la Clé Antique dans les deux sens) :
   31 glissements au moins) et les dalles-soleils façon Lights Out (5 × 5). Chacun est résolu par les tests.
   Images provisoires : `sarcophage`, `sarcophage_ouvert`, `torche_off`, `brasier` et `brasier_on` (ceux des Miroirs).
   En combat, le roi a le portrait du pharaon d'Odyssée ; son sarcophage (fermé, ouvert avec sa momie, vide quand il est debout) et les brasiers de l'autel viennent de PixelForge (`tools/pixelforge/donjon.py`, 32 pixels par case, liste `DENSITE_2` de `contenu.js`).
+  Mêmes dessins pour les brasiers des stèles ; torchères des murs (`torchere`), porte scellée du -10 (`porte_egypte`) et trésor
+  de la sépulture (montagnes et tas d'or, coffres, jarres : `tools/pixelforge/tresor.py`) viennent aussi de PixelForge.
+  Les morts-vivants ont tous l'allure de la goule ; leurs images de combat en sont tirées, teintées par espèce.
+  Au -3, le passage gardé par Gros-Bras et Lame-Fine se voit dans la roche (`passageVu` de la salle).
 
 Dessins d'Odyssée repris : les morts-vivants sont la goule et la momie, le Roi Sans Nom se dresse hors du sarcophage
 sous les traits du pharaon (`roiDebout`, le combat garde son image), le tombeau vu de dehors est le temple du pharaon
@@ -805,7 +815,7 @@ d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
 - Labyrinthe des Haies (`lab`, 49 × 49, généré ; `haies: true` : les buissons deviennent de hautes haies, `img/contes/haie0-2.png`) : entrée en bas depuis l'Orée des Contes, clairière vide au centre, cinq
   sorties avec leur pancarte (Hansel et Gretel, Chaperon rouge, Pinocchio, Jack, Boucle d'or).
 - Le labyrinthe (`lab`, 97 × 97, `LABYRINTHE`) : dans la pénombre (`nuit` : on ne voit qu'un cercle, la moitié de
-  l'écran ; classe `demi-nuit`). À l'entrée, cinq sacs de cailloux de couleur (`CAILLOUX`, `type: 'sac'`), un par joueur.
+  l'écran ; classe `demi-nuit`). Sur la place devant l'entrée (dehors, `SACS_PLACE`), cinq sacs de cailloux de couleur (`CAILLOUX`), un par joueur.
   Touche W (code `KeyZ`, libre dans Odyssée) ou bouton du journal : poser un caillou à ses pieds, ou reprendre le sien.
   État dans la salle `lab` : `sac_<joueur>`, `k<x>_<y>` (n° de couleur + 1, 0 = repris) ; tout le groupe voit les cailloux
   (`dessinerCailloux` de `js/rendu.js`, dessinés par-dessus les haies, qui cachent le sol des allées horizontales).

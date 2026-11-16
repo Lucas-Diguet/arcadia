@@ -81,6 +81,7 @@ async function boot() {
     if (mode === 'game') game.tick(dt);
     donjons.tick(dt);
     if (mode === 'game') game.ile.tick(dt);
+    if (mode === 'game') game.musee.tick();
     requestAnimationFrame(loop);
   };
   const premier = world.maps[DONJONS[0].carte];

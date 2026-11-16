@@ -111,7 +111,7 @@ export class Donjons {
     for (const s of d.salles) {
       if (!s.carte) continue;
       const m = g.world.maps[s.carte];
-      if (passageSuivant(m, s.ouvertPar ? !!e.salles[s.id].donnees[s.ouvertPar] : e.salles[s.id].faite || s.type === 'libre' || !!s.porte) && g.mapObj === m) { const [x, y] = m.donjon.plan.suivante; g.view.decoAt.delete(x + ',' + y); const dd = m.deco.find((q) => q.x === x && q.y === y); if (dd) g.view.decoAt.set(x + ',' + y, dd); g.view.rebuildAt(x, y); }
+      if (passageSuivant(m, s.ouvertPar ? !!e.salles[s.id].donnees[s.ouvertPar] : e.salles[s.id].faite || s.type === 'libre' || !!s.porte, !!s.passageVu) && g.mapObj === m) { const [x, y] = m.donjon.plan.suivante; g.view.decoAt.delete(x + ',' + y); const dd = m.deco.find((q) => q.x === x && q.y === y); if (dd) g.view.decoAt.set(x + ',' + y, dd); g.view.rebuildAt(x, y); }
     }
     for (const s of d.salles) {
       if (!s.porte) continue;

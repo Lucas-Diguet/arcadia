@@ -1174,15 +1174,28 @@ for (const l of Object.values(lieux).flat()) {
 
 /* ---------------- le Musée des Dunes ---------------- */
 {
-  const L = world.musee, M = world.maps.monde, m = world.maps['labo:musee'];
+  const L = world.musee, M = world.maps.monde, m = world.maps['labo:musee'], ids = ['labo:musee', 'labo:musee:fossiles', 'labo:musee:caravanes', 'labo:musee:ecrits', 'labo:musee:roi'];
   ok(L && m && M.warpAt(...L.porte)?.map === 'labo:musee' && m.warpAt(m.exitX, m.exitY)?.map === 'monde' && /:gym/.test(L.gym.map), 'musée : un bâtiment aux Dunes d\'Ocre, relié à la ville, près de l\'arène');
-  // de l'entrée, on atteint les trois salles et la vitrine ; après le vol, les policiers du cordon barrent la vitrine
-  const va = (bloques) => { const vu = new Set([m.exitX + ',' + m.exitY]), f = [[m.exitX, m.exitY]]; while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + dx) + ',' + (y + dy); if (vu.has(k) || !walkable(m.get(x + dx, y + dy)) || bloques.has(k)) continue; vu.add(k); f.push([x + dx, y + dy]); } } return vu; };
-  const pnj = (f) => new Set(m.npcs.filter((n) => !n.when || n.when(f)).map((n) => n.x + ',' + n.y));
-  const avant = va(pnj({ 'musee:scene': true })), apres = va(pnj({ 'musee:scene': true, 'musee:vol': true }));
-  ok(avant.has('15,4') && avant.has('4,4') && avant.has('26,4') && !apres.has('15,4') && apres.has('15,8') && apres.has('5,5'), 'musée : on visite les trois salles ; après le vol, la vitrine est bouclée mais on entre dans la salle');
-  ok(m.npcs.some((n) => n.id === 'musee:khamsin' && n.sprite === 'nox' && n.when({}) && !n.when({ 'musee:scene': true })) && m.npcs.filter((n) => n.sprite === 'garde' && n.when({ 'musee:vol': true }) && !n.when({})).length >= 7
-    && M.npcs.some((n) => n.id === 'musee:garde' && n.when({}) && !n.when({ 'musee:scene': true })), 'musée : Khamsin devant la vitrine avant la scène, un garde devant l\'arène, policiers et journalistes après le vol');
+  // de l'entrée, on traverse les galeries jusqu'à la vitrine, tout au bout ; après le vol, les policiers du cordon la barrent
+  const pnj = (c, f) => new Set(c.npcs.filter((n) => !n.when || n.when(f)).map((n) => n.x + ',' + n.y));
+  const va = (f) => {
+    const vu = new Set(['labo:musee|' + m.exitX + ',' + m.exitY]), file = [['labo:musee', m.exitX, m.exitY]];
+    while (file.length) {
+      const [id, x, y] = file.pop(), c = world.maps[id], w = c.warpAt(x, y);
+      const suiv = [];
+      if (w && w.step && ids.includes(w.map)) suiv.push([w.map, w.x, w.y]);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (walkable(c.get(x + dx, y + dy)) && !pnj(c, f).has((x + dx) + ',' + (y + dy))) suiv.push([id, x + dx, y + dy]);
+      for (const [i2, a, b] of suiv) { const k = i2 + '|' + a + ',' + b; if (!vu.has(k)) { vu.add(k); file.push([i2, a, b]); } }
+    }
+    return vu;
+  };
+  const avant = va({ 'musee:scene': true }), apres = va({ 'musee:scene': true, 'musee:vol': true });
+  ok(ids.every((id) => [...avant].some((k) => k.startsWith(id + '|'))) && avant.has('labo:musee:roi|15,5') && !apres.has('labo:musee:roi|15,5') && apres.has('labo:musee:roi|15,8'), 'musée : on traverse les galeries jusqu\'à la vitrine, tout au bout ; après le vol, elle est bouclée');
+  const roi = world.maps['labo:musee:roi'], G = world.maps[L.gym.map], chef = G.npcs.find((n) => /:leader$/.test(n.id));
+  ok(roi.npcs.some((n) => n.id === 'musee:khamsin' && n.sprite === 'nox' && n.when({}) && !n.when({ 'musee:scene': true })) && ids.flatMap((id) => world.maps[id].npcs).filter((n) => n.sprite === 'garde' && n.when({ 'musee:vol': true }) && !n.when({})).length >= 7
+    && !M.npcs.some((n) => n.id === 'musee:garde') && chef && !chef.when({}) && chef.when({ 'musee:scene': true })
+    && M.npcs.filter((n) => /musee:police/.test(n.id) && n.when({ 'musee:champion': true }) && !n.when({})).length === 2, 'musée : Khamsin devant la vitrine avant la scène, le champion absent avant, les policiers devant l\'arène, policiers et journalistes après le vol');
+  ok(world.maps['labo:musee:fossiles'].deco.filter((q) => q.k === 'socle_statue').length === 8, 'musée : huit statues de Pokémon fossiles');
 }
 for (const E of EQUIPES) for (const [sp, lvl] of E.pokemon) ok(SPECIES[sp] && lvl > 0, `équipe ${E.id} : Pokémon ${sp}`);
 for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équipe ${E.id} : objet ${k}`);
@@ -1291,7 +1304,7 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     ok(E && walkable(E.carte.get(ax, ay)) && Math.abs(ax - E.porte[0]) + Math.abs(ay - E.porte[1]) === 1, 'tombeau : la roche fissurée roule d\'une case, sur du sol libre'); }
   const BRIG = new Set(['voleur', 'brume', 'brume_f', 'brutus', 'corbin', 'croupier']);
   ok(Object.values(d.pnj).filter((p) => p.brigand || p.portier != null).every((p) => BRIG.has(p.sprite)), 'tombeau : les brigands ont tous une tête de brigand');
-  const feux = (id) => M[id].donjon.plan.decor.filter(([k]) => ['torche', 'brasero', 'lanterne'].includes(k)).length;
+  const feux = (id) => M[id].donjon.plan.decor.filter(([k]) => ['torchere', 'brasero', 'lanterne'].includes(k)).length;
   ok(d.salles.find((q) => q.id === 'b4a').lumiere === 'vive' && feux('b4a') >= 6, 'tombeau : la Caverne d\'Ali Baba est bien éclairée');
   ok(ITEMS['cle-ruinemaniac'] && ITEMS['carte-tombeau'] && !ITEMS['cle-fragile'] && !d.boutique.some((k) => /cle/.test(k)), 'tombeau : la clé de la porte de fer et la carte viennent du ruinemaniac ; Ali Baba ne vend pas de clé');
   ok(Object.values(d.pnj).filter((p) => p.brigand?.combat).length >= 4 && Object.values(d.pnj).filter((p) => p.brigand?.combat).every((p) => p.brigand.combat.every(([sp, l]) => SPECIES[sp] && l >= 30 && l <= 40)), 'tombeau : certains brigands proposent un combat');
@@ -1329,7 +1342,7 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     ok(['p6', 'p7'].every((id) => lettres(id, (p) => p.lutteur).length >= 3 && lettres(id, (p) => p.mortvivant).length >= 4 && lettres(id, (p) => p.mortvivant || p.lutteur).every((k) => d.pnj[k].apres)) && ['p4', 'p5'].every((id) => !lettres(id, (p) => p.mortvivant).length), 'tombeau : au -6 et au -7, la lutte contre les morts-vivants (après le vol du sceptre)');
     const gis = (id) => (M[id].donjon.plan.objets['ɠ'] || []).length + (M[id].donjon.plan.objets['ɑ'] || []).length;
     ok(['m8', 'm9'].every((id) => lettres(id, (p) => p.mortvivant).length >= 6 && gis(id) >= 14 && (M[id].donjon.plan.objets['ɑ'] || []).length >= 3), 'tombeau : au -8 et au -9, l\'hécatombe (morts-vivants, corps, mourants)');
-    ok(Object.values(d.pnj).filter((p) => p.mortvivant).every((p) => ['goule', 'momie'].includes(p.sprite) && SPECIES[p.mortvivant.sp]?.nonCapturable && p.mortvivant.lvl >= 38 && p.mortvivant.lvl <= 46) && Object.values(d.pnj).filter((p) => p.pilleur || p.lutteur || p.brigand || p.portier != null).every((p) => p.sprite !== 'spectrel'), 'tombeau : les abominations, créées pour le tombeau, ne se capturent pas');
+    ok(Object.values(d.pnj).filter((p) => p.mortvivant).every((p) => p.sprite === 'goule' && SPECIES[p.mortvivant.sp]?.nonCapturable && p.mortvivant.lvl >= 38 && p.mortvivant.lvl <= 46) && Object.values(d.pnj).filter((p) => p.pilleur || p.lutteur || p.brigand || p.portier != null).every((p) => p.sprite !== 'spectrel'), 'tombeau : les abominations, créées pour le tombeau, ne se capturent pas');
     const P7 = M.p7.donjon.plan, [nx, ny] = P7.suivante;
     ok(S('p7').piege && P7.objets['¤']?.[0][0] === nx && P7.objets['¤'][0][1] === ny + 1, 'tombeau : au -7, le piège, et la grille fermée à clé sous la sortie');
     const P10 = M.g10.donjon.plan;
@@ -1629,7 +1642,7 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   ok(liens.filter(([, o]) => o.type === 'lien').every(([c, o]) => d.objets[o.cible].cible === c), 'contes : chaque passage a son pendant de l\'autre côté');
   const sorties = ['α', 'β', 'γ', 'δ', 'ε'].filter((c) => M.lab.donjon.plan.objets[c]);
   ok(sorties.length === 5 && sorties.every((c) => d.objets[c].conte), 'contes : le labyrinthe a cinq sorties, une par conte');
-  ok(d.salles.find((q) => q.id === 'lab').nuit && Object.keys(M.lab.donjon.plan.objets).filter((c) => d.objets[c].type === 'sac').length === 5, 'contes : le labyrinthe est dans la pénombre, cinq sacs de cailloux attendent à l\'entrée');
+  ok(d.salles.find((q) => q.id === 'lab').nuit && [0, 1, 2, 3, 4].every((n) => world.maps['labo:contes:dehors']?.deco.some((q) => q.k === 'sac' + n)), 'contes : le labyrinthe est dans la pénombre, cinq sacs de cailloux attendent sur la place, devant l\'entrée');
   ok(M.lab.w >= 97 && M.cr1.w >= 60 && M.cr1.h >= 45 && M.cr2.w >= 60, 'contes : un grand labyrinthe, deux salles de forêt de la taille d\'une voie du Temple');
   ok(['hg1', 'hgj', 'hg2', 'hgd', 'hg3', 'hg4', 'hg5', 'hggm', 'hgeg', 'hgef', 'hgbib'].every((id) => M[id]) && d.objets['σ'].bloque === 'grenier'
     && [2, 3, 4].every((e) => { const P = M['hg' + e].donjon.plan, portes = Object.keys(P.objets).filter((c) => d.objets[c].type === 'lien' && !d.objets[c].escalier && !d.objets[c].bloque); return portes.length === 10 && new Set(P.sol.map(([x]) => x)).size === 5; }),

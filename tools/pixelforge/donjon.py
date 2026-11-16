@@ -224,6 +224,37 @@ def flamme(T, cx, base, largeur, hauteur, phase, graine=3):
         if f < 0.5: T.p(sx + 1, sy, FEU[4])
 
 
+def torchere(phase, eteint=False):
+    """torchère : petite coupe de bronze sur un fût de grès cerclé d'or, le cousin étroit du grand brasier (24 × 64)"""
+    T = Toile(24, 64)
+    cx = 12
+    for y in range(58, 63):                              # socle
+        w = 8 if y >= 60 else 6
+        for x in range(cx - w, cx + w):
+            T.p(x, y, nuance(SABLE, 0.6 - (x - cx + w) / (2 * w) * 0.4 + (0.2 if y in (58, 60) else 0), x, y))
+    for y in range(22, 58):                              # fût
+        for x in range(cx - 3, cx + 3):
+            u = (x - cx + 3) / 6
+            T.p(x, y, nuance(SABLE, 0.78 - u * 0.55 + (0.1 if x == cx - 2 else 0), x, y))
+    for y in (26, 40, 54):                               # bagues d'or
+        for x in range(cx - 4, cx + 4):
+            T.p(x, y, nuance(OR, 0.85 - (x - cx + 4) / 8 * 0.6, x, y))
+    for y in range(16, 22):                              # coupe en lotus
+        w = 3 + (22 - y) * 1.2
+        for x in range(int(cx - w), int(cx + w) + 1):
+            u = (x - cx + w) / (2 * w)
+            T.p(x, y, nuance(OR, 0.8 - u * 0.6 + (0.15 if y == 16 else 0), x, y))
+    for x in range(cx - 8, cx + 9):                      # le dessus de la coupe : braises ou cendres
+        for y in (15, 16):
+            if abs(x - cx) <= 8 - (16 - y) * 2:
+                T.p(x, y, nuance(PIERRE, 0.12 + bruit(x, y, 4) * 0.2, x, y) if eteint else nuance(FEU, 0.4 + bruit(x, y + int(phase), 4) * 0.4, x, y))
+    if not eteint:
+        flamme(T, cx - 3, 15, 3, 7, phase + 1.7, 7)
+        flamme(T, cx, 15, 5, 11, phase, 3)
+    contour_couleur(T, '#2a1606')
+    return T
+
+
 def brasier(phase, eteint=False):
     """grand brasier : vasque de bronze sur un fût de pierre sculptée, deux cases de large (64 × 96) ; éteint : cendres froides"""
     T = Toile(64, 96)
@@ -841,6 +872,8 @@ def main():
     out['sarcophage_ouvert'] = sarcophage(True)
     out['sarcophage_vide'] = sarcophage(True, True)
     out['brasier_eteint'] = brasier(0, True)
+    out['torchere'] = torchere(0.0)
+    out['torchere_eteinte'] = torchere(0, True)
     for k, f in PORTES.items():
         out['porte_' + k] = f(False); out['porte_' + k + '_ouverte'] = f(True)
     for k, T in out.items(): T.save(os.path.join(OUT, k + '.png'))

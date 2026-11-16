@@ -183,7 +183,7 @@ export const Contes = {
   tickContes(dt) {
     const g = this.game, d = this.contesIci(), m = g.mapObj, s = d && this.salleContes(d);
     g.ui.root.classList.toggle('penombre', !!s?.sombre);
-    g.ui.root.classList.toggle('demi-nuit', !!s?.nuit);
+    g.ui.root.classList.toggle('demi-nuit', !!s?.nuit || !!m?.vueLarge);
     this.tickCailloux(d, s, dt);   // le débarras : on voit à quelques cases, pas plus
     if (!s) { if (this.zzzGeant) { dessinerZzz(g.view, []); this.zzzGeant = false; } this.bruit = 0; return; }
     // le géant ronfle
@@ -223,7 +223,7 @@ export const Contes = {
     const g = this.game, d = this.contesIci(), s = d && this.salleContes(d);
     if (!s?.nuit || g.busy || g.bv?.alive || g.player.move) return;
     const n = this.monSac(d);
-    if (n < 0) { g.ui.toast('Il te faut un sac de cailloux : il y en a à l\'entrée du labyrinthe.', 2400); return; }
+    if (n < 0) { g.ui.toast('Il te faut un sac de cailloux : il y en a sur la place, devant le labyrinthe.', 2400); return; }
     const k = `k${g.player.x}_${g.player.y}`, la = this.dContes(d, 'lab')[k] || 0;
     if (la && la !== n + 1) { g.ui.toast('Il y a déjà un caillou ici.', 1500); return; }
     g.sound.sfx('ledge');

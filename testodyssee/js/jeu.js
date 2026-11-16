@@ -120,8 +120,7 @@ export class TestGame extends Game {
   }
   async useForce() { if (await this.donjons?.forceMeuble?.()) return; return super.useForce(); }
   async warp(to, sfx) {
-    // Musée des Dunes : l'arène fermée avant la scène, la vitrine pleine ou vide, la police à la sortie de l'arène
-    if (await this.musee?.bloque(to)) return;
+    // Musée des Dunes : la vitrine pleine ou vide, la police à la sortie de l'arène
     this.musee?.avantWarp(to);
     const de = this.mapObj?.id;
     (this.rv ||= new RoutesVictoire(this)).arrivee(to); this.donjons?.remiseTemple?.(to); this.donjons?.remiseContes?.(to);
@@ -129,6 +128,8 @@ export class TestGame extends Game {
     await this.musee?.apresWarp(de, to);
     return r;
   }
+  /** Musée des Dunes : avant la scène du sceptre, le champion n'est pas dans son arène */
+  async gymWelcome() { if (await this.musee?.championAbsent()) return; return super.gymWelcome(); }
   async badgeScene(l, nom) { await super.badgeScene(l, nom); this.musee?.championBattu(); }
   /** dans les donjons du labo, les capacités de terrain servent sans attendre les badges */
   /** le Talisman des Éléments (Temple des Éléments) : Coupe, Force, Éclate-Roc et Surf, sans CS ni badge */

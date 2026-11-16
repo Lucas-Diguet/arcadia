@@ -54,8 +54,6 @@ function labyrinthe() {
   const ex = 2 * (cw >> 1) + 1;
   for (let x = ex - 6; x <= ex + 6; x++) g[h - 2][x] = '.';
   g[h - 1][ex] = 'D'; g[h - 2][ex] = 'S';
-  // les sacs de cailloux : dans la haie, de part et d'autre de l'entrée
-  '❍❎❏❐❑'.split('').forEach((c, i) => { g[h - 3][ex - 5 + i * 2] = c; });
   return texte(g);
 }
 
@@ -155,6 +153,7 @@ function tige() {
   return texte(g);
 }
 
+export const SACS_PLACE = [[10, 4], [12, 4], [14, 4], [18, 4], [20, 4]];
 function exterieur() {
   const m = new GameMap('labo:contes:dehors', 32, 26, { outdoor: true, fill: T.TREE, name: 'Orée des Contes', music: 'forest' });
   m.rect(4, 2, 27, 23, T.GRASS, [T.TREE]);
@@ -166,6 +165,11 @@ function exterieur() {
   m.rect(6, 8, 10, 12, T.FLOWER, [T.GRASS]); m.rect(22, 8, 26, 12, T.FLOWER, [T.GRASS]);
   m.prop('fontaine', 16, 15); m.set(16, 15, T.BLOCK);
   for (let y = 14; y <= 16; y++) { m.set(15, y, T.PATH); m.set(17, y, T.PATH); }
+  // les sacs de cailloux, sur la place devant l'entrée du labyrinthe (un par joueur, état partagé du donjon)
+  SACS_PLACE.forEach(([x, y], n) => {
+    m.prop('sac' + n, x, y, true);
+    m.object(x, y, { use: (api) => { const D = api.game.donjons; return D.sacCailloux(D.defs.get('contes'), { n }); } });
+  });
   m.zone(0, 0, 31, 25, { name: 'Orée des Contes', music: 'forest' });
   return { carte: m, porte: [16, 1], arrivee: [16, 21] };
 }

@@ -163,7 +163,7 @@ function profondeur(sid, gen, pnj, apres) {
   let k = 0;
   const mort = (x, y, extra) => {
     const l = MORTS[nMort++], sp = ESPECES_MORTS[(k + y) % 3];
-    pnj[l] = { id: `${sid}-m${k}`, cls: '', nom: 'Abomination', sprite: k % 2 ? 'momie' : 'goule', dir: 'down', mortvivant: { sp, lvl: l0 + (k % (l1 - l0 + 1)) }, apres, ...extra };
+    pnj[l] = { id: `${sid}-m${k}`, cls: '', nom: 'Abomination', sprite: 'goule', dir: 'down', mortvivant: { sp, lvl: l0 + (k % (l1 - l0 + 1)) }, apres, ...extra };
     plan[y][x] = l; lettres.push(l); k++;
   };
   for (let y = 0; y < plan.length; y++) for (let x = 0; x < plan[y].length; x++) {
@@ -206,6 +206,13 @@ function sepulture() {
   // les brasiers tout au bord de la salle, leurs inscriptions juste devant, les torches serrées autour de l'autel
   cercle(20, 15, 'Ϙ'); cercle(18, 13.4, 'Ϟ'); cercle(3.6, 3, 'ȶ');
   g[cy][cx] = 'ǂ';
+  // le trésor du roi, entassé contre les murs : deux montagnes d'or, des tas, des coffres pleins, des jarres renversées
+  // (ǁ : une case prise par un tas trop large pour une seule case)
+  for (const [x, y] of [[7, 8], [39, 8]]) { for (let i = -1; i <= 1; i++) { g[y][x + i] = 'ǁ'; g[y - 1][x + i] = 'ǁ'; } g[y][x] = '₪'; }
+  for (const [x, y] of [[3, 5], [12, 5], [34, 5], [44, 5], [3, 25], [44, 25], [17, 36], [29, 36]]) g[y][x] = '₰';
+  for (const [x, y] of [[17, 5], [29, 5], [4, 34], [42, 34]]) { g[y][x] = '₤'; g[y][x + 1] = 'ǁ'; }
+  for (const [x, y] of [[10, 10], [37, 11], [3, 21], [44, 21], [14, 36], [32, 36], [7, 36], [39, 36]]) g[y][x] = '₿';
+  for (const [x, y] of [[9, 5], [37, 5], [2, 30], [44, 30]]) g[y][x] = '₳';
   g[37][23] = '.'; g[38][23] = 'S'; g[39][23] = 'D';
   return g.map((r) => r.join(''));
 }
@@ -244,7 +251,7 @@ const TOMBEAU = {
   style: 'egypte',
   tombeau: true,
   exterieur,
-  decor: { 'Ϯ': 'torche', '%': 'caverock', '|': 'colonne', l: 'stele', b: 'brasero', k: 'sarcophage_vide', c: 'caisse', n: 'tonneau', p: 'table', y: 'coffre', v: 'lanterne', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter' },
+  decor: { '₪': 'montagne_or', '₤': 'tas_or', '₰': 'coffre_or', '₿': 'pile_or', '₳': 'jarre_or', 'ǁ': 'porte_vide', 'Ϯ': 'torchere', '%': 'caverock', '|': 'colonne', l: 'stele', b: 'brasero', k: 'sarcophage_vide', c: 'caisse', n: 'tonneau', p: 'table', y: 'coffre', v: 'lanterne', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter' },
   objets: {
     // le gouffre : on y tombe ; pièges à pointes
     _: { type: 'gouffre', sol: true, decor: 'gouffre' },
@@ -255,10 +262,10 @@ const TOMBEAU = {
     'ɠ': { type: 'corps', decor: 'gisant_voleur' },
     'ɑ': { type: 'mourant', decor: 'gisant_brume' },
     '¤': { type: 'verrou', decor: 'porte_grille' },
-    'Ж': { type: 'porte_scellee', decor: 'porte_grande' },
+    'Ж': { type: 'porte_scellee', decor: 'porte_egypte' },
     // la sépulture du -11 : le sarcophage du roi, les brasiers et leurs inscriptions, les torches de l'autel
     'ǂ': { type: 'sarcophage_roi', decor: 'sarcophage_roi' },
-    'Ϙ': { type: 'brasier_roi', decor: 'brasier' },
+    'Ϙ': { type: 'brasier_roi', decor: 'brasier_stele_off' },
     'Ϟ': { type: 'inscription_roi', decor: 'stele' },
     'ȶ': { type: 'torche_autel', decor: 'brasier_autel_off' },
     // passages entre les étages (vers : la salle, cible : la marque du passage d'en face) ; porte : fermée à clé
@@ -281,7 +288,7 @@ const TOMBEAU = {
   salles: [
     // -3 : le repaire des brigands, où l'on arrive par le trou des pilleurs ; la porte de fer vers le -2, ses trois salles,
     // et le passage du -4, gardé par deux brigands
-    { id: 'b3', nom: 'Repaire des Brigands (-3)', type: 'libre', suivante: 'p4', ouvertPar: 'jamais', plan: [
+    { id: 'b3', nom: 'Repaire des Brigands (-3)', type: 'libre', suivante: 'p4', ouvertPar: 'jamais', passageVu: true, plan: [
       "##############################################",
       "#########α##########################N#########",
       "#########..#########################..########",
