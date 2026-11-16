@@ -1,8 +1,9 @@
 // odyssee/js/render/contes3d.js — bâtiments du Bois des Contes (labo) en fausse 3D, même atelier que batiments3d.js
 // (PixelForge : volumes simples, textures pixel art à D px par unité, éclairage en paliers). Trois modèles :
-//   painEpice   (9 × 6) : la maison de la vieille dame — murs de pain d'épice à joints de sucre glace, toit de tuiles en
-//                         chocolat ourlé de glaçage qui coule, boules de gomme, cheminée, sucres d'orge aux angles,
-//                         fenêtres rondes en sucre filé, porte en tablette de chocolat, sucettes et bonbons devant ;
+//   painEpice  (27 × 8) : le manoir de la vieille dame — trois étages, deux ailes, un avant-corps à pignon et balcon,
+//                         deux tours rondes à toit pointu ; murs de pain d'épice à joints de sucre glace, toits de
+//                         chocolat ourlés de glaçage qui coule, boules de gomme, cheminées, fenêtres en sucre filé,
+//                         porte en tablettes de chocolat, sucres d'orge, sucettes et bonbons devant ;
 //   puitsJardin (2 × 2) : puits de pierre moussue, toit de bardeaux, treuil, seau, pots de fleurs ;
 //   cabaneOutils (3 × 3) : cabane de planches au toit de bardeaux, porte entrouverte, outils appuyés, brouette, arrosoir.
 // Coordonnées comme les autres modèles : x de 0 à w, z de 0 à d (façade sud en z = d), y vers le haut.
@@ -68,77 +69,151 @@ export function batimentsContes({ B, TX, tex, hash, mix, S, D, boite, at, M, COL
     }
   };
 
-  /* ---------------------------------------------------------------- la maison en pain d'épice (8 × 6) */
+  /* ---------------------------------------------------------------- le manoir en pain d'épice (27 × 8) */
+  // trois corps de trois étages (deux ailes, un avant-corps central à pignon), deux tours rondes aux coins
+  const cylUV = (r1, r2, h, mat, n = 16, ouvert = false) => {
+    const g = new THREE.CylinderGeometry(r1, r2, h, n, 1, ouvert), uv = g.attributes.uv, c = Math.PI * (r1 + r2);
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * c, uv.getY(i) * h);
+    const m = new THREE.Mesh(g, mat); m.castShadow = m.receiveShadow = true; return m;
+  };
+  const coneUV = (r, h, mat, n = 16) => {
+    const g = new THREE.ConeGeometry(r, h, n), uv = g.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * Math.PI * r * 2, uv.getY(i) * Math.hypot(r, h));
+    const m = new THREE.Mesh(g, mat); m.castShadow = true; return m;
+  };
   B.painEpice = () => {
-    const G = new THREE.Group(), w = 9, d = 6, H = 3.0, x0 = 0.6, x1 = w - 0.6, z0 = 1.3, z1 = d - 0.7, cx = w / 2, yb = 0.3;
+    const G = new THREE.Group(), w = 27, d = 8, yb = 0.3, fh = 2.4, H = 3 * fh, cx = w / 2;
+    const z0 = 2.4, z1 = 6.8, zc = 7.4;                       // fond, façade des ailes, façade de l'avant-corps
+    const xa = 3.0, xb = w - 3.0, c0 = 10.5, c1 = w - 10.5;    // ailes de xa à xb, avant-corps de c0 à c1
     const PE = M({ map: painEpice() }), CH = M({ map: chocolat() }), SB = M({ map: sable() }), GL = COL(GLACE);
-    // soubassement de sablés
-    G.add(at(boite(x1 - x0 + 0.3, yb, z1 - z0 + 0.3, SB), cx, yb / 2, (z0 + z1) / 2));
-    // les murs, les joints d'angle de glaçage
-    G.add(at(boite(x1 - x0, H, z1 - z0, PE), cx, yb + H / 2, (z0 + z1) / 2));
-    for (const x of [x0, x1]) for (const z of [z0, z1]) G.add(at(boite(0.14, H, 0.14, GL), x, yb + H / 2, z));
-    coulures(G, x0, x1, yb + H, z1 + 0.06, 1);
-    // le toit de chocolat, pignon sur rue (le faîtage va vers le fond), pignons de pain d'épice ourlés de glaçage
-    const hr = 2.5, deb = 0.4, ax = (x1 - x0) / 2 + deb, haut = yb + H + hr, cz = (z0 + z1) / 2;
-    const R = new THREE.Group(); R.rotation.y = Math.PI / 2; R.position.set(cx, 0, cz);
-    toit2(R, -(z1 - z0) / 2, (z1 - z0) / 2, -(x1 - x0) / 2, (x1 - x0) / 2, yb + H, hr, CH, M({ map: painEpice(), side: THREE.DoubleSide }), deb, GLACE);
-    G.add(R);
-    // les rives de glaçage du pignon avant, avec leurs coulures
-    const L = Math.hypot(ax, hr), pente = Math.atan2(hr, ax);
-    for (const sg of [-1, 1]) {
-      const r = boite(L, 0.18, 0.2, GL); r.rotation.z = -sg * pente; G.add(at(r, cx + sg * ax / 2, yb + H + hr / 2 + 0.08, z1 + deb + 0.02));
-      for (let k = 1; k < 12; k++) {
-        const t = k / 12, l = 0.08 + hash(k, sg + 3, 38) * 0.22;
-        G.add(at(boite(0.1, l, 0.08, GL), cx + sg * ax * t, haut - hr * t - l / 2, z1 + deb + 0.03));
-        boule(G, cx + sg * ax * t, haut - hr * t - l, z1 + deb + 0.03, 0.06, GLACE);
+    const PED = M({ map: painEpice(), side: THREE.DoubleSide }), VOLET = M({ map: TX.bardage('#e8c890') }), VITRE = LUM('#f8d070', '#806020');
+    // soubassement de sablés, le corps principal, l'avant-corps
+    G.add(at(boite(xb - xa + 0.3, yb, z1 - z0 + 0.3, SB), cx, yb / 2, (z0 + z1) / 2));
+    G.add(at(boite(c1 - c0 + 0.3, yb, zc - z0 + 0.3, SB), cx, yb / 2, (z0 + zc) / 2));
+    G.add(at(boite(xb - xa, H, z1 - z0, PE), cx, yb + H / 2, (z0 + z1) / 2));
+    G.add(at(boite(c1 - c0, H, zc - z0, PE), cx, yb + H / 2, (z0 + zc) / 2));
+    for (const x of [c0, c1]) G.add(at(boite(0.18, H, 0.18, GL), x, yb + H / 2, zc));
+    // les cordons de glaçage qui marquent les étages, sur les ailes et l'avant-corps
+    for (let e = 1; e <= 3; e++) {
+      const y = yb + e * fh;
+      coulures(G, xa + 1.2, c0, y, z1 + 0.06, e); coulures(G, c1, xb - 1.2, y, z1 + 0.06, e + 5);
+      coulures(G, c0, c1, y, zc + 0.06, e + 9);
+    }
+    // le grand toit de chocolat des ailes (faîtage le long de x), boules de gomme, deux cheminées
+    const hr = 2.6, deb = 0.45, dz = (z1 - z0) / 2 + deb, czt = (z0 + z1) / 2, haut = yb + H + hr;
+    toit2(G, xa, xb, z0, z1, yb + H, hr, CH, PED, deb, GLACE);
+    for (let r = 0; r < 2; r++) for (let x = xa + 1.4 + r * 0.45; x < xb - 1.2; x += 0.9) {
+      if (x > c0 - 0.3 && x < c1 + 0.3) continue;
+      const t = 0.35 + r * 0.3;
+      boule(G, x, haut - hr * t + 0.12, czt + dz * t, 0.14, BONBONS[Math.floor(x * 1.3 + r) % BONBONS.length]);
+    }
+    for (let x = xa + 1.2; x < xb - 1.2; x += 0.34) boule(G, x, haut + 0.18, czt, 0.1, GLACE);
+    for (const xc of [xa + 3.2, xb - 3.2]) {
+      G.add(at(boite(0.8, 2.4, 0.8, CH), xc, haut - 0.3, z0 + 0.9));
+      G.add(at(boite(1.0, 0.18, 1.0, GL), xc, haut + 0.95, z0 + 0.9));
+      for (let i = 0; i < 3; i++) boule(G, xc + i * 0.2, haut + 1.35 + i * 0.4, z0 + 0.9 - i * 0.05, 0.24 + i * 0.07, '#f8c8e0');
+    }
+    // l'avant-corps : un haut pignon sur rue, rives de glaçage, une grande rosace de sucre
+    { const hp = 3.4, debp = 0.4, ax = (c1 - c0) / 2 + debp, top = yb + H + hp;
+      toitPignon(G, c0, c1, z0 + 0.4, zc, yb + H, hp, CH, PED, debp, GLACE);
+      const L = Math.hypot(ax, hp), pente = Math.atan2(hp, ax);
+      for (const sg of [-1, 1]) {
+        const r = boite(L, 0.2, 0.22, GL); r.rotation.z = -sg * pente; G.add(at(r, cx + sg * ax / 2, yb + H + hp / 2 + 0.08, zc + debp + 0.02));
+        for (let k = 1; k < 14; k++) {
+          const t = k / 14, l = 0.1 + hash(k, sg + 3, 38) * 0.25;
+          G.add(at(boite(0.11, l, 0.08, GL), cx + sg * ax * t, top - hp * t - l / 2, zc + debp + 0.03));
+          boule(G, cx + sg * ax * t, top - hp * t - l, zc + debp + 0.03, 0.07, GLACE);
+        }
+        for (let r = 0; r < 3; r++) for (let i = 0; i < 4; i++) {
+          const t = 0.25 + r * 0.25, z = z0 + 1.2 + (i + (r % 2) * 0.5) * (zc - z0 - 1.0) / 4;
+          boule(G, cx + sg * ax * t, top - hp * t + 0.13, z, 0.14, BONBONS[(i + r * 2 + (sg > 0 ? 3 : 0)) % BONBONS.length]);
+        }
+      }
+      for (let z = z0 + 0.5; z < zc + debp; z += 0.34) boule(G, cx, top + 0.18, z, 0.1, GLACE);
+      const yr = yb + H + 1.25;
+      G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.75, 24), VITRE), cx, yr, zc + 0.02));
+      G.add(at(new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.1, 8, 24), GL), cx, yr, zc + 0.05));
+      for (let k = 0; k < 4; k++) { const b = boite(1.5, 0.06, 0.04, GL); b.rotation.z = k * Math.PI / 4; G.add(at(b, cx, yr, zc + 0.04)); }
+      boule(G, cx, top + 0.45, zc + 0.1, 0.28, '#e8384a'); }
+    // les tours rondes aux deux bouts : murs de pain d'épice, toits pointus de chocolat semés de bonbons, une girouette sucre d'orge
+    for (const [tx, sgn] of [[2.2, -1], [w - 2.2, 1]]) {
+      const tz = 4.6, r = 1.9, ht = H + 1.4;
+      G.add(at(cylUV(r + 0.15, r + 0.15, yb, SB, 20), tx, yb / 2, tz));
+      G.add(at(cylUV(r, r, ht, PE, 20), tx, yb + ht / 2, tz));
+      for (let e = 1; e <= 3; e++) G.add(at(cylUV(r + 0.06, r + 0.06, 0.14, GL, 20), tx, yb + e * fh, tz));
+      G.add(at(cylUV(r + 0.12, r + 0.12, 0.2, GL, 20), tx, yb + ht, tz));
+      for (let k = 0; k < 20; k++) { const a = k / 20 * Math.PI * 2, l = 0.12 + hash(k, sgn + 7, 39) * 0.25; G.add(at(boite(0.12, l, 0.12, GL), tx + Math.sin(a) * (r + 0.1), yb + ht - 0.1 - l / 2, tz + Math.cos(a) * (r + 0.1))); }
+      const hc = 4.2, cone = coneUV(r + 0.45, hc, CH, 20); G.add(at(cone, tx, yb + ht + hc / 2, tz));
+      for (let rg = 0; rg < 4; rg++) for (let k = 0; k < 12 - rg * 2; k++) {
+        const t = 0.15 + rg * 0.2, rr = (r + 0.45) * (1 - t) + 0.08, a = (k + rg * 0.5) / (12 - rg * 2) * Math.PI * 2;
+        if (Math.cos(a) < -0.3) continue;
+        boule(G, tx + Math.sin(a) * rr, yb + ht + hc * t, tz + Math.cos(a) * rr, 0.13, BONBONS[(k + rg) % BONBONS.length]);
+      }
+      const SO = M({ map: sucreOrge() });
+      G.add(at(cyl(0.08, 0.08, 1.1, SO, 8), tx, yb + ht + hc + 0.5, tz));
+      boule(G, tx, yb + ht + hc + 1.1, tz, 0.2, '#f8c838');
+      // les fenêtres de la tour, une par étage, vers la clairière
+      for (let e = 0; e < 3; e++) {
+        const y = yb + e * fh + 1.2, zf = tz + r + 0.02;
+        G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.45, 18), VITRE), tx, y, zf));
+        G.add(at(new THREE.Mesh(new THREE.TorusGeometry(0.47, 0.08, 8, 18), GL), tx, y, zf + 0.03));
+        G.add(at(boite(0.06, 0.9, 0.04, GL), tx, y, zf + 0.03)); G.add(at(boite(0.9, 0.06, 0.04, GL), tx, y, zf + 0.03));
       }
     }
-    // une fenêtre ronde dans le pignon, un cœur au sommet
-    { const v = new THREE.Mesh(new THREE.CircleGeometry(0.42, 20), LUM('#f8d070', '#806020')); G.add(at(v, cx, yb + H + 0.85, z1 + 0.02));
-      G.add(at(new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.08, 8, 20), GL), cx, yb + H + 0.85, z1 + 0.04)); }
-    // boules de gomme sur les deux pans, en rangées, et des festons de glaçage tout le long du faîtage
-    for (const sg of [-1, 1]) for (let r = 0; r < 3; r++) for (let i = 0; i < 6; i++) {
-      const t = 0.25 + r * 0.25, z = z0 + 0.3 + (i + (r % 2) * 0.5) * (z1 - z0 - 0.4) / 6;
-      boule(G, cx + sg * ax * t, haut - hr * t + 0.12, z, 0.13, BONBONS[(i + r * 2 + (sg > 0 ? 3 : 0)) % BONBONS.length]);
+    // les fenêtres : rondes au rez-de-chaussée (jardinières de bonbons), hautes et cintrées aux étages (volets de gaufrette)
+    const ronde = (fx, fy, z) => {
+      G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.5, 20), VITRE), fx, fy, z + 0.01));
+      G.add(at(new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.08, 8, 20), GL), fx, fy, z + 0.03));
+      G.add(at(boite(0.06, 1.0, 0.04, GL), fx, fy, z + 0.03)); G.add(at(boite(1.0, 0.06, 0.04, GL), fx, fy, z + 0.03));
+      for (const s of [-1, 1]) G.add(at(boite(0.32, 1.05, 0.06, VOLET), fx + s * 0.76, fy, z + 0.03));
+      G.add(at(boite(1.15, 0.14, 0.22, CH), fx, fy - 0.62, z + 0.12));
+      for (let k = 0; k < 6; k++) boule(G, fx - 0.45 + k * 0.18, fy - 0.49, z + 0.12, 0.07, BONBONS[(k + Math.round(fx)) % BONBONS.length]);
+    };
+    const cintree = (fx, fy, z, fw = 0.8, fhh = 1.15) => {
+      G.add(at(boite(fw, fhh, 0.02, VITRE), fx, fy, z + 0.01));
+      G.add(at(new THREE.Mesh(new THREE.CircleGeometry(fw / 2, 16, 0, Math.PI), VITRE), fx, fy + fhh / 2, z + 0.01));
+      G.add(at(new THREE.Mesh(new THREE.TorusGeometry(fw / 2 + 0.03, 0.07, 6, 16, Math.PI), GL), fx, fy + fhh / 2, z + 0.04));
+      for (const s of [-1, 1]) G.add(at(boite(0.12, fhh, 0.08, GL), fx + s * (fw / 2 + 0.03), fy, z + 0.04));
+      G.add(at(boite(0.05, fhh, 0.04, GL), fx, fy, z + 0.03)); G.add(at(boite(fw, 0.05, 0.04, GL), fx, fy + 0.1, z + 0.03));
+      G.add(at(boite(fw + 0.3, 0.1, 0.22, GL), fx, fy - fhh / 2 - 0.05, z + 0.1));
+      for (const s of [-1, 1]) G.add(at(boite(fw * 0.45, fhh + 0.3, 0.06, VOLET), fx + s * (fw * 0.75 + 0.06), fy + 0.12, z + 0.03));
+    };
+    for (const fx of [5.3, 7.6, 9.4, w - 5.3, w - 7.6, w - 9.4]) {
+      ronde(fx, yb + 1.2, z1);
+      cintree(fx, yb + fh + 1.05, z1); cintree(fx, yb + 2 * fh + 1.05, z1);
     }
-    for (let z = z0 - deb + 0.15; z < z1 + deb; z += 0.32) boule(G, cx, haut + 0.18, z, 0.1, GLACE);
-    // la cheminée de chocolat sur le pan de droite, chapeau de glaçage, fumée de barbe à papa
-    { const xc = cx + 1.6, yc = haut - hr * (1.6 / ax);
-      G.add(at(boite(0.7, 1.5, 0.7, CH), xc, yc + 0.5, z0 + 1.0));
-      G.add(at(boite(0.86, 0.16, 0.86, GL), xc, yc + 1.3, z0 + 1.0));
-      for (let i = 0; i < 3; i++) boule(G, xc + i * 0.18, yc + 1.65 + i * 0.35, z0 + 1.0 - i * 0.05, 0.22 + i * 0.06, '#f8c8e0'); }
-    // les fenêtres rondes en sucre filé, cerclées de glaçage, volets en gaufrettes
-    for (const [fx, fy] of [[x0 + 1.25, 1.35], [x1 - 1.25, 1.35], [x0 + 1.25, 2.45], [x1 - 1.25, 2.45]]) {
-      const vitre = new THREE.Mesh(new THREE.CircleGeometry(0.48, 20), LUM('#f8d070', '#806020')); G.add(at(vitre, fx, yb + fy, z1 + 0.01));
-      const c = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.08, 8, 20), GL); G.add(at(c, fx, yb + fy, z1 + 0.03));
-      G.add(at(boite(0.06, 0.95, 0.04, GL), fx, yb + fy, z1 + 0.03)); G.add(at(boite(0.95, 0.06, 0.04, GL), fx, yb + fy, z1 + 0.03));
-      for (const s of [-1, 1]) G.add(at(boite(0.32, 1.0, 0.06, M({ map: TX.bardage('#e8c890') })), fx + s * 0.72, yb + fy, z1 + 0.03));
-      if (fy > 2) continue;
-      // une jardinière de bonbons
-      G.add(at(boite(1.1, 0.14, 0.2, CH), fx, yb + 0.85, z1 + 0.12));
-      for (let k = 0; k < 6; k++) boule(G, fx - 0.45 + k * 0.18, yb + 0.98, z1 + 0.12, 0.07, BONBONS[(k + 2) % BONBONS.length]);
+    ronde(cx - 2.0, yb + 1.2, zc); ronde(cx + 2.0, yb + 1.2, zc);
+    for (const fx of [cx - 2.0, cx + 2.0]) cintree(fx, yb + fh + 1.05, zc);
+    for (const fx of [cx - 2.0, cx, cx + 2.0]) cintree(fx, yb + 2 * fh + 1.05, zc);
+    // le balcon du premier étage : porte-fenêtre, dalle de chocolat, balustrade de sucres d'orge
+    { const yB = yb + fh, SO = M({ map: sucreOrge() });
+      cintree(cx, yB + 1.0, zc, 1.0, 1.5);
+      G.add(at(boite(2.6, 0.18, 0.9, CH), cx, yB + 0.04, zc + 0.45));
+      coulures(G, cx - 1.3, cx + 1.3, yB - 0.02, zc + 0.92, 21);
+      for (let k = 0; k <= 8; k++) G.add(at(cyl(0.05, 0.05, 0.7, SO, 6), cx - 1.2 + k * 0.3, yB + 0.48, zc + 0.85));
+      G.add(at(boite(2.6, 0.1, 0.12, GL), cx, yB + 0.86, zc + 0.85));
+      for (const s of [-1, 1]) G.add(at(boite(0.1, 0.1, 0.9, GL), cx + s * 1.25, yB + 0.86, zc + 0.45)); }
+    // la porte : une double tablette de chocolat sous une arche de glaçage, un cœur au-dessus, des marches de nougat
+    const pw = 1.2, ph = 1.8;
+    reperePorte(G, cx, yb, zc, pw, ph);
+    for (const s of [-1, 1]) {
+      G.add(at(boite(pw / 2 - 0.02, ph, 0.04, CH), cx + s * pw / 4, yb + ph / 2, zc + 0.02));
+      for (let j = 0; j < 4; j++) G.add(at(boite(0.44, 0.34, 0.06, CH), cx + s * pw / 4, yb + 0.28 + j * 0.42, zc + 0.04));
     }
-    // la porte : une tablette de chocolat (repère de porte pour l'ouverture animée), arche de glaçage, poignée bonbon
-    const pw = 0.9, ph = 1.55;
-    reperePorte(G, cx, yb, z1, pw, ph);
-    G.add(at(boite(pw, ph, 0.04, CH), cx, yb + ph / 2, z1 + 0.02));
-    for (let i = 0; i < 2; i++) for (let j = 0; j < 4; j++) G.add(at(boite(0.36, 0.3, 0.06, M({ map: chocolat() })), cx - 0.2 + i * 0.4, yb + 0.25 + j * 0.36, z1 + 0.04));
-    const arche = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.1, 8, 16, Math.PI), GL); G.add(at(arche, cx, yb + ph, z1 + 0.05));
-    for (const s of [-1, 1]) G.add(at(boite(0.14, ph, 0.12, GL), cx + s * 0.55, yb + ph / 2, z1 + 0.05));
-    boule(G, cx + 0.3, yb + 0.8, z1 + 0.1, 0.07, '#f8c838');
-    // l'enseigne au-dessus de la porte : un cœur de pain d'épice
-    const coeur = new THREE.Shape(); coeur.moveTo(0, -0.25); coeur.bezierCurveTo(0.45, 0.05, 0.25, 0.4, 0, 0.18); coeur.bezierCurveTo(-0.25, 0.4, -0.45, 0.05, 0, -0.25);
-    const ce = new THREE.Mesh(new THREE.ExtrudeGeometry(coeur, { depth: 0.06, bevelEnabled: false }), [M({ color: new THREE.Color('#d8383a') }), COL(GLACE)]); G.add(at(ce, cx, yb + ph + 0.65, z1 + 0.04));
-    // marches de nougat
-    G.add(at(boite(1.4, 0.15, 0.5, COL('#f2e6c8')), cx, 0.08, z1 + 0.45));
-    // devant : sucres d'orge aux angles, deux grandes sucettes, boules de gomme en bordure
-    for (const [x, s] of [[x0 - 0.15, -1], [x1 + 0.15, 1]]) canne(G, x, z1 + 0.25, 3.0, 0.14, s);
-    for (const [x, z] of [[1.0, d - 0.15], [w - 1.0, d - 0.15]]) {
-      G.add(at(cyl(0.04, 0.04, 1.3, COL(GLACE), 6), x, 0.65, z));
-      const disque = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.1, 22), [COL('#e8384a'), M({ map: spirale() }), M({ map: spirale() })]);
-      disque.rotation.x = Math.PI / 2; disque.castShadow = true; G.add(at(disque, x, 1.55, z));
+    G.add(at(new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.12, 8, 18, Math.PI), GL), cx, yb + ph, zc + 0.05));
+    for (const s of [-1, 1]) { G.add(at(boite(0.16, ph, 0.14, GL), cx + s * 0.72, yb + ph / 2, zc + 0.05)); boule(G, cx + s * 0.15, yb + 0.9, zc + 0.1, 0.07, '#f8c838'); }
+    const coeur = new THREE.Shape(); coeur.moveTo(0, -0.3); coeur.bezierCurveTo(0.55, 0.06, 0.3, 0.48, 0, 0.22); coeur.bezierCurveTo(-0.3, 0.48, -0.55, 0.06, 0, -0.3);
+    G.add(at(new THREE.Mesh(new THREE.ExtrudeGeometry(coeur, { depth: 0.06, bevelEnabled: false }), [M({ color: new THREE.Color('#d8383a') }), GL]), cx, yb + ph + 0.4, zc + 0.04));
+    for (let k = 0; k < 2; k++) G.add(at(boite(2.0 - k * 0.4, 0.15, 0.4, COL('#f2e6c8')), cx, 0.08 + k * 0.15, zc + 0.55 - k * 0.2));
+    // devant : grands sucres d'orge en colonnes de l'avant-corps, sucettes, bordure de boules de gomme
+    for (const [x, sg] of [[c0 - 0.2, -1], [c1 + 0.2, 1]]) canne(G, x, zc + 0.3, 4.2, 0.17, sg);
+    for (const [x, sg] of [[xa + 1.0, -1], [xb - 1.0, 1]]) canne(G, x, z1 + 0.35, 3.0, 0.14, sg);
+    for (const x of [c0 - 1.4, c1 + 1.4, 6.4, w - 6.4]) {
+      G.add(at(cyl(0.05, 0.05, 1.5, GL, 6), x, 0.75, d - 0.2));
+      const disque = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.12, 22), [COL('#e8384a'), M({ map: spirale() }), M({ map: spirale() })]);
+      disque.rotation.x = Math.PI / 2; disque.castShadow = true; G.add(at(disque, x, 1.8, d - 0.2));
     }
-    for (let i = 0; i < 8; i++) boule(G, x0 + 0.2 + i * 0.4 + (i > 3 ? 2.5 : 0), 0.14, d - 0.25, 0.14, BONBONS[i % BONBONS.length]);
+    for (let x = 0.6; x < w - 0.4; x += 0.55) if (Math.abs(x - cx) > 1.4) boule(G, x, 0.15, d - 0.15, 0.15, BONBONS[Math.round(x / 0.55) % BONBONS.length]);
     return G;
   };
 

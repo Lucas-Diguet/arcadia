@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.12 — 16 novembre 2026
+- **TestOdyssée** — Bois des Contes : la maison en pain d'épice devient un manoir, trois fois plus large.
+  - Trois étages, deux ailes, un grand pignon avec balcon au centre et deux tours rondes à toit pointu.
+  - La clairière s'agrandit pour lui faire de la place.
+
 ## 6.11 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : la vieille dame a enfin une vraie maison en pain d'épice, en volumes et bien plus grande.
   - Toit en tablettes de chocolat couvert de boules de gomme, glaçage qui coule, fenêtres en sucre filé, sucres d'orge et sucettes.
