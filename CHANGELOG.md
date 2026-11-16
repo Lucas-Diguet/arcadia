@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.5 — 16 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom, la sépulture :
+  - On y voit un peu plus loin autour de soi en entrant.
+  - Le chef de Sable-Noir attend hors du cercle des flambeaux, les yeux tournés vers le sarcophage.
+
 ## 6.4 — 16 novembre 2026
 - **TestOdyssée** — Musée des Dunes : le sceptre est exposé dans une petite salle, rien que pour lui.
 

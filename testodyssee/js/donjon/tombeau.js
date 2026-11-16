@@ -42,7 +42,7 @@ const numeroCercle = (x, y, [cx, cy]) => { const a = Math.atan2(y - cy, x - cx) 
 /** la pénombre de la sépulture : noire, puis un cran plus claire à chaque brasier rallumé */
 const lumiereSepulture = (n, t) => {
   const mix = (a, b, u) => a.map((v, i) => Math.round(v + (b[i] - v) * u)), u = n / 5;
-  return { fond: mix(mix([3, 2, 1], [30, 15, 8], u), [84, 44, 22], t / 5), r: 4.6, feu: [200, 120, 64], soi: 1.6 + 0.4 * u + 0.2 * t / 5 };
+  return { fond: mix(mix([3, 2, 1], [30, 15, 8], u), [84, 44, 22], t / 5), r: 4.6, feu: [200, 120, 64], soi: 2.1 + 0.4 * u + 0.2 * t / 5 };
 };
 /** ce que disent les inscriptions, en attendant les casse-têtes */
 const INSCRIPTIONS = [
@@ -107,13 +107,14 @@ export const Tombeau = {
       const s10 = d.salles.find((q) => q.id === 'g10'), [sx, sy] = P.sortie, [px, py] = this.porteG10(d);
       m.set(sx, sy, T.CAVEDOOR); m.warp(sx, sy, { map: s10.carte, x: px, y: py + 1, dir: 'down' }); m.deco.push({ k: 'exitlight', x: sx, y: sy });
     }
-    // la sépulture : Khamsin, qui vient aider après le troisième brasier (sa place : à côté du sarcophage), et le roi
+    // la sépulture : Khamsin, qui vient aider après le troisième brasier (sa place : juste hors du cercle des flambeaux,
+    // tourné vers le sarcophage), et le roi
     // qui se dresse hors du sarcophage le temps de sa colère
     if (s.id === 'g11') {
       const [cx, cy] = P.objets['ǂ'][0], pris = new Set(m.deco.map((q) => cle(q.x, q.y)));
-      const place = [[cx - 1, cy], [cx + 1, cy], [cx, cy + 1], [cx - 1, cy + 1], [cx + 1, cy + 1]].find(([x, y]) => walkable(m.get(x, y)) && !pris.has(cle(x, y))) || [cx, cy + 1];
+      const place = [[cx, cy + 5], [cx - 1, cy + 5], [cx + 1, cy + 5], [cx, cy + 6]].find(([x, y]) => walkable(m.get(x, y)) && !pris.has(cle(x, y))) || [cx, cy + 6];
       m.khamsinPlace = place;
-      m.npc({ id: `${d.id}:khamsin-11`, x: place[0], y: place[1], dir: 'down', sprite: 'nox', move: 'static', name: 'Khamsin',
+      m.npc({ id: `${d.id}:khamsin-11`, x: place[0], y: place[1], dir: 'up', sprite: 'nox', move: 'static', name: 'Khamsin',
         when: () => !!this.sceneKhamsin || !!this.dTombeau(d, 'g11').khamsin, talk: () => this.aideKhamsin(d) });
       m.npc({ id: `${d.id}:roi-11`, x: cx, y: cy, dir: 'down', sprite: 'pharaon', move: 'static', name: 'Roi Sans Nom', when: () => !!this.roiDebout, talk: () => {} });
     }
@@ -514,9 +515,9 @@ export const Tombeau = {
       p.dir = n ? (n.x > p.x ? 'right' : n.x < p.x ? 'left' : n.y > p.y ? 'down' : 'up') : p.dir;
       await ui.say(['Trois brasiers... Le tombeau s\'éveille.', 'Je t\'ai suivi. Je voulais seulement voir le trésor, je te le jure.',
         'Mais ces deux énigmes, je les connais : les billes du scribe, et les dalles-soleils.', 'J\'ai passé des années à étudier ce tombeau sur de vieux papyrus.',
-        'Si tu bloques, viens me voir près du sarcophage. Je peux te les simplifier... ou les résoudre à ta place.'], qui);
+        'Si tu bloques, viens me voir devant l\'autel. Je peux te les simplifier... ou les résoudre à ta place.'], qui);
       if (n) await this.marcherVers(n, m, ...m.khamsinPlace, 0);
-      if (n) n.dir = 'down';
+      if (n) n.dir = 'up';
     } finally {
       [def.x, def.y] = m.khamsinPlace;
       await this.demande(d.id, { a: 'maj', salle: 'g11', donnees: { khamsin: true } });
@@ -577,7 +578,7 @@ export const Tombeau = {
     } finally {
       await ui.fade(true, 400); await attendre(400);
       [def.x, def.y] = m.khamsinPlace; g.refreshNpcs();
-      const n2 = g.npcs.find((q) => q.id === def.id); if (n2) n2.dir = 'down';
+      const n2 = g.npcs.find((q) => q.id === def.id); if (n2) n2.dir = 'up';
       await ui.fade(false, 400);
     }
     return reussi;
