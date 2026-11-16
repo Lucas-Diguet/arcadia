@@ -1156,10 +1156,22 @@ const world = buildWorld();
 for (const dd of DONJONS) { const cs = dd.plan ? [construireCarte(dd)] : construireSalles(dd); for (const c of cs) world.maps[c.id] = c; const e = relierExterieur(dd, cs[0]); if (e) world.maps[e.id] = e; }
 construireIle(world.maps, nouvelleIle('Test'));
 const lieux = listerLieux(world, DONJONS);
-ok(lieux.labo.length === DONJONS.length + 1 + ROUTES.length + 1 + 1 && lieux.labo.some((l) => l.nom === 'Mont Givrécime') && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
+ok(lieux.labo.length === DONJONS.length + 1 + ROUTES.length + 1 + 1 + 1 && lieux.labo.some((l) => l.nom === 'Mont Givrécime') && lieux.villes.length >= 10 && lieux.routes.length >= 10 && lieux.grottes.length >= 5, 'liste des lieux');
 for (const l of Object.values(lieux).flat()) {
   const m = world.maps[l.map];
   ok(m && walkable(m.get(l.x, l.y)) && !m.warpAt(l.x, l.y), `on apparaît sur une case libre : ${l.nom}`);
+}
+/* ---------------- le Musée des Dunes ---------------- */
+{
+  const L = world.musee, M = world.maps.monde, m = world.maps['labo:musee'];
+  ok(L && m && M.warpAt(...L.porte)?.map === 'labo:musee' && m.warpAt(m.exitX, m.exitY)?.map === 'monde' && /:gym/.test(L.gym.map), 'musée : un bâtiment aux Dunes d\'Ocre, relié à la ville, près de l\'arène');
+  // de l'entrée, on atteint les trois salles et la vitrine ; après le vol, les policiers du cordon barrent la vitrine
+  const va = (bloques) => { const vu = new Set([m.exitX + ',' + m.exitY]), f = [[m.exitX, m.exitY]]; while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + dx) + ',' + (y + dy); if (vu.has(k) || !walkable(m.get(x + dx, y + dy)) || bloques.has(k)) continue; vu.add(k); f.push([x + dx, y + dy]); } } return vu; };
+  const pnj = (f) => new Set(m.npcs.filter((n) => !n.when || n.when(f)).map((n) => n.x + ',' + n.y));
+  const avant = va(pnj({ 'musee:scene': true })), apres = va(pnj({ 'musee:scene': true, 'musee:vol': true }));
+  ok(avant.has('15,4') && avant.has('4,4') && avant.has('26,4') && !apres.has('15,4') && apres.has('15,8') && apres.has('5,5'), 'musée : on visite les trois salles ; après le vol, la vitrine est bouclée mais on entre dans la salle');
+  ok(m.npcs.some((n) => n.id === 'musee:khamsin' && n.sprite === 'nox' && n.when({}) && !n.when({ 'musee:scene': true })) && m.npcs.filter((n) => n.sprite === 'garde' && n.when({ 'musee:vol': true }) && !n.when({})).length >= 7
+    && M.npcs.some((n) => n.id === 'musee:garde' && n.when({}) && !n.when({ 'musee:scene': true })), 'musée : Khamsin devant la vitrine avant la scène, un garde devant l\'arène, policiers et journalistes après le vol');
 }
 for (const E of EQUIPES) for (const [sp, lvl] of E.pokemon) ok(SPECIES[sp] && lvl > 0, `équipe ${E.id} : Pokémon ${sp}`);
 for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équipe ${E.id} : objet ${k}`);

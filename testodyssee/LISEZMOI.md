@@ -202,6 +202,23 @@ quête du joueur (les clés). Tout ce qui est dans le journal reste dans le donj
 L'encadré du donjon (en bas à droite) se cache et revient avec la touche N ou son petit bouton (`journalCache`, gardé
 dans le navigateur pour tous les donjons) ; caché, il n'en reste qu'un onglet « Journal (N) ».
 
+### Le Musée des Dunes (scène du sceptre)
+
+`js/musee.js` ajoute un musée aux Dunes d'Ocre, dans le labo seulement (le vrai jeu n'est pas touché) : le bâtiment se
+pose sur un rectangle de sable libre, au plus près de l'arène (`place`). Dedans (`labo:musee`), un hall et trois salles :
+fossiles, antiquités, et au milieu la salle du Roi Sans Nom avec le sceptre sous verre (`vitrine`, `vitrine_vide` :
+`python3 tools/musee-images.py`). L'avancée est dans les drapeaux de la partie :
+
+- `musee:scene` : en entrant dans la salle du Roi, Khamsin (le chef de Sable-Noir du Tombeau) parle seul devant la
+  vitrine, fait son cours d'histoire et s'en va (`Musee.scene`). Avant cela, l'arène est fermée (`bloque`, et un garde
+  devant la porte).
+- `musee:champion` : posé à la remise du badge dans l'arène des Dunes (`badgeScene` de `js/jeu.js`).
+- `musee:vol` : à la sortie de l'arène après la victoire, deux policiers remontent la rue, annoncent le vol et posent
+  trois questions sans conséquence (`police`). Ensuite la vitrine est vide, trois policiers barrent son accès, le hall
+  est plein de policiers et de journalistes (PNJ à condition `when`).
+
+Le lieu « Musée des Dunes » de la liste fait apparaître devant le bâtiment. Rien n'est lié au Tombeau pour l'instant.
+
 ### Les pancartes de classement
 
 Un donjon peut avoir des pancartes qui montrent les dix meilleurs temps : noms des joueurs (tout le groupe), date, durée.

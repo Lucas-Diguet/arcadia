@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 5.60 — 16 novembre 2026
+- **TestOdyssée** — Un musée ouvre aux Dunes d'Ocre (nouveau lieu « Musée des Dunes »). On y admire des fossiles, des antiquités, et le Sceptre du Roi Sans Nom sous sa vitrine.
+  - Dans la salle du sceptre, un homme en noir parle tout seul... L'arène de la ville reste fermée tant qu'on ne l'a pas croisé.
+  - Après la victoire contre le champion, la police attend à la sortie de l'arène : le sceptre a été volé. Au musée, la vitrine est vide, la salle est bouclée, et le hall grouille de policiers et de journalistes.
+
 ## 5.59 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : le labyrinthe est quatre fois plus grand, et on y avance dans la pénombre. On ne voit qu'un cercle autour de soi.
   - À l'entrée, cinq sacs de cailloux de couleur, un par joueur. Touche W (ou le bouton du journal) : on pose un caillou à ses pieds pour retrouver son chemin, et tout le groupe le voit.

@@ -6,6 +6,7 @@ import { texteJoueurs } from './donjon/plan.js';
 import { ILE, ARRIVEE } from './ile/modele.js';
 import { construireRoutes } from './rv/routes.js';
 import { construireMont } from './mont/mont.js';
+import { construireMusee } from './musee.js';
 
 const libre = (m, x, y) => walkable(m.get(x, y)) && ![T.DOOR, T.CAVEDOOR, T.MAT, T.STAIRS].includes(m.get(x, y)) && !m.warpAt(x, y) && !m.npcs.some((n) => n.x === x && n.y === y);
 
@@ -33,6 +34,9 @@ export function listerLieux(world, donjons) {
   out.labo.push(...(world.rvLieux ||= construireRoutes(world.maps)));
   // le Mont Givrécime : dix salles à gravir, dedans et dehors (aventure solo)
   out.labo.push(world.montLieu ||= construireMont(world.maps));
+  // le Musée des Dunes, ajouté aux Dunes d'Ocre : la scène du sceptre (Tombeau du Roi Sans Nom)
+  if (world.museeLieu === undefined) world.museeLieu = construireMusee(world);
+  if (world.museeLieu) out.labo.push(world.museeLieu);
   for (const t of Object.values(world.towns)) {
     const [x, y] = t.centerDoor ? pres(W, t.centerDoor[0], t.centerDoor[1] + 1) : pres(W, t.x + (t.w >> 1), t.y + (t.h >> 1));
     out.villes.push({ nom: t.name, map: 'monde', x, y, dir: 'down' });

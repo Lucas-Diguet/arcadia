@@ -119,7 +119,17 @@ export class TestGame extends Game {
     super.setTile(x, y, v); if (v === T.BOULDER) { this.rv?.rocherPose(x, y); this.donjons?.rocherTemple?.(x, y); this.donjons?.rocherArene?.(x, y); }
   }
   async useForce() { if (await this.donjons?.forceMeuble?.()) return; return super.useForce(); }
-  warp(to, sfx) { (this.rv ||= new RoutesVictoire(this)).arrivee(to); this.donjons?.remiseTemple?.(to); this.donjons?.remiseContes?.(to); return super.warp(to, sfx); }
+  async warp(to, sfx) {
+    // Musée des Dunes : l'arène fermée avant la scène, la vitrine pleine ou vide, la police à la sortie de l'arène
+    if (await this.musee?.bloque(to)) return;
+    this.musee?.avantWarp(to);
+    const de = this.mapObj?.id;
+    (this.rv ||= new RoutesVictoire(this)).arrivee(to); this.donjons?.remiseTemple?.(to); this.donjons?.remiseContes?.(to);
+    const r = await super.warp(to, sfx);
+    await this.musee?.apresWarp(de, to);
+    return r;
+  }
+  async badgeScene(l, nom) { await super.badgeScene(l, nom); this.musee?.championBattu(); }
   /** dans les donjons du labo, les capacités de terrain servent sans attendre les badges */
   /** le Talisman des Éléments (Temple des Éléments) : Coupe, Force, Éclate-Roc et Surf, sans CS ni badge */
   hasField(k) { return (['coupe', 'force', 'eclate', 'surf'].includes(k) && !!this.state?.bag?.['talisman-elements']) || super.hasField(k); }
@@ -127,7 +137,7 @@ export class TestGame extends Game {
   rvApprendre(cle) { return (this.rv ||= new RoutesVictoire(this)).apprendre(cle); }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
   async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }
-  async onStep(mv) { this.rv?.apresPas(mv); await super.onStep(mv); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas?.(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.donjons?.apresPasTemple(); if (!this.busy) await this.donjons?.apresPasTombeau?.(); if (!this.busy) await this.donjons?.apresPasContes?.(); if (!this.busy) await this.ile?.apresPas(); } }
+  async onStep(mv) { this.rv?.apresPas(mv); await super.onStep(mv); if (!this.busy && this.mapObj) await this.musee?.apresPas(); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas?.(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.donjons?.apresPasTemple(); if (!this.busy) await this.donjons?.apresPasTombeau?.(); if (!this.busy) await this.donjons?.apresPasContes?.(); if (!this.busy) await this.ile?.apresPas(); } }
   load() { return null; }
 
   async startMenu() {

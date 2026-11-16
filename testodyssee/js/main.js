@@ -13,6 +13,7 @@ import { TestGame } from './jeu.js';
 import { Donjons } from './donjon/jeu.js';
 import { DONJONS } from './donjons/index.js';
 import { listerLieux } from './lieux.js';
+import { Musee } from './musee.js';
 import { EQUIPES, partieTest } from './equipes.js';
 import { Ile } from './ile/jeu.js';
 import { installerContenu, DECOR } from './contenu.js';
@@ -54,6 +55,7 @@ async function boot() {
   const game = new TestGame({ view, ui, input, sound, world });
   brancherResume(game, ASSETS);
   const donjons = game.donjons = new Donjons(game, DONJONS, H);
+  game.musee = new Musee(game);
   game.ile = new Ile(game);
   const lieux = listerLieux(world, DONJONS);
   window.__testody = { game, world, view, donjons, lieux };
