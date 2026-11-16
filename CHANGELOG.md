@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.14 — 16 novembre 2026
+- **TestOdyssée** — Bois des Contes : le manoir en pain d'épice retrouve une taille plus raisonnable, trois maisons de large. La clairière se resserre autour de lui.
+
 ## 6.13 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : le manoir en pain d'épice perd ses tours pour ressembler moins à un château. Ses ailes s'allongent jusqu'aux deux bouts.
 
