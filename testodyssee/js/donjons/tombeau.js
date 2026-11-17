@@ -46,11 +46,13 @@ function exterieur() {
   // le tombeau, au nord : le temple du pharaon d'Odyssée (11 × 8, fausse 3D) ; la porte officielle est fermée
   const fx = 19, fw = 9, fy = 0, fh = 8, px = fx + 4, py = fy + fh - 1;
   m.rect(fx - 1, fy, fx + fw, py, T.SAND);
-  m.building('lab', fx - 1, fy, { modele: 'temple', w: 11, d: 8, door: -1, name: 'Tombeau du Roi Sans Nom' });
+  m.building('lab', fx - 1, fy, { modele: 'temple', w: 11, d: 8, door: -1, opts: { ferme: true }, name: 'Tombeau du Roi Sans Nom' });
   m.edge = T.ROCK;
   // le cordon (des bornes) et les gardiens : on ne passe pas
   for (let x = fx - 2; x <= fx + fw + 1; x++) m.prop('cordon', x, py + 3);
   for (const dx of [-2, 0, 2]) m.npc({ id: `tombeau-garde-dehors${dx}`, x: px + dx, y: py + 4, dir: 'down', sprite: 'pretre', move: 'static', name: 'Gardien du tombeau', text: dx ? 'Le tombeau est fermé au public. Ordre du Conservatoire des Antiquités.' : 'Halte ! Personne n\'entre dans le tombeau du Roi Sans Nom. Personne.' });
+  // un gardien de plus, planté juste devant la porte
+  m.npc({ id: 'tombeau-garde-porte', x: px, y: py + 1, dir: 'down', sprite: 'pretre', move: 'static', name: 'Gardien du tombeau', text: ['Tu as passé le cordon ? Fais demi-tour.', 'Cette porte ne s\'est pas ouverte depuis mille ans. Elle ne s\'ouvrira pas pour toi.'] });
   for (const [dx, dy, sprite, dir, move, name, text] of TOURISTES) m.npc({ id: `tombeau-touriste${dx},${dy}`, x: px + dx, y: py + dy, dir, sprite, move, name, text });
   for (const [x, y, sprite, dir, move, name, text] of PASSANTS) m.npc({ id: `tombeau-passant${x},${y}`, x, y, dir, sprite, move, name, text });
   // le ruinemaniac, à l'ombre des palmiers de l'ouest

@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.15 — 17 novembre 2026
+- **TestOdyssée** — Tombeau du Roi Sans Nom : la grande porte du tombeau est bien fermée, battants de bronze et barre en travers. Un gardien de plus se tient juste devant.
+
 ## 6.14 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : le manoir en pain d'épice retrouve une taille plus raisonnable, trois maisons de large. La clairière se resserre autour de lui.
 

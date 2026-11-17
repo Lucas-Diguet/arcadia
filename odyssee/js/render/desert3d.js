@@ -132,10 +132,21 @@ export function monumentsDesert({ B, tex, hash, mix, S, D, boite, at, M, COL, LU
     G.add(at(boite(0.56, 0.16, 0.56, M({ map: gres(GRES_C) })), x, y0 + h + 0.08, z));
   }
   // porte sombre au fond d'une embrasure, deux vantaux de bronze entrouverts
-  function entree(G, x, z, y0, w, h) {
+  function entree(G, x, z, y0, w, h, ferme = false) {
     reperePorte(G, x, y0, z, w, h);
     G.add(at(boite(w, h, 0.04, COL(NUIT)), x, y0 + h / 2, z + 0.01));
-    for (const s of [-1, 1]) {
+    if (ferme) {
+      // deux battants de bronze fermés : panneaux en relief, clous, deux anneaux, une barre en travers
+      const BR = LUM('#a8742a', '#2a1600'), BRS = COL('#6a4418');
+      for (const s of [-1, 1]) {
+        G.add(at(boite(w / 2 - 0.02, h, 0.08, BR), x + s * w / 4, y0 + h / 2, z + 0.05));
+        for (const k of [0.28, 0.72]) G.add(at(boite(w / 2 - 0.26, h * 0.34, 0.03, BRS), x + s * w / 4, y0 + h * k, z + 0.1));
+        for (let i = 0; i < 4; i++) G.add(at(boite(0.06, 0.06, 0.04, COL('#e8c060')), x + s * (w / 2 - 0.12), y0 + 0.25 + i * (h - 0.5) / 3, z + 0.11));
+        G.add(at(new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.025, 6, 12), COL('#e8c060')), x + s * 0.18, y0 + h * 0.48, z + 0.12));
+      }
+      G.add(at(boite(0.04, h, 0.1, COL('#3a2208')), x, y0 + h / 2, z + 0.1));
+      G.add(at(boite(w + 0.1, 0.14, 0.08, COL('#5a3a14')), x, y0 + h * 0.48, z + 0.15));
+    } else for (const s of [-1, 1]) {
       const v = boite(w * 0.18, h, 0.06, LUM('#a8742a', '#2a1600')); v.rotation.y = s * 0.9;
       G.add(at(v, x + s * (w / 2 - 0.05), y0 + h / 2, z + 0.14));
     }
@@ -177,7 +188,7 @@ export function monumentsDesert({ B, tex, hash, mix, S, D, boite, at, M, COL, LU
   };
 
   /* ---------------------------------------------------------------- temple du pharaon (11 × 8) */
-  B.temple = ({ col = GRES } = {}) => {
+  B.temple = ({ col = GRES, ferme = false } = {}) => {
     const G = new THREE.Group(), cx = 5.5;
     // terrasse et escalier central
     G.add(at(boite(11, 0.55, 7.2, M({ map: gres(GRES_S) })), cx, 0.275, 3.6));
@@ -214,7 +225,7 @@ export function monumentsDesert({ B, tex, hash, mix, S, D, boite, at, M, COL, LU
     corniche(G, cx, y0 + 3.1, zf - 0.5, 3.0, 1.0);
     const da = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 0.7), M({ map: disqueAile() })); G.add(at(da, cx, y0 + 2.7, zf + 0.01));
     for (const s of [-1, 1]) { G.add(at(cyl(0.05, 0.07, 0.4, OR, 6), cx + s * 0.75, y0 + 3.15, zf - 0.05)); G.add(at(boite(0.14, 0.12, 0.08, OR), cx + s * 0.75, y0 + 3.4, zf - 0.02)); }
-    entree(G, cx, zf + 0.02, y0, 1.5, 2.2);
+    entree(G, cx, zf + 0.02, y0, 1.5, 2.2, ferme);
     // gardiens : chacals couchés au bord de l'escalier, obélisques aux angles, brasiers
     for (const s of [-1, 1]) {
       chacal(G, cx + s * 2.3, 6.5, 0.82, y0);
