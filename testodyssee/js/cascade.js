@@ -1,5 +1,5 @@
 // testodyssee/js/cascade.js — la capacité Cascade du labo : en surfant, on remonte une cascade (cases m.cascades),
-// et on la descend. Sans Cascade, on ne fait que la descendre. Marche dans les donjons et sur les Routes Victoire.
+// et on la descend. Sans Cascade, on ne fait que la descendre. Marche dans les donjons.
 import { DIRS } from '../../odyssee/js/world/tiles.js';
 import { monName } from '../../odyssee/js/core/mon.js';
 

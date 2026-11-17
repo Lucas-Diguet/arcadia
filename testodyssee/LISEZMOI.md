@@ -740,24 +740,6 @@ Dans la donnée de l'île : `points`, `stock { article: nombre }`, `statues { 's
 2. Ce que voit le joueur dans `js/donjon/jeu.js` (dialogue d'un PNJ, ou vérification à chaque image comme les dalles,
    décidée par l'hôte).
 
-### Les Routes Victoire
-
-`tools/routes-victoire.py` recopie les Routes Victoire de Vert Feuille, d'Émeraude et de Platine case par case depuis
-les décompilations pret (`python3 tools/routes-victoire.py chemin/pokefirered chemin/pokeemerald chemin/pokeplatinum chemin/pokeheartgold` ;
-pour Platine, les cases et leurs permissions viennent de `res/field/maps/data`) et écrit
-`js/rv/donnees.js` (ne pas le modifier à la main) : sol, murs, hauteurs, rebords, eau, cascades, échelles, dresseurs
-(équipes, attaques, objets tenus, valeurs cachées), objets, objets cachés, rochers, rochers fissurés, boutons et
-barrières, trous, rencontres. Les textes des dresseurs sont traduits à la main dans `js/rv/textes.js`.
-`js/rv/routes.js` bâtit les cartes (chaque route seule, puis la fusion où la sortie d'une route mène à l'entrée de la
-suivante, dans l'ordre de `ROUTES`), `js/rv/jeu.js` ajoute les règles de la troisième génération : hauteurs (on change
-de niveau par une case de passage, hauteur 0, ou un pont, hauteur 15), cases fermées au nord, rocher qui tombe dans un
-trou, bouton qui ouvre une barrière, cascade qu'on descend seulement ; et de la quatrième (Platine) : on monte sur un
-pont par ses bouts (`p`), on ne le quitte que par eux, on passe dessous ; la paroi d'Escalade (`e`) se gravit tout droit.
-Au 2F de Platine, deux objets restent dans des recoins qu'on ne rejoint pas encore. HeartGold n'a pas de plan dans sa
-décompilation : ses étages sont recopiés à la main dans `tools/rv-heartgold.txt` (d'après des images prises en
-perspective, donc à une case ou deux près), et ses événements (échelles, objets, rochers, Silver) viennent de
-pokeheartgold. La fusion suit l'ordre des jeux : Vert Feuille, HeartGold, Émeraude, Platine.
-
 ### Le Tombeau du Roi Sans Nom
 
 Un donjon solo d'infiltration (`js/donjons/tombeau.js`, mécaniques `js/donjon/tombeau.js`), en style `egypte` (sol de
@@ -766,8 +748,8 @@ toile multipliée par-dessus l'image (`eclairerTombeau`) donne une pénombre bru
 (`Ϯ`, posées le long des murs du haut par `torches()`), des braseros, des lanternes, du joueur et des moines. `lumiere`
 d'une salle : `vive` (la Caverne d'Ali Baba) ou `noire` (le -4).
 
-Dehors, la Vallée des Rois Oubliés : la façade (`entree_tombeau`) et sa porte officielle sont fermées, derrière un
-cordon et trois gardiens ; des touristes (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac indique l'entrée des
+Dehors, la Vallée des Rois Oubliés : la façade (temple du pharaon, battants de bronze fermés) et sa porte officielle sont fermées, derrière un
+cordon et trois gardiens, plus un quatrième juste devant la porte ; des touristes (`TOURISTES`), des passants (`PASSANTS`). Le ruinemaniac indique l'entrée des
 pilleurs, explique qu'il faut le sceptre du roi pour ouvrir sa sépulture, demande qu'on lui rapporte le trésor contre une
 récompense ; si l'on accepte, il explique le plan (`planRuinemaniac`, qu'il répète si on le lui demande) et donne la Clé Antique (`cle-ruinemaniac`) et la Carte du Tombeau (`carte-tombeau`, du -1 au -4 : liste
 `CARTE`). La roche fissurée du bord droit (`porte`, parmi `roches`) se pousse avec Force : elle roule d'une case (`decale`)

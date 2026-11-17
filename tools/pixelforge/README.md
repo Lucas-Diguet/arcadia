@@ -34,7 +34,7 @@ Copié de `gt124578/multigame` (branche `odyssee-dev`, `tools/pixelforge/`), san
 de salles de boss (égypte, crypte, glace, lave, miroir, sylve ; fermées et ouvertes).
 `python3 tools/pixelforge/porte_elements.py` : la porte de la salle du Gardien du Temple des Éléments (3 × 4 cases, arche taillée
 dans la roche : lave à gauche, cascade à droite, racines et lierre en couronne ; trois gemmes qui s'allument une à une,
-`porte_elements[_f|_e|_p|_fe|…|_fep]`, puis `porte_elements_ouverte`). Pas encore dans le jeu.
-Le Temple vu du dehors, façade taillée dans la falaise à la manière de Petra : modèle 3D `templeElements` (13 × 9) de
-`odyssee/js/render/elements3d.js`, aperçu par `galerie3d.html?vue=seul&b=templeElements`. Pas encore dans le jeu.
+`porte_elements[_f|_e|_p|_fe|…|_fep]`, puis `porte_elements_ouverte`), copiée dans `testodyssee/img/temple/`.
+Le Temple vu du dehors, façade taillée dans la falaise à la manière de Petra : modèle 3D `templeElements` (13 × 8) de
+`odyssee/js/render/elements3d.js`, aperçu par `galerie3d.html?vue=seul&b=templeElements`, posé au Parvis du Temple.
 `python3 tools/pixelforge/miroir_poche.py` : le miroir de poche du Donjon des Miroirs (`donjon/miroir_poche.png`).

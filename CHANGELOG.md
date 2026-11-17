@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.16 — 17 novembre 2026
+- **TestOdyssée** — Temple des Éléments : le temple est maintenant taillé dans une falaise, avec une coulée de lave à gauche, une cascade à droite et la forêt au sommet.
+  - Dans la Salle des Clés, une nouvelle porte imposante garde le Gardien : chaque clé posée allume sa gemme (rouge, bleue, verte), et la porte s'ouvre à la troisième.
+- **TestOdyssée** — Les Routes Victoire des jeux d'origine quittent le labo.
+
 ## 6.15 — 17 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la grande porte du tombeau est bien fermée, battants de bronze et barre en travers. Un gardien de plus se tient juste devant.
 

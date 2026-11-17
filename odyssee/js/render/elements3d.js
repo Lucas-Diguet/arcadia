@@ -1,5 +1,5 @@
 // odyssee/js/render/elements3d.js — le Temple des Éléments du labo, vu du dehors (même atelier que batiments3d.js).
-//   templeElements (13 × 9) : une façade de temple taillée dans une falaise, à la manière de Petra : soubassement et
+//   templeElements (13 × 8) : une façade de temple taillée dans une falaise, à la manière de Petra : soubassement et
 //   escalier, six colonnes, fronton aux trois gemmes, étage à rotonde coiffée d'une urne entre deux demi-frontons ;
 //   autour, la roche brute de la montagne : coulée de lave à gauche, cascade à droite, arbres et racines sur le sommet.
 // Coordonnées comme les autres modèles : x de 0 à w, z de 0 à d (façade sud en z = d), y vers le haut.
@@ -71,11 +71,11 @@ export function templeElements({ B, tex, hash, mix, S, D, boite, at, M, COL, LUM
   };
   const boule = (G, x, y, z, r, mat) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), mat); m.castShadow = true; G.add(at(m, x, y, z)); };
 
-  /* ---------------------------------------------------------------- le temple (13 × 9) */
+  /* ---------------------------------------------------------------- le temple (13 × 8) */
   B.templeElements = () => {
-    const G = new THREE.Group(), w = 13, d = 9, cx = w / 2, zf = 6.2;             // zf : plan de la façade taillée
+    const G = new THREE.Group(), w = 13, d = 8, cx = w / 2, zf = 5.6;             // zf : plan de la façade taillée
     // la falaise : des blocs de roche de hauteurs inégales, plus hauts au centre
-    const blocs = [[0, 2.6, 8.4, 0.5], [2.4, 2.6, 10.2, 0.2], [4.8, 3.4, 11.0, 0], [8.2, 2.4, 10.4, 0.3], [10.6, 2.4, 8.8, 0.6]], zb = 3.4;
+    const blocs = [[0, 2.6, 8.4, 0.5], [2.4, 2.6, 10.2, 0.2], [4.8, 3.4, 11.0, 0], [8.2, 2.4, 10.4, 0.3], [10.6, 2.4, 8.8, 0.6]], zb = 2.8;
     for (const [x, bw, h, rz] of blocs) G.add(at(boite(bw, h, zf - zb - rz, R), x + bw / 2, h / 2, (zf + zb + rz) / 2));
     // flancs saillants de part et d'autre de la façade, en avancée
     for (const [x, bw, h] of [[0, 2.1, 7.6], [w - 2.1, 2.1, 7.0]]) G.add(at(boite(bw, h, 1.6, R), x + bw / 2, h / 2, zf + 0.6));

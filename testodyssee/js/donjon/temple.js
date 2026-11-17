@@ -325,7 +325,12 @@ export const Temple = {
         const [x, y] = P.objets.K[0], pris = D[`cle:${this.moi}`] || (s.branche === 'groupe' && Object.keys(D).some((k) => k.startsWith('cle:')));
         this.decoSol(m, x, y, pris ? null : IMG_CLE[s.cle]);
       }
-      if (P.objets.Q) P.objets.Q.forEach(([x, y], i) => this.decor(m, x, y, D.porte ? null : i === 1 ? 'porte_grande' : 'porte_vide'));
+      // la porte du Gardien : une gemme s'allume par clé posée (feu, eau, plante), puis elle s'ouvre
+      const gemmes = ['f', 'e', 'p'].filter((c) => D[`ins:${c}`]).join('');
+      if (P.objets.Q) P.objets.Q.forEach(([x, y], i) => {
+        if (!D.porte) this.decor(m, x, y, i !== 1 ? 'porte_vide' : gemmes ? `porte_elements_${gemmes}` : 'porte_elements');
+        else { this.decor(m, x, y, null); if (i === 1) this.decoSol(m, x, y, 'porte_elements_ouverte'); }   // ouverte, on passe dessous
+      });
       // la porte ouverte, la carte se redessine en entier : le passage derrière elle était caché par la porte
       if (P.objets.Q && P.suivante && g.mapObj === m && (this.porteVue ||= {})[m.id] !== !!D.porte) { this.porteVue[m.id] = !!D.porte; if (D.porte) g.setMap(m.id); }
     }

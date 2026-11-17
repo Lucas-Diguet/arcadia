@@ -4,7 +4,6 @@ import { T, walkable } from '../../odyssee/js/world/tiles.js';
 import { nearestWalkable } from '../../odyssee/js/world/mapgen.js';
 import { texteJoueurs } from './donjon/plan.js';
 import { ILE, ARRIVEE } from './ile/modele.js';
-import { construireRoutes } from './rv/routes.js';
 import { construireMont } from './mont/mont.js';
 import { construireMusee } from './musee.js';
 import { construireHorloge } from './horloge.js';
@@ -32,8 +31,6 @@ export function listerLieux(world, donjons) {
   }
   // l'île privée : chacun la sienne, gardée dans ce navigateur
   out.labo.push({ nom: 'Mon île', note: 'île privée, à construire', map: ILE, x: ARRIVEE[0], y: ARRIVEE[1], dir: 'up', equipe: 'milieu', ile: true });
-  // les Routes Victoire des jeux d'origine, seules puis à la suite
-  out.labo.push(...(world.rvLieux ||= construireRoutes(world.maps)));
   // le Mont Givrécime : dix salles à gravir, dedans et dehors (aventure solo)
   out.labo.push(world.montLieu ||= construireMont(world.maps));
   // le Musée des Dunes, ajouté aux Dunes d'Ocre : la scène du sceptre (Tombeau du Roi Sans Nom)
@@ -54,7 +51,7 @@ export function listerLieux(world, donjons) {
     out.routes.push({ nom, map: 'monde', x, y, dir: 'down' });
   }
   for (const m of Object.values(world.maps)) {
-    if (m.id === 'monde' || m.donjon || m.rv || m.mont || !(m.floor === 'cave' || m.outdoor)) continue;
+    if (m.id === 'monde' || m.donjon || m.mont || !(m.floor === 'cave' || m.outdoor)) continue;
     const w = [...m.warps.keys()][0];
     const [wx, wy] = w ? w.split(',').map(Number) : [m.w >> 1, m.h >> 1];
     const [x, y] = pres(m, wx, wy);

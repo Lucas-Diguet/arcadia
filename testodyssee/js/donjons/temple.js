@@ -28,7 +28,8 @@ function exterieur() {
   const m = new GameMap('labo:temple:dehors', 32, 26, { outdoor: true, fill: T.TREE, name: 'Parvis du Temple', music: 'route' });
   m.blob(16, 13, 12.5, 10, T.GRASS, rng(4242));
   m.rect(5, 3, 26, 22, T.GRASS, [T.TREE]);
-  const b = m.building('gym', 12, 4, { roof: 'red', name: 'Temple des Éléments' });
+  // le temple taillé dans la falaise (PixelForge, elements3d.js) : lave à gauche, cascade à droite, forêt au sommet
+  const b = m.building('gym', 10, 2, { modele: 'templeElements', w: 13, d: 8, door: 6, name: 'Temple des Éléments' });
   for (let y = b.doorY + 1; y <= 23; y++) m.set(b.doorX, y, T.PATH);
   m.rect(b.doorX - 1, b.doorY + 1, b.doorX + 1, b.doorY + 2, T.PATH);
   // trois bassins : la lave, l'eau, les fleurs

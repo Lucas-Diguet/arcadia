@@ -156,17 +156,7 @@ export function brancherRendu() {
     // arènes du labo : un sol par case (fourmis, toile, vase…)
     { const k = m.solArene?.get(x + ',' + y); if (k && A[k]) return { c: A[k] }; }
     // rebords dans une grotte : une marche de roche (pas de l'herbe)
-    if (!m.outdoor && !m.rv) { const t = m.get(x, y); if (t === T.LEDGE || t === T.LEDGE_E || t === T.LEDGE_W) return { c: A.cavestairs }; }
-    // Routes Victoire : ponts de bois et rebords taillés dans la roche (pas d'eau ni d'herbe sous la grotte)
-    if (m.rv) {
-      const t = m.get(x, y);
-      if (t === T.BRIDGE) {
-        const S = m.rv.sol, bout = (dx, dy) => { let i = 1; while ('=%'.includes(S[y + dy * i]?.[x + dx * i] || '#')) i++; return S[y + dy * i]?.[x + dx * i] === 'p'; };
-        const ew = m.rv.gen === 4 ? bout(1, 0) || bout(-1, 0) : [m.get(x - 1, y), m.get(x + 1, y)].some((q) => q === T.BRIDGE || q === T.CAVE) && m.elev[y * m.w + x - 1] !== 3;
-        return { c: A.cave0, bridge: ew ? A.bridgeEW || A.bridge : A.bridge };
-      }
-      if (t === T.LEDGE || t === T.LEDGE_E || t === T.LEDGE_W || m.rv.sol[y]?.[x] === 'e') return { c: A.cavestairs };
-    }
+    if (!m.outdoor) { const t = m.get(x, y); if (t === T.LEDGE || t === T.LEDGE_E || t === T.LEDGE_W) return { c: A.cavestairs }; }
     // tombeau : le gouffre est noir ; à travers les lunettes, le chemin invisible est une dalle de lumière
     if (m.tomb) { const k = this.decoAt.get(x + ',' + y)?.k; if (k === 'gouffre') return { c: A.void }; if (k === 'revele') return { c: A[REVELE] || A.matgreen }; }
     // Mont Givrécime : les rebords dehors sont des marches de roche dans la neige, pas des talus d'herbe

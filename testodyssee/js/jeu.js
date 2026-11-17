@@ -26,8 +26,6 @@ import { dissiperIllusion } from './combat/regles.js';
 import { T, DIRS, walkable } from '../../odyssee/js/world/tiles.js';
 import { partyScreen, dexScreen, mapScreen, optionsScreen } from '../../odyssee/js/ui/screens.js';
 import { ILE } from './ile/modele.js';
-import { RoutesVictoire } from './rv/jeu.js';
-import { equipeOrigine } from './rv/routes.js';
 import { pasCascade } from './cascade.js';
 
 const CLE_TEST = 'testodyssee-mode-test';
@@ -65,9 +63,8 @@ export class TestGame extends Game {
       }
     }
     if (D?.pasSpecial(d) || D?.pousser(d)) return;
-    // Routes Victoire : hauteurs, cases fermées d'un côté, rochers qui tombent dans les trous
+    // cascades : on les remonte en surfant avec Cascade
     if (pasCascade(this, d)) return;
-    if ((this.rv ||= new RoutesVictoire(this)).avantPas(d)) return;
     // Salle de l'Horloge : pas de marche entre deux hauteurs
     if (this.horloge?.avantPas(d)) return;
     // porte d'un donjon fermée à clé ; tombeau : pas de sortie sans le pendentif, et ses porteurs ne s'approchent pas
@@ -80,8 +77,6 @@ export class TestGame extends Game {
   }
   // donjon clair : fond de combat clair (Odyssée prend le fond de grotte pour toute carte de grotte)
   async runBattle(o) {
-    // dresseurs des Routes Victoire : les attaques, objets tenus et valeurs cachées du jeu d'origine
-    if (o.trainer?.rv && o.party) equipeOrigine(o.trainer.team, o.party);
     if (this.modeTest && await this.ui.yesNo('Mode test : passer ce combat (compté comme gagné) ?')) return 'win';
     // dresseurs des chemins du Temple : battu, on se réveille à l'entrée de la salle (pas au dernier Centre)
     if (o.trainer && this.donjons?.dresseurTemple?.(o.id)) {
@@ -105,27 +100,18 @@ export class TestGame extends Game {
     if (this.ile && this.state && (id === ILE || id?.startsWith(ILE + ':')) && (!this.world.maps[id] || this.ile.pour !== this.ile.cle || !this.ile.dedans())) this.ile.preparer();
     return super.setMap(id);
   }
-  /** rencontres des Routes Victoire : celles du jeu d'origine, de jour comme de nuit */
-  wildBattle(enc, o = {}) {
-    if (!this.mapObj?.rv || o.fixed) return super.wildBattle(enc, o);
-    let r = Math.random() * enc.reduce((a, x) => a + x[3], 0), e = enc[0];
-    for (const x of enc) { r -= x[3]; if (r <= 0) { e = x; break; } }
-    const lvl = e[1] + Math.floor(Math.random() * (e[2] - e[1] + 1)), lead = this.lead();
-    if (!lead || (this.state.repel > 0 && lead.lvl >= lvl)) return;
-    return super.wildBattle([[e[0], lvl, lvl, 1]], { ...o, fixed: true });
-  }
   setTile(x, y, v) {
     // un meuble poussé (Bois des Contes) garde son dessin : il suit le rocher d'une case à l'autre
     const B = this.mapObj?.blocs, k = x + ',' + y;
     if (B) { if (v !== T.BOULDER && B.has(k)) { this._bloc = B.get(k); B.delete(k); } else if (v === T.BOULDER && this._bloc) { B.set(k, this._bloc); this._bloc = null; } }
-    super.setTile(x, y, v); if (v === T.BOULDER) { this.rv?.rocherPose(x, y); this.donjons?.rocherTemple?.(x, y); this.donjons?.rocherArene?.(x, y); }
+    super.setTile(x, y, v); if (v === T.BOULDER) { this.donjons?.rocherTemple?.(x, y); this.donjons?.rocherArene?.(x, y); }
   }
   async useForce() { if (await this.donjons?.forceMeuble?.()) return; return super.useForce(); }
   async warp(to, sfx) {
     // Musée des Dunes : la vitrine pleine ou vide, la police à la sortie de l'arène
     this.musee?.avantWarp(to);
     const de = this.mapObj?.id;
-    (this.rv ||= new RoutesVictoire(this)).arrivee(to); this.donjons?.remiseTemple?.(to); this.donjons?.remiseContes?.(to);
+    this.donjons?.remiseTemple?.(to); this.donjons?.remiseContes?.(to);
     const r = await super.warp(to, sfx);
     await this.musee?.apresWarp(de, to);
     return r;
@@ -137,10 +123,9 @@ export class TestGame extends Game {
   /** le Talisman des Éléments (Temple des Éléments) : Coupe, Force, Éclate-Roc et Surf, sans CS ni badge */
   hasField(k) { return (['coupe', 'force', 'eclate', 'surf'].includes(k) && !!this.state?.bag?.['talisman-elements']) || super.hasField(k); }
   canField(k) { if (k !== 'vol' && ['coupe', 'force', 'eclate', 'surf'].includes(k) && this.state?.bag?.['talisman-elements']) return true; return this.donjons?.dansUnDonjon?.() && k !== 'vol' ? this.hasField(k) : super.canField(k); }
-  rvApprendre(cle) { return (this.rv ||= new RoutesVictoire(this)).apprendre(cle); }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
   async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }
-  async onStep(mv) { this.rv?.apresPas(mv); await super.onStep(mv); if (!this.busy && this.mapObj) await this.musee?.apresPas(); this.farwest?.apresPas(); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas?.(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.donjons?.apresPasTemple(); if (!this.busy) await this.donjons?.apresPasTombeau?.(); if (!this.busy) await this.donjons?.apresPasContes?.(); if (!this.busy) await this.donjons?.apresPasCourse?.(); if (!this.busy) await this.ile?.apresPas(); } }
+  async onStep(mv) { await super.onStep(mv); if (!this.busy && this.mapObj) await this.musee?.apresPas(); this.farwest?.apresPas(); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas?.(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.donjons?.apresPasTemple(); if (!this.busy) await this.donjons?.apresPasTombeau?.(); if (!this.busy) await this.donjons?.apresPasContes?.(); if (!this.busy) await this.donjons?.apresPasCourse?.(); if (!this.busy) await this.ile?.apresPas(); } }
   load() { return null; }
 
   async startMenu() {
