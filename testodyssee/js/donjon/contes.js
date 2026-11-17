@@ -22,7 +22,8 @@ import { PUITS, ORDRE_SOUFFLETS } from './meubles.js';
 import { jouerCasseTete } from './jeux-tombeau-ecran.js';
 
 const cle = (x, y) => x + ',' + y;
-const estContes = (d) => !!d?.contes;
+// les liens entre salles servent aussi à d'autres donjons (`liens` : le Château de Noirval)
+const estContes = (d) => !!(d?.contes || d?.liens);
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
 /** le Pokémon niché dans le tas de bois */
 const NICHE_BOIS = [168, 43];
@@ -110,8 +111,8 @@ export const Contes = {
     for (const [c, l] of Object.entries(P.objets)) {
       const o = d.objets[c]; if (o.type !== 'maison') continue;
       const [x, y] = l[0], B = o.modele ? { door: o.door, d: o.d } : BUILDINGS[o.batiment];
-      m.building(o.batiment, x - B.door, y - (B.d - 1), { roof: o.toit, name: o.nom, ...(o.modele ? { modele: o.modele, w: o.w, d: o.d, door: o.door } : {}) });
-      if (o.ferme) { m.set(x, y, T.BUILD); m.object(x, y, { use: () => this.game.ui.say(['La porte est fermée.', 'Derrière, on entend trois grosses voix qui se disputent à propos d\'une soupe trop chaude.']) }); continue; }
+      m.building(o.batiment, x - B.door, y - (B.d - 1), { roof: o.toit, name: o.nom, ...(o.modele ? { modele: o.modele, w: o.w, d: o.d, door: o.door, opts: o.opts } : {}) });
+      if (o.ferme) { m.set(x, y, T.BUILD); m.object(x, y, { use: () => this.game.ui.say(o.texteFerme || ['La porte est fermée.', 'Derrière, on entend trois grosses voix qui se disputent à propos d\'une soupe trop chaude.']) }); continue; }
       m.warp(x, y, { ...this.arriveeContes(d, c), dir: 'up' });
     }
     // l'entrée du labyrinthe : on y entre en marchant

@@ -740,6 +740,20 @@ Dans la donnée de l'île : `points`, `stock { article: nombre }`, `statues { 's
 2. Ce que voit le joueur dans `js/donjon/jeu.js` (dialogue d'un PNJ, ou vérification à chaque image comme les dalles,
    décidée par l'hôte).
 
+### Le Château de Noirval
+
+Seul ou en groupe (`js/donjons/chateau.js`, mécaniques `js/donjon/chateau.js`, style `chateau` : murs et dalles de
+pierre noire dessinés par `js/rendu.js`). Dehors, la Lande de Noirval : le château fort en volumes (`chateauFort` de
+`odyssee/js/render/labo3d.js`), et Dame Isaure devant le pont-levis. Dedans, la cour d'honneur (le donjon `donjonCour`
+et les quatre tours `tourCour`, cassée ou cachots par `opts`), reliée aux salles par les liens du Bois des Contes
+(`liens: true` du donjon : `lien`, `maison`, `escalier`, `ferme` et `texteFerme`).
+Grand Hall : à la première entrée, le seigneur Malvoran, Élise et quatre gardes d'élite montent dans la tour centrale
+(`sceneSeigneur`, drapeau `scene` de la salle `gh`). Sa porte (`Ш`, `porteCentrale`) a quatre serrures : un sceau au
+sommet de chaque tour (`sceau`, état partagé `sceau_<A|B|C|D>` de la salle `gh`, gardé par le dresseur qui a `sceau`).
+Tour du Faucon (avant gauche, `a1` à `a6`) : six étages façon Tour Céleste, escaliers d'un coin à l'autre (`ETAGES`,
+`MONTE` / `DESCEND`), trois dresseurs par étage, le capitaine et le sceau au sommet, la porte du chemin de ronde (`Ъ`)
+qui mènera à la tour cassée. Les trois autres tours sont fermées pour l'instant. Noms provisoires.
+
 ### Le Tombeau du Roi Sans Nom
 
 Un donjon solo d'infiltration (`js/donjons/tombeau.js`, mécaniques `js/donjon/tombeau.js`), en style `egypte` (sol de

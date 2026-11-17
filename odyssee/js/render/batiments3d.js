@@ -2965,5 +2965,5 @@ export const EMPRISES = {
   pagode: [11, 11], tourCendree: [11, 11], pavillon: [8, 7], tour: [8, 5], tourVerre: [10, 7], tourDeco: [8, 8], bourse: [12, 8], casino: [14, 8], ligue: [30, 14], usinePokeball: [32, 10],
   escalierMontant: [1, 2], escalierDescendant: [1, 2],
   pyramide: [12, 12], temple: [11, 8],
-  painEpice: [15, 8], templeElements: [13, 8], chateauFort: [30, 28], voiesSanctuaire: [9, 7], museeAntique: [17, 9], saloonFW: [7, 5], banqueFW: [5, 4], sherifFW: [4, 4], magasinFW: [6, 4], maisonFW: [4, 3], puitsJardin: [2, 2], cabaneOutils: [3, 3],
+  painEpice: [15, 8], templeElements: [13, 8], chateauFort: [30, 28], tourCour: [5, 6], donjonCour: [11, 8], voiesSanctuaire: [9, 7], museeAntique: [17, 9], saloonFW: [7, 5], banqueFW: [5, 4], sherifFW: [4, 4], magasinFW: [6, 4], maisonFW: [4, 3], puitsJardin: [2, 2], cabaneOutils: [3, 3],
 };

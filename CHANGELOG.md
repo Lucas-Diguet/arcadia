@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 6.18 — 17 novembre 2026
+- **TestOdyssée** — Nouveau donjon en construction : le Château de Noirval, seul ou en groupe.
+  - Devant le pont-levis, une mère dont la fille a été enlevée par le seigneur du château.
+  - Dans le Grand Hall, le seigneur s'enferme dans la tour centrale avec sa prisonnière. Sa porte demande quatre sceaux, un au sommet de chaque tour.
+  - La Tour du Faucon est ouverte : six étages de gardes et, tout en haut, le capitaine et le premier sceau. Les trois autres tours arrivent bientôt.
+
 ## 6.17 — 17 novembre 2026
 - **TestOdyssée** — Poussière-Ville a de vrais bâtiments de western : un saloon à balcon, une banque en briques, le bureau du shérif et son étoile, le magasin général et une petite maison de planches.
 

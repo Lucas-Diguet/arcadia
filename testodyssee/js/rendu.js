@@ -8,7 +8,8 @@ import { T } from '../../odyssee/js/world/tiles.js';
 // textures d'Odyssée reprises pour les styles de donjon : clair (miroirs), sable (pyramide)
 const CLAIR = { sol: 'floor_musee', mur: 'wall_mart', haut: ['snow', 'floor_lab', 'floor_mart'], glace: 'floor_gymWater', fond: '#e8eef8' };
 const EGYPTE = { sol: ['gl_sable'], mur: ['mur_tombeau', 'wall_in'], haut: ['haut_tombeau', 'cavetop'], fond: '#1c1408' };
-const STYLES = { insecte: { sol: ['floor_gymBug', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymGrass', 'cavetop'], fond: '#0c1408' },
+const CHATEAU = { sol: ['sol_chateau'], mur: ['mur_chateau', 'wall_in'], haut: ['haut_chateau', 'cavetop'], fond: '#0c0a10' };
+const STYLES = { chateau: CHATEAU, insecte: { sol: ['floor_gymBug', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymGrass', 'cavetop'], fond: '#0c1408' },
   poison: { sol: ['floor_gymPsy', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymPsy', 'cavetop'], fond: '#120a16' },
   clair: CLAIR, egypte: EGYPTE, bois: { sol: ['floor_wood'], mur: ['wall_in', 'wall_center'], haut: ['roof_flat', 'floor_wood'], fond: '#0c0a14' }, sable: { sol: ['floor_sand', 'gl_sable', 'floor_gymRock'], mur: ['wall_gym'], haut: ['floor_gymRock', 'cavetop'], fond: '#1a1008', relief: true } };
 const cellule = (A, k) => (Array.isArray(k) ? k.map((q) => A[q]).find(Boolean) : A[k]);
@@ -45,6 +46,33 @@ const TUILES = {
     x.fillStyle = '#6a4326'; x.fillRect(0, 0, 32, 32);
     for (let k = 0; k < 70; k++) { x.fillStyle = r() < 0.5 ? '#7b5130' : '#573619'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 1); }
     for (let k = 0; k < 8; k++) { x.fillStyle = '#4a2d14'; x.fillRect(r() * 30 | 0, r() * 30 | 0, 2, 2); }
+  },
+  mur_chateau(x, r) {
+    // château noir : grands blocs de pierre sombre, joints creusés, quelques éclats plus clairs
+    x.fillStyle = '#2e2c33'; x.fillRect(0, 0, 32, 32);
+    for (let j = 0; j < 3; j++) {
+      const y = j * 11, dec = j % 2 ? 10 : 0;
+      for (let i = -1; i < 3; i++) {
+        const bx = i * 20 + dec, t = r();
+        x.fillStyle = t < 0.33 ? '#36343b' : t < 0.66 ? '#2a2830' : '#323037'; x.fillRect(bx + 1, y + 1, 18, 9);
+        x.fillStyle = 'rgba(200,200,220,0.08)'; x.fillRect(bx + 1, y + 1, 18, 1);
+        x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(bx + 1, y + 9, 18, 1);
+      }
+      x.fillStyle = '#141218'; x.fillRect(0, y, 32, 1);
+      for (let i = -1; i < 3; i++) x.fillRect(i * 20 + dec, y, 1, 11);
+    }
+    for (let k = 0; k < 30; k++) { x.fillStyle = r() < 0.5 ? 'rgba(0,0,0,0.3)' : 'rgba(160,160,180,0.12)'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 1, 1); }
+  },
+  haut_chateau(x, r) {
+    x.fillStyle = '#1a181e'; x.fillRect(0, 0, 32, 32);
+    for (let k = 0; k < 50; k++) { x.fillStyle = r() < 0.5 ? '#222027' : '#141217'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 2); }
+  },
+  sol_chateau(x, r) {
+    // dalles de pierre grise usées, joints sombres, une dalle sur deux un peu plus claire
+    x.fillStyle = '#4a4850'; x.fillRect(0, 0, 32, 32);
+    for (const [px, py] of [[0, 0], [16, 0], [0, 16], [16, 16]]) { const t = r(); x.fillStyle = t < 0.4 ? '#4e4c54' : t < 0.75 ? '#46444c' : '#524f58'; x.fillRect(px + 1, py + 1, 14, 14); }
+    x.fillStyle = '#2a2830'; x.fillRect(0, 15, 32, 1); x.fillRect(15, 0, 1, 32); x.fillRect(0, 31, 32, 1); x.fillRect(31, 0, 1, 32);
+    for (let k = 0; k < 40; k++) { x.fillStyle = r() < 0.5 ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.06)'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 1, 1); }
   },
   sol_reflet(x) {
     // sol de la salle du Reflet : dalles bleu pâle, assez foncées pour que le haut blanc des murs s'en détache

@@ -186,6 +186,89 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
     return G;
   };
 
+  /* ---------------------------------------------------------------- vus de la cour du château */
+  // une des quatre tours d'angle, vue de la cour (5 × 6) : fût de pierre noire, porte cloutée en arc, archères,
+  // mâchicoulis, créneaux, toit en poivrière ; casse : le haut s'est effondré (moignon déchiqueté, gravats)
+  B.tourCour = ({ casse = false, prison = false } = {}) => {
+    const G = new THREE.Group(), w = 5, d = 6, cx = w / 2, cz = 2.6, r = 2.35, Ht = casse ? 9 : 15;
+    const PD = M({ map: grosBloc('#343238', 2) }), PT = M({ map: grosBloc('#25232a', 1) }), P = M({ map: grosBloc('#2e2c32', 0) });
+    const TOIT = M({ map: TX.ardoise('#1e1c24') }), SOMBRE = COL('#141218'), BOIS = COL('#4a3020'), FER = COL('#3a3a42');
+    G.add(at(cylUV(r + 0.15, r + 0.3, 0.6, PT), cx, 0.3, cz));
+    G.add(at(cylUV(r, r, Ht, PD), cx, Ht / 2, cz));
+    if (!casse) {
+      G.add(at(cylUV(r + 0.35, r, 0.6, PT), cx, Ht + 0.1, cz));
+      for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; G.add(at(boite(0.18, 0.5, 0.18, PT), cx + Math.cos(a) * (r + 0.15), Ht - 0.35, cz + Math.sin(a) * (r + 0.15))); }
+      G.add(at(cylUV(r + 0.35, r + 0.35, 0.35, P), cx, Ht + 0.55, cz));
+      couronne(G, cx, cz, r + 0.35, Ht + 0.72, P, 0.8, 16);
+      G.add(at(coneUV(r - 0.1, 4.2, TOIT, 18), cx, Ht + 0.72 + 2.1, cz));
+      drapeau(G, cx, Ht + 4.6, cz, prison ? '#1a1a1a' : '#7a1a22', 1.8);
+    } else {
+      // le sommet effondré : des blocs de hauteurs inégales, un trou noir, des gravats au pied
+      for (let i = 0; i < 14; i++) {
+        const a = i / 14 * Math.PI * 2, h = 0.4 + hash(i, 0, 99) * 2.4;
+        const b = boite(1.1, h, 0.7, PD); b.rotation.y = -a + Math.PI / 2; G.add(at(b, cx + Math.cos(a) * (r - 0.3), Ht + h / 2, cz + Math.sin(a) * (r - 0.3)));
+      }
+      G.add(at(cylUV(r - 0.65, r - 0.65, 0.05, SOMBRE), cx, Ht + 0.02, cz));
+      for (let i = 0; i < 9; i++) { const m = new THREE.Mesh(new THREE.DodecahedronGeometry(0.25 + hash(i, 1, 99) * 0.3, 0), PT); m.castShadow = true; G.add(at(m, cx - 2 + hash(i, 2, 99) * 4, 0.2, cz + r + 0.6 + hash(i, 3, 99) * 1.2)); }
+      const p = boite(1.6, 0.12, 0.3, BOIS); p.rotation.z = 0.5; G.add(at(p, cx + 1.4, Ht + 0.5, cz + 1.0));   // une poutre qui dépasse
+    }
+    for (let e = 0; e < (casse ? 2 : 3); e++) fente(G, cx + (e % 2 ? 0.9 : -0.9), 4 + e * 3.5, cz + r * 0.92 + 0.02, 0, 1.0);
+    if (prison) for (const dx of [-1.0, 1.0]) for (let i = 0; i < 3; i++) G.add(at(boite(0.04, 0.7, 0.04, FER), cx + dx - 0.2 + i * 0.2, 6.5, cz + r * 0.95));
+    // la porte : arc de pierre, vantail de bois clouté
+    const pw = 1.3, ph = 2.1, zp = cz + r + 0.32;
+    G.add(at(boite(pw + 0.9, ph + 1.0, 0.5, PD), cx, (ph + 1.0) / 2, zp - 0.26));   // avant-corps de la porte
+    reperePorte(G, cx, 0, zp, pw, ph);
+    G.add(at(boite(pw, ph, 0.05, BOIS), cx, ph / 2, zp));
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(pw / 2, 12, 0, Math.PI), BOIS), cx, ph, zp));
+    for (let i = 0; i < 9; i++) G.add(at(boite(0.07, 0.07, 0.04, FER), cx - 0.4 + (i % 3) * 0.4, 0.4 + Math.floor(i / 3) * 0.55, zp + 0.04));
+    for (let k = 0; k < 7; k++) G.add(at(boite(0.32, 0.26, 0.22, PT), cx + Math.cos(k / 6 * Math.PI) * (pw / 2 + 0.16), ph + Math.sin(k / 6 * Math.PI) * (pw / 2 + 0.16), zp - 0.02));
+    for (const s of [-1, 1]) { G.add(at(boite(0.14, 0.4, 0.14, FER), cx + s * 0.95, 1.6, zp + 0.08)); G.add(at(boite(0.12, 0.2, 0.12, LUM('#ffb050', '#a04000')), cx + s * 0.95, 1.9, zp + 0.1)); }
+    return G;
+  };
+  // le donjon central vu de la cour (11 × 8) : grosse tour carrée, perron, grande porte à deux battants ferrés,
+  // bannières, quatre tourelles d'angle, créneaux
+  B.donjonCour = () => {
+    const G = new THREE.Group(), w = 11, d = 8, cx = w / 2, zf = 6.2, kw = 9, kd = 5.6, kh = 18;
+    const PD = M({ map: grosBloc('#343238', 2) }), PT = M({ map: grosBloc('#25232a', 1) }), TOIT = M({ map: TX.ardoise('#1e1c24') });
+    const BOIS = COL('#3e2818'), FER = COL('#3a3a42'), SOMBRE = COL('#141218');
+    const kz = zf - kd / 2;
+    G.add(at(boite(kw + 0.6, 1.2, kd + 0.6, PT), cx, 0.6, kz));
+    G.add(at(boite(kw, kh, kd, PD), cx, kh / 2, kz));
+    for (let y = 4.5; y < kh; y += 4.5) G.add(at(boite(kw + 0.2, 0.22, kd + 0.2, PT), cx, y, kz));
+    G.add(at(boite(kw + 0.5, 0.35, kd + 0.5, PT), cx, kh + 0.15, kz));
+    creneaux(G, cx - kw / 2 - 0.1, zf + 0.15, cx + kw / 2 + 0.1, zf + 0.15, kh + 0.3, PD, 0.8, 0.45, 0.6);
+    for (const sx of [-1, 1]) {
+      const tx = cx + sx * kw / 2, tz = zf - 0.2;
+      G.add(at(cylUV(0.9, 0.9, 3.4, PD, 14), tx, kh + 1.7, tz));
+      couronne(G, tx, tz, 1.05, kh + 3.4, PD, 0.5, 10);
+      G.add(at(coneUV(0.95, 2.2, TOIT, 14), tx, kh + 3.4 + 1.1, tz));
+    }
+    for (let e = 0; e < 3; e++) for (const dx of [-2.6, 2.6]) fente(G, cx + dx, 6 + e * 4, zf + 0.02, 0, 1.2);
+    // grande baie haute, à vitrail sombre
+    G.add(at(boite(1.4, 2.6, 0.05, SOMBRE), cx, 10.5, zf + 0.01));
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.7, 12, 0, Math.PI), LUM('#802030', '#300810')), cx, 11.8, zf + 0.02));
+    // perron et grande porte
+    for (let k = 0; k < 3; k++) G.add(at(boite(4.4 - k * 0.6, 0.2, 0.5, PT), cx, 0.1 + k * 0.2, zf + 1.3 - k * 0.45));
+    const pw = 2.2, ph = 3.2;
+    reperePorte(G, cx, 0.6, zf, pw, ph);
+    for (const s of [-1, 1]) {
+      G.add(at(boite(pw / 2 - 0.03, ph, 0.08, BOIS), cx + s * pw / 4, 0.6 + ph / 2, zf + 0.04));
+      for (const k of [0.25, 0.55, 0.85]) G.add(at(boite(pw / 2 - 0.1, 0.1, 0.05, FER), cx + s * pw / 4, 0.6 + ph * k, zf + 0.1));
+      G.add(at(new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.03, 6, 10), FER), cx + s * 0.22, 0.6 + ph * 0.45, zf + 0.12));
+    }
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(pw / 2, 14, 0, Math.PI), BOIS), cx, 0.6 + ph, zf + 0.03));
+    for (let k = 0; k < 9; k++) G.add(at(boite(0.36, 0.3, 0.24, PT), cx + Math.cos(k / 8 * Math.PI) * (pw / 2 + 0.18), 0.6 + ph + Math.sin(k / 8 * Math.PI) * (pw / 2 + 0.18), zf));
+    // deux bannières noir et rouge, deux braseros
+    for (const s of [-1, 1]) {
+      G.add(at(boite(0.9, 3.0, 0.04, COL('#5a1018')), cx + s * 2.6, 5.4, zf + 0.04));
+      G.add(at(boite(0.5, 0.5, 0.05, COL('#141012')), cx + s * 2.6, 5.9, zf + 0.06));
+      G.add(at(cylUV(0.3, 0.18, 0.4, FER, 8), cx + s * 2.9, 1.2, zf + 1.2));
+      G.add(at(cylUV(0.06, 0.06, 1.0, FER, 6), cx + s * 2.9, 0.5, zf + 1.2));
+      G.add(at(new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 6), LUM('#ff9a30', '#c04000')), cx + s * 2.9, 1.6, zf + 1.2));
+    }
+    return G;
+  };
+
   /* ---------------------------------------------------------------- le Sanctuaire des Trois Voies (9 × 7) */
   B.voiesSanctuaire = () => {
     const G = new THREE.Group(), w = 9, d = 7, cx = w / 2, zf = 5.0;
