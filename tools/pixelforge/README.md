@@ -40,4 +40,8 @@ Le Temple vu du dehors, façade taillée dans la falaise à la manière de Petra
 Modèles 3D pas encore dans le jeu (`odyssee/js/render/labo3d.js`, aperçu `galerie3d.html?vue=seul&b=<nom>`) : `chateauFort`
 (30 × 28, pierre noire, douves, pont-levis, quatre tours d'angle, donjon central à plate-forme), `voiesSanctuaire` (9 × 7, extérieur du
 Sanctuaire des Trois Voies), `museeAntique` (17 × 9, musée à l'antique en marbre blanc et gris, dôme de cuivre).
+`python3 tools/pixelforge/temple_objets.py` : le Temple des Éléments en solo redessiné au propre, dans `temple/` (pas encore
+dans le jeu) : les passages secrets (`passage_lac`, `passage_sec`, `passage_tunnel`, `passage_verdure`, `passage`), les
+obstacles (`ronces_geantes`, `vapeur`, `mur_flammes`, `mur_glace`, `arbre_mort`, `gouffre`, `grille_temple`) et les six
+objets (`tresor_braise`, `_graine`, `_fiole`, `_pierre`, `_rosee`, `_corde`), à 32 px par case, et leurs planches.
 `python3 tools/pixelforge/miroir_poche.py` : le miroir de poche du Donjon des Miroirs (`donjon/miroir_poche.png`).
