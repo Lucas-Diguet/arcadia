@@ -127,6 +127,11 @@ if (vue === 'seul') {
   const perso = (ligne, x, z, haut) => plan(CH, x, z, 1.25, 1.25, haut ? 10 : 1, 12, NL, ligne);
   const dr = Q.get('dragon');
   const dw = +(Q.get('dw') || 8), dh = +(Q.get('dh') || dw);
+  if (dr && Q.get('halo')) {
+    const t = L.load(Q.get('halo')); t.colorSpace = THREE.SRGBColorSpace; t.repeat.set(1 / +(Q.get('nc') || 8), 1); t.offset.set(+(Q.get('col') || 0) / +(Q.get('nc') || 8), 0);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(dw, dh), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    m.position.set(7.5, +(Q.get('dy') || -0.2) + dh / 2, 4.35); etire.add(m);
+  }
   if (dr) plan(dr, 7.5, 4.4, dw, dh, +(Q.get('col') || 2), +(Q.get('nc') || 8), 1, 0, +(Q.get('dy') || -0.2));
   else plan('../../odyssee/img/pokeapi/pokemon/versions/generation-v/black-white/635.png', 7.5, 4.4, 10, 10, 0, 1, 1, 0, -0.8);
   perso(52, 7.5, 6.2); perso(66, 9.3, 6.0); perso(48, 5.6, 6.9); perso(49, 9.6, 7.2);
