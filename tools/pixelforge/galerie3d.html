@@ -113,6 +113,22 @@ if (vue === 'seul') {
   poser('pagode', 16.5, 12);
   for (const [x, z] of [[10, 18], [34, 18], [10, 30], [34, 30], [10, 10], [34, 10]]) poser('maison', x - 2, z - 3, { toit: '#7a3a2a', mur: '#efe0c8' });
   cx = +(Q.get('cx') || 22); cz = +(Q.get('cz') || 27.5);
+} else if (vue === 'toit') {
+  // le toit du donjon central de Noirval, la nuit : la scène finale avec le dragon (sprite officiel agrandi)
+  poser('toitDonjon', 0, 0);
+  const L = new THREE.TextureLoader();
+  const plan = (src, x, z, w, h, col, nc = 12, nl = 1, l = 0, y = 0) => {
+    const t = L.load(src); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
+    t.repeat.set(1 / nc, 1 / nl); t.offset.set(col / nc, 1 - (l + 1) / nl);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.5 }));
+    m.position.set(x, y + h / 2, z); etire.add(m); return m;
+  };
+  const CH = '../../odyssee/img/chars.png', NL = 73;
+  const perso = (ligne, x, z, haut) => plan(CH, x, z, 1.25, 1.25, haut ? 10 : 1, 12, NL, ligne);
+  plan('../../odyssee/img/pokeapi/pokemon/versions/generation-v/black-white/635.png', 7.5, 4.4, 10, 10, 0, 1, 1, 0, -0.8);
+  perso(52, 7.5, 6.2); perso(66, 9.3, 6.0); perso(48, 5.6, 6.9); perso(49, 9.6, 7.2);
+  perso(0, 6.6, 10.2, true); perso(1, 7.6, 10.4, true); perso(0, 8.6, 10.2, true);
+  cx = 7.5; cz = 3.2;
 } else if (vue === 'interieur') {
   // pièce de 13 × 9 : parquet, mur du fond, escalier qui monte (à droite) et qui descend (à gauche), comme dans les tours
   const W = 13, Dd = 9, tp = TX.parquet();
@@ -132,8 +148,8 @@ if (vue === 'seul') {
   cx = W / 2; cz = Dd / 2 - 1.6;
 }
 
-scene.add(new THREE.HemisphereLight(0xdfefff, 0x6a8a5a, vue === 'interieur' ? 1.4 : 1.1));
-const sun = new THREE.DirectionalLight(0xfff2dc, vue === 'interieur' ? 1.6 : 2.2);
+scene.add(new THREE.HemisphereLight(vue === 'toit' ? 0x8090c0 : 0xdfefff, vue === 'toit' ? 0x301018 : 0x6a8a5a, vue === 'interieur' ? 1.4 : vue === 'toit' ? 0.9 : 1.1));
+const sun = new THREE.DirectionalLight(vue === 'toit' ? 0xb0c0ff : 0xfff2dc, vue === 'interieur' ? 1.6 : vue === 'toit' ? 1.2 : 2.2);
 sun.position.set(cx - 32, 56, cz + 36); sun.target.position.set(cx, 0, cz); scene.add(sun); scene.add(sun.target);
 sun.castShadow = true; sun.shadow.mapSize.set(8192, 8192);
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 260 }); sun.shadow.bias = -0.0008;
@@ -143,7 +159,8 @@ camera.updateProjectionMatrix(); camera.projectionMatrix.elements[0] *= Math.sin
 const dist = (Math.sin(EL) * IH) / (2 * Math.tan(FOV * Math.PI / 360) * D);
 camera.position.set(cx, dist * Math.sin(EL), cz + dist * Math.cos(EL)); camera.lookAt(cx, 0, cz);
 renderer.render(scene, camera);
-window.done = true;
+if (vue === 'toit') THREE.DefaultLoadingManager.onLoad = () => { renderer.render(scene, camera); window.done = true; };
+else window.done = true;
 </script>
 </body>
 </html>

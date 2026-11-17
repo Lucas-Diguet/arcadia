@@ -269,6 +269,59 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
     return G;
   };
 
+  // le toit du donjon central (15 × 12) : terrasse de dalles noires, parapet crénelé, deux tourelles au fond,
+  // braseros, cercle d'invocation rouge au fond (là où le dragon se pose), trappe de l'escalier devant
+  B.toitDonjon = () => {
+    const G = new THREE.Group(), w = 15, d = 12;
+    const PD = M({ map: grosBloc('#343238', 2) }), PT = M({ map: grosBloc('#25232a', 1) }), TOIT = M({ map: TX.ardoise('#1e1c24') });
+    const FER = COL('#3a3a42'), SOMBRE = COL('#0c0a10'), ROUGE = LUM('#ff3030', '#a00010');
+    const td = dalles('#2a2830');
+    const g = new THREE.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2);
+    const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w, uv.getY(i) * d);
+    const sol = new THREE.Mesh(g, M({ map: td })); sol.receiveShadow = true; G.add(at(sol, w / 2, 0, d / 2));
+    // parapet : haut au fond et sur les côtés, bas devant pour qu'on voie la terrasse
+    G.add(at(boite(w, 1.1, 0.6, PD), w / 2, 0.55, 0.3));
+    for (const x of [0.3, w - 0.3]) G.add(at(boite(0.6, 1.1, d, PD), x, 0.55, d / 2));
+    G.add(at(boite(w, 0.45, 0.5, PD), w / 2, 0.22, d - 0.25));
+    creneaux(G, 0, 0.3, w, 0.3, 1.1, PD, 0.6, 0.6, 0.55);
+    creneaux(G, 0.3, 0, 0.3, d, 1.1, PD, 0.6, 0.6, 0.55);
+    creneaux(G, w - 0.3, 0, w - 0.3, d, 1.1, PD, 0.6, 0.6, 0.55);
+    // deux tourelles au fond
+    for (const x of [1.2, w - 1.2]) {
+      G.add(at(cylUV(1.2, 1.25, 4.2, PD, 16), x, 2.1, 1.2));
+      couronne(G, x, 1.2, 1.35, 4.2, PD, 0.6, 12);
+      G.add(at(coneUV(1.3, 2.8, TOIT, 16), x, 4.2 + 1.4, 1.2));
+      fente(G, x, 2.6, 1.2 + 1.24, 0, 1.0);
+    }
+    // cercle d'invocation : anneau rouge et runes, dalles fendues
+    const anneau = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.08, 4, 40), ROUGE); anneau.rotation.x = Math.PI / 2; G.add(at(anneau, w / 2, 0.03, 3.6));
+    const anneau2 = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.05, 4, 32), ROUGE); anneau2.rotation.x = Math.PI / 2; G.add(at(anneau2, w / 2, 0.03, 3.6));
+    for (let k = 0; k < 8; k++) {
+      const a = k / 8 * Math.PI * 2, r = boite(0.22, 0.02, 0.42, ROUGE); r.rotation.y = -a;
+      G.add(at(r, w / 2 + Math.cos(a) * 2.05, 0.03, 3.6 + Math.sin(a) * 2.05));
+    }
+    for (const [x, z, l, a] of [[4.6, 5.4, 1.4, 0.6], [10.2, 4.9, 1.2, -0.5], [6.1, 1.6, 0.9, 1.2]]) {
+      const f = boite(l, 0.02, 0.06, SOMBRE); f.rotation.y = a; G.add(at(f, x, 0.02, z));
+    }
+    // braseros le long des côtés
+    for (const x of [1.4, w - 1.4]) for (const z of [4.5, 8.5]) {
+      G.add(at(cylUV(0.07, 0.07, 0.9, FER, 6), x, 0.45, z));
+      G.add(at(cylUV(0.38, 0.2, 0.35, FER, 8), x, 1.0, z));
+      G.add(at(new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.6, 6), LUM('#ff9a30', '#c04000')), x, 1.45, z));
+    }
+    // bannières sur le parapet du fond
+    for (const x of [4.2, w - 4.2]) {
+      G.add(at(boite(0.9, 1.6, 0.04, COL('#5a1018')), x, 1.9, 0.62));
+      G.add(at(boite(0.45, 0.45, 0.05, COL('#141012')), x, 2.1, 0.64));
+      G.add(at(cylUV(0.04, 0.04, 2.0, FER, 6), x, 1.9, 0.58));
+    }
+    // trappe de l'escalier, devant
+    G.add(at(boite(2.0, 0.04, 1.4, SOMBRE), w / 2, 0.02, d - 1.6));
+    G.add(at(boite(2.2, 0.12, 0.12, PT), w / 2, 0.06, d - 2.35));
+    G.add(at(boite(2.2, 0.12, 0.12, PT), w / 2, 0.06, d - 0.85));
+    return G;
+  };
+
   /* ---------------------------------------------------------------- le Sanctuaire des Trois Voies (9 × 7) */
   B.voiesSanctuaire = () => {
     const G = new THREE.Group(), w = 9, d = 7, cx = w / 2, zf = 5.0;
