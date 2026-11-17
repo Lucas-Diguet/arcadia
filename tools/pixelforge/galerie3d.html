@@ -125,7 +125,9 @@ if (vue === 'seul') {
   };
   const CH = '../../odyssee/img/chars.png', NL = 73;
   const perso = (ligne, x, z, haut) => plan(CH, x, z, 1.25, 1.25, haut ? 10 : 1, 12, NL, ligne);
-  plan('../../odyssee/img/pokeapi/pokemon/versions/generation-v/black-white/635.png', 7.5, 4.4, 10, 10, 0, 1, 1, 0, -0.8);
+  const dr = Q.get('dragon');
+  if (dr) plan(dr, 7.5, 4.4, 8, 8, +(Q.get('col') || 2), +(Q.get('nc') || 8), 1, 0, -0.2);
+  else plan('../../odyssee/img/pokeapi/pokemon/versions/generation-v/black-white/635.png', 7.5, 4.4, 10, 10, 0, 1, 1, 0, -0.8);
   perso(52, 7.5, 6.2); perso(66, 9.3, 6.0); perso(48, 5.6, 6.9); perso(49, 9.6, 7.2);
   perso(0, 6.6, 10.2, true); perso(1, 7.6, 10.4, true); perso(0, 8.6, 10.2, true);
   cx = 7.5; cz = 3.2;
