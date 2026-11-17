@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.17 — 17 novembre 2026
+- **TestOdyssée** — Poussière-Ville a de vrais bâtiments de western : un saloon à balcon, une banque en briques, le bureau du shérif et son étoile, le magasin général et une petite maison de planches.
+
 ## 6.16 — 17 novembre 2026
 - **TestOdyssée** — Temple des Éléments : le temple est maintenant taillé dans une falaise, avec une coulée de lave à gauche, une cascade à droite et la forêt au sommet.
   - Dans la Salle des Clés, une nouvelle porte imposante garde le Gardien : chaque clé posée allume sa gemme (rouge, bleue, verte), et la porte s'ouvre à la troisième.

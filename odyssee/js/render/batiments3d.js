@@ -8,6 +8,7 @@ import { monumentsDesert } from './desert3d.js';
 import { batimentsContes } from './contes3d.js';
 import { templeElements } from './elements3d.js';
 import { batimentsLabo } from './labo3d.js';
+import { batimentsFarWest } from './farwest3d.js';
 
 export function atelier(D) {
   /* -------------------------------------------------------------- textures ------------------------------------------ */
@@ -16,7 +17,7 @@ export function atelier(D) {
   const mix = (c, f) => { const [r, g, b] = hex(c); const m = (v) => Math.max(0, Math.min(255, Math.round(f < 0 ? v * (1 + f) : v + (255 - v) * f))); return `rgb(${m(r)},${m(g)},${m(b)})`; };
   const S = D / 32, cache = new Map();
   const NETTES = new Set(['verre', 'croix', 'sac', 'etals', 'sol', 'shoji', 'pagodeMur']);
-  const netteCle = (k) => NETTES.has(k) || k.startsWith('dl#');
+  const netteCle = (k) => NETTES.has(k) || k.startsWith('dl#') || k.startsWith('fwEn');
   function tex(key, w, h, draw, rep = true) {
     if (cache.has(key)) return cache.get(key);
     const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
@@ -2950,6 +2951,7 @@ export function atelier(D) {
   batimentsContes({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, LUM, cyl, toit2, porte, fenetre2, reperePorte });
   templeElements({ B, tex, hash, mix, S, D, boite, at, M, COL, LUM, cyl, reperePorte });
   batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, LUM, cyl, reperePorte });
+  batimentsFarWest({ B, tex, hash, mix, S, D, boite, at, M, COL, LUM, cyl, reperePorte });
 
   return { B, boite, at, M, COL, TX };
 }
@@ -2963,5 +2965,5 @@ export const EMPRISES = {
   pagode: [11, 11], tourCendree: [11, 11], pavillon: [8, 7], tour: [8, 5], tourVerre: [10, 7], tourDeco: [8, 8], bourse: [12, 8], casino: [14, 8], ligue: [30, 14], usinePokeball: [32, 10],
   escalierMontant: [1, 2], escalierDescendant: [1, 2],
   pyramide: [12, 12], temple: [11, 8],
-  painEpice: [15, 8], templeElements: [13, 8], chateauFort: [30, 28], voiesSanctuaire: [9, 7], museeAntique: [17, 9], puitsJardin: [2, 2], cabaneOutils: [3, 3],
+  painEpice: [15, 8], templeElements: [13, 8], chateauFort: [30, 28], voiesSanctuaire: [9, 7], museeAntique: [17, 9], saloonFW: [7, 5], banqueFW: [5, 4], sherifFW: [4, 4], magasinFW: [6, 4], maisonFW: [4, 3], puitsJardin: [2, 2], cabaneOutils: [3, 3],
 };

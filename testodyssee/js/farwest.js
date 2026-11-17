@@ -19,10 +19,9 @@ export function construireFarWest(world) {
   m.rect(2, 2, W - 3, H - 2, T.SAND, [T.ROCK]);
   // la rue : saloon, banque, prison, magasin général
   m.rect(3, 7, W - 4, 9, T.PATH);
-  m.building('bighouse', 4, 2, { name: 'Saloon', roof: 'red' });
-  m.building('house2', 12, 3, { name: 'Banque', roof: 'gray' });
-  m.building('house', 24, 3, { name: 'Bureau du shérif', roof: 'blue' });
-  m.building('house2', 31, 3, { name: 'Magasin général', roof: 'orange' });
+  // bâtiments en volumes (odyssee/js/render/farwest3d.js), sans intérieur pour l'instant
+  for (const [modele, x, y, w, d, name] of [['saloonFW', 3, 2, 7, 5, 'Saloon'], ['banqueFW', 12, 3, 5, 4, 'Banque'], ['maisonFW', 18, 4, 4, 3, 'Maison'],
+    ['sherifFW', 24, 3, 4, 4, 'Bureau du shérif'], ['magasinFW', 30, 3, 6, 4, 'Magasin général']]) m.building('house', x, y, { modele, w, d, door: -1, name });
   for (const [x, y] of [[3, 11], [36, 11], [36, 20], [3, 24], [37, 27], [35, 14]]) m.prop('cactus', x, y);
   // le stand de tir : un enclos de barrières, une seule entrée en haut
   for (let x = STAND.x0; x <= STAND.x1; x++) for (const y of [STAND.y0, STAND.y1]) if (!(y === STAND.porte[1] && x === STAND.porte[0])) m.prop('barriere', x, y, true);

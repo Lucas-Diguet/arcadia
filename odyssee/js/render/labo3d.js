@@ -1,5 +1,5 @@
 // odyssee/js/render/labo3d.js — grands bâtiments des donjons du labo, même atelier que batiments3d.js (PixelForge).
-//   chateauFort     (30 × 28) : château fort gigantesque entouré de douves, pont-levis abaissé devant la herse, quatre
+//   chateauFort     (30 × 28) : château fort gigantesque de pierre noire, entouré de douves, pont-levis abaissé devant la herse, quatre
 //                               énormes tours rondes aux angles, courtines crénelées, donjon carré au centre (plate-forme
 //                               au sommet : la place du boss) flanqué de quatre tourelles ;
 //   voiesSanctuaire (9 × 7)   : le Sanctuaire des Trois Voies, petit et sobre : une porte de pierre taillée dans un rocher,
@@ -95,7 +95,7 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
   /* ---------------------------------------------------------------- le château fort (30 × 28) */
   B.chateauFort = () => {
     const G = new THREE.Group(), w = 30, d = 28, cx = w / 2;
-    const P = M({ map: grosBloc('#8c8a8e', 0) }), PT = M({ map: grosBloc('#7c7a80', 1) }), PD = M({ map: grosBloc('#96929a', 2) });
+    const P = M({ map: grosBloc('#2e2c32', 0) }), PT = M({ map: grosBloc('#25232a', 1) }), PD = M({ map: grosBloc('#343238', 2) });
     const SOMBRE = COL('#1a1820'), BOIS = planches ? M({ map: planches }) : COL('#6a4a2a'), FER = COL('#3a3a42');
     const x0 = 3.2, x1 = w - 3.2, z0 = 3.2, z1 = d - 3.6, Hm = 11, ep = 1.6, r = 3.4, Ht = 17;
     // les douves : un anneau d'eau, et les berges de pierre côté château
@@ -103,7 +103,7 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
     for (const [x, z, bw, bd] of [[cx, 1.0, w, 2.0], [cx, d - 1.6, w, 3.2], [1.0, d / 2, 2.0, d], [w - 1.0, d / 2, 2.0, d]]) G.add(at(boite(bw, 0.1, bd, EAU), x, -0.05, z));
     G.add(at(boite(w - 4, 0.7, d - 5.2, PT), cx, 0.0, (z0 + z1) / 2 + 0.2));                       // le socle, qui sort de l'eau
     // la cour pavée
-    G.add(at(boite(x1 - x0 - ep, 0.05, z1 - z0 - ep, M({ map: dalles('#9a948a') })), cx, 0.38, (z0 + z1) / 2));
+    G.add(at(boite(x1 - x0 - ep, 0.05, z1 - z0 - ep, M({ map: dalles('#4a4648') })), cx, 0.38, (z0 + z1) / 2));
     // les courtines crénelées, avec leur chemin de ronde
     const murs = [[x0, z0, x1, z0], [x0, z1, cx - 2.6, z1], [cx + 2.6, z1, x1, z1], [x0, z0, x0, z1], [x1, z0, x1, z1]];
     for (const [a, b, c, e] of murs) {
@@ -122,7 +122,7 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
       }
     }
     // les quatre énormes tours d'angle : talus, fût, mâchicoulis, créneaux, toit en poivrière, archères, drapeau
-    const TOIT = M({ map: TX.ardoise ? TX.ardoise('#3a4250') : null, color: TX.ardoise ? undefined : new THREE.Color('#3a4250') });
+    const TOIT = M({ map: TX.ardoise('#1e1c24') });
     for (const [tx, tz] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1]]) {
       G.add(at(cylUV(r + 0.6, r + 1.0, 1.6, PT), tx, 0.8, tz));
       G.add(at(cylUV(r, r, Ht, PD), tx, Ht / 2, tz));

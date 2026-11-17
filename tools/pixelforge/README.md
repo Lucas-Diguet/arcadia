@@ -38,6 +38,6 @@ dans la roche : lave à gauche, cascade à droite, racines et lierre en couronne
 Le Temple vu du dehors, façade taillée dans la falaise à la manière de Petra : modèle 3D `templeElements` (13 × 8) de
 `odyssee/js/render/elements3d.js`, aperçu par `galerie3d.html?vue=seul&b=templeElements`, posé au Parvis du Temple.
 Modèles 3D pas encore dans le jeu (`odyssee/js/render/labo3d.js`, aperçu `galerie3d.html?vue=seul&b=<nom>`) : `chateauFort`
-(30 × 28, douves, pont-levis, quatre tours d'angle, donjon central à plate-forme), `voiesSanctuaire` (9 × 7, extérieur du
+(30 × 28, pierre noire, douves, pont-levis, quatre tours d'angle, donjon central à plate-forme), `voiesSanctuaire` (9 × 7, extérieur du
 Sanctuaire des Trois Voies), `museeAntique` (17 × 9, musée à l'antique en marbre blanc et gris, dôme de cuivre).
 `python3 tools/pixelforge/miroir_poche.py` : le miroir de poche du Donjon des Miroirs (`donjon/miroir_poche.png`).
