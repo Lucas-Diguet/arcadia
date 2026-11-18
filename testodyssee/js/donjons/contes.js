@@ -224,7 +224,7 @@ const CONTES = {
   contes: true,
   exterieur,
   textes: { perdu: 'Tes Pokémon n\'en peuvent plus... Tu te réveilles un peu plus loin, ton équipe soignée.' },
-  decor: { '|': 'colonne', p: 'table', n: 'tonneau', c: 'caisse', y: 'coffre', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter', k: 'books', 'ş': 'shelf', 'ḱ': 'kitchen', 'ƒ': 'fireplace', 'ą': 'armoire', 'ç': 'chair', 'ɓ': 'boxes', 'ṽ': 'vase', 'ŀ': 'lanterne', 'ḅ': 'bateau', 'ḟ': 'fontaine', 'ʗ': 'cheval', 'ʘ': 'cubes', 'ʚ': 'peluche', 'ʞ': 'poupee', 'Ɵ': 'clock', 'Ƨ': 'sofa', 'Ƥ': 'plant', 'ɰ': 'miroir_pied_g', 'ŧ': 'painting' },
+  decor: { '|': 'colonne', p: 'table', n: 'tonneau', c: 'caisse', y: 'coffre', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter', k: 'books', 'ş': 'shelf', 'ḱ': 'kitchen', 'ƒ': 'fireplace', 'ą': 'armoire', 'ç': 'chair', 'ɓ': 'boxes', 'ṽ': 'vase', 'ŀ': 'lanterne', 'ḅ': 'bateau', 'ḟ': 'fontaine', 'ʗ': 'cheval', 'ʘ': 'cubes', 'ʚ': 'peluche', 'ʞ': 'poupee', 'Ɵ': 'clock', 'Ƨ': 'sofa', 'Ƥ': 'plant', 'ɰ': 'miroir_pied_g', 'ŧ': 'painting', 'ȃ': 'armure', 'ȓ': 'ratelier', 'ȇ': 'enclume' },
   objets: {
     // le décor en plein air
     Y: { type: 'tuile', sol: true, t: 'TREE' },
@@ -254,7 +254,7 @@ const CONTES = {
     'σ': { type: 'lien', sol: true, vers: 'hg5', cible: 'Σ', bloque: 'grenier' }, 'Σ': { type: 'lien', sol: true, vers: 'hg4', cible: 'σ' },
     ...MAISON.objets,   // les portes des couloirs et des pièces
     // le manoir : tapisseries et portraits accrochés aux murs (rendu.js)
-    'Ƭ': { type: 'tenture', mur: true, tenture: 'tapisserie' }, 'Ʊ': { type: 'tenture', mur: true, tenture: 'portrait' }, 'Ʋ': { type: 'tenture', mur: true, tenture: 'dessin' },
+    'Ƭ': { type: 'tenture', mur: true, tenture: 'tapisserie' }, 'Ʊ': { type: 'tenture', mur: true, tenture: 'portrait' }, 'Ʋ': { type: 'tenture', mur: true, tenture: 'dessin' }, 'Ʌ': { type: 'tenture', mur: true, tenture: 'panoplie' },
     // les sacs de cailloux du labyrinthe
     '❍': { type: 'sac', decor: 'sac0', n: 0 }, '❎': { type: 'sac', decor: 'sac1', n: 1 }, '❏': { type: 'sac', decor: 'sac2', n: 2 }, '❐': { type: 'sac', decor: 'sac3', n: 3 }, '❑': { type: 'sac', decor: 'sac4', n: 4 },
     // le potager

@@ -137,6 +137,21 @@ const PIECES = [
     '##.ş...S.....##',
     '#######◘#######',
   ] },
+  // l'armurerie : armures sur pied, râteliers d'armes, enclume ; aux murs, tapisseries, portraits et panoplies (bouclier et épées croisées)
+  { etage: 1, rang: 1, id: 'arm', nom: 'Armurerie', style: 'manoir', tapis: [[8, 3, 14, 8]], plan: [
+    '#######################',
+    '##Ƭ#ɅƱ#ɅƬ##Ʊ##ƬɅ#ƱɅ#Ƭ##',
+    '##.ȃ..ȃ..ȓȓ.ȓȓ..ȃ..ȃ.##',
+    '##...................##',
+    '##...................##',
+    '##ȃ.................ȃ##',
+    '##....ȇ.........ȓ....##',
+    '##...................##',
+    '##ȃ..w...........y..ȃ##',
+    '##..c...........n....##',
+    '##.........S.........##',
+    '###########◘###########',
+  ] },
   { etage: 1, rang: 4, id: 'd', nom: 'Débarras', meubles: true, sombre: true, style: 'manoir', plan: debarras() },
   // les chambres d'enfants : papier peint, lambris blanc, tapis ; dessins punaisés au mur ; chez la petite fille, un goûter
   // de poupées et de peluches autour de la table ; chez le petit garçon, chevaux à bascule et cubes éparpillés

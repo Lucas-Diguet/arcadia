@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.23 — 18 novembre 2026
+- **TestOdyssée** — Bois des Contes : une armurerie au premier étage de la maison de la vieille dame, avec ses armures sur pied, ses râteliers d'armes et son enclume, et aux murs des tapisseries, des portraits et des panoplies d'épées croisées.
+
 ## 6.22 — 18 novembre 2026
 - **TestOdyssée** — Bois des Contes : les chambres d'enfants de la maison de la vieille dame sont refaites.
   - La chambre de la petite fille : papier peint rose à fleurs, tapis rose, et un goûter de poupées et de peluches autour de la table.

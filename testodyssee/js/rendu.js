@@ -324,6 +324,7 @@ function poserAffiche(view, a) {
 function poserTenture(view, a) {
   if (a.genre === 'porte') return poserPorteManoir(view, a);
   if (a.genre === 'dessin') return poserDessin(view, a);
+  if (a.genre === 'panoplie') return poserPanoplie(view, a);
   const tap = a.genre === 'tapisserie', c = document.createElement('canvas'); c.width = 24; c.height = tap ? 40 : 28;
   const x = c.getContext('2d'), R = hasard(a.x * 131 + a.y * 17);
   if (tap) {
@@ -350,6 +351,24 @@ function poserTenture(view, a) {
   const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
   const W = tap ? 0.62 : 0.6, H = W * c.height / c.width * Math.tan(EL), haut = 1.25 * Math.tan(EL);
   const geo = new THREE.PlaneGeometry(W, H); geo.translate(a.x + 0.5, haut * (tap ? 0.62 : 0.6), a.y + 1.01);
+  const mat = new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.5 }); mat.userData.own = true;
+  view.root.add(new THREE.Mesh(geo, mat));
+}
+
+/** une panoplie au mur : deux épées croisées derrière un bouclier aux couleurs de la maison */
+function poserPanoplie(view, a) {
+  const c = document.createElement('canvas'); c.width = 24; c.height = 24;
+  const x = c.getContext('2d');
+  const lame = (x0, y0, dx, dy) => { for (let i = 0; i < 18; i++) { x.fillStyle = i < 3 ? '#4a2c14' : i === 3 ? '#d8b048' : i % 4 ? '#c8ccd8' : '#9aa0b0'; x.fillRect(x0 + dx * i, y0 + dy * i, 2, 2); } };
+  lame(3, 21, 1, -1); lame(19, 21, -1, -1);
+  x.fillStyle = '#d8b048'; x.fillRect(1, 18, 5, 1); x.fillRect(18, 18, 5, 1);
+  x.fillStyle = '#2a1a10'; x.beginPath(); x.moveTo(6, 5); x.lineTo(18, 5); x.lineTo(18, 13); x.lineTo(12, 20); x.lineTo(6, 13); x.fill();
+  x.fillStyle = '#8a1820'; x.beginPath(); x.moveTo(7, 6); x.lineTo(17, 6); x.lineTo(17, 13); x.lineTo(12, 19); x.lineTo(7, 13); x.fill();
+  x.fillStyle = '#d8b048'; x.fillRect(11, 7, 2, 10); x.fillRect(8, 10, 8, 2);
+  x.fillStyle = 'rgba(255,255,255,0.18)'; x.fillRect(7, 6, 10, 1);
+  const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
+  const W = 0.72, H = W * Math.tan(EL), haut = 1.25 * Math.tan(EL);
+  const geo = new THREE.PlaneGeometry(W, H); geo.translate(a.x + 0.5, haut * 0.6, a.y + 1.01);
   const mat = new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.5 }); mat.userData.own = true;
   view.root.add(new THREE.Mesh(geo, mat));
 }

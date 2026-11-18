@@ -40,6 +40,8 @@ Le Temple vu du dehors, façade taillée dans la falaise à la manière de Petra
 Modèles 3D pas encore dans le jeu (`odyssee/js/render/labo3d.js`, aperçu `galerie3d.html?vue=seul&b=<nom>`) : `chateauFort`
 (30 × 28, pierre noire, douves, pont-levis, quatre tours d'angle, donjon central à plate-forme), `voiesSanctuaire` (9 × 7, extérieur du
 Sanctuaire des Trois Voies), `museeAntique` (17 × 9, musée à l'antique en marbre blanc et gris, dôme de cuivre).
+`python3 tools/pixelforge/armurerie.py` : armure sur pied, râtelier d'armes et enclume de l'armurerie (Bois des Contes), à 16 px par case, dans `testodyssee/img/contes/`.
+
 `python3 tools/pixelforge/copycat.py` : Copycat hors combat (Donjon des Miroirs), mime au masque blanc et au béret, 4 directions × 3 images de 64 px dans `copycat/` (`copycat_marche.png` dans l'ordre de `chars.png`, pas encore dans le jeu). Le palais du donjon est le modèle 3D `templeMiroirs` de `labo3d.js`.
 
 `python3 tools/pixelforge/temple_objets.py` : le Temple des Éléments en solo redessiné au propre, dans `temple/` (pas encore

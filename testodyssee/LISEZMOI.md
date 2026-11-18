@@ -872,7 +872,7 @@ d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
     arrive à droite, on monte à gauche ; 2e : l'inverse ; 3e : la porte du grenier est à gauche) ;
   - les pièces décidées sont dans `PIECES` (étage, rang de la porte depuis la gauche, plan avec `◘` pour la porte, dans
     le mur du bas, `S` juste au-dessus) :
-    chambre de la vieille dame et débarras au 1er, chambres de garçon et de fille au 2e, bibliothèque au 3e ; les
+    armurerie (armures, râteliers et enclume dessinés par `tools/pixelforge/armurerie.py`, panoplies `Ʌ` au mur), chambre de la vieille dame et débarras au 1er, chambres de garçon et de fille au 2e, bibliothèque au 3e ; les
     autres sont de petites pièces vides (`VIDE`) ;
   - le débarras (style `manoir`) : une immense pièce dans la pénombre (`sombre`, classe `penombre`), du bas vers le
     haut quatre allées séparées par des murs de vieilleries (malles, caisses, tonneaux, armoires, étagères, miroirs `ɰ`,
