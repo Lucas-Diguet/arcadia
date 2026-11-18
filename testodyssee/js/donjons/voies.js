@@ -22,7 +22,7 @@ function exterieur() {
   const m = new GameMap('labo:voies:dehors', 32, 26, { outdoor: true, fill: T.TREE, name: 'Clairière des Trois Voies', music: 'route' });
   m.blob(16, 13, 12.5, 10, T.GRASS, rng(333));
   m.rect(5, 3, 26, 22, T.GRASS, [T.TREE]);
-  const b = m.building('gym', 12, 4, { roof: 'gray', name: 'Sanctuaire des Trois Voies' });
+  const b = m.building('gym', 11, 2, { modele: 'voiesSanctuaire', w: 9, d: 7, door: 4, name: 'Sanctuaire des Trois Voies' });
   for (let y = b.doorY + 1; y <= 23; y++) m.set(b.doorX, y, T.PATH);
   m.rect(b.doorX - 1, b.doorY + 1, b.doorX + 1, b.doorY + 2, T.PATH);
   for (const [x, y] of [[8, 10], [23, 10], [8, 17], [23, 17]]) m.prop('lanterne', x, y);

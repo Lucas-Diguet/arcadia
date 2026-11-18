@@ -177,7 +177,7 @@ Ajouter `[skip changelog]` dans le message d'un commit purement technique pour q
   résolus sans écran dans `testodyssee/js/donjon/casse-tetes.js`, vérifiés par `node tools/test-testodyssee.mjs`. Un panneau demandé se pose au centre de la première salle.
   Standard de tous les donjons : panneau d'entrée dehors (nom, `entree`, `joueurs` : solo, groupe ou exact) et « Quitter le donjon » ; un PC d'aide
   (`type: 'pc'`, `aide` de la salle) seulement dans les salles où l'auteur du donjon le demande.
-  Sanctuaire des Trois Voies (à trois, `testodyssee/js/donjons/voies.js`, mécaniques `testodyssee/js/donjon/voies.js`) : chemins séparés (`apres`, `suivante`,
+  Sanctuaire des Trois Voies (à trois, `testodyssee/js/donjons/voies.js`, bâtiment `voiesSanctuaire` de `labo3d.js`, mécaniques `testodyssee/js/donjon/voies.js`) : chemins séparés (`apres`, `suivante`,
   salle `voies`), codes tirés par l'hôte (`preparer`), plusieurs combats à blocs dans un donjon (un par salle `raid`), combats de groupe
   contre un dresseur (salle `groupe`, moteur `testodyssee/js/combat/groupe.js`, n joueurs contre n Pokémon en jeu, cible choisie par chacun) ; salles sombres vues sur la moitié de l'écran, comme le labyrinthe des contes (`vueLarge` du donjon).
   Pyramide de l'Ascension (3 ou 4 joueurs, `testodyssee/js/donjons/pyramide.js`, mécaniques `testodyssee/js/donjon/pyramide.js`) : étages (`etage`) à dresseurs

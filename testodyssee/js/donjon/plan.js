@@ -221,6 +221,8 @@ function poserPanneau(def, carte, [px, py]) {
   for (const [dx, dy] of [[1, 2], [-1, 2], [2, 1], [-2, 1], [1, 3], [-1, 3], [2, 2], [-2, 2]]) {
     const x = px + dx, y = py + dy;
     if (!carte.in(x, y) || !walkable(carte.get(x, y)) || carte.warpAt(x, y) || carte.deco.some((q) => q.x === x && q.y === y)) continue;
+    // pas sur les marches d'un bâtiment (cases libres de son emprise)
+    if (carte.buildings.some((b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + (b.d ?? b.h))) continue;
     carte.sign(x, y, textePanneau(def));
     return;
   }

@@ -78,6 +78,8 @@ export const GRAND = {
 export const OUVERTS = {
   maisonL: GRAND.maisonL,
   // palais du Donjon des Miroirs (labo) : la porte est en haut des marches, les marches se montent
+  // Sanctuaire des Trois Voies (labo) : porte au fond, trois marches devant
+  voiesSanctuaire: { w: 9, d: 7, door: 4, porteY: 4, libres: [[3, 5], [4, 5], [5, 5], [3, 6], [4, 6], [5, 6]] },
   templeMiroirs: { w: 11, d: 7, door: 5, porteY: 4, libres: [[4, 5], [5, 5], [6, 5], [4, 6], [5, 6], [6, 6]] },
   // chalet : le balcon de l'étage avance au-dessus de la dernière rangée, sur deux poteaux aux coins
   chalet: { w: 5, d: 5, door: 1, porteY: 3, libres: [[1, 4], [2, 4], [3, 4]] },

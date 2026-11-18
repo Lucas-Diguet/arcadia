@@ -1,5 +1,9 @@
 # Journal des versions — Arcadia
 
+## 6.27 — 18 novembre 2026
+- **TestOdyssée** — Sanctuaire des Trois Voies : le sanctuaire a enfin son vrai bâtiment, taillé dans la roche, avec ses trois niches à flammes au-dessus de la porte et ses marches.
+  - Les panneaux d'entrée des donjons ne se posent plus sur les marches des bâtiments.
+
 ## 6.26 — 18 novembre 2026
 - **TestOdyssée** — Temple des Éléments : dans la Salle des Clés, les trois portes colorées du bas ont disparu ; ce sont maintenant de simples sorties, qui ramènent toujours au bout de chaque chemin.
 
