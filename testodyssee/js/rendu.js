@@ -12,7 +12,7 @@ const CHATEAU = { sol: ['sol_chateau'], mur: ['mur_chateau', 'wall_in'], haut: [
 const MANOIR = { sol: ['sol_manoir'], mur: ['mur_manoir', 'wall_in'], haut: ['haut_manoir', 'cavetop'], fond: '#0a0608' };
 const FILLE = { sol: ['sol_chambre'], mur: ['mur_fille', 'wall_in'], haut: ['haut_manoir', 'cavetop'], fond: '#0a0608' };
 const GARCON = { sol: ['sol_chambre'], mur: ['mur_garcon', 'wall_in'], haut: ['haut_manoir', 'cavetop'], fond: '#0a0608' };
-const STYLES = { chateau: CHATEAU, manoir: MANOIR, fille: FILLE, garcon: GARCON, insecte: { sol: ['floor_gymBug', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymGrass', 'cavetop'], fond: '#0c1408' },
+const STYLES = { carillon: { sol: ['sol_carillon'], mur: ['mur_manoir', 'wall_in'], haut: ['haut_manoir', 'cavetop'], fond: '#0a0608' }, chateau: CHATEAU, manoir: MANOIR, fille: FILLE, garcon: GARCON, insecte: { sol: ['floor_gymBug', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymGrass', 'cavetop'], fond: '#0c1408' },
   poison: { sol: ['floor_gymPsy', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymPsy', 'cavetop'], fond: '#120a16' },
   clair: CLAIR, egypte: EGYPTE, bois: { sol: ['floor_wood'], mur: ['wall_in', 'wall_center'], haut: ['roof_flat', 'floor_wood'], fond: '#0c0a14' }, sable: { sol: ['floor_sand', 'gl_sable', 'floor_gymRock'], mur: ['wall_gym'], haut: ['floor_gymRock', 'cavetop'], fond: '#1a1008', relief: true } };
 const cellule = (A, k) => (Array.isArray(k) ? k.map((q) => A[q]).find(Boolean) : A[k]);
@@ -108,6 +108,16 @@ const TUILES = {
     for (let k = 0; k < 30; k++) { x.fillStyle = r() < 0.5 ? '#120a06' : '#2a1a10'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 1); }
   },
   // chambres d'enfants : parquet plus clair, papier peint (rose à fleurs, bleu à étoiles) au-dessus d'un lambris blanc
+  // Tour de l'Horloge, salles du mur (façon Tour Carillon) : passerelles de planches, planchers bas posés de biais, rambardes
+  sol_carillon(x, r) { planchesCarillon(x, r); },
+  sol_carillon_bas(x, r) {
+    x.fillStyle = '#3e2216'; x.fillRect(0, 0, 32, 32);
+    for (let k = -32; k < 32; k += 8) { x.fillStyle = r() < 0.5 ? '#5a3220' : '#52301e'; x.beginPath(); x.moveTo(k, 32); x.lineTo(k + 32, 0); x.lineTo(k + 37, 0); x.lineTo(k + 5, 32); x.fill(); }
+    x.fillStyle = 'rgba(0,0,0,0.25)'; for (let k = -32; k < 32; k += 8) { x.beginPath(); x.moveTo(k + 5, 32); x.lineTo(k + 37, 0); x.lineTo(k + 38, 0); x.lineTo(k + 6, 32); x.fill(); }
+  },
+  rambarde_s(x, r) { planchesCarillon(x, r); x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(0, 24, 32, 8); for (const px of [3, 15, 27]) { x.fillStyle = '#6a3a1a'; x.fillRect(px, 14, 3, 12); } x.fillStyle = '#e0a858'; x.fillRect(0, 13, 32, 4); x.fillStyle = '#8a5428'; x.fillRect(0, 17, 32, 2); },
+  rambarde_e(x, r) { planchesCarillon(x, r); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(24, 0, 8, 32); for (const py of [3, 15, 27]) { x.fillStyle = '#6a3a1a'; x.fillRect(14, py, 6, 3); } x.fillStyle = '#e0a858'; x.fillRect(19, 0, 4, 32); x.fillStyle = '#8a5428'; x.fillRect(23, 0, 2, 32); },
+  rambarde_w(x, r) { planchesCarillon(x, r); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(0, 0, 8, 32); for (const py of [3, 15, 27]) { x.fillStyle = '#6a3a1a'; x.fillRect(12, py, 6, 3); } x.fillStyle = '#e0a858'; x.fillRect(9, 0, 4, 32); x.fillStyle = '#8a5428'; x.fillRect(7, 0, 2, 32); },
   sol_chambre(x, r) {
     x.fillStyle = '#5a3a22'; x.fillRect(0, 0, 32, 32);
     for (let j = 0; j < 4; j++) {
@@ -140,6 +150,14 @@ function murEnfant(x, fond, fonce, baguette, motif) {
   x.fillStyle = '#e8e2d6'; x.fillRect(0, 20, 32, 12);
   for (const px of [1, 17]) { x.fillStyle = '#c8c0b0'; x.fillRect(px, 22, 14, 8); x.fillStyle = '#ece6da'; x.fillRect(px + 1, 23, 12, 6); }
   x.fillStyle = '#9a9080'; x.fillRect(0, 31, 32, 1);
+}
+/** planches de passerelle (Tour de l'Horloge) : lames horizontales orangées, joints sombres */
+function planchesCarillon(x, r) {
+  x.fillStyle = '#5a2e18'; x.fillRect(0, 0, 32, 32);
+  for (let j = 0; j < 4; j++) {
+    const y = j * 8, dec = (j * 13) % 32;
+    for (let i = -1; i < 2; i++) { const t = r(); x.fillStyle = t < 0.33 ? '#b06036' : t < 0.66 ? '#a85a32' : '#ba683c'; x.fillRect(i * 32 + dec + 1, y + 1, 30, 6); x.fillStyle = 'rgba(255,220,170,0.12)'; x.fillRect(i * 32 + dec + 1, y + 1, 30, 1); x.fillStyle = '#5a2e18'; x.fillRect(i * 32 + dec, y, 1, 8); }
+  }
 }
 function TUILES_TAPIS(nom, fond, motif, frange, filet) {
   const out = {};
@@ -268,6 +286,7 @@ export function brancherRendu() {
     // arènes du labo : un sol par case (fourmis, toile, vase…)
     { const k = m.solArene?.get(x + ',' + y); if (k && A[k]) return { c: A[k] }; }
     // rebords dans une grotte : une marche de roche (pas de l'herbe)
+    if (m.style === 'carillon') { const t = m.get(x, y), k = t === T.LEDGE ? 'rambarde_s' : t === T.LEDGE_E ? 'rambarde_e' : t === T.LEDGE_W ? 'rambarde_w' : null; if (k && A[k]) return { c: A[k] }; }
     if (!m.outdoor) { const t = m.get(x, y); if (t === T.LEDGE || t === T.LEDGE_E || t === T.LEDGE_W) return { c: A.cavestairs }; }
     // tombeau : le gouffre est noir ; à travers les lunettes, le chemin invisible est une dalle de lumière
     if (m.tomb) { const k = this.decoAt.get(x + ',' + y)?.k; if (k === 'gouffre') return { c: A.void }; if (k === 'revele') return { c: A[REVELE] || A.matgreen }; }

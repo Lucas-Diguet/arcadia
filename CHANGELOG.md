@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.32 — 18 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge : les trois salles du mur sont devenues des labyrinthes de passerelles, comme dans une tour ancienne. Certaines rambardes ne se sautent que dans un sens : un mauvais saut ramène en arrière. Un objet attend au fond de chaque salle.
+
 ## 6.31 — 18 novembre 2026
 - **TestOdyssée** — Nouvelles musiques : le Sanctuaire des Trois Voies et la Tour de l'Horloge ont chacun la leur.
 

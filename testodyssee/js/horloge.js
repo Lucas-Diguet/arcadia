@@ -121,6 +121,92 @@ export function emporter(E, E2, x, y) {
   return cases.sort((p, q) => Math.hypot(p[0] + 0.5 - vise[0], p[1] + 0.5 - vise[1]) - Math.hypot(q[0] + 0.5 - vise[0], q[1] + 0.5 - vise[1]))[0];
 }
 
+/* ---------------- les salles du mur : des labyrinthes à rambardes, comme la Tour Carillon ---------------- */
+// Un labyrinthe de passerelles de bois ; certaines rambardes ne se franchissent que dans un sens (on saute par-dessus,
+// vers le bas, la gauche ou la droite, jamais vers le haut). Un mauvais saut ramène en arrière ; l'objet est au fond.
+// Plan : '#' mur ou vide, '.' plancher, 'v' '>' '<' rambardes, 'O' l'objet, 'S' l'escalier de service.
+export const SALLE_W = 19, SALLE_H = 18, SALLE_ENTREE = [10, 16];
+const MI = 8, MJ = 7;   // cases du labyrinthe : (2 + 2i, 3 + 2j)
+function alea(g) { let a = g >>> 0 || 1; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const DIR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+/** les pas possibles depuis (x, y) dans un plan : on marche sur '.', 'O' n'est pas franchissable, une rambarde se saute dans son sens */
+export function pasPlan(P, x, y) {
+  const out = [];
+  for (const [dx, dy] of DIR4) {
+    const c = P[y + dy]?.[x + dx];
+    if (c === '.' || c === 'S') out.push([x + dx, y + dy]);
+    else if ((c === 'v' && dy === 1) || (c === '>' && dx === 1) || (c === '<' && dx === -1)) { const d = P[y + 2 * dy]?.[x + 2 * dx]; if (d === '.' || d === 'S') out.push([x + 2 * dx, y + 2 * dy]); }
+  }
+  return out;
+}
+/** distances (en pas) depuis une case, ou vers elle (inverse) */
+export function distancesPlan(P, x0, y0, inverse = false) {
+  const cases = []; P.forEach((l, y) => [...l].forEach((c, x) => { if (c === '.' || c === 'S') cases.push([x, y]); }));
+  const succ = new Map(cases.map(([x, y]) => [x + ',' + y, pasPlan(P, x, y)]));
+  const pred = new Map(cases.map(([x, y]) => [x + ',' + y, []]));
+  for (const [k, l] of succ) for (const [a, b] of l) pred.get(a + ',' + b)?.push(k.split(',').map(Number));
+  const vois = inverse ? pred : succ, D = new Map([[x0 + ',' + y0, 0]]), f = [[x0, y0]];
+  for (let i = 0; i < f.length; i++) { const [x, y] = f[i], d = D.get(x + ',' + y); for (const [a, b] of vois.get(x + ',' + y) || []) if (!D.has(a + ',' + b)) { D.set(a + ',' + b, d + 1); f.push([a, b]); } }
+  return D;
+}
+/** le labyrinthe d'une graine (tableau de lignes) et la case de l'objet */
+export function labyrinthe(graine) {
+  const r = alea(graine), G = Array.from({ length: SALLE_H }, (_, y) => Array.from({ length: SALLE_W }, () => '#'));
+  const X = (i) => 2 + 2 * i, Y = (j) => 3 + 2 * j;
+  for (let j = 0; j < MJ; j++) for (let i = 0; i < MI; i++) G[Y(j)][X(i)] = '.';
+  // un labyrinthe parfait (en profondeur), depuis l'entrée, puis quelques murs ouverts en plus (des boucles)
+  const vu = new Set(), pile = [[4, MJ - 1]]; vu.add('4,' + (MJ - 1));
+  while (pile.length) {
+    const [i, j] = pile[pile.length - 1], v = DIR4.map(([a, b]) => [i + a, j + b]).filter(([a, b]) => a >= 0 && b >= 0 && a < MI && b < MJ && !vu.has(a + ',' + b));
+    if (!v.length) { pile.pop(); continue; }
+    const [a, b] = v[Math.floor(r() * v.length)]; G[(Y(j) + Y(b)) / 2][(X(i) + X(a)) / 2] = '.'; vu.add(a + ',' + b); pile.push([a, b]);
+  }
+  for (let j = 0; j < MJ; j++) for (let i = 0; i < MI; i++) for (const [a, b] of [[1, 0], [0, 1]]) if (i + a < MI && j + b < MJ && r() < 0.22) G[Y(j) + b][X(i) + a] = '.';
+  // des passages deviennent des rambardes à sens unique
+  for (let j = 0; j < MJ; j++) for (let i = 0; i < MI; i++) for (const [a, b] of [[1, 0], [0, 1]]) {
+    if (i + a >= MI || j + b >= MJ) continue;
+    const y = Y(j) + b, x = X(i) + a; if (G[y][x] !== '.' || r() > 0.38) continue;
+    G[y][x] = b ? 'v' : r() < 0.5 ? '>' : '<';
+  }
+  // l'entrée, l'escalier de service
+  G[SALLE_ENTREE[1]][SALLE_ENTREE[0]] = '.'; G[16][2] = 'S';
+  const P = G.map((l) => l.join(''));
+  // l'objet : sur la rangée du haut, la case la plus loin de l'entrée
+  const D = distancesPlan(P, ...SALLE_ENTREE);
+  let obj = null; for (let i = 0; i < MI; i++) { const k = X(i) + ',' + Y(0); if (D.has(k) && (!obj || D.get(k) > D.get(obj))) obj = k; }
+  return { plan: P, objet: obj?.split(',').map(Number) || null };
+}
+/** un labyrinthe convient : objet et escalier atteints, jamais coincé (on revient toujours à l'entrée), assez de faux pas */
+export function labyrintheValide(L) {
+  if (!L.objet) return false;
+  const P = L.plan, D = distancesPlan(P, ...SALLE_ENTREE), R = distancesPlan(P, ...SALLE_ENTREE, true);
+  const [ox, oy] = L.objet, V = distancesPlan(P, ox, oy, true);
+  if (!D.has('2,16') || [...D.keys()].some((k) => !R.has(k))) return false;
+  // les rambardes qui éloignent de l'objet : des pièges
+  let pieges = 0, ramb = 0;
+  P.forEach((l, y) => [...l].forEach((c, x) => {
+    if (!'v<>'.includes(c)) return;
+    const [dx, dy] = c === 'v' ? [0, 1] : c === '>' ? [1, 0] : [-1, 0], a = (x - dx) + ',' + (y - dy), b = (x + dx) + ',' + (y + dy);
+    if (!D.has(a)) return; ramb++;
+    if ((V.get(b) ?? 99) - (V.get(a) ?? 99) >= 8) pieges++;
+  }));
+  return V.get(SALLE_ENTREE.join(',')) >= 34 && pieges >= 4 && ramb >= 10;
+}
+/** les graines retenues (cherchées par tools/test-testodyssee.mjs, qui vérifie qu'elles conviennent toujours) */
+export const GRAINES_SALLES = { dix: 390, deux: 1087, midi: 1192 };
+export const OBJETS_SALLES = { dix: 'pp-up', deux: 'max-elixir', midi: 'rare-candy' };
+/** pose un labyrinthe dans la carte d'une salle */
+function poserLabyrinthe(r, L, id) {
+  const tuile = { '.': T.FLOOR, v: T.LEDGE, '>': T.LEDGE_E, '<': T.LEDGE_W, '#': T.BLOCK, S: T.STAIRS };
+  L.plan.forEach((l, y) => { if (y < 2 || y >= SALLE_H - 1) return; [...l].forEach((c, x) => { if (x > 0 && x < SALLE_W - 1) r.set(x, y, tuile[c] ?? T.BLOCK); }); });
+  for (let x = 1; x < SALLE_W - 1; x++) if (x !== SALLE_ENTREE[0]) r.set(x, SALLE_H - 1, T.BLOCK);   // le bas de la salle, sauf la porte
+  r.item(L.objet[0], L.objet[1], OBJETS_SALLES[id], 1, `${HORLOGE}:${id}:objet`);
+  // les passerelles en planches ; entre elles, le plancher du dessous (posé de biais), où l'on ne descend pas
+  const sol = new Map();
+  L.plan.forEach((l, y) => [...l].forEach((c, x) => { if (c === '#' && y >= 2 && !(y === SALLE_H - 1 && x === SALLE_ENTREE[0]) && x > 0 && x < SALLE_W - 1) sol.set(x + ',' + y, 'sol_carillon_bas'); }));
+  r.solArene = sol; r.style = 'carillon';
+}
+
 export function construireHorloge(world) {
   const m = room(HORLOGE, W, H, { floor: 'cave', music: 'dmhh', wall: 'wall_cendre', name: 'Tour de l\'Horloge' });
   m.zone(0, 0, W - 1, H - 1, { name: 'Tour de l\'Horloge', music: 'dmhh' });
@@ -132,12 +218,12 @@ export function construireHorloge(world) {
   // les trois salles du mur, vides pour l'instant ; un escalier de service y redescend vers le quai
   const [ax, ay] = placeArrivee();
   for (const s of SALLES) {
-    const r = room(salleId(s), 9, 7, { floor: 'cave', music: 'dmhh', wall: 'wall_cendre', name: s.nom });
-    r.zone(0, 0, 8, 6, { name: s.nom, music: 'dmhh' });
+    const r = room(salleId(s), SALLE_W, SALLE_H, { floor: 'wood', music: 'dmhh', wall: 'wall_cendre', name: s.nom, exitX: SALLE_ENTREE[0] });
+    r.zone(0, 0, SALLE_W - 1, SALLE_H - 1, { name: s.nom, music: 'dmhh' });
+    poserLabyrinthe(r, labyrinthe(GRAINES_SALLES[s.id]), s.id);
     const p = PLATEFORMES.find((q) => q.id === s.pf), [px, py] = caseSur(p.id, exterieur(p), 0);
     r.warp(r.exitX, r.exitY, { map: HORLOGE, x: px, y: py, dir: 'down' });
-    r.set(7, 2, T.STAIRS); r.warp(7, 2, { map: HORLOGE, x: ax, y: ay, dir: 'up' });
-    r.sign(1, 2, 'Un escalier de service redescend vers le quai.');
+    r.warp(2, 16, { map: HORLOGE, x: ax, y: ay, dir: 'up' });
     world.maps[salleId(s)] = r;
     const [dx, dy] = placePorte(s);
     m.object(dx, dy, { use: async (api) => { await api.game.warp({ map: salleId(s), x: r.exitX, y: r.exitY - 1, dir: 'up' }); } });

@@ -1207,6 +1207,8 @@ for (const l of Object.values(lieux).flat()) {
   const fin = atteint(E, ...B);
   ok(okA && okB && surPf(fin, 'midi') && pres(fin, Hm.placeCle()) && pres(fin, Hm.placePorte(Hm.SALLES[2])), 'horloge : à deux, la grande aiguille mène à dix heures et l\'aiguille fine à la corniche de la clé');
   ok(Hm.SALLES.every((s) => world.maps[Hm.salleId(s)]?.warps.size === 2), 'horloge : trois salles dans le mur, avec leur escalier de service vers le quai');
+  ok(Hm.SALLES.every((s) => { const L = Hm.labyrinthe(Hm.GRAINES_SALLES[s.id]), r = world.maps[Hm.salleId(s)]; return Hm.labyrintheValide(L) && r.get(...Hm.SALLE_ENTREE) === T.FLOOR && [...r.items?.values?.() || [1]].length > 0; }),
+    'horloge : trois labyrinthes à rambardes, l\'objet au fond, jamais coincé, des sauts qui ramènent en arrière');
   Hm.appliquer(m, m.horloge);
 }
 

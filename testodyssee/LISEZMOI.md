@@ -232,7 +232,10 @@ que touchent les deux grandes aiguilles, et la corniche de midi, que seule l'aig
 Sur chaque plateforme, un levier rouge (grande aiguille) et un bleu (aiguille fine) la font tourner d'une heure, dans un
 sens ou dans l'autre ; celui qui se tient sur l'aiguille est emporté avec elle (`emporter`), mais ne peut pas tirer le
 levier lui-même : seul, on ne quitte pas le quai (vérifié pour toutes les heures). Trois petites salles dans le mur (dix
-heures, deux heures, midi), vides pour l'instant, avec un escalier de service qui redescend au quai. La clé du mécanisme
+heures, deux heures, midi), façon Tour Carillon de HeartGold : un labyrinthe de passerelles en planches au-dessus d'un
+plancher posé de biais, avec des rambardes qu'on ne saute que dans un sens (vers le bas, la gauche ou la droite) ; un
+mauvais saut ramène en arrière, un objet attend au fond (`labyrinthe`, graines `GRAINES_SALLES` : jamais coincé, au moins
+quatre sauts qui éloignent de l'objet, vérifié par `labyrintheValide`), et un escalier de service redescend au quai. La clé du mécanisme
 central est sur la corniche de midi ; le mécanisme, sur le quai, fera monter ou descendre l'horloge vers les étages 1 et -1
 (pas encore construits).
 À plusieurs, l'hôte tient l'état de l'horloge (`js/horloge-jeu.js`, messages `djHor`, `djHorE`, `djHorS`) : chacun anime
