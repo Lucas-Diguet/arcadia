@@ -63,6 +63,13 @@ export const Temple = {
         if (o.cascade) { (m.cascades ||= new Set()).add(cle(x, y)); m.deco.push({ k: 'cascade', x, y }); }
         if (o.type === 'tuile') { m.set(x, y, T[o.t]); if (o.t === 'WHIRL') (m.remous ||= []).push([x, y]); }
         if (o.type === 'courant') { m.set(x, y, T.WATER); (m.courants ||= new Map()).set(cle(x, y), o.dir); }
+        // Salle des Clés du solo : une sortie ordinaire dans le mur du bas, vers le bout du chemin (calculée au moment d'y passer)
+        if (o.type === 'retourChemin') {
+          const cible = () => { const S2 = d.salles.find((q) => q.branche === 'solo' && q.chemin === o.chemin && q.cle), cm = this.game.world.maps[S2.carte]; return [cm, cm.donjon.plan.suivante]; };
+          m.set(x, y, T.CAVEDOOR); m.deco.push({ k: 'exitlight', x, y });
+          m.warp(x, y, { get map() { return cible()[0].id; }, get x() { return cible()[1][0]; }, get y() { return cible()[1][1] + 1; }, dir: 'down' });
+          continue;
+        }
         if (TYPES.has(o.type)) m.object(x, y, { use: () => this.objetTemple(d, m, c, x, y) });
       }
     }

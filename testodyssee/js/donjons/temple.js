@@ -311,10 +311,10 @@ const DEF_TEMPLE = {
     H: { type: 'voie', decor: 'porte_plante_pf', voie: 'p' },
     // en solo : les mêmes portes ; celles du Feu et de l'Eau sont scellées tant qu'on n'est pas arrivé derrière
     R: { type: 'porteSolo', decor: 'porte_feu_pf', chemin: 'f' },
-    // Salle des Clés du solo : les portes qui ramènent au bout de chaque chemin
-    'Ⓕ': { type: 'retourChemin', decor: 'porte_feu', chemin: 'f' },
-    'Ⓔ': { type: 'retourChemin', decor: 'porte_eau', chemin: 'e' },
-    'Ⓟ': { type: 'retourChemin', decor: 'porte_plante', chemin: 'p' },
+    // Salle des Clés du solo : les sorties du bas qui ramènent au bout de chaque chemin (sans dessin de porte)
+    'Ⓕ': { type: 'retourChemin', sol: true, chemin: 'f' },
+    'Ⓔ': { type: 'retourChemin', sol: true, chemin: 'e' },
+    'Ⓟ': { type: 'retourChemin', sol: true, chemin: 'p' },
     U: { type: 'porteSolo', decor: 'porte_eau_pf', chemin: 'e' },
     W: { type: 'porteSolo', decor: 'porte_plante_pf', chemin: 'p' },
     // le décor des chemins

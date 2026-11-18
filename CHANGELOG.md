@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.26 — 18 novembre 2026
+- **TestOdyssée** — Temple des Éléments : dans la Salle des Clés, les trois portes colorées du bas ont disparu ; ce sont maintenant de simples sorties, qui ramènent toujours au bout de chaque chemin.
+
 ## 6.25 — 18 novembre 2026
 - **TestOdyssée** — Donjon des Miroirs : on monte les marches du palais et c'est devant la porte, en haut, qu'on l'ouvre avec la Clé des Miroirs (et non plus au pied de l'escalier).
 
