@@ -1633,14 +1633,18 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     const n = resoudreMeubles(S, S.marques.S[0], S.marques['Ⓗ'][0]);
     const sans = resoudreMeubles({ ...S, interdit: new Set([...S.interdit, ...[...Array(S.w * S.h).keys()].map((i) => (i % S.w) + ',' + Math.floor(i / S.w))]) }, S.marques.S[0], S.marques['Ⓗ'][0]);
     ok(n >= 5 && n <= 20 && sans === -1, `contes : le fond du débarras se traverse en poussant les meubles (${n} poussées au mieux), pas sans les pousser`);
-    // le labyrinthe : fermé tant qu'on n'a rien poussé, ouvert une fois chaque meuble poussé dans l'allée d'en face
+    // les barrages : chacun se traverse en poussant des meubles, pas sans ; le débarras entier ne se traverse pas sans pousser
+    const { BARRAGES } = await import('../testodyssee/js/donjons/contes-maison.js');
+    const tout = (P) => new Set([...Array(P.w * P.h).keys()].map((i) => (i % P.w) + ',' + Math.floor(i / P.w)));
+    const coups = BARRAGES.map((B) => {
+      const P = lireSalle(B, { meubles, plein: plein + 'E', interdit: 'S' }), dep = P.marques.S[0], but = P.marques.E[0];
+      return resoudreMeubles({ ...P, interdit: tout(P) }, dep, but) === -1 ? resoudreMeubles(P, dep, but) : -1;
+    });
+    ok(coups.every((n) => n >= 5 && n <= 15), `contes : les trois barrages du débarras se passent en poussant les meubles (${coups.join(', ')} poussées au mieux), pas sans`);
     const sd = d.salles.find((q) => q.id === 'hgd'), L = lireSalle(sd.plan, { meubles, plein, interdit: '' });
-    const porte = Object.keys(L.marques).find((c) => d.objets[c]?.type === 'lien'), [px, py] = L.marques[porte][0], dep = (px + 1) + ',' + py;
-    const va = (bloques) => { const vu = new Set([dep]), f = [dep]; while (f.length) { const [x, y] = f.pop().split(',').map(Number); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + dx) + ',' + (y + dy); if (vu.has(k) || L.murs.has(k) || bloques.has(k) || y + dy < 0 || y + dy >= L.h || x + dx < 0 || x + dx >= L.w) continue; vu.add(k); f.push(k); } } return vu.has(DEBARRAS.arrivee.join()); };
-    const avant = new Set(L.meubles), apres = new Set(L.meubles);
-    for (const [x, y, u, v] of DEBARRAS.verrous) { apres.delete(x + ',' + y); apres.add(u + ',' + v); }
-    ok(DEBARRAS.verrous.length >= 6 && DEBARRAS.verrous.every(([x, y]) => avant.has(x + ',' + y)) && !va(avant) && va(apres) && sd.plan.length >= 35 && sd.sombre,
-      `contes : le débarras est immense et sombre, ${DEBARRAS.verrous.length} meubles barrent le chemin du fond et se poussent dans l'allée d'en face`);
+    const fige = resoudreMeubles({ ...L, interdit: tout(L) }, DEBARRAS.entree, L.marques['Ⓗ'][0]);
+    ok(sd.plan.length >= 45 && sd.plan[0].length >= 45 && sd.sombre && DEBARRAS.etapes.length === 4 && fige === -1,
+      'contes : le débarras est immense et sombre, quatre murs de vieilleries à franchir jusqu\'au chaudron, impossible sans rien pousser');
     const sol = PUITS.jeu.solution();
     ok(sol >= 8 && sol <= 20 && PUITS.jeu.nouveau().blocs.length === PUITS.jeu.NIVEAU.length, `contes : le seau du puits se dégage (${sol} glissements au mieux)`);
     ok(ORDRE_SOUFFLETS.length === 3 && new Set(ORDRE_SOUFFLETS).size === 3 && ORDRE_SOUFFLETS[2] === 1 && ORDRE_SOUFFLETS[0] !== 0, 'contes : l\'ordre des soufflets suit la recette (le milieu en dernier, la gauche jamais en premier)');

@@ -224,7 +224,7 @@ const CONTES = {
   contes: true,
   exterieur,
   textes: { perdu: 'Tes Pokémon n\'en peuvent plus... Tu te réveilles un peu plus loin, ton équipe soignée.' },
-  decor: { '|': 'colonne', p: 'table', n: 'tonneau', c: 'caisse', y: 'coffre', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter', k: 'books', 'ş': 'shelf', 'ḱ': 'kitchen', 'ƒ': 'fireplace', 'ą': 'armoire', 'ç': 'chair', 'ɓ': 'boxes', 'ṽ': 'vase', 'ŀ': 'lanterne', 'ḅ': 'bateau', 'ḟ': 'fontaine', 'ʗ': 'cheval', 'ʘ': 'cubes', 'ʚ': 'peluche', 'ʞ': 'poupee', 'Ɵ': 'clock', 'Ƨ': 'sofa', 'Ƥ': 'plant' },
+  decor: { '|': 'colonne', p: 'table', n: 'tonneau', c: 'caisse', y: 'coffre', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter', k: 'books', 'ş': 'shelf', 'ḱ': 'kitchen', 'ƒ': 'fireplace', 'ą': 'armoire', 'ç': 'chair', 'ɓ': 'boxes', 'ṽ': 'vase', 'ŀ': 'lanterne', 'ḅ': 'bateau', 'ḟ': 'fontaine', 'ʗ': 'cheval', 'ʘ': 'cubes', 'ʚ': 'peluche', 'ʞ': 'poupee', 'Ɵ': 'clock', 'Ƨ': 'sofa', 'Ƥ': 'plant', 'ɰ': 'miroir_pied_g', 'ŧ': 'painting' },
   objets: {
     // le décor en plein air
     Y: { type: 'tuile', sol: true, t: 'TREE' },
@@ -264,6 +264,7 @@ const CONTES = {
     // les meubles lourds : ils se poussent avec Force (donjon/meubles.js)
     'Ⓐ': { type: 'meuble', sol: true, sprite: 'armoire' }, 'Ⓛ': { type: 'meuble', sol: true, sprite: 'bed' }, 'Ⓣ': { type: 'meuble', sol: true, sprite: 'table' },
     'Ⓧ': { type: 'meuble', sol: true, sprite: 'boxes' }, 'Ⓢ': { type: 'meuble', sol: true, sprite: 'chair' },
+    'Ⓚ': { type: 'meuble', sol: true, sprite: 'caisse' }, 'Ⓡ': { type: 'meuble', sol: true, sprite: 'tonneau' }, 'Ⓜ': { type: 'meuble', sol: true, sprite: 'miroir_pied_d' },
     // les missions de la sorcière
     'Ⓑ': { type: 'bois', decor: 'buches' },
     'Ⓦ': { type: 'puits', decor: 'porte_vide' },   // le puits lui-même est un volume (batiments de la salle hgj)

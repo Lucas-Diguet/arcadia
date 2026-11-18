@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.21 — 18 novembre 2026
+- **TestOdyssée** — Bois des Contes : le débarras de la vieille dame est entièrement refait.
+  - Une pièce immense et sombre, encombrée de malles, caisses, tonneaux, armoires, étagères, miroirs et tableaux.
+  - Trois murs de vieilleries barrent le chemin du chaudron : à chaque fois, il faut pousser caisses, tonneaux, chaises ou miroirs avec Force pour ouvrir le passage.
+
 ## 6.20 — 18 novembre 2026
 - **TestOdyssée** — Bois des Contes : la maison de la vieille dame devient un vrai manoir.
   - Le hall est sombre et cossu : parquet, tapisseries rouges, portraits, tapis rouge de l'entrée au grand escalier, salon au coin du feu.

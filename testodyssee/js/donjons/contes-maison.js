@@ -18,54 +18,81 @@ export const NOEUD_DEBARRAS = [
   '.w.n.ncw.wcnc',
   'S.c..Ⓢ...Ⓣ...',
 ];
-export const DEBARRAS = { cw: 24, ch: 14, graine: 0, verrous: [], arrivee: null };
-/** le débarras : un labyrinthe de piles (une case sur deux), des meubles posés aux carrefours du bon chemin, qu'on pousse
- *  dans l'impasse d'en face ; tout au fond, en haut, le dernier casse-tête et le chaudron */
+/** trois barrages de bric-à-brac (13 × 7, bord compris) : on entre par S en bas, on sort par E en haut ; les meubles
+ *  Ⓚ Ⓡ Ⓢ Ⓜ Ⓧ Ⓣ se poussent avec Force, le reste est fixe (trouvés par recherche, vérifiés par les tests) */
+export const BARRAGES = [
+  [
+    '#########E###',
+    '#.Ⓚ.Ⓧ......c#',
+    '#....ɓ.w.ṽ.n#',
+    '#.ɓ.Ⓧw..ą..ɓ#',
+    '#n..Ⓢ.wɓ.ɓⓂ.#',
+    '#Ⓣ.Ⓣ.Ⓡ..cnwⓈ#',
+    '####S########',
+  ],
+  [
+    '#########E###',
+    '#.n...Ⓜ.....#',
+    '#Ⓜ...Ⓢc.ṽc..#',
+    '#.Ⓣṽw..şṽąş.#',
+    '#Ⓧ...Ⓡ..nɓ.w#',
+    '#şṽ.........#',
+    '#####S#######',
+  ],
+  [
+    '##E##########',
+    '#Ⓣ...wnş.şⓈṽ#',
+    '#ɓ..c.Ⓡ.ąɓṽş#',
+    '#ṽɓ...Ⓡ.nⓈąⓀ#',
+    '#...ⓀⓂ.Ⓚą.c.#',
+    '#ą...c.Ⓡ....#',
+    '##########S##',
+  ],
+];
+/** où sont posés les barrages et le nœud du fond, et ce que vérifient les tests (coordonnées du plan) */
+export const DEBARRAS = { iw: 45, barrages: [], noeud: null, entree: null, chaudron: null };
+/** le débarras : une immense pièce encombrée, du bas vers le haut ; quatre allées séparées par des murs de vieilleries
+ *  (malles, caisses, armoires, miroirs, tableaux, étagères) ; chaque mur n'a qu'un passage, bouché par des meubles à
+ *  pousser ; tout au fond, le dernier casse-tête et le chaudron. Dans les allées, des meubles qu'on peut pousser pour rien. */
 function debarras() {
-  const { cw, ch } = DEBARRAS, W = cw * 2 + 1, H = ch * 2 + 1, PILES = 'wwnnccɓɓąkş';
-  const DIR = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  for (let graine = 1; graine < 400; graine++) {
-    const R = alea(graine * 7919), g = Array.from({ length: H }, () => Array(W).fill('#'));
-    const vu = new Set(['0,' + (ch - 1)]), pile = [[0, ch - 1]], parent = new Map();
-    g[H - 2][1] = '.';
-    while (pile.length) {
-      // (une case prise tantôt au bout, tantôt au hasard : beaucoup de carrefours et de petites impasses)
-      const ip = R() < 0.55 ? pile.length - 1 : Math.floor(R() * pile.length), [cx, cy] = pile[ip];
-      const l = DIR.map(([dx, dy]) => [cx + dx, cy + dy, dx, dy]).filter(([x, y]) => x >= 0 && y >= 0 && x < cw && y < ch && !vu.has(x + ',' + y));
-      if (!l.length) { pile.splice(ip, 1); continue; }
-      const [x, y, dx, dy] = l[Math.floor(R() * l.length)];
-      vu.add(x + ',' + y); parent.set(x + ',' + y, [cx, cy]); pile.push([x, y]);
-      g[cy * 2 + 1 + dy][cx * 2 + 1 + dx] = '.'; g[y * 2 + 1][x * 2 + 1] = '.';
-    }
-    // le bon chemin : de l'entrée (en bas à gauche) à la case sous le casse-tête (en haut à droite)
-    const but = [cw - 7, 0], chemin = [];
-    for (let c = but; c; c = parent.get(c.join())) chemin.unshift(c);
-    // les verrous : là où le chemin tourne et où, tout droit, part une autre allée (on y pousse le meuble)
-    const ouvert = (x, y) => x > 0 && y > 0 && x < W - 1 && y < H - 1 && g[y][x] === '.';
-    const verrous = [];
-    for (let i = 1; i < chemin.length - 1; i++) {
-      const [ax, ay] = chemin[i - 1], [bx, by] = chemin[i], [cx, cy] = chemin[i + 1], dx = bx - ax, dy = by - ay;
-      if (cx - bx === dx && cy - by === dy) continue;
-      const X = bx * 2 + 1, Y = by * 2 + 1, qx = X + 2 * dx, qy = Y + 2 * dy;
-      if (!ouvert(X + dx, Y + dy) || !ouvert(qx, qy)) continue;
-      if (verrous.length && i - verrous[verrous.length - 1].i < 5) continue;
-      verrous.push({ i, X, Y, vers: [X + dx, Y + dy] });
-    }
-    if (verrous.length < 6) continue;
-    const garde = verrous.slice(0, 8);
-    garde.forEach(({ X, Y }, k) => { g[Y][X] = 'ⒶⓁⓉⓍ'[k % 4]; });
-    // les piles de vieilleries
-    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '#') g[y][x] = PILES[Math.floor(R() * PILES.length)];
-    g[H - 2][1] = 'S';   // la porte : sous l'arrivée, dans le mur du bas (la pièce est au-dessus du couloir)
-    // le casse-tête du fond, au-dessus de la case d'arrivée
-    const ox = but[0] * 2 + 1, large = NOEUD_DEBARRAS[0].length;
-    const haut = NOEUD_DEBARRAS.map((r) => '#'.repeat(ox) + r.replace('S', '.') + '#'.repeat(W - ox - large));
-    // (pour les tests : chaque verrou et la case où on le pousse, dans les coordonnées du plan)
-    const dy0 = 2 + NOEUD_DEBARRAS.length;
-    DEBARRAS.graine = graine; DEBARRAS.verrous = garde.map(({ X, Y, vers }) => [X, Y + dy0, vers[0], vers[1] + dy0]); DEBARRAS.arrivee = [ox, 2 + NOEUD_DEBARRAS.length];
-    return ['#'.repeat(W), '#'.repeat(W), ...haut, '#'.repeat(ox) + '.' + '#'.repeat(W - ox - 1), ...g.slice(1, H - 1).map((r) => r.join('')), '#Φ' + '#'.repeat(W - 2)];
+  const IW = DEBARRAS.iw, W = IW + 4, MUR = 'wnccɓɓąşṽɰŧkyw', DECO = 'wncɓąşṽɰŧykçƟʘ', LIBRE = 'ⓀⓇⓈⓂ';
+  for (let graine = 1; graine < 500; graine++) {
+  const R = alea(graine * 4243);
+  const ligne = () => Array(W).fill('#');
+  const rangee = (f) => { const l = ligne(); for (let x = 2; x < W - 2; x++) l[x] = f(x); return l; };
+  const plein = () => rangee(() => MUR[Math.floor(R() * MUR.length)]);
+  const g = [ligne(), ligne()];
+  // le nœud du fond (le chaudron), dans un mur de vieilleries
+  const nx = 30;
+  NOEUD_DEBARRAS.forEach((r) => { const l = plein(); [...r].forEach((c, i) => { l[nx + i] = c === 'S' ? '.' : c; }); g.push(l); });
+  DEBARRAS.noeud = { x: nx, y: 2 };
+  { const l = plein(); l[nx] = '.'; g.push(l); }
+  // allées et barrages, de haut en bas
+  const allee = (h) => { for (let k = 0; k < h; k++) g.push(rangee(() => { const r = R(); return r < 0.12 ? DECO[Math.floor(R() * DECO.length)] : r < 0.16 ? LIBRE[Math.floor(R() * LIBRE.length)] : '.'; })); };
+  const POS = [10, 28, 4];
+  [2, 1, 0].forEach((i) => {
+    allee(5);
+    const B = BARRAGES[i], bx = POS[i], y0 = g.length;
+    B.forEach((r, j) => { const l = plein(); [...r].forEach((c, k) => { l[bx + k] = c === '#' ? MUR[Math.floor(R() * MUR.length)] : c === 'E' || c === 'S' ? '.' : c; }); g.push(l); });
+    DEBARRAS.barrages[i] = { x: bx, y: y0 };
+  });
+  allee(6);
+  const sx = 2 + (IW >> 1);
+  g.push(ligne()); g[g.length - 2][sx] = 'S'; g[g.length - 1][sx] = 'Φ';
+  DEBARRAS.entree = [sx, g.length - 2];
+  // chaque allée mène du passage d'en bas à celui d'en haut sans rien pousser (les meubles des allées comptent comme des murs)
+  const va = ([x0, y0], [x1, y1]) => {
+    const vu = new Set([x0 + ',' + y0]), f = [[x0, y0]];
+    while (f.length) { const [x, y] = f.pop(); if (x === x1 && y === y1) return true; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = x + dx, b = y + dy, k = a + ',' + b; if (vu.has(k) || !g[b] || (g[b][a] !== '.' && !(a === x1 && b === y1))) continue; vu.add(k); f.push([a, b]); } }
+    return false;
+  };
+  const porte = (i, c) => { const B = BARRAGES[i], { x, y } = DEBARRAS.barrages[i], j = B.findIndex((r) => r.includes(c)); return [x + B[j].indexOf(c), y + j]; };
+  const etapes = [[DEBARRAS.entree, porte(0, 'S')], [porte(0, 'E'), porte(1, 'S')], [porte(1, 'E'), porte(2, 'S')], [porte(2, 'E'), [nx, 2 + NOEUD_DEBARRAS.length]]];
+  if (!etapes.every(([a, b]) => va(a, b))) { DEBARRAS.barrages = []; continue; }
+  DEBARRAS.etapes = etapes;
+  return g.map((l) => l.join(''));
   }
-  throw new Error('débarras : pas de labyrinthe');
+  throw new Error('débarras : pas de plan');
 }
 
 /** le jardin : la porte de la cuisine en haut, le bûcher et le puits à gauche, le potager à droite */
@@ -110,7 +137,7 @@ const PIECES = [
     '##.ş...S.....##',
     '#######◘#######',
   ] },
-  { etage: 1, rang: 4, id: 'd', nom: 'Débarras', meubles: true, sombre: true, plan: debarras() },
+  { etage: 1, rang: 4, id: 'd', nom: 'Débarras', meubles: true, sombre: true, style: 'manoir', plan: debarras() },
   { etage: 2, rang: 0, id: 'eg', nom: 'Chambre de garçon', plan: [
     '#############', '#############',
     '##ʙ..ş..ʗ.k##',
@@ -158,7 +185,7 @@ export function maison() {
       const a = String.fromCharCode(n++), b = String.fromCharCode(n++), id = P ? `hg${P.id}` : `hg${e}${'abcdefghij'[i]}`;
       portes.push(a);
       objets[a] = { type: 'lien', mur: true, tenture: 'porte', porte: true, vers: id, cible: b }; objets[b] = { type: 'lien', sol: true, vers: `hg${e + 1}`, cible: a };
-      pieces.push({ id, nom: `${NOM} — ${P ? P.nom : 'Petite pièce'}`, type: 'libre', conte: 'hg', ...(P?.meubles ? { meubles: true } : {}), ...(P?.sombre ? { sombre: true } : {}),
+      pieces.push({ id, nom: `${NOM} — ${P ? P.nom : 'Petite pièce'}`, type: 'libre', conte: 'hg', ...(P?.style ? { style: P.style } : {}), ...(P?.meubles ? { meubles: true } : {}), ...(P?.sombre ? { sombre: true } : {}),
         plan: (P ? P.plan : VIDE).map((r) => r.replace('◘', b).replace('Φ', b)) });
     }
     salles.push({ id: `hg${e + 1}`, nom: `${NOM} — ${RANG[e - 1]} étage`, type: 'libre', conte: 'hg', style: 'manoir', tapis: TAPIS_COULOIR, plan: couloir(HAUT[e], BAS[e], portes) }, ...pieces);

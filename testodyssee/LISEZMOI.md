@@ -872,9 +872,12 @@ d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
     le mur du bas, `S` juste au-dessus) :
     chambre de la vieille dame et débarras au 1er, chambres de garçon et de fille au 2e, bibliothèque au 3e ; les
     autres sont de petites pièces vides (`VIDE`) ;
-  - le débarras : immense et dans la pénombre (`sombre`, classe `penombre`), un labyrinthe de piles de vieilleries tiré
-    d'une graine ; aux carrefours du bon chemin, un meuble à pousser dans l'allée d'en face (`DEBARRAS.verrous`) ; au
-    fond, le casse-tête `NOEUD_DEBARRAS` et le chaudron ;
+  - le débarras (style `manoir`) : une immense pièce dans la pénombre (`sombre`, classe `penombre`), du bas vers le
+    haut quatre allées séparées par des murs de vieilleries (malles, caisses, tonneaux, armoires, étagères, miroirs `ɰ`,
+    tableaux `ŧ`) ; chaque mur n'a qu'un passage, bouché par un barrage de meubles à pousser avec Force (`BARRAGES`,
+    trouvés par recherche ; meubles `Ⓚ` caisse, `Ⓡ` tonneau, `Ⓜ` miroir, `Ⓢ` chaise, `Ⓧ` cartons, `Ⓣ` table) ; des
+    meubles libres dans les allées ; au fond, le casse-tête `NOEUD_DEBARRAS` et le chaudron. Les allées sont tirées
+    d'une graine et vérifiées : chacune mène du passage d'en bas à celui d'en haut (`DEBARRAS.etapes`) ;
   - le potager du jardin : deux blocs séparés par cinq colonnes d'herbe ; dans chacun, trois rangs de dix légumes
     séparés par un rang de terre, trois rangs d'herbe, trois autres rangs (carottes et citrouilles, pommes de terre et
     oignons ; `type: 'legume'`), sur de la terre brune (`type: 'terre'`, `m.terre`, tuile `sol_terre` de `js/rendu.js`).
