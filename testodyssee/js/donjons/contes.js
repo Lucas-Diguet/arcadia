@@ -224,7 +224,7 @@ const CONTES = {
   contes: true,
   exterieur,
   textes: { perdu: 'Tes Pokémon n\'en peuvent plus... Tu te réveilles un peu plus loin, ton équipe soignée.' },
-  decor: { '|': 'colonne', p: 'table', n: 'tonneau', c: 'caisse', y: 'coffre', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter', k: 'books', 'ş': 'shelf', 'ḱ': 'kitchen', 'ƒ': 'fireplace', 'ą': 'armoire', 'ç': 'chair', 'ɓ': 'boxes', 'ṽ': 'vase', 'ŀ': 'lanterne', 'ḅ': 'bateau', 'ḟ': 'fontaine', 'ʗ': 'cheval', 'ʘ': 'cubes', 'ʚ': 'peluche', 'ʞ': 'poupee' },
+  decor: { '|': 'colonne', p: 'table', n: 'tonneau', c: 'caisse', y: 'coffre', w: 'caisses', 'ʙ': 'bed', 'Ŗ': 'counter', k: 'books', 'ş': 'shelf', 'ḱ': 'kitchen', 'ƒ': 'fireplace', 'ą': 'armoire', 'ç': 'chair', 'ɓ': 'boxes', 'ṽ': 'vase', 'ŀ': 'lanterne', 'ḅ': 'bateau', 'ḟ': 'fontaine', 'ʗ': 'cheval', 'ʘ': 'cubes', 'ʚ': 'peluche', 'ʞ': 'poupee', 'Ɵ': 'clock', 'Ƨ': 'sofa', 'Ƥ': 'plant' },
   objets: {
     // le décor en plein air
     Y: { type: 'tuile', sol: true, t: 'TREE' },
@@ -253,6 +253,8 @@ const CONTES = {
     'θ': { type: 'lien', sol: true, vers: 'hg4', cible: 'Θ', escalier: true }, 'Θ': { type: 'lien', sol: true, vers: 'hg3', cible: 'θ', escalier: true },
     'σ': { type: 'lien', sol: true, vers: 'hg5', cible: 'Σ', bloque: 'grenier' }, 'Σ': { type: 'lien', sol: true, vers: 'hg4', cible: 'σ' },
     ...MAISON.objets,   // les portes des couloirs et des pièces
+    // le manoir : tapisseries et portraits accrochés aux murs (rendu.js)
+    'Ƭ': { type: 'tenture', mur: true, tenture: 'tapisserie' }, 'Ʊ': { type: 'tenture', mur: true, tenture: 'portrait' },
     // les sacs de cailloux du labyrinthe
     '❍': { type: 'sac', decor: 'sac0', n: 0 }, '❎': { type: 'sac', decor: 'sac1', n: 1 }, '❏': { type: 'sac', decor: 'sac2', n: 2 }, '❐': { type: 'sac', decor: 'sac3', n: 3 }, '❑': { type: 'sac', decor: 'sac4', n: 4 },
     // le potager
@@ -332,17 +334,21 @@ const CONTES = {
       "##.........f..S..f.........##",
       "##############Α##############",
     ] },
-    { id: 'hg1', nom: 'Maison de la vieille dame — Salon et cuisine', type: 'libre', conte: 'hg', plan: [
-      "####################################",
-      "####################################",
-      "##ƒ...k..ş...ṽ...ζ.##ḱḱ..Ⓞ..❶❷❸...##",
-      "##.................##.............##",
-      "##....ç.p.ç.......................##",
-      "##......ŝ..........##...p.p...Ⓝ...##",
-      "##....ç.p.ç........##.............##",
-      "##.................##.............##",
-      "##.......S.........############ρ####",
-      "#########ƕ##########################",
+    // le hall : manoir sombre, tapisseries et portraits, tapis rouge de l'entrée au grand escalier ; le salon à gauche, la cuisine à droite
+    { id: 'hg1', nom: 'Maison de la vieille dame — Hall', type: 'libre', conte: 'hg', style: 'manoir', tapis: [[13, 2, 15, 11], [4, 4, 8, 8], [20, 6, 24, 8]], plan: [
+      "##########################################",
+      "####Ʊ##Ʊ##Ƭ#######Ƭ####Ʊ##################",
+      "##kk.ƒ..ş...ṽ.ζ.ṽ....Ɵ..kkş.#ḱḱ..Ⓞ..❶❷❸.##",
+      "##..........................#...........##",
+      "##..........................#...........##",
+      "##Ƥ..ç.ç...................Ƥ#..p.p...Ⓝ..##",
+      "##....p..Ƨ..............................##",
+      "##...ç.ç..............Ƨ.................##",
+      "##........ŝ.................#...........##",
+      "##ą.........................#...........##",
+      "##.........................Ƥ########ρ#####",
+      "##Ƥ......ŀ....S....ŀ........##############",
+      "##############ƕ###########################",
     ] },
     { id: 'hgj', nom: 'Jardin de la vieille dame', type: 'libre', batiments: [
       { modele: 'puitsJardin', x: 5, y: 11, w: 2, d: 2 },

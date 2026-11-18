@@ -96,6 +96,11 @@ export const Contes = {
         if (s?.haies) { const [ox, oy] = x === 1 ? [0, y] : x === m.w - 2 ? [m.w - 1, y] : y === 1 ? [x, 0] : [-1, -1]; if (ox >= 0) m.set(ox, oy, T.PATH); }
         if (o.liane) m.deco.push({ k: 'liane', x, y });
         if (o.gueule) m.deco.push({ k: 'entree_mine', x, y });
+      } else if (o.porte) {
+        // porte peinte dans le mur du fond (couloirs de la maison, rendu.js) : on l'ouvre en lui faisant face
+        const A = this.arriveeContes(d, c);
+        m.object(x, y, { use: () => this.game.warp(A) });
+        continue;
       } else if (o.escalier) { m.set(x, y, T.CAVE); m.deco.push({ k: 'ladder', x, y }); }
       else { m.set(x, y, T.CAVEDOOR); m.deco.push({ k: 'exitlight', x, y }); }
       m.warp(x, y, { ...this.arriveeContes(d, c), step: true });

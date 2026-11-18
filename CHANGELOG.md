@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.20 — 18 novembre 2026
+- **TestOdyssée** — Bois des Contes : la maison de la vieille dame devient un vrai manoir.
+  - Le hall est sombre et cossu : parquet, tapisseries rouges, portraits, tapis rouge de l'entrée au grand escalier, salon au coin du feu.
+  - Les couloirs des étages vont maintenant de gauche à droite, avec dix portes de manoir dans le mur : on les ouvre en leur faisant face.
+
 ## 6.19 — 18 novembre 2026
 - **TestOdyssée** — Donjon des Miroirs : un nouveau palais de marbre blanc sur le Parvis enneigé, avec ses colonnes de cristal, ses hauts miroirs et ses obélisques de glace.
   - Copycat a enfin son vrai visage : un mime au masque blanc et au béret, en combinaison de losanges miroir, qui marche quand il te suit en reflet.

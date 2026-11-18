@@ -854,17 +854,22 @@ d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
   La haie d'enceinte s'ouvre devant chaque sortie.
 - Haies du labyrinthe (`haies: true`) : `haie0` à `haie2` de face ; une haie qui en a une autre devant elle ne montre que
   son dessus (`haiev`, et `haien` pour le bout du fond), pour qu'une haie verticale soit une barre continue.
-- Hansel et Gretel : la clairière (`hg0`), le salon et la cuisine (`hg1`), le jardin (`hgj`), trois étages (`hg2` à
+- Hansel et Gretel : la clairière (`hg0`), le hall, son salon et la cuisine (`hg1`), le jardin (`hgj`), trois étages (`hg2` à
   `hg4`), le grenier fermé à clé (`hg5`, Hansel et Gretel). Rien de ce que lit le joueur ne dit « sorcière » : c'est
   la vieille dame. Le manoir en pain d'épice (15 × 8, trois étages), le puits et la cabane à outils du jardin sont des modèles en
   volumes de PixelForge (`odyssee/js/render/contes3d.js` : `painEpice`, `puitsJardin`, `cabaneOutils`) ; une salle
   pose ses décors en volumes par `batiments` (modèle, coin, emprise, texte), une maison par `modele`, `w`, `d`, `door`.
   la vieille dame. Étages, pièces, débarras et jardin sont écrits par `js/donjons/contes-maison.js` :
-  - un étage = un long couloir droit, de haut en bas, cinq portes à gauche et cinq à droite ; chaque porte mène à une
-    pièce qui a sa carte. Les escaliers alternent : celui du haut arrive en haut du couloir du dessus, celui du bas en
-    bas (1er : on arrive en bas, on monte en haut ; 2e : l'inverse ; 3e : la porte du grenier est en haut) ;
-  - les pièces décidées sont dans `PIECES` (étage, côté `g` ou `d`, rang depuis le haut, plan avec `◘` pour la porte, écrit pour une pièce à gauche du couloir : la porte est sur son mur de droite, on y entre
-    en marchant vers la gauche ; à droite du couloir le plan est retourné, sauf `natif`) :
+  - le hall et les couloirs sont en style `manoir` (`js/rendu.js` : parquet sombre, tapisserie rouge damassée sur un
+    lambris, plafond de poutres) ; `tapis` d'une salle : des rectangles du plan couverts d'un tapis rouge bordé d'or
+    (`poserTapis` de `donjon/plan.js`, tuiles `tapis_*`) ; objets `mur: true` avec `tenture` : tapisserie, portrait ou
+    porte, peints sur la face du mur (`poserTenture`, `poserPorteManoir`) ;
+  - un étage = un long couloir droit, de gauche à droite, dix portes de manoir dans le mur du fond (on les ouvre en leur
+    faisant face : `porte` d'un lien) ; chaque porte mène à une pièce, au-dessus du couloir, qui a sa carte. Les
+    escaliers alternent : celui de gauche arrive à gauche du couloir du dessus, celui de droite à droite (1er : on
+    arrive à droite, on monte à gauche ; 2e : l'inverse ; 3e : la porte du grenier est à gauche) ;
+  - les pièces décidées sont dans `PIECES` (étage, rang de la porte depuis la gauche, plan avec `◘` pour la porte, dans
+    le mur du bas, `S` juste au-dessus) :
     chambre de la vieille dame et débarras au 1er, chambres de garçon et de fille au 2e, bibliothèque au 3e ; les
     autres sont de petites pièces vides (`VIDE`) ;
   - le débarras : immense et dans la pénombre (`sombre`, classe `penombre`), un labyrinthe de piles de vieilleries tiré

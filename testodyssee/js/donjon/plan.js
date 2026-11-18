@@ -63,7 +63,7 @@ export function construireCarte(def) {
       if (o.type === 'panneau') m.sign(x, y, o.texte || '...');
       else if (o.type === 'ramasser') m.item(x, y, o.objet, o.n || 1, `${def.carte}:${c}:${i}`);
       else if (o.sol) { if (o.decor) m.deco.push({ k: o.decor, x, y }); }   // objet sur lequel on marche (départ d'un personnage…)
-      else if (o.mur) (m.affiches ||= []).push({ x, y, texte: o.affiche });  // dessinée sur la face sud du mur (rendu.js)
+      else if (o.mur) (m.affiches ||= []).push({ x, y, texte: o.affiche, genre: o.tenture });  // dessinée sur la face sud du mur (rendu.js)
       else m.prop(o.decor || DECOR_OBJET[o.type] || 'statue', x, y);
     });
   }
@@ -83,6 +83,17 @@ export function construireCarte(def) {
   return m;
 }
 
+/** tapis (rectangles [x0, y0, x1, y1] du plan) : une tuile par case, bordée d'or du côté où le tapis s'arrête (rendu.js) */
+function poserTapis(m, rects) {
+  const t = new Set();
+  for (const [x0, y0, x1, y1] of rects) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) t.add((x + 1) + ',' + (y + 1));
+  m.solArene ||= new Map();
+  for (const k of t) {
+    const [x, y] = k.split(',').map(Number), a = (dx, dy) => !t.has((x + dx) + ',' + (y + dy));
+    m.solArene.set(k, `tapis_${a(0, -1) ? 'N' : ''}${a(0, 1) ? 'S' : ''}${a(-1, 0) ? 'O' : ''}${a(1, 0) ? 'E' : ''}`);
+  }
+}
+
 /**
  * donjon en salles séparées (chaque salle a son `plan`) : une carte par salle, comme les étages d'un bâtiment.
  * La première garde l'identifiant du donjon (def.carte) ; N d'une salle mène à S de la suivante, D ramène devant
@@ -96,6 +107,7 @@ export function construireSalles(def) {
     m.zone(0, 0, m.w - 1, m.h - 1, { name: s.nom, music: s.musique || def.musique || 'cave', salle: s.id, ...(s.zoneOpts || {}) });
     m.salle = s.id;
     if (s.sol) m.solSalle = s.sol;   // sol d'une autre couleur que celui du style
+    if (s.tapis) poserTapis(m, s.tapis);
     if (s.sombre) m.dark = 'arene';   // dans le noir, même avec Flash
     if (s.sombre && def.vueLarge) m.vueLarge = true;   // ... mais on y voit sur la moitié de l'écran, en cercle (comme le labyrinthe des contes)
     return m;

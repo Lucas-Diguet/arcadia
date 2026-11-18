@@ -1,7 +1,7 @@
 // testodyssee/js/donjons/contes-maison.js — la maison de la vieille dame (Bois des Contes, Hansel et Gretel) : trois étages
-// faits d'un long couloir droit, de haut en bas, avec cinq portes à gauche et cinq à droite ; chaque porte mène à une
-// pièce, qui a sa propre carte. Les escaliers alternent : celui du haut d'un couloir arrive en haut du couloir du dessus,
-// celui du bas arrive en bas. Les pièces se décident une par une (`PIECES`) ; les autres sont de petites pièces vides.
+// faits d'un long couloir droit, de gauche à droite (style manoir : tapis rouge, tapisseries et portraits), avec dix portes
+// dans le mur du fond ; chaque porte mène à une pièce, au-dessus du couloir, qui a sa propre carte (sa porte dans le mur du bas). Les escaliers alternent : celui de gauche d'un couloir arrive à gauche du couloir du dessus,
+// celui de droite arrive à droite. Les pièces se décident une par une (`PIECES`) ; les autres sont de petites pièces vides.
 // Le débarras est immense et sombre : un labyrinthe de piles de vieilleries, des meubles à pousser, le chaudron au fond.
 // Le jardin : le bûcher, le puits, et le potager (carottes et citrouilles, pommes de terre et oignons).
 
@@ -56,14 +56,14 @@ function debarras() {
     garde.forEach(({ X, Y }, k) => { g[Y][X] = 'ⒶⓁⓉⓍ'[k % 4]; });
     // les piles de vieilleries
     for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '#') g[y][x] = PILES[Math.floor(R() * PILES.length)];
-    g[H - 2][1] = 'S'; g[H - 2][0] = 'Φ';   // la porte : sur le mur de gauche (la pièce est à droite du couloir)
+    g[H - 2][1] = 'S';   // la porte : sous l'arrivée, dans le mur du bas (la pièce est au-dessus du couloir)
     // le casse-tête du fond, au-dessus de la case d'arrivée
     const ox = but[0] * 2 + 1, large = NOEUD_DEBARRAS[0].length;
     const haut = NOEUD_DEBARRAS.map((r) => '#'.repeat(ox) + r.replace('S', '.') + '#'.repeat(W - ox - large));
     // (pour les tests : chaque verrou et la case où on le pousse, dans les coordonnées du plan)
     const dy0 = 2 + NOEUD_DEBARRAS.length;
     DEBARRAS.graine = graine; DEBARRAS.verrous = garde.map(({ X, Y, vers }) => [X, Y + dy0, vers[0], vers[1] + dy0]); DEBARRAS.arrivee = [ox, 2 + NOEUD_DEBARRAS.length];
-    return ['#'.repeat(W), '#'.repeat(W), ...haut, '#'.repeat(ox) + '.' + '#'.repeat(W - ox - 1), ...g.slice(1, H - 1).map((r) => r.join('')), '#'.repeat(W)];
+    return ['#'.repeat(W), '#'.repeat(W), ...haut, '#'.repeat(ox) + '.' + '#'.repeat(W - ox - 1), ...g.slice(1, H - 1).map((r) => r.join('')), '#Φ' + '#'.repeat(W - 2)];
   }
   throw new Error('débarras : pas de labyrinthe');
 }
@@ -85,62 +85,64 @@ function jardin() {
   return g.map((r) => r.join(''));
 }
 
-/** un couloir : l'escalier (ou la porte) du haut, celui du bas, cinq portes de chaque côté */
-function couloir(haut, bas, portes) {
-  const r = ['#####', '#####', `#.${haut}.#`, '#...#'];
-  for (let i = 0; i < 5; i++) r.push(`${portes[i]}...${portes[5 + i]}`, '#...#', '#...#', '#...#');
-  r.push('#.S.#', `#.${bas}.#`, '#####');
-  return r;
+/** un couloir horizontal : l'escalier de gauche, celui de droite, dix portes dans le mur du fond (on les ouvre en leur
+ *  faisant face) ; entre les portes, des tapisseries et des portraits */
+function couloir(gauche, droite, portes) {
+  const W = 45, haut = Array(W).fill('#');
+  portes.forEach((c, i) => { haut[4 + i * 4] = c; });
+  for (let i = 0; i < 11; i++) haut[2 + i * 4] = i % 2 ? 'Ʊ' : 'Ƭ';
+  return ['#'.repeat(W), haut.join(''), '#Ƥ' + '.'.repeat(W - 4) + 'Ƥ#', `#${gauche}${'.'.repeat(W - 5)}S${droite}#`, '#' + '.'.repeat(W - 2) + '#', '#'.repeat(W)];
 }
+/** le tapis du couloir : de l'escalier de gauche à celui de droite */
+const TAPIS_COULOIR = [[2, 3, 41, 3]];
 
-// (plans écrits pour une pièce à gauche du couloir : la porte ◘ est sur son mur de droite, on y entre en marchant vers la
-// gauche ; à droite du couloir, le plan est retourné, sauf `natif`)
-const VIDE = ['#########', '#########', '##.....##', '##.....##', '##....S◘#', '##.....##', '#########'];
-/** les pièces décidées : étage, côté (g ou d), rang depuis le haut du couloir (0 à 4) */
+// plans des pièces : ◘ la porte, dans le mur du bas (les pièces sont au-dessus du couloir) ; S juste au-dessus
+const VIDE = ['#########', '#########', '##.....##', '##.....##', '##..S..##', '####◘####'];
+/** les pièces décidées : étage, rang de la porte depuis la gauche (0 à 9) */
 const PIECES = [
-  { etage: 1, cote: 'g', rang: 4, id: 'gm', nom: 'Chambre de la vieille dame', plan: [
+  { etage: 1, rang: 9, id: 'gm', nom: 'Chambre de la vieille dame', plan: [
     '###############', '###############',
     '##ƒ.ą..ʙ..ṽ.k##',
     '##...........##',
     '##.ç.p.......##',
-    '##..........S◘#',
+    '##...........##',
     '##ṽ.......p..##',
-    '##.ş.........##',
-    '###############',
+    '##.ş...S.....##',
+    '#######◘#######',
   ] },
-  { etage: 1, cote: 'd', rang: 4, id: 'd', nom: 'Débarras', meubles: true, sombre: true, natif: true, plan: debarras() },
-  { etage: 2, cote: 'g', rang: 0, id: 'eg', nom: 'Chambre de garçon', plan: [
+  { etage: 1, rang: 4, id: 'd', nom: 'Débarras', meubles: true, sombre: true, plan: debarras() },
+  { etage: 2, rang: 0, id: 'eg', nom: 'Chambre de garçon', plan: [
     '#############', '#############',
     '##ʙ..ş..ʗ.k##',
     '##.........##',
-    '##.ʘ......S◘#',
+    '##.ʘ.......##',
     '##.....ʘ.p.##',
-    '##.........##',
-    '#############',
+    '##....S....##',
+    '######◘######',
   ] },
-  { etage: 2, cote: 'd', rang: 0, id: 'ef', nom: 'Chambre de fille', plan: [
+  { etage: 2, rang: 5, id: 'ef', nom: 'Chambre de fille', plan: [
     '#############', '#############',
     '##ʙ..ą..ṽ.ʚ##',
     '##.........##',
-    '##.ʞ......S◘#',
+    '##.ʞ.......##',
     '##....ʚ..p.##',
-    '##.........##',
-    '#############',
+    '##....S....##',
+    '######◘######',
   ] },
-  { etage: 3, cote: 'g', rang: 2, id: 'bib', nom: 'Bibliothèque', plan: [
+  { etage: 3, rang: 2, id: 'bib', nom: 'Bibliothèque', plan: [
     '#############################', '#############################',
     '##kkkkkkkkkkkkkkkkkkkkkkkkk##',
     '##.........................##',
     '##.kkkk.kkkk.....kkkk.kkkk.##',
     '##.........................##',
     '##.kkkk.kkkk..p..kkkk.kkkk.##',
-    '##...........ç.ç..........S◘#',
+    '##...........ç.ç...........##',
     '##.kkkk.kkkk..p..kkkk.kkkk.##',
     '##.........................##',
     '##.kkkk.kkkk.....kkkk.kkkk.##',
     '##.........................##',
-    '##ş.......................ş##',
-    '#############################',
+    '##ş...........S...........ş##',
+    '##############◘##############',
   ] },
 ];
 
@@ -152,14 +154,14 @@ export function maison() {
   for (let e = 1; e <= 3; e++) {
     const portes = [], pieces = [];
     for (let i = 0; i < 10; i++) {
-      const cote = i < 5 ? 'g' : 'd', rang = i % 5, P = PIECES.find((q) => q.etage === e && q.cote === cote && q.rang === rang);
+      const P = PIECES.find((q) => q.etage === e && q.rang === i);
       const a = String.fromCharCode(n++), b = String.fromCharCode(n++), id = P ? `hg${P.id}` : `hg${e}${'abcdefghij'[i]}`;
       portes.push(a);
-      objets[a] = { type: 'lien', sol: true, vers: id, cible: b }; objets[b] = { type: 'lien', sol: true, vers: `hg${e + 1}`, cible: a };
+      objets[a] = { type: 'lien', mur: true, tenture: 'porte', porte: true, vers: id, cible: b }; objets[b] = { type: 'lien', sol: true, vers: `hg${e + 1}`, cible: a };
       pieces.push({ id, nom: `${NOM} — ${P ? P.nom : 'Petite pièce'}`, type: 'libre', conte: 'hg', ...(P?.meubles ? { meubles: true } : {}), ...(P?.sombre ? { sombre: true } : {}),
-        plan: (P ? P.plan : VIDE).map((r) => (cote === 'd' && !P?.natif ? [...r].reverse().join('') : r).replace('◘', b).replace('Φ', b)) });
+        plan: (P ? P.plan : VIDE).map((r) => r.replace('◘', b).replace('Φ', b)) });
     }
-    salles.push({ id: `hg${e + 1}`, nom: `${NOM} — ${RANG[e - 1]} étage`, type: 'libre', conte: 'hg', plan: couloir(HAUT[e], BAS[e], portes) }, ...pieces);
+    salles.push({ id: `hg${e + 1}`, nom: `${NOM} — ${RANG[e - 1]} étage`, type: 'libre', conte: 'hg', style: 'manoir', tapis: TAPIS_COULOIR, plan: couloir(HAUT[e], BAS[e], portes) }, ...pieces);
   }
   return { salles, objets, jardin: jardin() };
 }
