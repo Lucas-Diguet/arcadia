@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.24 — 18 novembre 2026
+- **TestOdyssée** — Bois des Contes, armurerie : les armures sont redessinées en plus grand et plus détaillées (heaume à visière, tabard rouge, épée plantée devant), et des épées sont accrochées aux murs, croisées sur leur écusson ou posées sur des crochets.
+
 ## 6.23 — 18 novembre 2026
 - **TestOdyssée** — Bois des Contes : une armurerie au premier étage de la maison de la vieille dame, avec ses armures sur pied, ses râteliers d'armes et son enclume, et aux murs des tapisseries, des portraits et des panoplies d'épées croisées.
 

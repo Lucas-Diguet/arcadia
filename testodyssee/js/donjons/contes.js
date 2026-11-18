@@ -254,7 +254,7 @@ const CONTES = {
     'σ': { type: 'lien', sol: true, vers: 'hg5', cible: 'Σ', bloque: 'grenier' }, 'Σ': { type: 'lien', sol: true, vers: 'hg4', cible: 'σ' },
     ...MAISON.objets,   // les portes des couloirs et des pièces
     // le manoir : tapisseries et portraits accrochés aux murs (rendu.js)
-    'Ƭ': { type: 'tenture', mur: true, tenture: 'tapisserie' }, 'Ʊ': { type: 'tenture', mur: true, tenture: 'portrait' }, 'Ʋ': { type: 'tenture', mur: true, tenture: 'dessin' }, 'Ʌ': { type: 'tenture', mur: true, tenture: 'panoplie' },
+    'Ƭ': { type: 'tenture', mur: true, tenture: 'tapisserie' }, 'Ʊ': { type: 'tenture', mur: true, tenture: 'portrait' }, 'Ʋ': { type: 'tenture', mur: true, tenture: 'dessin' }, 'Ʌ': { type: 'tenture', mur: true, tenture: 'panoplie' }, 'Ȿ': { type: 'tenture', mur: true, tenture: 'epees' }, 'ȿ': { type: 'tenture', mur: true, tenture: 'epee' },
     // les sacs de cailloux du labyrinthe
     '❍': { type: 'sac', decor: 'sac0', n: 0 }, '❎': { type: 'sac', decor: 'sac1', n: 1 }, '❏': { type: 'sac', decor: 'sac2', n: 2 }, '❐': { type: 'sac', decor: 'sac3', n: 3 }, '❑': { type: 'sac', decor: 'sac4', n: 4 },
     // le potager

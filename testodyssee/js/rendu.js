@@ -325,6 +325,7 @@ function poserTenture(view, a) {
   if (a.genre === 'porte') return poserPorteManoir(view, a);
   if (a.genre === 'dessin') return poserDessin(view, a);
   if (a.genre === 'panoplie') return poserPanoplie(view, a);
+  if (a.genre === 'epees' || a.genre === 'epee') return poserEpees(view, a);
   const tap = a.genre === 'tapisserie', c = document.createElement('canvas'); c.width = 24; c.height = tap ? 40 : 28;
   const x = c.getContext('2d'), R = hasard(a.x * 131 + a.y * 17);
   if (tap) {
@@ -351,6 +352,39 @@ function poserTenture(view, a) {
   const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
   const W = tap ? 0.62 : 0.6, H = W * c.height / c.width * Math.tan(EL), haut = 1.25 * Math.tan(EL);
   const geo = new THREE.PlaneGeometry(W, H); geo.translate(a.x + 0.5, haut * (tap ? 0.62 : 0.6), a.y + 1.01);
+  const mat = new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.5 }); mat.userData.own = true;
+  view.root.add(new THREE.Mesh(geo, mat));
+}
+
+/** des épées au mur : deux épées croisées sur une plaque de bois (epees), ou une longue épée posée sur deux crochets (epee) */
+function poserEpees(view, a) {
+  const c = document.createElement('canvas'); c.width = 28; c.height = 24;
+  const x = c.getContext('2d');
+  const px = (X, Y, col) => { x.fillStyle = col; x.fillRect(X, Y, 1, 1); };
+  const epee = (pts) => pts.forEach(([X, Y], i) => {
+    const n = pts.length, col = i < 4 ? '#4a2c14' : i === 4 ? '#e0b850' : i === 5 ? '#d8b048' : (i % 3 ? '#d0d4e0' : '#a0a6b8');
+    px(X, Y, col); if (i >= 6) px(X + 1, Y, i % 2 ? '#8a90a2' : '#e8ecf4');
+    if (i === 4) for (const d of [-2, -1, 1, 2]) px(X + d, Y - d, '#d8b048');
+    if (i === 0) { px(X - 1, Y, '#e0b850'); px(X, Y + 1, '#e0b850'); }
+  });
+  if (a.genre === 'epees') {
+    x.fillStyle = '#3a2210'; x.beginPath(); x.ellipse(14, 12, 9, 10, 0, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#5a3a1e'; x.beginPath(); x.ellipse(14, 12, 7.5, 8.5, 0, 0, Math.PI * 2); x.fill();
+    epee([...Array(22)].map((_, i) => [3 + i, 22 - i]));
+    epee([...Array(22)].map((_, i) => [24 - i, 22 - i]));
+  } else {
+    for (const X of [6, 21]) { x.fillStyle = '#2a1a0c'; x.fillRect(X, 9, 2, 5); x.fillStyle = '#c89a48'; x.fillRect(X, 9, 2, 1); }
+    for (let i = 0; i < 26; i++) {
+      const X = 1 + i, col = i < 4 ? '#4a2c14' : i === 4 ? '#e0b850' : '#d0d4e0';
+      x.fillStyle = i < 4 ? '#5a3418' : i === 4 ? '#f0d070' : '#eef0f6'; x.fillRect(X, 10, 1, 1);
+      x.fillStyle = col; x.fillRect(X, 11, 1, 1); x.fillStyle = i < 4 ? '#3a2010' : i === 4 ? '#d8b048' : '#9aa0b0'; x.fillRect(X, 12, 1, 1);
+      if (i === 4) { x.fillStyle = '#d8b048'; x.fillRect(X - 1, 6, 2, 11); }
+    }
+    x.fillStyle = '#e0b850'; x.fillRect(0, 11, 1, 2);
+  }
+  const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
+  const W = 1.0, H = W * 24 / 28 * Math.tan(EL), haut = 1.25 * Math.tan(EL);
+  const geo = new THREE.PlaneGeometry(W, H); geo.translate(a.x + 0.5, haut * 0.6, a.y + 1.01);
   const mat = new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.5 }); mat.userData.own = true;
   view.root.add(new THREE.Mesh(geo, mat));
 }

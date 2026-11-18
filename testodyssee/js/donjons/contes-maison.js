@@ -137,10 +137,11 @@ const PIECES = [
     '##.ş...S.....##',
     '#######◘#######',
   ] },
-  // l'armurerie : armures sur pied, râteliers d'armes, enclume ; aux murs, tapisseries, portraits et panoplies (bouclier et épées croisées)
+  // l'armurerie : armures sur pied, râteliers d'armes, enclume ; aux murs, tapisseries, portraits, panoplies (bouclier et épées
+  // croisées), épées croisées sur leur écusson de bois et longues épées sur crochets
   { etage: 1, rang: 1, id: 'arm', nom: 'Armurerie', style: 'manoir', tapis: [[8, 3, 14, 8]], plan: [
     '#######################',
-    '##Ƭ#ɅƱ#ɅƬ##Ʊ##ƬɅ#ƱɅ#Ƭ##',
+    '##ƬƬⱾɅƱȿƬ##Ȿ##ȿɅƱⱾƬ#Ƭ##',
     '##.ȃ..ȃ..ȓȓ.ȓȓ..ȃ..ȃ.##',
     '##...................##',
     '##...................##',
