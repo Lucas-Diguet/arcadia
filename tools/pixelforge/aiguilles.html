@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<!-- PixelForge : les trois aiguilles de la Salle de l'Horloge (testodyssee/js/horloge-aiguilles.js) sur le cadran,
+     avec la caméra du jeu. ?vue=cadran (les trois sur le cadran) ou ?vue=seules (côte à côte). -->
+<title>Aiguilles de l'horloge</title>
+<style>html,body{margin:0;background:#0a0808}canvas{display:block}</style>
+<script type="importmap">{ "imports": { "three": "../../shared/vendor/three/three.module.min.js" } }</script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { creerAiguille } from '../../testodyssee/js/horloge-aiguilles.js';
+const Q = new URLSearchParams(location.search), vue = Q.get('vue') || 'cadran';
+const D = 24, EL = 55 * Math.PI / 180, YS = Math.tan(EL);
+const IW = +(Q.get('w') || 48) * D, IH = +(Q.get('h') || 44) * D;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setSize(IW, IH); document.body.appendChild(renderer.domElement);
+renderer.setClearColor('#0a0808');
+const scene = new THREE.Scene(), etire = new THREE.Group(); etire.scale.y = YS; scene.add(etire);
+const m = (c) => new THREE.MeshBasicMaterial({ color: c });
+if (vue === 'cadran') {
+  const R = 18, F = -6;
+  const d = new THREE.Mesh(new THREE.CircleGeometry(R + 3, 64).rotateX(-Math.PI / 2), m('#1c1712')); d.position.y = F; etire.add(d);
+  const c = new THREE.Mesh(new THREE.RingGeometry(R + 2.2, R + 3, 64).rotateX(-Math.PI / 2), m('#7a5a22')); c.position.y = F + 0.01; etire.add(c);
+  for (let k = 0; k < 60; k++) { const a = k * Math.PI / 30, g = k % 5 === 0, b = new THREE.Mesh(new THREE.PlaneGeometry(g ? 0.5 : 0.18, g ? 2 : 0.7).rotateX(-Math.PI / 2), m(g ? '#c8a050' : '#6a5030')); b.rotation.y = -a; b.position.set(Math.sin(a) * (R + 1.2), F + 0.02, -Math.cos(a) * (R + 1.2)); etire.add(b); }
+  const pv = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 2.9, 0.45, 32), [m('#6a5428'), m('#b08c44'), m('#3a2e18')]); pv.position.y = -0.225; etire.add(pv);
+  const eg = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.9, 10), [m('#9a7a3a'), m('#e0c070'), m('#4a3a1a')]); eg.position.y = 0.45; etire.add(eg);
+  for (const [t, h, y] of [['petite', 4, 0.02], ['grande', 1.5, 0.06], ['fine', 8.2, 0.12]]) { const A = creerAiguille(t); A.rotation.y = -h * Math.PI / 6; A.position.y = y; etire.add(A); }
+} else {
+  [['grande', -7], ['fine', 0], ['petite', 7]].forEach(([t, x]) => { const A = creerAiguille(t); A.position.set(x, 0, 9); etire.add(A); });
+}
+const camera = new THREE.PerspectiveCamera(13, IW / IH, 1, 4000);
+camera.updateProjectionMatrix(); camera.projectionMatrix.elements[0] *= Math.sin(EL); camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+const dist = (Math.sin(EL) * IH) / (2 * Math.tan(13 * Math.PI / 360) * D);
+const oz = vue === 'cadran' ? 4 : 0; camera.position.set(0, dist * Math.sin(EL), oz + dist * Math.cos(EL)); camera.lookAt(0, 0, oz);
+renderer.render(scene, camera); window.done = true;
+</script>
+</body>
+</html>
