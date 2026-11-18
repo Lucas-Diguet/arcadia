@@ -1,6 +1,8 @@
 // testodyssee/js/horloge-jeu.js — les règles de la Salle de l'Horloge (horloge.js) dans le jeu du labo : les pas
 // (pas de changement de hauteur), les leviers, la vis, le joueur emporté par l'aiguille sur laquelle il se tient, le
 // joueur monté à la hauteur de sa case, et le dessin (horloge-vue.js) à la place du sol et des murs de la carte.
+// À plusieurs, l'hôte du salon tient l'état de l'horloge : un levier demande le mouvement à l'hôte (message djHor), qui
+// le valide et l'annonce à tous (djHorE) ; chacun anime l'horloge et emporte son propre joueur s'il est sur l'aiguille.
 import { DIRS } from '../../odyssee/js/world/tiles.js';
 import { HORLOGE, NIV_MAX, C, LEVIERS, COFFRE, appliquer, caseHorloge, passage, casesAiguille, placeLevier, milieu } from './horloge.js';
 import { creerHorloge, poserHorloge, ETAGE } from './horloge-vue.js';
@@ -63,9 +65,47 @@ export class Horloge {
     poserHorloge(this.vue.H, this.D);
     if (!this.vu && !g.busy) this.arrivee();
   }
+  /* ---------------- à plusieurs ---------------- */
+  /** le salon (celui des donjons), s'il y en a un */
+  get salon() { const D = this.game.donjons; return D?.H ? D : null; }
+  /** un levier veut faire bouger l'horloge : l'hôte décide, tout le monde voit */
+  demander(E2, duree) {
+    const S = this.salon;
+    if (!S || S.hote) return this.decider(E2, duree);
+    S.H.send('host', { t: 'djHor', E2, duree });
+    return new Promise((r) => { this.attente = r; setTimeout(() => { if (this.attente === r) { this.attente = null; r(); } }, 6000); });
+  }
+  /** chez l'hôte : un seul mouvement à la fois, annoncé à tous */
+  decider(E2, duree) {
+    if (this.occupe || !E2 || typeof E2 !== 'object') return Promise.resolve();
+    const E = this.E, ok = ['grande', 'petite', 'niv'].every((k) => Number.isFinite(E2[k])) && E2.niv >= 0 && E2.niv <= NIV_MAX
+      && Math.abs(E2.niv - E.niv) <= 1 && [...['grande', 'petite']].every((k) => { const d = (((E2[k] - E[k]) % 12) + 12) % 12; return d <= 1 || d === 11; });
+    if (!ok) return Promise.resolve();
+    this.occupe = true;
+    const d = Math.min(3, Math.max(0.5, +duree || 1.1));
+    this.salon?.H.send('all', { t: 'djHorE', E2, duree: d });
+    return this.bouger(E2, d).finally(() => { this.occupe = false; });
+  }
+  /** messages du salon (passés par les donjons) */
+  recevoir(from, m, S) {
+    const deHote = String(from) === String(S.H.info.hostId);
+    if (m.t === 'djHor' && S.hote) { this.decider(m.E2, m.duree); return; }
+    if (m.t === 'djHor?' && S.hote) { S.H.send(from, { t: 'djHorS', E: this.E }); return; }
+    if (m.t === 'djHorE' && deHote) { this.bouger(m.E2, m.duree).then(() => { const r = this.attente; this.attente = null; r?.(); }); return; }
+    if (m.t === 'djHorS' && deHote && m.E && !this.anim) { this.bouger(m.E, 0); }
+  }
+
   /** fait tourner (et monter) l'horloge jusqu'à l'état E2, en emportant le joueur qui se tient sur une aiguille */
   async bouger(E2, duree) {
     const g = this.game, p = g.player, m = this.ici(), E = this.E;
+    const net = (k) => ((Math.round(E2[k]) % 12) + 12) % 12;
+    // pas dans la salle, ou état reçu en arrivant : on pose l'horloge sans l'animer
+    if (!m || !duree) {
+      Object.assign(E, { grande: net('grande'), petite: net('petite'), niv: Math.round(E2.niv) });
+      this.D = { ...E }; appliquer(g.world.maps[HORLOGE], E);
+      return;
+    }
+    if (this.anim) await new Promise((r) => { const f = this.anim.fin; this.anim.fin = () => { f(); r(); }; });
     const sous = caseHorloge(E, p.x, p.y);
     let place = null;
     if (sous && (sous.quoi === 'grande' || sous.quoi === 'petite') && E2[sous.quoi] !== E[sous.quoi]) {
@@ -96,12 +136,12 @@ export class Horloge {
         const r = await ui.ask(`${L.nom}. Les deux aiguilles sont au niveau ${E.niv} sur ${NIV_MAX}.\nFaire tourner la vis ?`, ['Monter (sens des aiguilles)', 'Descendre (sens inverse)', 'Ne rien faire']);
         if (r === 0 && E.niv >= NIV_MAX) await ui.say('La vis est en butée : les aiguilles ne montent pas plus haut.');
         else if (r === 1 && E.niv <= 0) await ui.say('La vis est en butée : les aiguilles ne descendent pas plus bas.');
-        else if (r === 0 || r === 1) { const s = r === 0 ? 1 : -1; await this.bouger({ grande: E.grande + s, petite: E.petite + s, niv: E.niv + s }, 1.6); }
+        else if (r === 0 || r === 1) { const s = r === 0 ? 1 : -1; await this.demander({ grande: E.grande + s, petite: E.petite + s, niv: E.niv + s }, 1.6); }
         return true;
       }
       const nom = L.quoi === 'grande' ? 'la grande aiguille' : 'la petite aiguille';
       const r = await ui.ask(`${L.nom}. Faire tourner ${nom} d'une heure ?`, ['Sens des aiguilles', 'Sens inverse', 'Ne rien faire']);
-      if (r === 0 || r === 1) await this.bouger({ ...E, [L.quoi]: E[L.quoi] + (r === 0 ? 1 : -1) }, 1.1);
+      if (r === 0 || r === 1) await this.demander({ ...E, [L.quoi]: E[L.quoi] + (r === 0 ? 1 : -1) }, 1.1);
       return true;
     }
   }
@@ -109,7 +149,9 @@ export class Horloge {
   async arrivee() {
     if (!this.ici() || this.vu) return;
     this.vu = true;
-    const g = this.game; g.busy = true;
+    const g = this.game, S = this.salon;
+    if (S && !S.hote) S.H.send('host', { t: 'djHor?' });   // l'état de l'horloge chez l'hôte
+    g.busy = true;
     await attendre(300);
     try { await g.ui.say(['Une horloge gigantesque, suspendue dans le vide. Ses aiguilles sont des passerelles.',
       'Sur le quai : le levier bleu fait tourner la petite aiguille, le rouge la grande.',

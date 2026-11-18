@@ -224,6 +224,7 @@ export class Donjons {
   }
   recevoir(from, m) {
     if (!m || typeof m.t !== 'string' || !m.t.startsWith('dj') || String(from) === this.moi) return;
+    if (m.t.startsWith('djHor')) { this.game.horloge?.recevoir(String(from), m, this); return; }
     if (m.t === 'dj' && this.hote) { const r = this.traiter(m.id, String(from), m.m); this.H.send(from, { t: 'djR', rid: m.rid, ...r }); return; }
     if (m.t === 'dj?' && this.hote) { for (const [id, d] of this.defs) if (!d.solo) this.H.send(from, { t: 'djE', id, e: this.etats[id] }); return; }
     if (m.t === 'djRA' && this.hote) { this.actionRaid(String(from), m.id, m.action); return; }

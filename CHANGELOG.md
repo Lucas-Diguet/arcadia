@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.29 — 18 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge à plusieurs : quand un joueur tire un levier, les aiguilles tournent chez tout le monde, et celui qui se tient dessus est emporté avec elles. En arrivant dans la salle, on retrouve l'horloge telle que les autres l'ont laissée.
+
 ## 6.28 — 18 novembre 2026
 - **TestOdyssée** — La Tour de l'Horloge se dresse dans le labo : une tour de pierre qui se défait, ses étages flottant au-dessus du vide autour d'un cadran suspendu. On y entre à pied pour rejoindre la salle des aiguilles.
 
