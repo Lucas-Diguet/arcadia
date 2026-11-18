@@ -322,6 +322,204 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
     return G;
   };
 
+  /* ---------------------------------------------------------------- la Tour de l'Horloge : quatre essais */
+  // outils communs : roue dentée (face à +z, tourne autour de z), cadran à aiguilles qui avancent
+  const LAITON = COL('#c9a24e'), BRONZE = COL('#8a6a34'), FER = COL('#3c3a42');
+  const roue = (r, n, e, mat, vitesse) => {
+    const R = new THREE.Group();
+    const d = cylUV(r * 0.84, r * 0.84, e, mat, 28); d.rotation.x = Math.PI / 2; R.add(d);
+    for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, t = boite(r * 0.2, r * 0.22, e, mat); t.rotation.z = a; R.add(at(t, Math.cos(a) * r * 0.92, Math.sin(a) * r * 0.92, 0)); }
+    for (let k = 0; k < 3; k++) { const b = boite(r * 1.3, r * 0.1, e + 0.04, BRONZE); b.rotation.z = k * Math.PI / 3; R.add(b); }
+    const m = cylUV(r * 0.18, r * 0.18, e + 0.1, FER, 10); m.rotation.x = Math.PI / 2; R.add(m);
+    if (vitesse) R.userData.tourne = { vitesse };
+    return R;
+  };
+  const cadran = (G, x, y, z, r, fond = '#efe6cc', bord = LAITON, chiffres = FER) => {
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(r, 36), COL(fond)), x, y, z));
+    const t = new THREE.Mesh(new THREE.TorusGeometry(r, r * 0.07, 6, 36), bord); G.add(at(t, x, y, z + 0.02));
+    for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2, b = boite(k % 3 ? r * 0.06 : r * 0.1, r * 0.2, 0.03, chiffres); b.rotation.z = -a; G.add(at(b, x + Math.sin(a) * r * 0.78, y + Math.cos(a) * r * 0.78, z + 0.02)); }
+    const h = new THREE.Group(), mi = new THREE.Group();
+    h.add(at(boite(r * 0.1, r * 0.5, 0.04, FER), 0, r * 0.22, 0)); h.rotation.z = -2.2; h.userData.tourne = { vitesse: 0.004 };
+    mi.add(at(boite(r * 0.07, r * 0.78, 0.04, FER), 0, r * 0.36, 0)); mi.userData.tourne = { vitesse: 0.05 };
+    G.add(at(h, x, y, z + 0.05)); G.add(at(mi, x, y, z + 0.08));
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(r * 0.07, 10), bord), x, y, z + 0.11));
+  };
+  const toitPointu = (G, x, y, z, r, h, mat, n = 16) => { G.add(at(coneUV(r, h, mat, n), x, y + h / 2, z)); G.add(at(cylUV(0.04, 0.04, 0.9, LAITON, 6), x, y + h + 0.4, z)); G.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), LAITON), x, y + h + 0.1, z)); };
+
+  // 1. la tour aux engrenages à nu (10 × 8) : bas de forteresse, cage d'engrenages ouverte, grand cadran, toit pointu
+  B.tourEngrenages = () => {
+    const G = new THREE.Group(), cx = 5, cz = 4, R = 3.4;
+    const PI = M({ map: grosBloc('#7c7a82', 2) }), PC = M({ map: grosBloc('#6a6870', 1) }), ARD = M({ map: TX.ardoise('#3a4050') });
+    // le bas : la forteresse, la porte et le balancier derrière une grille
+    G.add(at(cylUV(R + 0.25, R + 0.55, 1.0, PC, 28), cx, 0.5, cz));
+    G.add(at(cylUV(R, R + 0.25, 4.0, PI, 28), cx, 3.0, cz));
+    const zp = cz + R + 0.1;
+    reperePorte(G, cx, 1.0, zp, 1.4, 2.2);
+    G.add(at(boite(1.4, 2.2, 0.2, COL('#4a3422')), cx, 2.1, zp));
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.7, 14, 0, Math.PI), COL('#4a3422')), cx, 3.2, zp + 0.1));
+    for (const sx of [-1, 1]) G.add(at(boite(0.3, 2.9, 0.4, PC), cx + sx * 0.85, 2.45, zp + 0.05));
+    for (const sx of [-1, 1]) fente(G, cx + sx * 2.3, 3.4, cz + Math.sqrt(R * R - 5.3) + 0.04, sx * -0.75, 1.0);
+    { const o = at(new THREE.Mesh(new THREE.TorusGeometry(R + 0.02, 0.1, 6, 36), LAITON), cx, 5.0, cz); o.rotation.x = Math.PI / 2; G.add(o); }
+    // la cage : six piliers, le plancher et le plafond, les roues qui tournent et le balancier
+    const y1 = 5.0, y2 = 10.0;
+    G.add(at(cylUV(R + 0.15, R + 0.15, 0.35, PC, 28), cx, y1 + 0.17, cz));
+    G.add(at(cylUV(R + 0.15, R + 0.15, 0.35, PC, 28), cx, y2 - 0.17, cz));
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2 + Math.PI / 6; G.add(at(boite(0.7, y2 - y1, 0.7, PI), cx + Math.cos(a) * R, (y1 + y2) / 2, cz + Math.sin(a) * R)); }
+    G.add(at(cylUV(R - 1.4, R - 1.4, y2 - y1 - 0.4, COL('#26232c'), 24), cx, (y1 + y2) / 2, cz - 1.0));
+    G.add(at(cylUV(0.18, 0.18, y2 - y1, FER, 8), cx - 0.4, (y1 + y2) / 2, cz + 1.0));
+    for (const [x, y, z, r, n, v] of [[cx - 1.1, 8.2, cz + 1.4, 1.4, 18, 0.06], [cx + 1.2, 7.7, cz + 1.7, 0.95, 12, -0.09], [cx + 0.3, 6.3, cz + 2.2, 0.7, 10, 0.12], [cx - 1.5, 6.1, cz + 2.0, 0.55, 8, -0.15]])
+      G.add(at(roue(r, n, 0.22, LAITON, v), x, y, z));
+    const bal = new THREE.Group(); bal.add(at(boite(0.08, 3.2, 0.08, BRONZE), 0, -1.6, 0)); { const o = at(cylUV(0.45, 0.45, 0.12, LAITON, 18), 0, -3.3, 0); o.rotation.x = Math.PI / 2; bal.add(o); }
+    bal.rotation.z = 0.2; G.add(at(bal, cx + 0.6, y2 - 0.3, cz + 2.7));
+    { const o = at(new THREE.Mesh(new THREE.TorusGeometry(R + 0.17, 0.1, 6, 36), LAITON), cx, y2, cz); o.rotation.x = Math.PI / 2; G.add(o); }
+    // le haut : le grand cadran, la couronne et le toit pointu
+    G.add(at(cylUV(R - 0.1, R, 3.6, PI, 28), cx, y2 + 1.8, cz));
+    cadran(G, cx, y2 + 1.8, cz + R - 0.02, 1.5);
+    for (const sx of [-1, 1]) G.add(at(roue(0.45, 8, 0.12, BRONZE, sx * 0.1), cx + sx * 2.05, y2 + 2.9, cz + R - 0.55));
+    couronne(G, cx, cz, R - 0.05, y2 + 3.6, PC, 0.6, 20);
+    toitPointu(G, cx, y2 + 3.7, cz, R - 0.4, 4.4, ARD, 20);
+    return G;
+  };
+
+  // 3. la tour qui se défait (10 × 8) : bas solide, tambours qui flottent, cadran suspendu dans ses anneaux
+  B.tourDefaite = () => {
+    const G = new THREE.Group(), cx = 5, cz = 4, R = 3.3;
+    const PI = M({ map: grosBloc('#7a7684', 2) }), PC = M({ map: grosBloc('#686474', 1) });
+    const FAILLE = LUM('#b8a0ff', '#5a3aa0'), ANN = LUM('#e2c87a', '#6a5020');
+    G.add(at(cylUV(R + 0.3, R + 0.6, 1.0, PC, 28), cx, 0.5, cz));
+    G.add(at(cylUV(R, R + 0.3, 5.0, PI, 28), cx, 3.5, cz));
+    const zp = cz + R + 0.15;
+    reperePorte(G, cx, 1.0, zp, 1.4, 2.2);
+    G.add(at(boite(1.4, 2.2, 0.2, COL('#3a2a2a')), cx, 2.1, zp));
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.7, 14, 0, Math.PI), COL('#3a2a2a')), cx, 3.2, zp + 0.1));
+    for (const sx of [-1, 1]) fente(G, cx + sx * 2.2, 4.0, cz + Math.sqrt(R * R - 4.84) + 0.06, sx * -0.72, 1.0);
+    // haut cassé du bas : dents de pierre et faille lumineuse
+    for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, h = 0.3 + hash(k, 3, 81) * 0.8; const b = boite(1.3, h, 0.5, PI); b.rotation.y = -a + Math.PI / 2; G.add(at(b, cx + Math.cos(a) * (R - 0.2), 6.0 + h / 2, cz + Math.sin(a) * (R - 0.2))); }
+    G.add(at(cylUV(R - 0.5, R - 0.5, 0.06, FAILLE, 24), cx, 6.1, cz));
+    // tambours qui flottent, un peu de travers, chacun avec ses rouages
+    const tambour = (y, r, h, rx, rz, dx, v) => {
+      const T = new THREE.Group();
+      T.add(at(cylUV(r, r, h, PI, 26), 0, 0, 0));
+      { const o = at(new THREE.Mesh(new THREE.TorusGeometry(r + 0.03, 0.08, 6, 32), LAITON), 0, h / 2 - 0.1, 0); o.rotation.x = Math.PI / 2; T.add(o); }
+      T.add(at(cylUV(r - 0.4, r - 0.4, 0.05, FAILLE, 22), 0, -h / 2 - 0.03, 0));
+      T.add(at(roue(0.7, 10, 0.12, LAITON, v), 0.9, 0, r - 0.02));
+      for (let k = 0; k < 4; k++) fente(T, Math.cos(k * 1.6 + 0.5) * r * 0.98, 0.1, Math.sin(k * 1.6 + 0.5) * r * 0.98, -(k * 1.6 + 0.5) + Math.PI / 2, 0.7);
+      T.rotation.set(rx, 0, rz); G.add(at(T, cx + dx, y, cz));
+    };
+    tambour(8.4, R - 0.25, 1.6, 0.05, 0.06, 0.25, 0.08);
+    tambour(11.6, R - 0.55, 1.3, -0.06, -0.1, -0.3, -0.1);
+    // éclats de pierre en suspens
+    for (let k = 0; k < 12; k++) {
+      const a = k * 2.4, r = R + 0.4 + hash(k, 1, 82) * 1.2, y = 6.6 + hash(k, 2, 82) * 6.5;
+      const e = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18 + hash(k, 4, 82) * 0.22, 0), PI); e.rotation.set(k, k * 2, 0); G.add(at(e, cx + Math.cos(a) * r, y, cz + Math.sin(a) * r * 0.6));
+    }
+    // le cadran suspendu et ses anneaux qui gravitent
+    const yc = 15.6;
+    { const o = at(cylUV(2.5, 2.5, 0.5, PC, 32), cx, yc, cz + 0.4); o.rotation.x = Math.PI / 2; G.add(o); }
+    cadran(G, cx, yc, cz + 0.67, 2.2, '#ece2ff', LAITON, COL('#2a2440'));
+    for (const [r, rx, ry, v] of [[3.1, 0.35, 0.2, 0.05], [3.5, -0.5, -0.4, -0.04], [3.9, 1.1, 0.3, 0.03]]) {
+      const A = new THREE.Group(); A.add(new THREE.Mesh(new THREE.TorusGeometry(r, 0.07, 6, 48), ANN));
+      for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; A.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), FAILLE), Math.cos(a) * r, Math.sin(a) * r, 0)); }
+      A.rotation.set(rx, ry, 0); A.userData.tourne = { vitesse: v }; G.add(at(A, cx, yc, cz + 0.4));
+    }
+    return G;
+  };
+
+  // 4. le beffroi aux automates (8 × 7) : tour carrée, contreforts, quatre cadrans, balcon des automates, cloches, flèche d'ardoise
+  B.beffroiAutomates = () => {
+    const G = new THREE.Group(), cx = 4, cz = 3.4, L = 5.0;
+    const PI = M({ map: grosBloc('#8a8076', 2) }), PC = M({ map: grosBloc('#746a62', 1) }), ARD = M({ map: TX.ardoise('#2e3446') }), OR = COL('#d8b048');
+    const zf = cz + L / 2;
+    G.add(at(boite(L + 0.6, 0.8, L + 0.6, PC), cx, 0.4, cz));
+    G.add(at(boite(L, 6.0, L, PI), cx, 3.8, cz));
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { G.add(at(boite(0.7, 6.4, 0.7, PC), cx + sx * L / 2, 3.6, cz + sz * L / 2)); const o = at(coneUV(0.5, 0.9, PC, 4), cx + sx * L / 2, 7.25, cz + sz * L / 2); o.rotation.y = Math.PI / 4; G.add(o); }
+    reperePorte(G, cx, 0.8, zf, 1.4, 2.4);
+    G.add(at(boite(1.4, 2.4, 0.06, COL('#4a3020')), cx, 2.0, zf + 0.03));
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.7, 14, 0, Math.PI), COL('#4a3020')), cx, 3.2, zf + 0.04));
+    G.add(at(boite(2.0, 0.25, 0.2, PC), cx, 3.95, zf + 0.06));
+    for (const sx of [-1, 1]) { G.add(at(boite(0.35, 1.5, 0.04, COL('#22202a')), cx + sx * 1.5, 4.8, zf + 0.02)); G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.175, 10, 0, Math.PI), COL('#22202a')), cx + sx * 1.5, 5.55, zf + 0.02)); }
+    // l'étage du cadran, en retrait, et ses quatre cadrans
+    const L2 = L - 0.4, y2 = 6.8;
+    G.add(at(boite(L + 0.3, 0.3, L + 0.3, PC), cx, y2 - 0.05, cz));
+    G.add(at(boite(L2, 4.0, L2, PI), cx, y2 + 2.0, cz));
+    cadran(G, cx, y2 + 2.6, cz + L2 / 2 + 0.01, 1.4, '#f2ead2', OR);
+    const dr = new THREE.Group(); cadran(dr, 0, 0, 0, 1.4, '#f2ead2', OR); dr.rotation.y = Math.PI / 2; G.add(at(dr, cx + L2 / 2 + 0.01, y2 + 2.6, cz));
+    // le balcon des automates sous le cadran : deux portes, un chevalier, la mort à la faux, un sonneur
+    const yb = y2 + 0.35, zb = cz + L2 / 2;
+    G.add(at(boite(3.4, 0.15, 0.7, PC), cx, yb, zb + 0.3));
+    for (let i = 0; i < 6; i++) G.add(at(boite(0.06, 0.4, 0.06, FER), cx - 1.6 + i * 0.64, yb + 0.25, zb + 0.62));
+    for (const sx of [-1, 1]) G.add(at(boite(0.6, 0.95, 0.04, COL('#1c1820')), cx + sx * 1.0, yb + 0.55, zb + 0.01));
+    const automate = (x, corps, tete, extra) => { G.add(at(cylUV(0.14, 0.2, 0.55, corps, 8), x, yb + 0.35, zb + 0.32)); G.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), tete), x, yb + 0.72, zb + 0.32)); if (extra) extra(x); };
+    automate(cx - 1.0, COL('#8a8e9a'), COL('#a8acb6'), (x) => G.add(at(boite(0.04, 0.7, 0.04, COL('#c8ccd4')), x + 0.2, yb + 0.5, zb + 0.4)));
+    automate(cx + 1.0, COL('#2a2630'), COL('#e8e2d4'), (x) => { G.add(at(boite(0.03, 0.9, 0.03, COL('#5a4a3a')), x - 0.22, yb + 0.6, zb + 0.4)); const f = boite(0.45, 0.05, 0.03, COL('#c8ccd4')); f.rotation.z = 0.4; G.add(at(f, x - 0.08, yb + 1.03, zb + 0.4)); });
+    automate(cx, COL('#9a2a2a'), COL('#e8c8a0'), (x) => G.add(at(boite(0.05, 0.05, 0.4, OR), x, yb + 0.5, zb + 0.5)));
+    // la chambre des cloches : arcades ouvertes, cloche de bronze
+    const y3 = y2 + 4.0;
+    G.add(at(boite(L2 + 0.3, 0.3, L2 + 0.3, PC), cx, y3 + 0.15, cz));
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) G.add(at(boite(0.7, 2.6, 0.7, PI), cx + sx * (L2 / 2 - 0.35), y3 + 1.6, cz + sz * (L2 / 2 - 0.35)));
+    G.add(at(boite(L2, 0.5, L2, PI), cx, y3 + 3.15, cz));
+    { const o = at(cylUV(L2 / 2 - 0.5, L2 / 2 - 0.5, 2.4, COL('#16141c'), 4), cx, y3 + 1.6, cz); o.rotation.y = Math.PI / 4; G.add(o); }
+    const cloche = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.85, 1.2, 16, 1, true), BRONZE); G.add(at(cloche, cx, y3 + 1.5, cz + 0.6));
+    G.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), BRONZE), cx, y3 + 2.08, cz + 0.6));
+    G.add(at(boite(L2 - 0.4, 0.15, 0.15, COL('#4a3420')), cx, y3 + 2.55, cz + 0.6));
+    // la flèche d'ardoise, ses quatre clochetons et le coq doré
+    const y4 = y3 + 3.4;
+    const fl = coneUV(L2 / 2 * 1.35, 6.5, ARD, 4); fl.rotation.y = Math.PI / 4; G.add(at(fl, cx, y4 + 3.25, cz));
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const c = coneUV(0.4, 1.6, ARD, 4); c.rotation.y = Math.PI / 4; G.add(at(c, cx + sx * (L2 / 2 - 0.2), y4 + 0.8, cz + sz * (L2 / 2 - 0.2))); }
+    G.add(at(cylUV(0.04, 0.04, 1.0, OR, 6), cx, y4 + 6.9, cz));
+    G.add(at(boite(0.5, 0.35, 0.06, OR), cx, y4 + 7.35, cz));
+    G.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), OR), cx, y4 + 6.45, cz));
+    return G;
+  };
+
+  // 5. l'horloge astronomique (10 × 8) : tour claire, cadran du ciel, soleil, lune et zodiaque, coupole d'observatoire
+  B.tourAstronomique = () => {
+    const G = new THREE.Group(), cx = 5, cz = 3.8, R = 3.5;
+    const MB = M({ map: marbre('#ddd6c6') }), MG = M({ map: marbre('#b8b0a0') }), OR = COL('#e0b84a');
+    const CIEL = LUM('#1f3a78', '#0c1838'), NUIT = COL('#14183a'), ETOILE = LUM('#fff4c0', '#c0a040');
+    G.add(at(cylUV(R + 0.3, R + 0.6, 1.0, MG, 30), cx, 0.5, cz));
+    G.add(at(cylUV(R, R + 0.3, 11.0, MB, 30), cx, 6.5, cz));
+    for (const y of [1.2, 12.0]) G.add(at(cylUV(R + 0.2, R + 0.2, 0.3, MG, 30), cx, y, cz));
+    const zp = cz + R + 0.1;
+    reperePorte(G, cx, 1.0, zp, 1.3, 2.1);
+    G.add(at(boite(1.3, 2.1, 0.15, COL('#2a3050')), cx, 2.05, zp));
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.65, 14, 0, Math.PI), COL('#2a3050')), cx, 3.1, zp + 0.08));
+    for (const sx of [-1, 1]) G.add(at(cylUV(0.18, 0.2, 2.6, MG, 10), cx + sx * 0.95, 2.3, zp + 0.1));
+    // le grand cadran du ciel
+    const yd = 7.4, zd = cz + R + 0.4, r = 2.6;
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(r + 0.35, 40), MG), cx, yd, zd - 0.02));
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(r, 40), CIEL), cx, yd, zd));
+    { const o = at(new THREE.Mesh(new THREE.CircleGeometry(r * 0.55, 32, 0, Math.PI), NUIT), cx, yd, zd + 0.01); o.rotation.z = Math.PI; G.add(o); }
+    for (let k = 0; k < 22; k++) { const a = k * 2.39, d = r * (0.25 + 0.65 * hash(k, 7, 83)); G.add(at(boite(0.07, 0.07, 0.02, ETOILE), cx + Math.cos(a) * d, yd + Math.sin(a) * d, zd + 0.02)); }
+    const zod = new THREE.Group();
+    zod.add(new THREE.Mesh(new THREE.TorusGeometry(r * 0.82, 0.05, 6, 40), OR));
+    zod.add(new THREE.Mesh(new THREE.TorusGeometry(r * 0.66, 0.04, 6, 40), OR));
+    for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2, b = boite(0.16, 0.16, 0.03, OR); b.rotation.z = a + Math.PI / 4; zod.add(at(b, Math.cos(a) * r * 0.74, Math.sin(a) * r * 0.74, 0.01)); }
+    zod.userData.tourne = { vitesse: 0.01 }; zod.position.y = -0.35; G.add(at(zod, cx, yd + 0.35, zd + 0.04));
+    G.add(at(new THREE.Mesh(new THREE.TorusGeometry(r, 0.12, 6, 40), OR), cx, yd, zd + 0.04));
+    for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2, b = boite(0.05, k % 2 ? 0.14 : 0.24, 0.03, MG); b.rotation.z = -a; G.add(at(b, cx + Math.sin(a) * (r + 0.2), yd + Math.cos(a) * (r + 0.2), zd + 0.01)); }
+    // aiguilles du soleil et de la lune
+    const sol = new THREE.Group(); sol.add(at(boite(0.06, r * 0.9, 0.03, OR), 0, r * 0.45, 0)); sol.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 8), LUM('#ffd040', '#c08010')), 0, r * 0.62, 0.05));
+    sol.rotation.z = -0.7; sol.userData.tourne = { vitesse: 0.02 }; G.add(at(sol, cx, yd, zd + 0.08));
+    const lune = new THREE.Group(); lune.add(at(boite(0.05, r * 0.7, 0.03, COL('#c8ccd8')), 0, r * 0.35, 0)); lune.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8), COL('#d8dce8')), 0, r * 0.48, 0.05));
+    lune.rotation.z = 2.3; lune.userData.tourne = { vitesse: 0.017 }; G.add(at(lune, cx, yd, zd + 0.1));
+    G.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), OR), cx, yd, zd + 0.14));
+    // deux statues d'astronomes en niche
+    for (const sx of [-1, 1]) {
+      const a = sx * 0.95, x = cx + Math.sin(a) * (R + 0.05), z = cz + Math.cos(a) * (R + 0.05);
+      G.add(at(boite(0.7, 0.2, 0.4, MG), x, 4.3, z));
+      G.add(at(cylUV(0.16, 0.24, 1.0, MG, 8), x, 4.9, z)); G.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), MG), x, 5.55, z));
+    }
+    // la coupole d'observatoire, sa fente et sa lunette
+    const yt = 12.15;
+    G.add(at(cylUV(R - 0.2, R - 0.2, 0.8, MB, 30), cx, yt + 0.4, cz));
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(R - 0.3, 26, 12, 0, Math.PI * 2, 0, Math.PI / 2), M({ map: cuivre() })); dome.castShadow = true; G.add(at(dome, cx, yt + 0.8, cz));
+    const fen = boite(0.7, 0.04, R, COL('#14182a')); fen.rotation.x = -0.75; G.add(at(fen, cx, yt + 0.8 + (R - 0.3) * 0.72, cz + (R - 0.3) * 0.55));
+    const lun = cylUV(0.18, 0.24, 2.4, LAITON, 12); lun.rotation.x = -0.8; G.add(at(lun, cx, yt + 2.9, cz + 1.6));
+    for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; G.add(at(boite(0.3, 0.5, 0.3, MG), cx + Math.cos(a) * (R + 0.05), yt + 0.25, cz + Math.sin(a) * (R + 0.05))); }
+    return G;
+  };
+
   /* ---------------------------------------------------------------- le Donjon des Miroirs (11 × 7) */
   // palais de marbre blanc sur la neige : colonnes de cristal, hauts miroirs entre elles, grand miroir rond au-dessus
   // de la porte, fronton au losange de miroir, toit enneigé, deux obélisques de glace devant
