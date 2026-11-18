@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.31 — 18 novembre 2026
+- **TestOdyssée** — Nouvelles musiques : le Sanctuaire des Trois Voies et la Tour de l'Horloge ont chacun la leur.
+
 ## 6.30 — 18 novembre 2026
 - **TestOdyssée** — La Tour de l'Horloge devient un vrai étage, à deux joueurs ou plus :
   - trois aiguilles géantes autour du pivot, toutes à la même hauteur que les plateformes ;

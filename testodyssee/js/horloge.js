@@ -122,8 +122,8 @@ export function emporter(E, E2, x, y) {
 }
 
 export function construireHorloge(world) {
-  const m = room(HORLOGE, W, H, { floor: 'cave', music: 'cave', wall: 'wall_cendre', name: 'Tour de l\'Horloge' });
-  m.zone(0, 0, W - 1, H - 1, { name: 'Tour de l\'Horloge', music: 'cave' });
+  const m = room(HORLOGE, W, H, { floor: 'cave', music: 'dmhh', wall: 'wall_cendre', name: 'Tour de l\'Horloge' });
+  m.zone(0, 0, W - 1, H - 1, { name: 'Tour de l\'Horloge', music: 'dmhh' });
   m.horloge = depart();
   appliquer(m, m.horloge);
   // leviers, clé et mécanisme : on s'en sert de face (horloge-jeu.js)
@@ -132,8 +132,8 @@ export function construireHorloge(world) {
   // les trois salles du mur, vides pour l'instant ; un escalier de service y redescend vers le quai
   const [ax, ay] = placeArrivee();
   for (const s of SALLES) {
-    const r = room(salleId(s), 9, 7, { floor: 'cave', music: 'cave', wall: 'wall_cendre', name: s.nom });
-    r.zone(0, 0, 8, 6, { name: s.nom, music: 'cave' });
+    const r = room(salleId(s), 9, 7, { floor: 'cave', music: 'dmhh', wall: 'wall_cendre', name: s.nom });
+    r.zone(0, 0, 8, 6, { name: s.nom, music: 'dmhh' });
     const p = PLATEFORMES.find((q) => q.id === s.pf), [px, py] = caseSur(p.id, exterieur(p), 0);
     r.warp(r.exitX, r.exitY, { map: HORLOGE, x: px, y: py, dir: 'down' });
     r.set(7, 2, T.STAIRS); r.warp(7, 2, { map: HORLOGE, x: ax, y: ay, dir: 'up' });
