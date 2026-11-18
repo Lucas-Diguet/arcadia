@@ -77,6 +77,8 @@ export const GRAND = {
  *  quand la définition donne une autre porte : sinon la porte du jeu tombe au milieu de la terrasse du dessin. */
 export const OUVERTS = {
   maisonL: GRAND.maisonL,
+  // palais du Donjon des Miroirs (labo) : la porte est en haut des marches, les marches se montent
+  templeMiroirs: { w: 11, d: 7, door: 5, porteY: 4, libres: [[4, 5], [5, 5], [6, 5], [4, 6], [5, 6], [6, 6]] },
   // chalet : le balcon de l'étage avance au-dessus de la dernière rangée, sur deux poteaux aux coins
   chalet: { w: 5, d: 5, door: 1, porteY: 3, libres: [[1, 4], [2, 4], [3, 4]] },
   // auberge : la terrasse et ses deux tables à parasol devant la façade ; porte de deux cases

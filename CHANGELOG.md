@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.25 — 18 novembre 2026
+- **TestOdyssée** — Donjon des Miroirs : on monte les marches du palais et c'est devant la porte, en haut, qu'on l'ouvre avec la Clé des Miroirs (et non plus au pied de l'escalier).
+
 ## 6.24 — 18 novembre 2026
 - **TestOdyssée** — Bois des Contes, armurerie : les armures sont redessinées en plus grand et plus détaillées (heaume à visière, tabard rouge, épée plantée devant), et des épées sont accrochées aux murs, croisées sur leur écusson ou posées sur des crochets.
 

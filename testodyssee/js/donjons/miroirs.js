@@ -21,10 +21,10 @@ function exterieur() {
   m.rect(5, 3, 26, 22, T.GRASS, [T.PINE]);
   const b = m.building('gym', 10, 2, { modele: 'templeMiroirs', w: 11, d: 7, door: 5, name: 'Donjon des Miroirs' });
   for (let y = b.doorY + 1; y <= 23; y++) { m.set(b.doorX, y, T.PATH); }
-  m.rect(b.doorX - 1, b.doorY + 1, b.doorX + 1, b.doorY + 3, T.PATH);
+  m.rect(b.doorX - 1, b.doorY + 3, b.doorX + 1, b.doorY + 5, T.PATH);
   for (const [x, y] of [[9, 12], [22, 12], [9, 18], [22, 18]]) m.prop('cristal', x, y);
   for (const [x, y] of [[7, 7], [24, 7], [6, 16], [25, 16]]) m.prop('snowpine', x, y);
-  m.prop('lanterne', b.doorX - 2, b.doorY + 2); m.prop('lanterne', b.doorX + 2, b.doorY + 2);
+  m.prop('lanterne', b.doorX - 2, b.doorY + 4); m.prop('lanterne', b.doorX + 2, b.doorY + 4);
   m.zone(0, 0, 31, 25, { name: 'Parvis des Miroirs', music: 'snow', theme: 'snow' });
   return { carte: m, porte: [b.doorX, b.doorY] };
 }
