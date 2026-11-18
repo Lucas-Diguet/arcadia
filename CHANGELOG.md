@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.28 — 18 novembre 2026
+- **TestOdyssée** — La Tour de l'Horloge se dresse dans le labo : une tour de pierre qui se défait, ses étages flottant au-dessus du vide autour d'un cadran suspendu. On y entre à pied pour rejoindre la salle des aiguilles.
+
 ## 6.27 — 18 novembre 2026
 - **TestOdyssée** — Sanctuaire des Trois Voies : le sanctuaire a enfin son vrai bâtiment, taillé dans la roche, avec ses trois niches à flammes au-dessus de la porte et ses marches.
   - Les panneaux d'entrée des donjons ne se posent plus sur les marches des bâtiments.

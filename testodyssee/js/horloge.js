@@ -5,9 +5,11 @@
 // aiguille à une plateforme que s'ils sont à la même hauteur. Logique sans DOM ici (cases, niveaux, cases des
 // aiguilles) ; le dessin en 3D est dans horloge-vue.js, les règles du jeu dans horloge-jeu.js.
 import { room } from '../../odyssee/js/world/interiors.js';
+import { GameMap, rng } from '../../odyssee/js/world/mapgen.js';
 import { T } from '../../odyssee/js/world/tiles.js';
 
 export const HORLOGE = 'labo:horloge';
+export const DEHORS = 'labo:horloge:dehors';
 export const W = 48, H = 44;
 /** centre du cadran (le milieu de cette case), longueur des aiguilles (en cases), rayon du pivot, niveau le plus haut */
 export const C = [24, 22], R_GRANDE = 18, R_PETITE = 12, R_PIVOT = 2.6, NIV_MAX = 3;
@@ -96,5 +98,19 @@ export function construireHorloge(world) {
   // les leviers, le grand mécanisme et le coffre : on s'en sert de face (horloge-jeu.js)
   for (const [x, y] of [...LEVIERS.map(placeLevier), milieu(COFFRE.pf)]) m.object(x, y, { use: (api) => api.game.horloge?.utiliser(x, y) });
   world.maps[HORLOGE] = m;
-  return { nom: 'Salle de l\'Horloge (prototype)', note: 'les aiguilles géantes et la vis', map: HORLOGE, x: C[0], y: 42, dir: 'up', equipe: 'fin100' };
+  // dehors : la Tour de l'Horloge (la tour qui se défait, labo3d.js) ; on entre au niveau 0, sur le quai
+  const d = new GameMap(DEHORS, 30, 26, { outdoor: true, fill: T.TREE, name: 'Tour de l\'Horloge', music: 'route' });
+  d.blob(15, 13, 12, 10, T.GRASS, rng(777));
+  d.rect(4, 2, 25, 23, T.GRASS, [T.TREE]);
+  const b = d.building('gym', 10, 3, { modele: 'tourDefaite', w: 10, d: 8, door: 4, name: 'Tour de l\'Horloge' });
+  for (let y = b.doorY + 1; y <= 23; y++) d.set(b.doorX, y, T.PATH);
+  d.rect(b.doorX - 1, b.doorY + 1, b.doorX + 1, b.doorY + 2, T.PATH);
+  for (const [x, y] of [[b.doorX - 3, b.doorY + 2], [b.doorX + 3, b.doorY + 2]]) d.prop('lanterne', x, y);
+  d.sign(b.doorX + 2, b.doorY + 4, 'TOUR DE L\'HORLOGE\nLe temps s\'y est brisé.');
+  d.warp(b.doorX, b.doorY, { map: HORLOGE, x: C[0], y: 42, dir: 'up' });
+  d.zone(0, 0, 29, 25, { name: 'Tour de l\'Horloge', music: 'route' });
+  world.maps[DEHORS] = d;
+  // la sortie : face au bord du quai, en bas
+  m.object(C[0], 43, { use: async (api) => { if (await api.game.ui.yesNo('Sortir de la tour ?')) await api.game.warp({ map: DEHORS, x: b.doorX, y: b.doorY + 1, dir: 'down' }); } });
+  return { nom: 'Tour de l\'Horloge (prototype)', note: 'les aiguilles géantes et la vis', map: DEHORS, x: b.doorX, y: b.doorY + 2, dir: 'up', equipe: 'fin100' };
 }
