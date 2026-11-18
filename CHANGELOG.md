@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 6.22 — 18 novembre 2026
+- **TestOdyssée** — Bois des Contes : les chambres d'enfants de la maison de la vieille dame sont refaites.
+  - La chambre de la petite fille : papier peint rose à fleurs, tapis rose, et un goûter de poupées et de peluches autour de la table.
+  - La chambre du petit garçon : papier peint bleu à étoiles, tapis bleu, chevaux à bascule et cubes éparpillés.
+  - Des dessins d'enfants sont punaisés aux murs.
+
 ## 6.21 — 18 novembre 2026
 - **TestOdyssée** — Bois des Contes : le débarras de la vieille dame est entièrement refait.
   - Une pièce immense et sombre, encombrée de malles, caisses, tonneaux, armoires, étagères, miroirs et tableaux.

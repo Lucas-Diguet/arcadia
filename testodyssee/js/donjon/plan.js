@@ -83,14 +83,16 @@ export function construireCarte(def) {
   return m;
 }
 
-/** tapis (rectangles [x0, y0, x1, y1] du plan) : une tuile par case, bordée d'or du côté où le tapis s'arrête (rendu.js) */
+/** tapis (rectangles [x0, y0, x1, y1, couleur] du plan : rouge, 'rose' ou 'bleu') : une tuile par case, bordée du côté où le tapis s'arrête (rendu.js) */
 function poserTapis(m, rects) {
-  const t = new Set();
-  for (const [x0, y0, x1, y1] of rects) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) t.add((x + 1) + ',' + (y + 1));
   m.solArene ||= new Map();
-  for (const k of t) {
-    const [x, y] = k.split(',').map(Number), a = (dx, dy) => !t.has((x + dx) + ',' + (y + dy));
-    m.solArene.set(k, `tapis_${a(0, -1) ? 'N' : ''}${a(0, 1) ? 'S' : ''}${a(-1, 0) ? 'O' : ''}${a(1, 0) ? 'E' : ''}`);
+  for (const [x0, y0, x1, y1, coul] of rects) {
+    const t = new Set();
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) t.add((x + 1) + ',' + (y + 1));
+    for (const k of t) {
+      const [x, y] = k.split(',').map(Number), a = (dx, dy) => !t.has((x + dx) + ',' + (y + dy));
+      m.solArene.set(k, `tapis${coul || ''}_${a(0, -1) ? 'N' : ''}${a(0, 1) ? 'S' : ''}${a(-1, 0) ? 'O' : ''}${a(1, 0) ? 'E' : ''}`);
+    }
   }
 }
 

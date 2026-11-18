@@ -10,7 +10,9 @@ const CLAIR = { sol: 'floor_musee', mur: 'wall_mart', haut: ['snow', 'floor_lab'
 const EGYPTE = { sol: ['gl_sable'], mur: ['mur_tombeau', 'wall_in'], haut: ['haut_tombeau', 'cavetop'], fond: '#1c1408' };
 const CHATEAU = { sol: ['sol_chateau'], mur: ['mur_chateau', 'wall_in'], haut: ['haut_chateau', 'cavetop'], fond: '#0c0a10' };
 const MANOIR = { sol: ['sol_manoir'], mur: ['mur_manoir', 'wall_in'], haut: ['haut_manoir', 'cavetop'], fond: '#0a0608' };
-const STYLES = { chateau: CHATEAU, manoir: MANOIR, insecte: { sol: ['floor_gymBug', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymGrass', 'cavetop'], fond: '#0c1408' },
+const FILLE = { sol: ['sol_chambre'], mur: ['mur_fille', 'wall_in'], haut: ['haut_manoir', 'cavetop'], fond: '#0a0608' };
+const GARCON = { sol: ['sol_chambre'], mur: ['mur_garcon', 'wall_in'], haut: ['haut_manoir', 'cavetop'], fond: '#0a0608' };
+const STYLES = { chateau: CHATEAU, manoir: MANOIR, fille: FILLE, garcon: GARCON, insecte: { sol: ['floor_gymBug', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymGrass', 'cavetop'], fond: '#0c1408' },
   poison: { sol: ['floor_gymPsy', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymPsy', 'cavetop'], fond: '#120a16' },
   clair: CLAIR, egypte: EGYPTE, bois: { sol: ['floor_wood'], mur: ['wall_in', 'wall_center'], haut: ['roof_flat', 'floor_wood'], fond: '#0c0a14' }, sable: { sol: ['floor_sand', 'gl_sable', 'floor_gymRock'], mur: ['wall_gym'], haut: ['floor_gymRock', 'cavetop'], fond: '#1a1008', relief: true } };
 const cellule = (A, k) => (Array.isArray(k) ? k.map((q) => A[q]).find(Boolean) : A[k]);
@@ -105,7 +107,21 @@ const TUILES = {
     x.fillStyle = '#24160e'; x.fillRect(0, 2, 32, 6); x.fillRect(0, 18, 32, 6);
     for (let k = 0; k < 30; k++) { x.fillStyle = r() < 0.5 ? '#120a06' : '#2a1a10'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 1); }
   },
-  ...TUILES_TAPIS(),
+  // chambres d'enfants : parquet plus clair, papier peint (rose à fleurs, bleu à étoiles) au-dessus d'un lambris blanc
+  sol_chambre(x, r) {
+    x.fillStyle = '#5a3a22'; x.fillRect(0, 0, 32, 32);
+    for (let j = 0; j < 4; j++) {
+      const y = j * 8, dec = (j * 13) % 32;
+      for (let i = -1; i < 2; i++) { const t = r(); x.fillStyle = t < 0.33 ? '#6a4628' : t < 0.66 ? '#624024' : '#704c2c'; x.fillRect(i * 32 + dec + 1, y + 1, 30, 6); x.fillStyle = '#3e2614'; x.fillRect(i * 32 + dec, y, 1, 8); }
+      x.fillStyle = '#3e2614'; x.fillRect(0, y, 32, 1);
+    }
+  },
+  mur_fille(x, r) { murEnfant(x, '#c88aa0', '#b07088', '#f4e0a8', (cx, cy) => { x.fillStyle = '#f4d0dc'; x.fillRect(cx - 1, cy - 2, 2, 1); x.fillRect(cx - 2, cy - 1, 4, 2); x.fillRect(cx - 1, cy + 1, 2, 1); x.fillStyle = '#e8b040'; x.fillRect(cx - 0, cy - 0, 1, 1); }); },
+  mur_garcon(x, r) { murEnfant(x, '#6a86b0', '#5a7298', '#f0e0a0', (cx, cy) => { x.fillStyle = '#f0e0a0'; x.fillRect(cx, cy - 2, 1, 5); x.fillRect(cx - 2, cy, 5, 1); x.fillRect(cx - 1, cy - 1, 3, 3); }); },
+  ...TUILES_TAPIS('tapis', '#7a1820', '#6a121a', '#4a0c12', '#d0a050'),
+  ...TUILES_TAPIS('tapisrose', '#d890a8', '#c87890', '#a85a78', '#fff0f4'),
+  ...TUILES_TAPIS('tapisbleu', '#4a6aa0', '#3e5c90', '#2a3e68', '#e8d890'),
+
   sol_reflet(x) {
     // sol de la salle du Reflet : dalles bleu pâle, assez foncées pour que le haut blanc des murs s'en détache
     x.fillStyle = '#a9c9ee'; x.fillRect(0, 0, 32, 32);
@@ -115,26 +131,37 @@ const TUILES = {
   ...TUILES_ARENES(),
 };
 /** tapis rouges du manoir, posés par m.solArene : une tuile par côté bordé (N, S, O, E : bord d'or de ce côté) */
-function TUILES_TAPIS() {
+/** un mur de chambre d'enfant : papier peint à motif (dessin), baguette, lambris blanc */
+function murEnfant(x, fond, fonce, baguette, motif) {
+  x.fillStyle = fond; x.fillRect(0, 0, 32, 19);
+  x.fillStyle = fonce; for (let k = 0; k < 32; k += 8) x.fillRect(k, 0, 1, 19);
+  for (const [cx, cy] of [[4, 4], [20, 4], [12, 12], [28, 12]]) motif(cx, cy);
+  x.fillStyle = baguette; x.fillRect(0, 18, 32, 1); x.fillStyle = '#8a7a6a'; x.fillRect(0, 19, 32, 1);
+  x.fillStyle = '#e8e2d6'; x.fillRect(0, 20, 32, 12);
+  for (const px of [1, 17]) { x.fillStyle = '#c8c0b0'; x.fillRect(px, 22, 14, 8); x.fillStyle = '#ece6da'; x.fillRect(px + 1, 23, 12, 6); }
+  x.fillStyle = '#9a9080'; x.fillRect(0, 31, 32, 1);
+}
+function TUILES_TAPIS(nom, fond, motif, frange, filet) {
   const out = {};
   for (let k = 0; k < 16; k++) {
     const n = k & 1, s = k & 2, o = k & 4, e = k & 8;
-    out[`tapis_${n ? 'N' : ''}${s ? 'S' : ''}${o ? 'O' : ''}${e ? 'E' : ''}`] = (x, r) => {
-      x.fillStyle = '#7a1820'; x.fillRect(0, 0, 32, 32);
+    out[`${nom}_${n ? 'N' : ''}${s ? 'S' : ''}${o ? 'O' : ''}${e ? 'E' : ''}`] = (x, r) => {
+      x.fillStyle = fond; x.fillRect(0, 0, 32, 32);
       // motif : losanges d'or pâle et rosaces plus sombres
-      x.fillStyle = '#6a121a'; for (const [cx, cy] of [[8, 8], [24, 24]]) { x.fillRect(cx - 4, cy - 1, 8, 2); x.fillRect(cx - 1, cy - 4, 2, 8); }
-      x.fillStyle = 'rgba(220,170,80,0.45)'; for (const [cx, cy] of [[24, 8], [8, 24]]) { x.fillRect(cx - 1, cy - 3, 2, 1); x.fillRect(cx - 2, cy - 2, 4, 1); x.fillRect(cx - 3, cy - 1, 6, 2); x.fillRect(cx - 2, cy + 1, 4, 1); x.fillRect(cx - 1, cy + 2, 2, 1); }
+      x.fillStyle = motif; for (const [cx, cy] of [[8, 8], [24, 24]]) { x.fillRect(cx - 4, cy - 1, 8, 2); x.fillRect(cx - 1, cy - 4, 2, 8); }
+      x.fillStyle = filet; x.globalAlpha = 0.45; for (const [cx, cy] of [[24, 8], [8, 24]]) { x.fillRect(cx - 1, cy - 3, 2, 1); x.fillRect(cx - 2, cy - 2, 4, 1); x.fillRect(cx - 3, cy - 1, 6, 2); x.fillRect(cx - 2, cy + 1, 4, 1); x.fillRect(cx - 1, cy + 2, 2, 1); }
+      x.globalAlpha = 1;
       for (let i = 0; i < 25; i++) { x.fillStyle = r() < 0.5 ? 'rgba(0,0,0,0.12)' : 'rgba(255,120,120,0.06)'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 1, 1); }
       // bordures : franges sombres, filet d'or
-      const bord = (fx, fy, fw, fh, gx, gy, gw, gh) => { x.fillStyle = '#4a0c12'; x.fillRect(fx, fy, fw, fh); x.fillStyle = '#d0a050'; x.fillRect(gx, gy, gw, gh); };
+      const bord = (fx, fy, fw, fh, gx, gy, gw, gh) => { x.fillStyle = frange; x.fillRect(fx, fy, fw, fh); x.fillStyle = filet; x.fillRect(gx, gy, gw, gh); };
       if (n) bord(0, 0, 32, 4, 0, 4, 32, 1);
       if (s) bord(0, 28, 32, 4, 0, 27, 32, 1);
       if (o) bord(0, 0, 4, 32, 4, 0, 1, 32);
       if (e) bord(28, 0, 4, 32, 27, 0, 1, 32);
-      if (n && o) { x.fillStyle = '#4a0c12'; x.fillRect(0, 0, 5, 5); }
-      if (n && e) { x.fillStyle = '#4a0c12'; x.fillRect(27, 0, 5, 5); }
-      if (s && o) { x.fillStyle = '#4a0c12'; x.fillRect(0, 27, 5, 5); }
-      if (s && e) { x.fillStyle = '#4a0c12'; x.fillRect(27, 27, 5, 5); }
+      if (n && o) { x.fillStyle = frange; x.fillRect(0, 0, 5, 5); }
+      if (n && e) { x.fillStyle = frange; x.fillRect(27, 0, 5, 5); }
+      if (s && o) { x.fillStyle = frange; x.fillRect(0, 27, 5, 5); }
+      if (s && e) { x.fillStyle = frange; x.fillRect(27, 27, 5, 5); }
     };
   }
   return out;
@@ -296,6 +323,7 @@ function poserAffiche(view, a) {
 /** une tenture accrochée sur la face sud d'un mur : tapisserie (rouge, bordure d'or, blason), portrait (cadre doré, visage sombre) */
 function poserTenture(view, a) {
   if (a.genre === 'porte') return poserPorteManoir(view, a);
+  if (a.genre === 'dessin') return poserDessin(view, a);
   const tap = a.genre === 'tapisserie', c = document.createElement('canvas'); c.width = 24; c.height = tap ? 40 : 28;
   const x = c.getContext('2d'), R = hasard(a.x * 131 + a.y * 17);
   if (tap) {
@@ -323,6 +351,25 @@ function poserTenture(view, a) {
   const W = tap ? 0.62 : 0.6, H = W * c.height / c.width * Math.tan(EL), haut = 1.25 * Math.tan(EL);
   const geo = new THREE.PlaneGeometry(W, H); geo.translate(a.x + 0.5, haut * (tap ? 0.62 : 0.6), a.y + 1.01);
   const mat = new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.5 }); mat.userData.own = true;
+  view.root.add(new THREE.Mesh(geo, mat));
+}
+
+/** un dessin d'enfant punaisé au mur : la maison, un soleil, deux enfants qui se tiennent la main (tiré de la case) */
+function poserDessin(view, a) {
+  const c = document.createElement('canvas'); c.width = 20; c.height = 16;
+  const x = c.getContext('2d'), R = hasard(a.x * 71 + a.y * 13), k = Math.floor(R() * 3);
+  x.fillStyle = '#f4efe0'; x.fillRect(0, 0, 20, 16); x.fillStyle = '#d8d0b8'; x.fillRect(0, 15, 20, 1); x.fillRect(19, 0, 1, 16);
+  x.fillStyle = '#c03030'; x.fillRect(9, 0, 2, 1);                                        // punaise
+  x.fillStyle = '#f0c020'; x.fillRect(15, 2, 3, 3);                                       // soleil
+  if (k === 0) { x.fillStyle = '#a06030'; x.fillRect(3, 8, 8, 6); x.fillStyle = '#c03040'; x.fillRect(2, 6, 10, 2); x.fillRect(4, 5, 6, 1); x.fillStyle = '#e8a0c0'; x.fillRect(5, 9, 2, 2); x.fillRect(8, 10, 2, 4); }   // la maison en pain d'épice
+  else { const coul = k === 1 ? ['#3060c0', '#d050a0'] : ['#40a040', '#d08030'];
+    for (const [cx, col] of [[6, coul[0]], [12, coul[1]]]) { x.fillStyle = '#e0b090'; x.fillRect(cx, 5, 2, 2); x.fillStyle = col; x.fillRect(cx, 7, 2, 4); x.fillStyle = '#404040'; x.fillRect(cx, 11, 1, 3); x.fillRect(cx + 1, 11, 1, 3); }
+    x.fillStyle = '#404040'; x.fillRect(8, 8, 4, 1); }
+  x.fillStyle = '#50a040'; x.fillRect(0, 14, 19, 1);
+  const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
+  const W = 0.6, H = W * 16 / 20 * Math.tan(EL), haut = 1.25 * Math.tan(EL);
+  const geo = new THREE.PlaneGeometry(W, H); geo.translate(a.x + 0.5 + (R() - 0.5) * 0.15, haut * 0.66, a.y + 1.01);
+  const mat = new THREE.MeshBasicMaterial({ map: t }); mat.userData.own = true;
   view.root.add(new THREE.Mesh(geo, mat));
 }
 

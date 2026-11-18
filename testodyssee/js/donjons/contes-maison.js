@@ -138,23 +138,33 @@ const PIECES = [
     '#######◘#######',
   ] },
   { etage: 1, rang: 4, id: 'd', nom: 'Débarras', meubles: true, sombre: true, style: 'manoir', plan: debarras() },
-  { etage: 2, rang: 0, id: 'eg', nom: 'Chambre de garçon', plan: [
-    '#############', '#############',
-    '##ʙ..ş..ʗ.k##',
-    '##.........##',
-    '##.ʘ.......##',
-    '##.....ʘ.p.##',
-    '##....S....##',
-    '######◘######',
+  // les chambres d'enfants : papier peint, lambris blanc, tapis ; dessins punaisés au mur ; chez la petite fille, un goûter
+  // de poupées et de peluches autour de la table ; chez le petit garçon, chevaux à bascule et cubes éparpillés
+  { etage: 2, rang: 0, id: 'eg', nom: 'Chambre du petit garçon', style: 'garcon', tapis: [[4, 4, 14, 7, 'bleu']], plan: [
+    '###################',
+    '###Ʋ#####Ʊ#Ʋ###Ʋ###',
+    '##ʙ.ą.kk....ş.Ɵ.Ƥ##',
+    '##...............##',
+    '##.......ʘ.......##',
+    '##...ʗ.......ʗ...##',
+    '##.ç.......ʘ...yy##',
+    '##.p......ʘ......##',
+    '##ʚ..........ʘ..ş##',
+    '##.......S.......##',
+    '#########◘#########',
   ] },
-  { etage: 2, rang: 5, id: 'ef', nom: 'Chambre de fille', plan: [
-    '#############', '#############',
-    '##ʙ..ą..ṽ.ʚ##',
-    '##.........##',
-    '##.ʞ.......##',
-    '##....ʚ..p.##',
-    '##....S....##',
-    '######◘######',
+  { etage: 2, rang: 5, id: 'ef', nom: 'Chambre de la petite fille', style: 'fille', tapis: [[6, 4, 12, 8, 'rose']], plan: [
+    '###################',
+    '###Ʋ##Ʋ#####Ʊ##Ʋ###',
+    '##ʙ.ą..ş.ʞʞ..ş.ʚƤ##',
+    '##...............##',
+    '##...............##',
+    '##......ʞçʚ.....ṽ##',
+    '##......çpç......##',
+    '##y......ʞ.......##',
+    '##.Ƥ...........ʚą##',
+    '##.......S.......##',
+    '#########◘#########',
   ] },
   { etage: 3, rang: 2, id: 'bib', nom: 'Bibliothèque', plan: [
     '#############################', '#############################',
@@ -185,7 +195,7 @@ export function maison() {
       const a = String.fromCharCode(n++), b = String.fromCharCode(n++), id = P ? `hg${P.id}` : `hg${e}${'abcdefghij'[i]}`;
       portes.push(a);
       objets[a] = { type: 'lien', mur: true, tenture: 'porte', porte: true, vers: id, cible: b }; objets[b] = { type: 'lien', sol: true, vers: `hg${e + 1}`, cible: a };
-      pieces.push({ id, nom: `${NOM} — ${P ? P.nom : 'Petite pièce'}`, type: 'libre', conte: 'hg', ...(P?.style ? { style: P.style } : {}), ...(P?.meubles ? { meubles: true } : {}), ...(P?.sombre ? { sombre: true } : {}),
+      pieces.push({ id, nom: `${NOM} — ${P ? P.nom : 'Petite pièce'}`, type: 'libre', conte: 'hg', ...(P?.style ? { style: P.style } : {}), ...(P?.tapis ? { tapis: P.tapis } : {}), ...(P?.meubles ? { meubles: true } : {}), ...(P?.sombre ? { sombre: true } : {}),
         plan: (P ? P.plan : VIDE).map((r) => r.replace('◘', b).replace('Φ', b)) });
     }
     salles.push({ id: `hg${e + 1}`, nom: `${NOM} — ${RANG[e - 1]} étage`, type: 'libre', conte: 'hg', style: 'manoir', tapis: TAPIS_COULOIR, plan: couloir(HAUT[e], BAS[e], portes) }, ...pieces);

@@ -863,7 +863,9 @@ d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
   - le hall et les couloirs sont en style `manoir` (`js/rendu.js` : parquet sombre, tapisserie rouge damassée sur un
     lambris, plafond de poutres) ; `tapis` d'une salle : des rectangles du plan couverts d'un tapis rouge bordé d'or
     (`poserTapis` de `donjon/plan.js`, tuiles `tapis_*`) ; objets `mur: true` avec `tenture` : tapisserie, portrait ou
-    porte, peints sur la face du mur (`poserTenture`, `poserPorteManoir`) ;
+    porte, peints sur la face du mur (`poserTenture`, `poserPorteManoir`), dessin d'enfant (`Ʋ`, `poserDessin`) ;
+  - les chambres d'enfants (styles `fille` et `garcon` : papier peint rose à fleurs ou bleu à étoiles, lambris blanc,
+    parquet clair) ont un tapis rose ou bleu (cinquième élément d'un rectangle de `tapis`) et des dessins au mur ;
   - un étage = un long couloir droit, de gauche à droite, dix portes de manoir dans le mur du fond (on les ouvre en leur
     faisant face : `porte` d'un lien) ; chaque porte mène à une pièce, au-dessus du couloir, qui a sa carte. Les
     escaliers alternent : celui de gauche arrive à gauche du couloir du dessus, celui de droite à droite (1er : on
