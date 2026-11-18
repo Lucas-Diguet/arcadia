@@ -324,7 +324,7 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
 
   /* ---------------------------------------------------------------- le Donjon des Miroirs (11 × 7) */
   // palais de marbre blanc sur la neige : colonnes de cristal, hauts miroirs entre elles, grand miroir rond au-dessus
-  // de la porte, fronton en pointe de cristal, toit enneigé et bouquet de cristaux, deux obélisques de glace devant
+  // de la porte, fronton au losange de miroir, toit enneigé, deux obélisques de glace devant
   const miroirTex = () => tex('miroirSalle', D, D * 2, (g, px, w, h) => {
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const t = y / h, b = ((x + y * 0.55) / (w * 0.9)) % 1;
@@ -338,7 +338,7 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
     const G = new THREE.Group(), w = 11, cx = w / 2, zf = 5.2;
     const MB = M({ map: marbre('#eef0f4') }), MG = M({ map: marbre('#c4cad6') }), MC = M({ map: marbre('#dde1ea') });
     const NEIGE = COL('#f8fbff'), MIR = M({ map: miroirTex(), emissive: new THREE.Color('#1c2c3a') });
-    const CRI = new THREE.MeshStandardMaterial({ color: '#bfe9ff', emissive: '#2a6a8a', emissiveIntensity: 0.5, roughness: 0.15, metalness: 0.2, transparent: true, opacity: 0.88 });
+    const CRI = LUM('#bfe9ff', '#2a5a78');
     const ARG = COL('#aab2c4');
     // soubassement et marches enneigées
     G.add(at(boite(w - 0.4, 0.7, zf - 0.6, MG), cx, 0.35, (zf + 0.6) / 2));
@@ -379,12 +379,7 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
     fronton(G, cx, y0 + H + 0.42, zw + 0.3, 4.4, 1.6, 1.2, MB);
     const losange = boite(0.55, 0.55, 0.04, MIR); losange.rotation.z = Math.PI / 4; G.add(at(losange, cx, y0 + H + 0.95, zw + 0.32));
     for (const sx of [-1, 1]) { const n = boite(2.5, 0.12, 1.25, NEIGE); n.rotation.z = -sx * Math.atan2(1.6, 2.2); G.add(at(n, cx + sx * 1.1, y0 + H + 1.27, zw - 0.3)); }
-    // bouquet de cristaux sur le toit
     const cristal = (x, y, z, r, h, a) => { const c = new THREE.Mesh(new THREE.ConeGeometry(r, h, 6), CRI); c.rotation.z = a; c.castShadow = true; G.add(at(c, x, y + h / 2, z)); };
-    const yr = y0 + H + 0.4, zr = (zf - 1.4) / 2 + 0.6;
-    cristal(cx, yr, zr, 0.5, 2.4, 0); cristal(cx - 0.65, yr, zr + 0.2, 0.32, 1.5, 0.3); cristal(cx + 0.7, yr, zr + 0.1, 0.34, 1.6, -0.28);
-    cristal(cx - 0.3, yr, zr - 0.5, 0.3, 1.6, 0.15); cristal(cx + 0.4, yr, zr - 0.45, 0.28, 1.4, -0.2);
-    for (const x of [1.4, w - 1.4]) { cristal(x, yr, zr, 0.3, 1.5, 0); cristal(x + 0.35, yr, zr + 0.2, 0.2, 0.9, -0.3); }
     // deux obélisques de glace au pied des marches
     for (const sx of [-1, 1]) {
       const ox = cx + sx * 3.3, oz = zf + 1.2;

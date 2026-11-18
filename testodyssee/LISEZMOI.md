@@ -320,7 +320,7 @@ de toutes les équipes du labo) :
    l'entrée) ramène au début de la salle.
 
 Récompenses : un Bouchon d'Or (IV au maximum, pour renforcer l'équipe) et un Éclat de Miroir (pour un futur donjon).
-Dessins : Copycat a le dessin du copieur d'Odyssée (tourné comme il marche) ; miroirs de poche, miroirs sur pied, fourneau à charbon
+Dessins : Copycat, mime au masque blanc (`tools/pixelforge/copycat.py`, 4 directions et 2 pas) ; palais du Parvis : modèle 3D `templeMiroirs` de `labo3d.js` ; miroirs de poche, miroirs sur pied, fourneau à charbon
 (`tools/pixelforge/fourneau.py`) et grande porte de la Salle du Brasier viennent de PixelForge (32 pixels par case, `DENSITE_2` de `contenu.js`).
 La pancarte du classement est dans la Salle du Secret.
 `tools/test-testodyssee.mjs` vérifie l'enchaînement des salles, qu'on ne reste jamais coincé sur la glace (quels que

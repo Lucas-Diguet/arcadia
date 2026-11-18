@@ -19,7 +19,7 @@ function exterieur() {
   const m = new GameMap('labo:miroirs:dehors', 32, 26, { outdoor: true, fill: T.PINE, name: 'Parvis des Miroirs', music: 'snow' });
   m.blob(16, 13, 12.5, 10, T.GRASS, rng(909));
   m.rect(5, 3, 26, 22, T.GRASS, [T.PINE]);
-  const b = m.building('gym', 12, 4, { roof: 'gray', name: 'Donjon des Miroirs' });
+  const b = m.building('gym', 10, 2, { modele: 'templeMiroirs', w: 11, d: 7, door: 5, name: 'Donjon des Miroirs' });
   for (let y = b.doorY + 1; y <= 23; y++) { m.set(b.doorX, y, T.PATH); }
   m.rect(b.doorX - 1, b.doorY + 1, b.doorX + 1, b.doorY + 3, T.PATH);
   for (const [x, y] of [[9, 12], [22, 12], [9, 18], [22, 18]]) m.prop('cristal', x, y);

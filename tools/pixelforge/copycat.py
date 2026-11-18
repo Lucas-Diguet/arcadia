@@ -241,6 +241,7 @@ def main():
     for i, d in enumerate(ordre):
         for j, im in enumerate(images[d]): feuille.alpha_composite(im, (64 * (i * 3 + j), 0))
         images[d][0].save(os.path.join(SORTIE, f'copycat_{d}.png'))
+        for j in (1, 2): images[d][j].save(os.path.join(SORTIE, f'copycat_{d}_{j}.png'))
     feuille.save(os.path.join(SORTIE, 'copycat_marche.png'))
     toutes = [im for d in ordre for im in images[d]]
     planche(toutes, fond='#d8dce6', colonnes=12, echelle=3).save(os.path.join(SORTIE, 'planche_copycat.png'))

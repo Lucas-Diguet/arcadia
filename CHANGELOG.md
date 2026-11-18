@@ -1,5 +1,9 @@
 # Journal des versions — Arcadia
 
+## 6.19 — 18 novembre 2026
+- **TestOdyssée** — Donjon des Miroirs : un nouveau palais de marbre blanc sur le Parvis enneigé, avec ses colonnes de cristal, ses hauts miroirs et ses obélisques de glace.
+  - Copycat a enfin son vrai visage : un mime au masque blanc et au béret, en combinaison de losanges miroir, qui marche quand il te suit en reflet.
+
 ## 6.18 — 17 novembre 2026
 - **TestOdyssée** — Nouveau donjon en construction : le Château de Noirval, seul ou en groupe.
   - Devant le pont-levis, une mère dont la fille a été enlevée par le seigneur du château.

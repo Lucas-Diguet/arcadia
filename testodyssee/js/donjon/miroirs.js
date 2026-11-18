@@ -13,7 +13,7 @@ import { ouvrir } from './plan.js';
 import { IMAGES } from '../contenu.js';
 
 const SENS = ['down', 'left', 'right', 'up'];
-function retirerCopycat(v) { for (const s of SENS) if (v.actors.has('copycat:' + s)) v.removeActor('copycat:' + s); }
+function retirerCopycat(v) { for (const a of [...v.actors.keys()]) if (a.startsWith('copycat:')) v.removeActor(a); }
 import { dessinerFaisceaux, dessinerMiroir } from '../rendu.js';
 
 const estMiroirs = (d) => d.salles.some((s) => s.type === 'reflet' || s.type === 'lumiere');
@@ -379,13 +379,15 @@ export const Miroirs = {
     const R = this.reflet, g = this.game, v = g.view;
     this.dessinerGlace(R && this.refletActif(R.d) ? R.d : null);
     if (!R || !this.refletActif(R.d)) { retirerCopycat(v); return; }
-    // Copycat a le dessin du copieur d'Odyssée, tourné comme il marche (64 pixels par case : échelle 1/2)
-    if (!this.imgCopycat) { if (!this.chargeCopycat) this.chargeCopycat = Promise.all(SENS.map((s) => loadImg(IMAGES['copycat_' + s]))).then((ims) => { this.imgCopycat = Object.fromEntries(SENS.map((s, i) => [s, ims[i]])); }); return; }
+    // Copycat, tourné comme il marche, un pas sur deux de chaque pied (64 pixels par case : échelle 1/2)
+    const IMS = SENS.flatMap((s) => ['copycat_' + s, 'copycat_' + s + '_1', 'copycat_' + s + '_2']);
+    if (!this.imgCopycat) { if (!this.chargeCopycat) this.chargeCopycat = Promise.all(IMS.map((k) => loadImg(IMAGES[k]))).then((ims) => { this.imgCopycat = Object.fromEntries(IMS.map((k, i) => [k, ims[i]])); }); return; }
     let x = R.x, y = R.y;
     if (R.move) { R.move.t += dt / R.move.dur; const u = Math.min(1, R.move.t); x = R.move.fx + (R.x - R.move.fx) * u; y = R.move.fy + (R.y - R.move.fy) * u; if (R.move.t >= 1) R.move = null; }
-    const sens = SENS.includes(R.dir) ? R.dir : 'down', id = 'copycat:' + sens;
-    for (const s of SENS) if (s !== sens && v.actors.has('copycat:' + s)) v.removeActor('copycat:' + s);
-    const a = v.imageActor(id, this.imgCopycat[sens], 0.5);
+    const sens = SENS.includes(R.dir) ? R.dir : 'down';
+    const k = 'copycat_' + sens + (R.move && R.move.t < 0.6 ? '_' + (1 + ((R.x + R.y) & 1)) : ''), id = 'copycat:' + k;
+    for (const a of [...v.actors.keys()]) if (a.startsWith('copycat:') && a !== id) v.removeActor(a);
+    const a = v.imageActor(id, this.imgCopycat[k], 0.5);
     v.place(a, x, y, R.move ? Math.abs(Math.sin(R.move.t * Math.PI)) * 0.08 : 0);
   },
   /** le grand miroir le long de la ligne du milieu, et le reflet du joueur quand il s'y colle */

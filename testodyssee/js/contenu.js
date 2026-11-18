@@ -170,7 +170,7 @@ export const DECOR = [
 ];
 /** décors dessinés à 32 pixels par case (PixelForge) */
 export const DENSITE_2 = ['cible', 'cible_tombee', 'porte_elements', 'porte_elements_f', 'porte_elements_e', 'porte_elements_p', 'porte_elements_fe', 'porte_elements_fp', 'porte_elements_ep', 'porte_elements_fep', 'porte_elements_ouverte', 'porte_feu_pf', 'porte_feu_pf_f', 'porte_eau_pf', 'porte_eau_pf_f', 'porte_plante_pf', 'porte_plante_pf_f', 'montagne_or', 'tas_or', 'coffre_or', 'pile_or', 'jarre_or', 'brasier_stele', 'brasier_stele_off', 'torchere', 'torchere_off', 'porte_egypte', 'porte_egypte_o', 'porte_miroir', 'miroir_poche2', 'miroir_pied_d', 'miroir_pied_g', 'fourneau', 'fourneau_on', 'sarcophage_roi', 'sarcophage_roi_ouvert', 'sarcophage_roi_vide', 'brasier_autel', 'brasier_autel_off'];
-export const IMAGES = { copycat: IMG + 'miroirs/copycat.png', ...Object.fromEntries([['down', 'bas'], ['left', 'gauche'], ['right', 'droite'], ['up', 'haut']].map(([s, f]) => ['copycat_' + s, IMG + 'miroirs/copieur_' + f + '.png'])), horloge: IMG + 'miroirs/horloge.png' };
+export const IMAGES = { copycat: IMG + 'miroirs/copycat.png', ...Object.fromEntries([['down', 'bas'], ['left', 'gauche'], ['right', 'droite'], ['up', 'haut']].flatMap(([s, f]) => [['copycat_' + s, IMG + 'miroirs/copycat_' + f + '.png'], ...[1, 2].map((k) => ['copycat_' + s + '_' + k, IMG + 'miroirs/copycat_' + f + '_' + k + '.png'])])), horloge: IMG + 'miroirs/horloge.png' };
 
 let fait = false;
 /** ajoute espèces et objets aux tables d'Odyssée ; avec ASSETS (navigateur), branche aussi leurs images */
