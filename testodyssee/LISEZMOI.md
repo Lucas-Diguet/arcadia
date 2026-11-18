@@ -223,21 +223,21 @@ cible debout ou au premier obstacle. Hors épreuve, une cible tombée se relève
 chronomètre les dix cibles (départ à l'entrée de l'enclos) et garde le record. Cibles dessinées par PixelForge
 (`tools/pixelforge/contes_jardin.py`, dans `img/farwest/`). La suite prévue : des PNJ, des PNJ qui bougent, puis les joueurs.
 
-### La Salle de l'Horloge (prototype)
+### La Tour de l'Horloge, niveau 0 (au moins deux joueurs)
 
-Une seule salle, pour essayer le principe du futur donjon de l'Horloge : une horloge gigantesque (la taille de la
-sépulture du Tombeau) suspendue dans le vide, dont les deux aiguilles sont des passerelles. Les leviers du quai font
-tourner la petite ou la grande aiguille d'une heure ; le grand mécanisme du pivot fait tourner la vis : les deux
-aiguilles tournent ensemble d'une heure et montent (ou descendent) d'un niveau, et le joueur posé sur le pivot monte
-avec elles. Autour, des plateformes flottantes à quatre hauteurs : on ne passe d'une aiguille à une plateforme que s'ils
-sont au même niveau. Le joueur qui se tient sur une aiguille qui tourne est emporté avec elle. Le coffre, tout en haut
-à midi, se mérite : petite aiguille vers l'îlot de quatre heures, trois tours de grande aiguille depuis l'îlot, trois
-tours de vis.
-
-`js/horloge.js` (sans DOM : plan, plateformes, cases des aiguilles, niveaux, `passage`), `js/horloge-jeu.js` (pas,
-leviers, vis, joueur emporté, joueur et caméra à la hauteur de sa case), `js/horloge-vue.js` (tout en volumes : cadran au
-fond, vis, pivot, aiguilles, plateformes ; le sol et les murs de la carte ne sont pas dessinés). Lieu « Salle de
-l'Horloge (prototype) » de la liste ; vérifiée par `test-testodyssee.mjs`.
+Au creux de la tour, une horloge gigantesque, tout à la même hauteur (`js/horloge.js`, sans DOM). Au centre, la barre
+du pivot (on n'y marche pas) ; trois aiguilles (`js/horloge-aiguilles.js`) : la grande et large, la grande et fine (la
+plus longue) et la petite (elle servira aux étages 1 et -1). Contre le mur, le quai, deux plateformes (dix et deux heures)
+que touchent les deux grandes aiguilles, et la corniche de midi, que seule l'aiguille fine atteint.
+Sur chaque plateforme, un levier rouge (grande aiguille) et un bleu (aiguille fine) la font tourner d'une heure, dans un
+sens ou dans l'autre ; celui qui se tient sur l'aiguille est emporté avec elle (`emporter`), mais ne peut pas tirer le
+levier lui-même : seul, on ne quitte pas le quai (vérifié pour toutes les heures). Trois petites salles dans le mur (dix
+heures, deux heures, midi), vides pour l'instant, avec un escalier de service qui redescend au quai. La clé du mécanisme
+central est sur la corniche de midi ; le mécanisme, sur le quai, fera monter ou descendre l'horloge vers les étages 1 et -1
+(pas encore construits).
+À plusieurs, l'hôte tient l'état de l'horloge (`js/horloge-jeu.js`, messages `djHor`, `djHorE`, `djHorS`) : chacun anime
+les aiguilles, et les joueurs posés sur une aiguille tournent avec elle à l'écran (`decalage`).
+Dessin : `js/horloge-vue.js`. Dans la liste des lieux : « Tour de l'Horloge (prototype) » ; vérifiée par `test-testodyssee.mjs`.
 
 ### Le Musée des Dunes (scène du sceptre)
 

@@ -1169,28 +1169,44 @@ for (const l of Object.values(lieux).flat()) {
   ok(B.billes.size < BILLES.depart().size && gagne(B.billes) && S.allume.filter((v) => !v).length <= 10 && !SOLEILS.resolu(S), 'tombeau : Khamsin simplifie les billes (7 billes, toujours faisable) et les dalles-soleils (mélangées de 2 coups)');
 }
 
-/* ---------------- la Salle de l'Horloge (prototype) ---------------- */
+/* ---------------- la Tour de l'Horloge, niveau 0 ---------------- */
 {
   const Hm = await import('../testodyssee/js/horloge.js'), m = world.maps[Hm.HORLOGE];
-  // ce qu'on atteint à pied depuis une case, l'horloge à l'état E (jamais d'une hauteur à l'autre)
+  const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   const atteint = (E, x0, y0) => {
     Hm.appliquer(m, E);
     const vu = new Set([x0 + ',' + y0]), f = [[x0, y0]];
-    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a = x + dx, b = y + dy, k = a + ',' + b; if (!vu.has(k) && walkable(m.get(a, b)) && Hm.passage(E, x, y, a, b)) { vu.add(k); f.push([a, b]); } } }
+    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const a = x + dx, b = y + dy, k = a + ',' + b; if (!vu.has(k) && walkable(m.get(a, b))) { vu.add(k); f.push([a, b]); } } }
     return vu;
   };
-  const pres = (vu, [x, y]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vu.has((x + dx) + ',' + (y + dy)));
-  const L = (q, pf) => Hm.placeLevier(Hm.LEVIERS.find((l) => l.quoi === q && (pf ? l.pf === pf : !l.pf)));
+  const pres = (vu, [x, y]) => N4.some(([dx, dy]) => vu.has((x + dx) + ',' + (y + dy)));
+  const surPf = (vu, id) => [...Hm.casesPlateforme(id)].some((k) => vu.has(k));
+  const cases = (q, k) => [...Hm.casesAiguille(q, k)].map((c) => c.split(',').map(Number));
+  const [ax, ay] = Hm.placeArrivee();
+  // la pointe de chaque grande aiguille touche les plateformes ; les corniches, seulement l'aiguille fine
+  const touche = (q, p) => { const E = { ...Hm.depart(), grande: (p.k + 6) % 12, fine: (p.k + 6) % 12, [q]: p.k }; const c = cases(q, p.k).sort((u, v) => Math.hypot(u[0] - Hm.C[0], u[1] - Hm.C[1]) - Math.hypot(v[0] - Hm.C[0], v[1] - Hm.C[1]))[0]; return surPf(atteint(E, ...c), p.id); };
+  ok(m && walkable(m.get(ax, ay)) && Hm.PLATEFORMES.every((p) => touche('fine', p) && touche('grande', p) === !p.corniche), 'horloge : la grande aiguille touche les plateformes, l\'aiguille fine aussi les corniches');
+  ok([...Array(12).keys()].every((k) => { const s = Hm.casesAiguille('fine', k), [d] = s, vu = new Set([d]), f = [d.split(',').map(Number)]; while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const kk = (x + dx) + ',' + (y + dy); if (s.has(kk) && !vu.has(kk)) { vu.add(kk); f.push([x + dx, y + dy]); } } } return vu.size === s.size; }), 'horloge : l\'aiguille fine se suit d\'un bout à l\'autre à chaque heure');
+  // seul : quelle que soit l'heure des aiguilles, on ne quitte pas le quai à pied
+  let seul = true;
+  for (let g = 0; g < 12; g++) for (let f = 0; f < 12; f++) { const vu = atteint({ ...Hm.depart(), grande: g, fine: f }, ax, ay); if (Hm.PLATEFORMES.some((p) => p.id !== 'quai' && surPf(vu, p.id))) seul = false; }
+  const a0 = atteint(Hm.depart(), ax, ay), objets = [...Hm.LEVIERS.map(Hm.placeLevier), Hm.placeCle(), Hm.placeMecanisme(), ...Hm.SALLES.map(Hm.placePorte), Hm.placeSortie()].map(String);
+  ok(seul && Hm.LEVIERS.filter((L) => L.pf === 'quai').every((L) => pres(a0, Hm.placeLevier(L))) && pres(a0, Hm.placeMecanisme()) && pres(a0, Hm.placeSortie()) && new Set(objets).size === objets.length,
+    'horloge : seul, on ne quitte jamais le quai ; leviers, mécanisme et sortie à portée');
+  // à deux : A sur la grande aiguille, B au levier ; puis A ramène l'aiguille pour B ; l'aiguille fine mène B à la corniche
   let E = Hm.depart();
-  const a0 = atteint(E, Hm.C[0], 42);
-  ok(m && pres(a0, L('petite')) && pres(a0, L('grande')) && pres(a0, L('vis')) && !pres(a0, L('grande', 'ilot4')), 'horloge : du quai, la grande aiguille mène au pivot et à sa vis ; l\'îlot n\'est pas encore à portée');
-  E = { ...E, petite: 4 };
-  const a1 = atteint(E, Hm.C[0], 42);
-  E = { ...E, grande: 9 };
-  const a2 = atteint(E, ...L('grande', 'ilot4').map((v, i) => v + (i ? 0 : -1)));
-  E = { grande: 0, petite: 7, niv: 3 };
-  const a3 = atteint(E, Hm.C[0] + 2, Hm.C[1]);
-  ok(pres(a1, L('grande', 'ilot4')) && pres(a2, L('vis')) && pres(a3, Hm.milieu(Hm.COFFRE.pf)) && !pres(atteint(Hm.depart(), Hm.C[0], 42), Hm.milieu(Hm.COFFRE.pf)), 'horloge : petite aiguille vers l\'îlot, trois tours de grande aiguille, trois tours de vis : le coffre de midi');
+  const pointe = (q, k, vu) => cases(q, k).filter((c) => vu.has(String(c)) && Hm.caseHorloge(E, ...c).quoi !== 'pf').sort((u, v) => Math.hypot(v[0] - Hm.C[0], v[1] - Hm.C[1]) - Math.hypot(u[0] - Hm.C[0], u[1] - Hm.C[1]))[0];
+  const tours = (q, s, n, qui) => { for (let i = 0; i < n; i++) { const E2 = Hm.tourner(E, q, s); if (qui) qui = Hm.emporter(E, E2, ...qui); E = E2; } return qui; };
+  let A = tours('grande', 1, 4, pointe('grande', 6, a0));
+  const okA = surPf(atteint(E, ...A), 'dix');
+  tours('grande', -1, 4);
+  let B = tours('grande', 1, 4, pointe('grande', 6, atteint(E, ax, ay)));
+  const okB = surPf(atteint(E, ...B), 'dix');
+  tours('fine', 1, 4);
+  B = tours('fine', 1, 2, pointe('fine', 10, atteint(E, ...B)));
+  const fin = atteint(E, ...B);
+  ok(okA && okB && surPf(fin, 'midi') && pres(fin, Hm.placeCle()) && pres(fin, Hm.placePorte(Hm.SALLES[2])), 'horloge : à deux, la grande aiguille mène à dix heures et l\'aiguille fine à la corniche de la clé');
+  ok(Hm.SALLES.every((s) => world.maps[Hm.salleId(s)]?.warps.size === 2), 'horloge : trois salles dans le mur, avec leur escalier de service vers le quai');
   Hm.appliquer(m, m.horloge);
 }
 

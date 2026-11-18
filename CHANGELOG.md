@@ -1,5 +1,13 @@
 # Journal des versions — Arcadia
 
+## 6.30 — 18 novembre 2026
+- **TestOdyssée** — La Tour de l'Horloge devient un vrai étage, à deux joueurs ou plus :
+  - trois aiguilles géantes autour du pivot, toutes à la même hauteur que les plateformes ;
+  - sur chaque plateforme, un levier rouge et un levier bleu font tourner la grande aiguille ou l'aiguille fine d'une heure : celui qui se tient dessus est emporté, mais il faut un coéquipier au levier ;
+  - l'aiguille fine, la plus longue, est la seule à atteindre la corniche de midi, où attend la clé du mécanisme central ;
+  - trois petites salles dans le mur de la tour.
+  - Le joueur tourne maintenant avec l'aiguille au lieu de rester un instant dans le vide.
+
 ## 6.29 — 18 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge à plusieurs : quand un joueur tire un levier, les aiguilles tournent chez tout le monde, et celui qui se tient dessus est emporté avec elles. En arrivant dans la salle, on retrouve l'horloge telle que les autres l'ont laissée.
 
