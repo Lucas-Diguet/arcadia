@@ -229,16 +229,16 @@ export function construireHorloge(world) {
     m.object(dx, dy, { use: async (api) => { await api.game.warp({ map: salleId(s), x: r.exitX, y: r.exitY - 1, dir: 'up' }); } });
   }
   // dehors : la Tour de l'Horloge (la tour qui se défait, labo3d.js) ; on entre sur le quai
-  const d = new GameMap(DEHORS, 30, 26, { outdoor: true, fill: T.TREE, name: 'Tour de l\'Horloge', music: 'route' });
-  d.blob(15, 13, 12, 10, T.GRASS, rng(777));
-  d.rect(4, 2, 25, 23, T.GRASS, [T.TREE]);
-  const b = d.building('gym', 10, 3, { modele: 'tourDefaite', w: 10, d: 8, door: 4, name: 'Tour de l\'Horloge' });
-  for (let y = b.doorY + 1; y <= 23; y++) d.set(b.doorX, y, T.PATH);
+  const d = new GameMap(DEHORS, 41, 34, { outdoor: true, fill: T.TREE, name: 'Tour de l\'Horloge', music: 'route' });
+  d.blob(20, 17, 18, 15, T.GRASS, rng(777));
+  d.rect(4, 2, 36, 31, T.GRASS, [T.TREE]);
+  const b = d.building('gym', 10, 3, { modele: 'tourDefaite', w: 21, d: 17, door: 10, name: 'Tour de l\'Horloge' });
+  for (let y = b.doorY + 1; y <= 31; y++) d.set(b.doorX, y, T.PATH);
   d.rect(b.doorX - 1, b.doorY + 1, b.doorX + 1, b.doorY + 2, T.PATH);
   for (const [x, y] of [[b.doorX - 3, b.doorY + 2], [b.doorX + 3, b.doorY + 2]]) d.prop('lanterne', x, y);
   d.sign(b.doorX + 2, b.doorY + 4, 'TOUR DE L\'HORLOGE\nLe temps s\'y est brisé.\nAu moins deux explorateurs.');
   d.warp(b.doorX, b.doorY, { map: HORLOGE, x: ax, y: ay, dir: 'up' });
-  d.zone(0, 0, 29, 25, { name: 'Tour de l\'Horloge', music: 'route' });
+  d.zone(0, 0, 40, 33, { name: 'Tour de l\'Horloge', music: 'route' });
   world.maps[DEHORS] = d;
   // la sortie : derrière le quai
   const [sx, sy] = placeSortie();

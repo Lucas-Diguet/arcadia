@@ -382,16 +382,19 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
   };
 
   // 3. la tour qui se défait (10 × 8) : bas solide, tambours qui flottent, cadran suspendu dans ses anneaux
+  // dessinée sur 10 × 8 puis agrandie (S) : une tour énorme, à la mesure de son horloge ; posée sur 21 × 17, porte au sol
   B.tourDefaite = () => {
-    const G = new THREE.Group(), cx = 5, cz = 4, R = 3.3;
+    const S = 2.2, T0 = new THREE.Group(), G = new THREE.Group(), cx = 5, cz = 4, R = 3.3;
+    G.scale.setScalar(S); G.position.set(10.5 - cx * S, 0, 16.92 - (cz + R + 0.34) * S); T0.add(G);
     const PI = M({ map: grosBloc('#7a7684', 2) }), PC = M({ map: grosBloc('#686474', 1) });
     const FAILLE = LUM('#b8a0ff', '#5a3aa0'), ANN = LUM('#e2c87a', '#6a5020');
-    G.add(at(cylUV(R + 0.3, R + 0.6, 1.0, PC, 28), cx, 0.5, cz));
-    G.add(at(cylUV(R, R + 0.3, 5.0, PI, 28), cx, 3.5, cz));
-    const zp = cz + R + 0.15;
-    reperePorte(G, cx, 1.0, zp, 1.4, 2.2);
-    G.add(at(boite(1.4, 2.2, 0.2, COL('#3a2a2a')), cx, 2.1, zp));
-    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.7, 14, 0, Math.PI), COL('#3a2a2a')), cx, 3.2, zp + 0.1));
+    // un socle à peine plus haut qu'une marche : la porte est au niveau du sol
+    G.add(at(cylUV(R + 0.3, R + 0.5, 0.12, PC, 28), cx, 0.06, cz));
+    G.add(at(cylUV(R, R + 0.3, 6.0, PI, 28), cx, 3.0, cz));
+    const zp = cz + R + 0.34;   // devant le pied du mur (plus large en bas)
+    reperePorte(G, cx, 0, zp, 1.4, 2.2);
+    G.add(at(boite(1.4, 2.2, 0.2, COL('#3a2a2a')), cx, 1.1, zp));
+    G.add(at(new THREE.Mesh(new THREE.CircleGeometry(0.7, 14, 0, Math.PI), COL('#3a2a2a')), cx, 2.2, zp + 0.1));
     for (const sx of [-1, 1]) fente(G, cx + sx * 2.2, 4.0, cz + Math.sqrt(R * R - 4.84) + 0.06, sx * -0.72, 1.0);
     // haut cassé du bas : dents de pierre et faille lumineuse
     for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, h = 0.3 + hash(k, 3, 81) * 0.8; const b = boite(1.3, h, 0.5, PI); b.rotation.y = -a + Math.PI / 2; G.add(at(b, cx + Math.cos(a) * (R - 0.2), 6.0 + h / 2, cz + Math.sin(a) * (R - 0.2))); }
@@ -422,7 +425,7 @@ export function batimentsLabo({ B, TX, tex, hash, mix, S, D, boite, at, M, COL, 
       for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; A.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), FAILLE), Math.cos(a) * r, Math.sin(a) * r, 0)); }
       A.rotation.set(rx, ry, 0); A.userData.tourne = { vitesse: v }; G.add(at(A, cx, yc, cz + 0.4));
     }
-    return G;
+    return T0;
   };
 
   // 4. le beffroi aux automates (8 × 7) : tour carrée, contreforts, quatre cadrans, balcon des automates, cloches, flèche d'ardoise
