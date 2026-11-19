@@ -112,15 +112,6 @@ const TUILES = {
   sol_carillon(x, r) { planchesCarillon(x, r); },
   sol_carillon_bas(x, r) { sol_bas(x, r); },
   // une rambarde : barrière de bois clair cerclée de sombre, poteaux, ombre portée, et des chevrons gravés dans le sens du saut
-  // la sortie d'une salle du mur (Tour de l'Horloge) : un seuil de laiton autour d'un passage sombre, marches qui descendent
-  sortie_salle(x, r) {
-    x.fillStyle = '#5a3a14'; x.fillRect(0, 0, 32, 32);
-    x.fillStyle = '#d8a848'; x.fillRect(1, 1, 30, 30);
-    x.fillStyle = '#7a5420'; x.fillRect(3, 3, 26, 26);
-    x.fillStyle = '#100806'; x.fillRect(5, 5, 22, 22);
-    for (let k = 0; k < 4; k++) { x.fillStyle = `rgba(200,150,80,${0.35 - k * 0.07})`; x.fillRect(6 + k * 2, 7 + k * 5, 20 - k * 4, 2); }
-    x.fillStyle = '#fff0b0'; x.fillRect(1, 1, 30, 1); x.fillRect(1, 1, 1, 30);
-  },
   rambarde_s(x, r) { rambarde(x, r, 's'); },
   rambarde_e(x, r) { rambarde(x, r, 'e'); },
   rambarde_w(x, r) { rambarde(x, r, 'w'); },

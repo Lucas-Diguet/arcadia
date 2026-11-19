@@ -1,7 +1,7 @@
 # Journal des versions — Arcadia
 
 ## 6.40 — 19 novembre 2026
-- **TestOdyssée** — Tour de l'Horloge : dans les salles du mur, la sortie vers la plateforme se voit enfin. C'est un passage sombre bordé de laiton, juste à côté de l'arrivée.
+- **TestOdyssée** — Tour de l'Horloge : dans les salles du mur, la sortie vers la plateforme est maintenant une vraie porte dans le mur, comme celle du vestibule. On y entre en marchant dedans.
 
 ## 6.39 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge :

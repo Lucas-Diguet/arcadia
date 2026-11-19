@@ -88,6 +88,8 @@ export class Horloge {
     const arret = () => { p.dir = d; p.walking = false; return true; };
     // la bouche du tube, au bout de la salle est : on s'y glisse en marchant dedans
     if (m.tube && tx === m.tube.x && ty === m.tube.y) { arret(); this.entrerTube(...m.tube.vers); return true; }
+    // la porte d'une salle du mur, vers sa plateforme : on y entre en marchant dedans
+    if (m.porte && tx === m.porte[0] && ty === m.porte[1]) { arret(); g.warp(m.warpAt(tx, ty)); return true; }
     if (m.id !== VESTIBULE) return false;
     if (this.tube) {
       if (dy !== 0) return arret();   // on ne descend pas du tube au milieu

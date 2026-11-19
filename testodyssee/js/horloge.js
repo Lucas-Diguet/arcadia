@@ -210,7 +210,10 @@ export function labyrinthe(s, graine) {
   const r = alea(graine), N = SALLE_N, G = Array.from({ length: N }, (_, y) => Array.from({ length: N }, (_, x) => (dansSalle(s, x, y) ? '#' : ' ')));
   const noeud = (x, y) => x % 2 === 1 && y % 2 === 1 && dansSalle(s, x, y, 0.6);
   for (let y = 1; y < N; y += 2) for (let x = 1; x < N; x += 2) if (noeud(x, y)) G[y][x] = '.';
-  const entree = noeudPres(G.map((l) => l.join('')), pointSalle(s.entreeR ?? SR0 + 0.6, s.entree));
+  // l'entrée : le nœud près de la porte, avec un mur au-dessus (la porte y est peinte, comme dans le vestibule)
+  const P0 = G.map((l) => l.join('')), [ex, ey] = pointSalle(s.entreeR ?? SR0 + 0.6, s.entree);
+  const entree = s.pf ? [...Array(SALLE_N).keys()].flatMap((y) => [...Array(SALLE_N).keys()].map((x) => [x, y])).filter(([x, y]) => P0[y][x] === '.' && x % 2 === 1 && y % 2 === 1 && '# '.includes(P0[y - 1][x]))
+    .sort((a, b) => Math.hypot(a[0] + 0.5 - ex, a[1] + 0.5 - ey) - Math.hypot(b[0] + 0.5 - ex, b[1] + 0.5 - ey))[0] : noeudPres(P0, [ex, ey]);
   // un labyrinthe parfait (en profondeur) depuis l'entrée, puis quelques murs ouverts en plus (des boucles)
   const vu = new Set([cle(...entree)]), pile = [entree], voisins = (x, y) => DIR4.map(([a, b]) => [x + 2 * a, y + 2 * b]).filter(([a, b]) => noeud(a, b));
   while (pile.length) {
@@ -233,7 +236,7 @@ export function labyrinthe(s, graine) {
   }
   const P = G.map((l) => l.join(''));
   // le paillasson de l'entrée : la case voisine de l'entrée la plus proche du centre de la tour
-  const tapis = DIR4.map(([a, b]) => [entree[0] + a, entree[1] + b]).sort((u, v) => Math.hypot(u[0] - SC, u[1] - SC) - Math.hypot(v[0] - SC, v[1] - SC))[0];
+  const tapis = [entree[0], entree[1] - 1];   // la porte, dans le mur au-dessus de l'entrée
   return { plan: P, entree, tapis: s.pf ? tapis : null, objet: base.objet, grille: base.grille, tube: base.tube };
 }
 /** un labyrinthe convient : objet et grille atteints depuis l'entrée, jamais coincé (on revient toujours à l'entrée ou à
@@ -285,8 +288,9 @@ export function construireHorloge(world) {
     // l'entrée : un paillasson qui ramène à la plateforme
     if (s.pf) {
       const [px, py] = caseSur(s.pf, exterieur(pf(s.pf)), 0);
-      r.set(...L.tapis, T.MAT); r.warp(...L.tapis, { map: HORLOGE, x: px, y: py, dir: 'down', step: true });
-      r.solArene.set(cle(...L.tapis), 'sortie_salle');   // bien visible (rendu.js)
+      // la porte de la plateforme, peinte sur le mur au-dessus de l'entrée ; on y entre en marchant dedans (horloge-jeu.js)
+      r.set(...L.tapis, T.BLOCK); (r.affiches ||= []).push({ x: L.tapis[0], y: L.tapis[1], genre: 'porte' });
+      r.warp(...L.tapis, { map: HORLOGE, x: px, y: py, dir: 'down' }); r.porte = L.tapis;
       r.exitX = L.tapis[0]; r.exitY = L.tapis[1];
     }
     // la bouche du tube de cuivre (salle est) : il traverse le vestibule et mène à l'autre moitié de la salle
