@@ -110,12 +110,17 @@ const TUILES = {
   // chambres d'enfants : parquet plus clair, papier peint (rose à fleurs, bleu à étoiles) au-dessus d'un lambris blanc
   // Tour de l'Horloge, salles du mur (façon Tour Carillon) : passerelles de planches, planchers bas posés de biais, rambardes
   sol_carillon(x, r) { planchesCarillon(x, r); },
-  sol_carillon_bas(x, r) {
-    x.fillStyle = '#3e2216'; x.fillRect(0, 0, 32, 32);
-    for (let k = -32; k < 32; k += 8) { x.fillStyle = r() < 0.5 ? '#5a3220' : '#52301e'; x.beginPath(); x.moveTo(k, 32); x.lineTo(k + 32, 0); x.lineTo(k + 37, 0); x.lineTo(k + 5, 32); x.fill(); }
-    x.fillStyle = 'rgba(0,0,0,0.25)'; for (let k = -32; k < 32; k += 8) { x.beginPath(); x.moveTo(k + 5, 32); x.lineTo(k + 37, 0); x.lineTo(k + 38, 0); x.lineTo(k + 6, 32); x.fill(); }
-  },
+  sol_carillon_bas(x, r) { sol_bas(x, r); },
   // une rambarde : barrière de bois clair cerclée de sombre, poteaux, ombre portée, et des chevrons gravés dans le sens du saut
+  // la bouche du tube de cuivre (salle est de la Tour de l'Horloge) : un anneau de cuivre autour d'un trou sombre
+  bouche_tube(x, r) {
+    sol_bas(x, r);
+    x.fillStyle = '#3a1c0a'; x.beginPath(); x.arc(16, 16, 14, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#c8783a'; x.beginPath(); x.arc(16, 16, 12.5, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#f0b070'; x.beginPath(); x.arc(15, 15, 11, Math.PI, Math.PI * 1.5); x.lineTo(15, 15); x.fill();
+    x.fillStyle = '#0e0806'; x.beginPath(); x.arc(16, 16, 8.5, 0, Math.PI * 2); x.fill();
+    x.fillStyle = 'rgba(160,220,255,0.25)'; x.beginPath(); x.arc(14, 14, 3, 0, Math.PI * 2); x.fill();
+  },
   rambarde_s(x, r) { rambarde(x, r, 's'); },
   rambarde_e(x, r) { rambarde(x, r, 'e'); },
   rambarde_w(x, r) { rambarde(x, r, 'w'); },
@@ -151,6 +156,12 @@ function murEnfant(x, fond, fonce, baguette, motif) {
   x.fillStyle = '#e8e2d6'; x.fillRect(0, 20, 32, 12);
   for (const px of [1, 17]) { x.fillStyle = '#c8c0b0'; x.fillRect(px, 22, 14, 8); x.fillStyle = '#ece6da'; x.fillRect(px + 1, 23, 12, 6); }
   x.fillStyle = '#9a9080'; x.fillRect(0, 31, 32, 1);
+}
+/** plancher du dessous (Tour de l'Horloge), lames posées de biais */
+function sol_bas(x, r) {
+  x.fillStyle = '#3e2216'; x.fillRect(0, 0, 32, 32);
+  for (let k = -32; k < 32; k += 8) { x.fillStyle = r() < 0.5 ? '#5a3220' : '#52301e'; x.beginPath(); x.moveTo(k, 32); x.lineTo(k + 32, 0); x.lineTo(k + 37, 0); x.lineTo(k + 5, 32); x.fill(); }
+  x.fillStyle = 'rgba(0,0,0,0.25)'; for (let k = -32; k < 32; k += 8) { x.beginPath(); x.moveTo(k + 5, 32); x.lineTo(k + 37, 0); x.lineTo(k + 38, 0); x.lineTo(k + 6, 32); x.fill(); }
 }
 /** planches de passerelle (Tour de l'Horloge) : lames horizontales orangées, joints sombres */
 function planchesCarillon(x, r) {

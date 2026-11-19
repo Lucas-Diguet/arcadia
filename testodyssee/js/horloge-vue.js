@@ -4,7 +4,7 @@
 // voir le quai, et ses portes ; les plateformes, les leviers, et les deux blocs de pierre qui arrêtent les aiguilles.
 // Le décor (tout sauf les aiguilles et la barre) est dans un groupe qui glisse quand l'horloge monte ou descend.
 import * as THREE from 'three';
-import { C, R_PIVOT, R_MUR, R_MUR2, PLATEFORMES, LEVIERS, SALLES, BLOCS, R_BLOC, casesPlateforme, placeLevier, placePorte, placeSortie, sens } from './horloge.js';
+import { C, R_PIVOT, R_MUR, R_MUR2, PLATEFORMES, LEVIERS, SALLES_PF, BLOCS, R_BLOC, casesPlateforme, placeLevier, placePorte, placeSortie, sens } from './horloge.js';
 import { creerAiguille } from './horloge-aiguilles.js';
 
 /** profondeur du cadran */
@@ -74,7 +74,7 @@ export function creerHorloge() {
     r2.position.set(CX + Math.sin(a) * (R_MUR + 0.4), haut - 0.54, CZ - Math.cos(a) * (R_MUR + 0.4)); r2.rotation.y = Math.PI / 2 - a; decor.add(r2);
   }
   // les portes des salles, dans la face intérieure du mur : encadrement de laiton, battant de bois sombre
-  for (const S of SALLES) {
+  for (const S of SALLES_PF()) {
     const k = PLATEFORMES.find((p) => p.id === S.pf).k, a = (k * Math.PI) / 6, r = R_MUR - 0.08;
     const P = new THREE.Group(); P.position.set(CX + Math.sin(a) * r, 0, CZ - Math.cos(a) * r); P.rotation.y = -a;
     P.add(new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.5, 0.2).translate(0, 1.25, 0), mat('#a08040')));
@@ -89,7 +89,7 @@ export function creerHorloge() {
   }
   for (const L of LEVIERS) { const [x, z] = placeLevier(L); decor.add(levier(x, z, L.quoi === 'grande' ? '#c84a3a' : '#3a7ac8')); }
   // la sortie et les portes : un seuil de laiton
-  for (const [x, z] of [placeSortie(), ...SALLES.map(placePorte)]) decor.add(pave(x + 0.05, x + 0.95, -0.6, 0.04, z + 0.05, z + 0.95, '#7a6a40', '#4a3e22'));
+  for (const [x, z] of [placeSortie(), ...SALLES_PF().map(placePorte)]) decor.add(pave(x + 0.05, x + 0.95, -0.6, 0.04, z + 0.05, z + 0.95, '#7a6a40', '#4a3e22'));
   // les deux blocs de pierre qui arrêtent les aiguilles : de gros piliers dressés depuis le fond, plus hauts que les aiguilles
   const blocs = BLOCS.map((h) => {
     const B = new THREE.Group(), [dx, dy] = sens(h), entier = new THREE.Group(); B.add(entier);

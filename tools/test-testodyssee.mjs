@@ -1190,7 +1190,7 @@ for (const l of Object.values(lieux).flat()) {
   // seul : quelle que soit l'heure des aiguilles (blocs ou pas), on ne quitte pas le quai à pied
   let seul = true;
   for (const blocs of [true, false]) for (let g = 0; g < 12; g++) for (let f = 0; f < 12; f++) { const vu = atteint({ ...Hm.depart(), blocs, grande: g, fine: f }, ax, ay); if (Hm.PLATEFORMES.some((p) => p.id !== 'sud' && surPf(vu, p.id))) seul = false; }
-  const a0 = atteint(Hm.depart(), ax, ay), objets = [...Hm.LEVIERS.map(Hm.placeLevier), ...Hm.SALLES.map(Hm.placePorte), Hm.placeSortie()].map(String);
+  const a0 = atteint(Hm.depart(), ax, ay), objets = [...Hm.LEVIERS.map(Hm.placeLevier), ...Hm.SALLES_PF().map(Hm.placePorte), Hm.placeSortie()].map(String);
   ok(seul && Hm.LEVIERS.filter((L) => L.pf === 'sud').every((L) => pres(a0, Hm.placeLevier(L))) && pres(a0, Hm.placeSortie()) && new Set(objets).size === objets.length,
     'horloge : seul, on ne quitte jamais le quai ; leviers et sortie à portée');
   // les blocs : tant qu'ils sont là, aucune grande aiguille ne va sur 11 h, midi ou 1 h ; ensuite, si
@@ -1207,8 +1207,19 @@ for (const l of Object.values(lieux).flat()) {
   // les trois salles : secteurs de couronne, labyrinthes à rambardes jamais coinçants, clé et grille au fond
   const L = Hm.labyrinthes();
   ok(Hm.SALLES.every((s) => Hm.labyrintheValide(s, L[s.id])?.ok), 'horloge : trois labyrinthes à rambardes, jamais coincé, des sauts qui éloignent du but');
-  ok(Hm.SALLES.every((s) => { const r = world.maps[Hm.salleId(s)], [dx, dy] = Hm.placePorte(s), w = m.warpAt(dx, dy); return r && w?.map === Hm.salleId(s) && walkable(r.get(w.x, w.y)) && r.warpAt(...L[s.id].tapis)?.map === Hm.HORLOGE; }), 'horloge : chaque plateforme mène à sa salle et chaque salle ramène à sa plateforme');
-  ok(L.est.objet && L.nord.objet && L.ouest.grille && L.nord.grille && Hm.SALLES.find((s) => s.id === 'est').objet.quoi === 'cle1' && Hm.SALLES.find((s) => s.id === 'nord').objet.quoi === 'cle', 'horloge : la clé de la grille dans la salle est, la grille entre ouest et nord, la clé du mécanisme dans la salle nord');
+  ok(Hm.SALLES_PF().every((s) => { const r = world.maps[Hm.salleId(s)], [dx, dy] = Hm.placePorte(s), w = m.warpAt(dx, dy); return r && w?.map === Hm.salleId(s) && walkable(r.get(w.x, w.y)) && r.warpAt(...L[s.id].tapis)?.map === Hm.HORLOGE; }), 'horloge : chaque plateforme mène à sa salle et chaque salle ramène à sa plateforme');
+  // le vestibule : la porte de la tour y mène, son couloir passe sous le tube jusqu'au quai ; le tube relie les deux moitiés de la salle est
+  {
+    const V = world.maps[Hm.VESTIBULE], d = world.maps[Hm.DEHORS], [sx, sy] = Hm.placeSortie();
+    const porte = [...d.warps.values()].find((w) => w.map === Hm.VESTIBULE);
+    const vu = new Set([porte.x + ',' + porte.y]), f = [[porte.x, porte.y]];
+    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const a = x + dx, b = y + dy, k = a + ',' + b; if (vu.has(k) || !walkable(V.get(a, b)) || (Hm.dansLeTube(a, b) && !Hm.sousLeTube(a))) continue; vu.add(k); if (!V.warpAt(a, b)) f.push([a, b]); } }
+    const bouts = [V.warpAt(1, Hm.TUBE_Y), V.warpAt(Hm.VW - 2, Hm.TUBE_Y)];
+    ok(porte && vu.has(Hm.V_HAUT.join(',')) && V.warpAt(...Hm.V_HAUT)?.map === Hm.HORLOGE && m.warpAt(sx, sy)?.map === Hm.VESTIBULE && !vu.has('1,' + Hm.TUBE_Y) && !vu.has((Hm.VW - 2) + ',' + Hm.TUBE_Y)
+      && bouts[0]?.map === Hm.salleId({ id: 'est2' }) && bouts[1]?.map === Hm.salleId({ id: 'est' }) && L.est.tube && L.est2.tube,
+      'horloge : le vestibule mène au quai sous le tube, et le tube relie les deux moitiés de la salle est');
+  }
+  ok(L.est2.objet && L.nord.objet && L.ouest.grille && L.nord.grille && Hm.SALLES.find((s) => s.id === 'est2').objet.quoi === 'cle1' && Hm.SALLES.find((s) => s.id === 'nord').objet.quoi === 'cle', 'horloge : la clé de la grille dans la salle est, la grille entre ouest et nord, la clé du mécanisme dans la salle nord');
   // le mécanisme : sur le bord de la barre, atteint depuis le bout d'une aiguille
   E = { ...Hm.depart(), grande: 6 };
   const bout = cases('grande', 6).sort((u, v) => Math.hypot(u[0] - Hm.C[0], u[1] - Hm.C[1]) - Math.hypot(v[0] - Hm.C[0], v[1] - Hm.C[1]))[0];

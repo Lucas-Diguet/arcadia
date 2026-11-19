@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.36 — 19 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge : on n'arrive plus directement dans la salle des aiguilles. On traverse d'abord un vestibule creusé dans le mur, sous un grand tube de cuivre vitré. Ce tube coupe la salle est en deux : on s'y glisse depuis la première moitié et on le parcourt au-dessus du vestibule pour rejoindre l'autre moitié, où se trouve la clé de la grille.
+
 ## 6.35 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge, l'étage 0 prend forme :
   - les murs de la tour sont épais, et les salles sont creusées dedans, en arc de cercle ;

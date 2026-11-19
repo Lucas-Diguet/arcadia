@@ -235,8 +235,11 @@ se tient sur l'aiguille est emporté avec elle (`emporter`), mais ne peut pas ti
 pas le quai (vérifié pour toutes les heures, avec et sans les blocs).
 Les salles sont dans l'épaisseur du mur (de `R_MUR` à `R_MUR2`), en secteurs de couronne, chacune sur sa carte dans le
 même repère que la tour : labyrinthes à rambardes façon Tour Carillon (`labyrinthe` : treillis dans le secteur, rambardes
-posées une à une tant qu'on n'est jamais coincé ; graines `GRAINES_SALLES`, vérifiées par `labyrintheValide`). La salle
-est fait le tour par le bas jusqu'à l'ouest : la clé de la grille au fond (`cle1`). La salle ouest monte jusqu'au nord :
+posées une à une tant qu'on n'est jamais coincé ; graines `GRAINES_SALLES`, vérifiées par `labyrintheValide`).
+On entre dans la tour par le vestibule (`VESTIBULE`, au sud dans l'épaisseur du mur) : on le traverse par le couloir du
+milieu, sous le tube de cuivre qui le barre de droite à gauche (`TUBE_Y`). La salle est est en deux moitiés (`est` et
+`est2`) reliées par ce tube : on s'y glisse par sa bouche (`entrerTube`), on y est dessiné en hauteur, on n'en descend
+pas au milieu, et l'on ressort dans l'autre moitié. Au fond de la seconde, la clé de la grille (`cle1`). La salle ouest monte jusqu'au nord :
 une grille fermée à clé y mène à la salle nord, où attend la clé du mécanisme (`cle`). Le mécanisme se prend depuis le
 bout d'une aiguille, contre la barre (`casesMecanisme`) : la clé brise les deux blocs, puis il fait monter ou descendre
 l'horloge (les aiguilles tournent de plus en plus vite, puis le décor glisse ; étages 1 et -1 à venir).

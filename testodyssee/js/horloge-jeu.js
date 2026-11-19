@@ -4,7 +4,7 @@
 // À plusieurs, l'hôte du salon tient l'état de l'horloge : une action demande le mouvement à l'hôte (message djHor), qui
 // la valide et l'annonce à tous (djHorE) ; chacun anime l'horloge et emporte son propre joueur s'il est sur l'aiguille.
 import * as THREE from 'three';
-import { HORLOGE, DEHORS, C, LEVIERS, NOMS, appliquer, caseHorloge, casesMecanisme, placeLevier, tourner, emporter, heure } from './horloge.js';
+import { HORLOGE, DEHORS, VESTIBULE, VW, TUBE_Y, C, LEVIERS, NOMS, appliquer, caseHorloge, casesMecanisme, placeLevier, tourner, emporter, heure, dansLeTube, sousLeTube } from './horloge.js';
 import { creerHorloge, poserHorloge } from './horloge-vue.js';
 
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -12,6 +12,8 @@ const egal = (a, b) => a[0] === b[0] && a[1] === b[1];
 const lisse = (u) => (u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u));
 /** la montée ou la descente de l'horloge : les aiguilles tournent de plus en plus vite (3 tours), puis ralentissent */
 const TOURS = 36, PIC = 0.7;
+/** hauteur du plancher du tube de cuivre, au-dessus du vestibule */
+const TUBE_H = 1.6;
 const tours = (t) => (t < PIC ? (t * t) / (2 * PIC) : 0.5 * PIC + 0.5 * (1 - PIC) - ((1 - t) ** 2) / (2 * (1 - PIC))) / 0.5;
 /** et le décor qui glisse (on descend : il monte) : rien au début, puis il part, attend, et revient */
 const glisse = (t) => lisse((t - 0.3) / 0.2) - lisse((t - 0.78) / 0.17);
@@ -22,7 +24,13 @@ export class Horloge {
     const v = game.view;
     // pendant que l'aiguille tourne, ceux qui se tiennent dessus (soi et les autres) tournent avec elle
     const place = v.place.bind(v);
-    v.place = (a, x, y, ...r) => { const d = this.decalage(x, y); place(a, d ? x + d[0] : x, d ? y + d[1] : y, ...r); };
+    v.place = (a, x, y, hop = 0, ...r) => {
+      const d = this.decalage(x, y);
+      // dans le vestibule, qui est dans le tube de cuivre y est dessiné en hauteur (soi : on le sait ; les autres : s'ils
+      // sont sur la rangée du tube hors du couloir qui passe dessous)
+      if (this.game.mapObj?.id === VESTIBULE && Math.round(y) === TUBE_Y && (a === v.actors.get('player') ? this.tube : !sousLeTube(Math.round(x)))) hop += TUBE_H;
+      place(a, d ? x + d[0] : x, d ? y + d[1] : y, hop, ...r);
+    };
     const update = v.update.bind(v);
     v.update = (dt, x, y, ...r) => {
       update(dt, x, y, ...r);
@@ -67,11 +75,44 @@ export class Horloge {
   }
   ici() { const m = this.game.mapObj; return m?.id === HORLOGE ? m : null; }
   get E() { return this.game.world.maps[HORLOGE]?.horloge; }
-  /** avant un pas : on ne marche pas pendant que l'horloge bouge */
-  avantPas() { return !!(this.ici() && this.anim); }
+  /** avant un pas : on ne marche pas pendant que l'horloge bouge ; dans le vestibule, on ne descend pas du tube et l'on
+   *  n'y monte pas (on passe dessous par le couloir du milieu) */
+  avantPas(d) {
+    if (this.ici() && this.anim) return true;
+    const g = this.game, p = g.player;
+    if (g.mapObj?.id !== VESTIBULE || p.move || !d) return false;
+    const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[d], tx = p.x + dx, ty = p.y + dy;
+    if (this.tube ? dy !== 0 : dansLeTube(tx, ty) && !sousLeTube(tx)) { p.dir = d; p.walking = false; return true; }
+    return false;
+  }
+  /** se glisser dans le tube de cuivre (depuis la salle est) : on arrive dans le vestibule, dans le tube */
+  async entrerTube(x, dir) {
+    const g = this.game;
+    if (!await g.ui.yesNo('Un gros tube de cuivre s\'enfonce dans le mur. S\'y glisser ?')) return true;
+    this.tube = true;
+    await g.warp({ map: VESTIBULE, x, y: TUBE_Y, dir });
+    this.tube = true;
+    return true;
+  }
+  /** le tube du vestibule, en volume : verre épais cerclé de cuivre, d'un mur à l'autre */
+  poserTube() {
+    const v = this.game.view;
+    if (this.tube3d?.root === v.root) return;
+    const T = new THREE.Group(), y = TUBE_H + 0.6, z = TUBE_Y + 0.55, L = VW - 1;
+    const verre = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.72, L, 20, 1, true).rotateZ(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#a8dcff', transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }));
+    verre.position.set(L / 2 + 0.5, y, z); T.add(verre);
+    const fond = new THREE.Mesh(new THREE.BoxGeometry(L, 0.08, 1.0), new THREE.MeshBasicMaterial({ color: '#7a4a22' })); fond.position.set(L / 2 + 0.5, TUBE_H - 0.04, z); T.add(fond);
+    const cuivre = new THREE.MeshBasicMaterial({ color: '#c8783a' });
+    for (let x = 1; x <= L; x += 2) { const o = new THREE.Mesh(new THREE.TorusGeometry(0.76, 0.07, 6, 20), cuivre); o.rotation.y = Math.PI / 2; o.position.set(x, y, z); T.add(o); }
+    for (const x of [0.6, L + 0.4]) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.3, 20).rotateZ(Math.PI / 2), cuivre); b.position.set(x, y, z); T.add(b); }
+    for (const x of [3, 8, 15, 20]) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.2, TUBE_H, 0.2), new THREE.MeshBasicMaterial({ color: '#6a4426' })); s.position.set(x, TUBE_H / 2, z); T.add(s); }
+    v.root.add(T); this.tube3d = { root: v.root, T };
+  }
   /** à chaque image : l'horloge dessinée, les aiguilles qui tournent vers leur place */
   tick(dt) {
     const g = this.game, v = g.view, m = this.ici();
+    if (g.mapObj?.id === VESTIBULE) { if (v.root) this.poserTube(); }
+    else this.tube = false;
     if (!m || !v.root) return;
     if (!this.D) this.D = { ...this.E };
     if (this.vue?.root !== v.root) {

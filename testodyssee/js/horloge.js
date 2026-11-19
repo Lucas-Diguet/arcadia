@@ -101,7 +101,7 @@ export function caseHorloge(E, x, y) {
 export const obstacles = () => new Set(LEVIERS.map((L) => cle(...placeLevier(L))));
 /** pose les cases praticables de la carte selon l'état (le vide est infranchissable) */
 export function appliquer(m, E) {
-  const obs = obstacles(), portes = new Set(SALLES.map((s) => cle(...placePorte(s))));
+  const obs = obstacles(), portes = new Set([...SALLES_PF().map((s) => cle(...placePorte(s))), cle(...placeSortie())]);
   for (let y = 2; y < H; y++) for (let x = 1; x < W - 1; x++) m.set(x, y, portes.has(cle(x, y)) || (caseHorloge(E, x, y) && !obs.has(cle(x, y))) ? T.FLOOR : T.BLOCK);
 }
 /** l'état après un coup de levier (quoi : l'aiguille, s : +1 dans le sens des aiguilles, -1 à l'envers) ; null si un bloc l'arrête */
@@ -130,12 +130,20 @@ export const SALLE_N = 2 * R_MUR2 + 3, SC = R_MUR2 + 1, SR0 = R_MUR + 1, SR1 = R
 /** de : heure où la salle commence, a : où elle finit (dans le sens des aiguilles) ; entree : porte de la plateforme ;
  *  objet : la clé (cle1 : celle de la grille, cle : celle du mécanisme) ; grille : la porte fermée vers une autre salle */
 export const SALLES = [
-  { id: 'est', nom: 'La salle est', pf: 'est', de: 2, a: 9.6, entree: 2.15, objet: { quoi: 'cle1', k: 9.35 } },
+  { id: 'est', nom: 'La salle est', pf: 'est', de: 2, a: 5.5, entree: 2.15, tube: { k: 5.25, vers: 'est2' } },
+  { id: 'est2', nom: 'La salle est (de l\'autre côté du tube)', de: 6.5, a: 9.6, entree: 6.75, entreeR: (R_MUR + R_MUR2) / 2, tube: { k: 6.75, vers: 'est' }, objet: { quoi: 'cle1', k: 9.35 } },
   { id: 'ouest', nom: 'La salle ouest', pf: 'ouest', de: 10, a: 11.97, entree: 10.15, grille: { vers: 'nord', k: 11.8 } },
   { id: 'nord', nom: 'La salle nord', pf: 'nord', de: 11.97, a: 1.85, entree: 0, objet: { quoi: 'cle', k: 1.6 }, grille: { vers: 'ouest', k: 12.15 } },
 ];
+/** le vestibule de l'entrée (au sud, dans l'épaisseur du mur) : on le traverse de bas en haut par le couloir du milieu ;
+ *  le tube de cuivre le traverse de droite à gauche, sur la rangée TUBE_Y, et relie les deux moitiés de la salle est */
+export const VESTIBULE = 'labo:horloge:entree', VW = 23, VH = 12, TUBE_Y = 5, COULOIR = [10, 12], V_HAUT = [11, 2];
+/** une case du tube (on n'y monte que par ses deux bouches, et on n'en descend pas) */
+export const dansLeTube = (x, y) => y === TUBE_Y && x >= 1 && x <= VW - 2;
+export const sousLeTube = (x) => x >= COULOIR[0] && x <= COULOIR[1];
 export const salleId = (s) => `${HORLOGE}:salle:${s.id}`;
 export const placePorte = (s) => caseSur(s.pf, pf(s.pf).r1 + 0.7, 0);
+export const SALLES_PF = () => SALLES.filter((s) => s.pf);
 /** le point (rayon r, heure k) dans une carte de salle */
 const pointSalle = (r, k) => { const [dx, dy] = sens(k); return [SC + 0.5 + dx * r, SC + 0.5 + dy * r]; };
 /** une case d'une carte de salle est-elle dans la salle s (avec une marge en cases) ? */
@@ -182,16 +190,16 @@ const placer = (G, k) => { const P = G.map((l) => l.join('')), n = noeudPres(P, 
 /** on n'y est jamais coincé : de partout où l'on va depuis l'entrée, on revient à l'entrée ou à la grille ; l'objet et la grille sont atteints */
 function sur(s, L) {
   const P = L.plan, D = distancesPlan(P, ...L.entree);
-  const sorties = [L.entree, ...(L.grille ? [L.grille.noeud] : [])].map((n) => distancesPlan(P, n[0], n[1], true));
+  const sorties = [L.entree, ...[L.grille, L.tube].filter(Boolean).map((b) => b.noeud)].map((n) => distancesPlan(P, n[0], n[1], true));
   if ([...D.keys()].some((k) => !sorties.some((R) => R.has(k)))) return false;
-  return [L.objet, L.grille].filter(Boolean).every((b) => b.case && D.has(cle(...b.noeud)));
+  return [L.objet, L.grille, L.tube].filter(Boolean).every((b) => b.case && D.has(cle(...b.noeud)));
 }
 /** le labyrinthe d'une salle pour une graine : plan, entrée (nœud et paillasson), objet et grille (nœud devant, case du décor) */
 export function labyrinthe(s, graine) {
   const r = alea(graine), N = SALLE_N, G = Array.from({ length: N }, (_, y) => Array.from({ length: N }, (_, x) => (dansSalle(s, x, y) ? '#' : ' ')));
   const noeud = (x, y) => x % 2 === 1 && y % 2 === 1 && dansSalle(s, x, y, 0.6);
   for (let y = 1; y < N; y += 2) for (let x = 1; x < N; x += 2) if (noeud(x, y)) G[y][x] = '.';
-  const entree = noeudPres(G.map((l) => l.join('')), pointSalle(SR0 + 0.6, s.entree));
+  const entree = noeudPres(G.map((l) => l.join('')), pointSalle(s.entreeR ?? SR0 + 0.6, s.entree));
   // un labyrinthe parfait (en profondeur) depuis l'entrée, puis quelques murs ouverts en plus (des boucles)
   const vu = new Set([cle(...entree)]), pile = [entree], voisins = (x, y) => DIR4.map(([a, b]) => [x + 2 * a, y + 2 * b]).filter(([a, b]) => noeud(a, b));
   while (pile.length) {
@@ -205,7 +213,7 @@ export function labyrinthe(s, graine) {
   const cand = [];
   for (let y = 1; y < N; y += 2) for (let x = 1; x < N; x += 2) if (noeud(x, y)) for (const [a, b] of [[2, 0], [0, 2]]) if (noeud(x + a, y + b) && G[y + b / 2][x + a / 2] === '.') cand.push([x + a / 2, y + b / 2, b ? 'v' : null]);
   for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [cand[i], cand[j]] = [cand[j], cand[i]]; }
-  const base = { entree, objet: s.objet ? placer(G, s.objet.k) : null, grille: s.grille ? placer(G, s.grille.k) : null };
+  const base = { entree, objet: s.objet ? placer(G, s.objet.k) : null, grille: s.grille ? placer(G, s.grille.k) : null, tube: s.tube ? placer(G, s.tube.k) : null };
   let n = 0;
   for (const [x, y, v] of cand) {
     if (n >= 60) break;
@@ -215,14 +223,14 @@ export function labyrinthe(s, graine) {
   const P = G.map((l) => l.join(''));
   // le paillasson de l'entrée : la case voisine de l'entrée la plus proche du centre de la tour
   const tapis = DIR4.map(([a, b]) => [entree[0] + a, entree[1] + b]).sort((u, v) => Math.hypot(u[0] - SC, u[1] - SC) - Math.hypot(v[0] - SC, v[1] - SC))[0];
-  return { plan: P, entree, tapis, objet: base.objet, grille: base.grille };
+  return { plan: P, entree, tapis: s.pf ? tapis : null, objet: base.objet, grille: base.grille, tube: base.tube };
 }
 /** un labyrinthe convient : objet et grille atteints depuis l'entrée, jamais coincé (on revient toujours à l'entrée ou à
  *  la grille), assez de faux pas (des rambardes qui éloignent du but) */
 export function labyrintheValide(s, L) {
   if (!sur(s, L)) return null;
   const P = L.plan, [ex, ey] = L.entree, D = distancesPlan(P, ex, ey);
-  const but = (L.objet || L.grille).noeud, V = distancesPlan(P, but[0], but[1], true);
+  const but = (L.objet || L.grille || L.tube).noeud, V = distancesPlan(P, but[0], but[1], true);
   let pieges = 0;
   P.forEach((l, y) => [...l].forEach((c, x) => {
     if (!'v<>'.includes(c)) return;
@@ -233,7 +241,7 @@ export function labyrintheValide(s, L) {
   return { pieges, loin, taille, ok: pieges >= Math.round(1 + taille / 2) && loin >= 8 * taille };
 }
 /** les graines retenues (cherchées hors du jeu ; tools/test-testodyssee.mjs vérifie qu'elles conviennent toujours) */
-export const GRAINES_SALLES = { est: 375, ouest: 400, nord: 288 };
+export const GRAINES_SALLES = { est: 459, est2: 291, ouest: 400, nord: 288 };
 /** pose le labyrinthe d'une salle dans sa carte */
 function poserLabyrinthe(r, L) {
   const tuile = { '.': T.FLOOR, v: T.LEDGE, '>': T.LEDGE_E, '<': T.LEDGE_W }, sol = new Map();
@@ -264,17 +272,24 @@ export function construireHorloge(world) {
     r.zone(0, 0, SALLE_N - 1, SALLE_N - 1, { name: s.nom, music: 'dmhh' });
     poserLabyrinthe(r, L);
     // l'entrée : un paillasson qui ramène à la plateforme
-    const [px, py] = caseSur(s.pf, exterieur(pf(s.pf)), 0);
-    r.set(...L.tapis, T.MAT); r.warp(...L.tapis, { map: HORLOGE, x: px, y: py, dir: 'down', step: true });
-    r.exitX = L.tapis[0]; r.exitY = L.tapis[1];
+    if (s.pf) {
+      const [px, py] = caseSur(s.pf, exterieur(pf(s.pf)), 0);
+      r.set(...L.tapis, T.MAT); r.warp(...L.tapis, { map: HORLOGE, x: px, y: py, dir: 'down', step: true });
+      r.exitX = L.tapis[0]; r.exitY = L.tapis[1];
+    }
+    // la bouche du tube de cuivre (salle est) : il traverse le vestibule et mène à l'autre moitié de la salle
+    if (L.tube) {
+      const [tx, ty] = L.tube.case, versDroite = s.id === 'est2';
+      r.set(tx, ty, T.BLOCK); r.solArene.set(cle(tx, ty), 'bouche_tube');
+      r.object(tx, ty, { use: (api) => api.game.horloge?.entrerTube(versDroite ? 2 : VW - 3, versDroite ? 'right' : 'left') });
+    }
     if (L.objet) {
       const [ox, oy] = L.objet.case, quoi = s.objet.quoi;
       r.set(ox, oy, T.BLOCK); r.prop('coffre', ox, oy);
       r.object(ox, oy, { use: (api) => api.game.horloge?.prendre(quoi) });
     }
     world.maps[salleId(s)] = cartes[s.id] = r;
-    const [dx, dy] = placePorte(s);
-    m.warp(dx, dy, { map: salleId(s), x: L.entree[0], y: L.entree[1], dir: 'up', step: true });   // on entre en marchant dans la porte
+    if (s.pf) { const [dx, dy] = placePorte(s); m.warp(dx, dy, { map: salleId(s), x: L.entree[0], y: L.entree[1], dir: 'up', step: true }); }   // on entre en marchant dans la porte
   }
   // la grille entre la salle ouest et la salle nord (la clé trouvée dans la salle est l'ouvre)
   for (const s of SALLES) if (s.grille) {
@@ -291,11 +306,23 @@ export function construireHorloge(world) {
   d.rect(b.doorX - 1, b.doorY + 1, b.doorX + 1, b.doorY + 2, T.PATH);
   for (const [x, y] of [[b.doorX - 3, b.doorY + 2], [b.doorX + 3, b.doorY + 2]]) d.prop('lanterne', x, y);
   d.sign(b.doorX + 2, b.doorY + 4, 'TOUR DE L\'HORLOGE\nLe temps s\'y est brisé.\nAu moins deux explorateurs.');
-  d.warp(b.doorX, b.doorY, { map: HORLOGE, x: ax, y: ay, dir: 'up' });
+  d.warp(b.doorX, b.doorY, { map: VESTIBULE, x: V_HAUT[0], y: VH - 2, dir: 'up' });
   d.zone(0, 0, 40, 33, { name: 'Tour de l\'Horloge', music: 'route' });
   world.maps[DEHORS] = d;
-  // la sortie : derrière le quai
+  // le vestibule : dans l'épaisseur du mur, entre la porte de la tour et le quai ; le tube de cuivre le traverse
+  const v = room(VESTIBULE, VW, VH, { floor: 'cave', music: 'dmhh', wall: 'wall_cendre', name: 'Le vestibule de la tour', exitX: V_HAUT[0] });
+  v.zone(0, 0, VW - 1, VH - 1, { name: 'Le vestibule de la tour', music: 'dmhh' });
+  v.style = 'chateau';
+  v.warp(v.exitX, v.exitY, { map: DEHORS, x: b.doorX, y: b.doorY + 1, dir: 'down' });
+  v.set(...V_HAUT, T.MAT); v.warp(...V_HAUT, { map: HORLOGE, x: ax, y: ay, dir: 'up', step: true });
+  for (const x of [2, 4, VW - 3, VW - 5]) { v.prop('torchere', x, 2); }
+  // les deux bouches du tube : on ressort dans la salle est (à droite) ou dans l'autre moitié (à gauche)
+  const L1 = labs.est.tube.noeud, L2 = labs.est2.tube.noeud;
+  v.warp(1, TUBE_Y, { map: salleId({ id: 'est2' }), x: L2[0], y: L2[1], dir: 'left', step: true });
+  v.warp(VW - 2, TUBE_Y, { map: salleId({ id: 'est' }), x: L1[0], y: L1[1], dir: 'right', step: true });
+  world.maps[VESTIBULE] = v;
+  // la sortie du quai : on retourne au vestibule en marchant dans la porte
   const [sx, sy] = placeSortie();
-  m.object(sx, sy, { use: async (api) => { if (await api.game.ui.yesNo('Sortir de la tour ?')) await api.game.warp({ map: DEHORS, x: b.doorX, y: b.doorY + 1, dir: 'down' }); } });
+  m.warp(sx, sy, { map: VESTIBULE, x: V_HAUT[0], y: V_HAUT[1] + 1, dir: 'down', step: true });
   return { nom: 'Tour de l\'Horloge (prototype)', note: 'niveau 0 : les aiguilles, à deux ou plus', map: DEHORS, x: b.doorX, y: b.doorY + 2, dir: 'up', equipe: 'fin100' };
 }
