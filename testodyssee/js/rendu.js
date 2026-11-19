@@ -112,6 +112,11 @@ const TUILES = {
   sol_carillon(x, r) { planchesCarillon(x, r); },
   sol_carillon_bas(x, r) { sol_bas(x, r); },
   // une rambarde : barrière de bois clair cerclée de sombre, poteaux, ombre portée, et des chevrons gravés dans le sens du saut
+  // le bout du tube de cuivre (Tour de l'Horloge), qui sort du mur d'extrémité d'une salle ; n : il vient du mur du haut
+  tube_n(x, r) { boutTube(x, r, 0); },
+  tube_e(x, r) { boutTube(x, r, Math.PI / 2); },
+  tube_s(x, r) { boutTube(x, r, Math.PI); },
+  tube_o(x, r) { boutTube(x, r, -Math.PI / 2); },
   rambarde_s(x, r) { rambarde(x, r, 's'); },
   rambarde_e(x, r) { rambarde(x, r, 'e'); },
   rambarde_w(x, r) { rambarde(x, r, 'w'); },
@@ -161,6 +166,21 @@ function planchesCarillon(x, r) {
     const y = j * 8, dec = (j * 13) % 32;
     for (let i = -1; i < 2; i++) { const t = r(); x.fillStyle = t < 0.33 ? '#b06036' : t < 0.66 ? '#a85a32' : '#ba683c'; x.fillRect(i * 32 + dec + 1, y + 1, 30, 6); x.fillStyle = 'rgba(255,220,170,0.12)'; x.fillRect(i * 32 + dec + 1, y + 1, 30, 1); x.fillStyle = '#5a2e18'; x.fillRect(i * 32 + dec, y, 1, 8); }
   }
+}
+/** le bout du tube de cuivre, vu de dessus : le tuyau sort du mur (en haut), sa bride, et l'ouverture sombre vers la salle */
+function boutTube(x, r, angle) {
+  sol_bas(x, r);
+  x.save(); x.translate(16, 16); x.rotate(angle); x.translate(-16, -16);
+  x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(5, 0, 24, 30);
+  x.fillStyle = '#7a3e16'; x.fillRect(4, 0, 24, 26);                 // le tuyau
+  x.fillStyle = '#c8783a'; x.fillRect(6, 0, 20, 26);
+  x.fillStyle = '#f0b070'; x.fillRect(9, 0, 4, 26);
+  x.fillStyle = '#5a2c10'; x.fillRect(2, 18, 28, 8);                 // la bride
+  x.fillStyle = '#d88a48'; x.fillRect(3, 19, 26, 5);
+  for (const bx of [5, 15, 25]) { x.fillStyle = '#5a2c10'; x.fillRect(bx, 20, 2, 2); }
+  x.fillStyle = '#0c0604'; x.beginPath(); x.ellipse(16, 27, 10, 4, 0, 0, Math.PI * 2); x.fill();   // l'ouverture
+  x.fillStyle = 'rgba(160,220,255,0.3)'; x.fillRect(10, 26, 5, 1);
+  x.restore();
 }
 /** une rambarde de la Tour de l'Horloge, dessinée vers le bas puis tournée selon son sens (s, e, w) */
 function rambarde(x, r, d) {
