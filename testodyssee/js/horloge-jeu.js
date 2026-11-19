@@ -12,6 +12,8 @@ const egal = (a, b) => a[0] === b[0] && a[1] === b[1];
 const lisse = (u) => (u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u));
 /** la montée ou la descente de l'horloge : les aiguilles tournent de plus en plus vite (3 tours), puis ralentissent */
 const TOURS = 36, PIC = 0.7;
+/** jusqu'où une aiguille tourne (en heures) avant de heurter un bloc de pierre */
+const BUTEE = 0.7;
 /** hauteur du plancher du tube de cuivre, au-dessus du vestibule */
 const TUBE_H = 1.6;
 const tours = (t) => (t < PIC ? (t * t) / (2 * PIC) : 0.5 * PIC + 0.5 * (1 - PIC) - ((1 - t) ** 2) / (2 * (1 - PIC))) / 0.5;
@@ -126,6 +128,11 @@ export class Horloge {
         const u = tours(A.t); for (const k of ['grande', 'fine', 'petite']) this.D[k] = A.de[k] + TOURS * u;
         this.D.envY = -A.s * 7 * glisse(A.t);
         v.shake = Math.max(v.shake || 0, 0.04 * Math.sin(Math.PI * A.t));
+      } else if (A.fx === 'bute') {
+        // élan jusqu'au bloc, choc, petit rebond, puis retour lent à sa place
+        const u = A.t < 0.35 ? (A.t / 0.35) ** 2 : A.t < 0.45 ? 1 - 0.08 * Math.sin(((A.t - 0.35) / 0.1) * Math.PI) : 1 - lisse((A.t - 0.45) / 0.55);
+        for (const k of ['grande', 'fine', 'petite']) this.D[k] = A.de[k] + (A.vers[k] - A.de[k]) * u;
+        if (A.t >= 0.35 && !this.choc) { this.choc = true; this.game.sound.sfx('ledge'); v.shake = Math.max(v.shake || 0, 0.18); }
       } else if (A.fx === 'casse') {
         this.D.casse = A.t; v.shake = Math.max(v.shake || 0, 0.12 * (1 - A.t));
       } else {
@@ -154,15 +161,19 @@ export class Horloge {
   decider(act) {
     const E = this.E;
     if (this.occupe || !act || !E) return Promise.resolve();
-    let E2 = null, duree = 1.1, fx = null, s = 0;
-    if (act.a === 'tourner' && (act.quoi === 'grande' || act.quoi === 'fine') && (act.s === 1 || act.s === -1)) E2 = tourner(E, act.quoi, act.s);
+    let E2 = null, duree = 1.1, fx = null, s = 0, quoi = null;
+    if (act.a === 'tourner' && (act.quoi === 'grande' || act.quoi === 'fine') && (act.s === 1 || act.s === -1)) {
+      E2 = tourner(E, act.quoi, act.s);
+      // un bloc de pierre l'arrête : l'aiguille part, bute contre lui et revient
+      if (!E2) { E2 = { ...E }; duree = 1.5; fx = 'bute'; s = act.s; quoi = act.quoi; }
+    }
     else if ((act.a === 'cle1' || act.a === 'cle') && !E[act.a]) { E2 = { ...E, [act.a]: true }; duree = 0; }
     else if (act.a === 'meca' && E.cle && E.blocs) { E2 = { ...E, blocs: false }; duree = 1.6; fx = 'casse'; }
     else if (act.a === 'niveau' && E.cle && !E.blocs && (act.s === 1 || act.s === -1)) { E2 = { ...E }; duree = 9; fx = 'niveau'; s = act.s; }
     if (!E2) return Promise.resolve();
     this.occupe = true;
-    this.salon?.H.send('all', { t: 'djHorE', E2, duree, fx, s });
-    return this.bouger(E2, duree, fx, s).finally(() => { this.occupe = false; });
+    this.salon?.H.send('all', { t: 'djHorE', E2, duree, fx, s, quoi });
+    return this.bouger(E2, duree, fx, s, quoi).finally(() => { this.occupe = false; });
   }
   /** messages du salon (passés par les donjons) */
   recevoir(from, m, S) {
@@ -171,14 +182,15 @@ export class Horloge {
     if (m.t === 'djHor?' && S.hote) { S.H.send(from, { t: 'djHorS', E: this.E }); return; }
     if (m.t === 'djHorE' && deHote && m.E2) {
       for (const [k, txt] of [['cle1', 'Quelqu\'un a trouvé la clé de la grille.'], ['cle', 'Quelqu\'un a trouvé la clé du mécanisme central.']]) if (m.E2[k] && !this.E[k]) this.game.ui.toast(txt, 1800);
-      this.bouger(m.E2, m.duree, m.fx, m.s).then(() => { const r = this.attente; this.attente = null; r?.(); }); return;
+      this.bouger(m.E2, m.duree, m.fx, m.s, m.quoi).then(() => { const r = this.attente; this.attente = null; r?.(); }); return;
     }
     if (m.t === 'djHorS' && deHote && m.E && !this.anim) { this.bouger(m.E, 0); }
   }
 
   /** fait bouger l'horloge jusqu'à l'état E2, en emportant le joueur qui se tient sur une aiguille qui tourne ;
-   *  fx : 'casse' (les blocs se brisent), 'niveau' (l'horloge monte ou descend, s = 1 ou -1) */
-  async bouger(E2, duree, fx = null, s = 0) {
+   *  fx : 'casse' (les blocs se brisent), 'niveau' (l'horloge monte ou descend, s = 1 ou -1), 'bute' (l'aiguille quoi part
+   *  dans le sens s, heurte un bloc de pierre et revient à sa place) */
+  async bouger(E2, duree, fx = null, s = 0, quoi = null) {
     const g = this.game, p = g.player, m = this.ici(), E = this.E;
     const net = { ...E, ...E2, grande: heure(E2.grande), fine: heure(E2.fine), petite: heure(E2.petite) };
     // pas dans la salle, ou rien qui bouge : on pose l'horloge sans l'animer
@@ -187,8 +199,10 @@ export class Horloge {
     const place = fx ? [p.x, p.y] : emporter(E, net, p.x, p.y);
     const de = { ...this.D }, vers = { ...net };
     if (fx === 'niveau') for (const k of ['grande', 'fine', 'petite']) vers[k] = de[k] + TOURS;
+    else if (fx === 'bute') vers[quoi] = de[quoi] + s * BUTEE;   // jusqu'au bloc (seule cette aiguille bouge)
     else for (const k of ['grande', 'fine', 'petite']) { let d = vers[k] - de[k]; while (d > 6) d -= 12; while (d < -6) d += 12; vers[k] = de[k] + d; }   // le chemin le plus court
     g.sound.sfx(fx === 'casse' ? 'ledge' : 'door');
+    if (fx === 'bute') this.choc = false;
     await new Promise((fin) => { this.anim = { de, vers, t: 0, duree, fin, fx, s, E0: { ...E } }; });
     Object.assign(E, net);
     this.D = { ...E };
@@ -223,7 +237,6 @@ export class Horloge {
       const r = await ui.ask(`${L.nom}. Faire tourner ${NOMS[L.quoi]} d'une heure ?`, ['Sens des aiguilles', 'Sens inverse', 'Ne rien faire']);
       if (r !== 0 && r !== 1) return true;
       const s = r === 0 ? 1 : -1;
-      if (!tourner(this.E, L.quoi, s)) { await ui.say('Le levier résiste : l\'aiguille bute contre un bloc de pierre.'); return true; }
       await this.demander({ a: 'tourner', quoi: L.quoi, s });
       return true;
     }

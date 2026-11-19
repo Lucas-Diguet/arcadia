@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.38 — 19 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge : quand on tire un levier vers un bloc de pierre, l'aiguille part quand même, heurte le bloc dans un choc qui secoue l'écran, puis revient à sa place (avec ceux qui sont dessus).
+
 ## 6.37 — 19 novembre 2026
 - **TestOdyssée** — Nouveau donjon, la Course de la Vallée, à 2 ou 3 joueurs : chacun court dans son couloir, celui du milieu au fond de la vallée et les deux autres sur les plateaux. On voit les autres courir sans pouvoir les rejoindre.
   - Les trois couloirs sont identiques : rochers à pousser, labyrinthe de rebords à sens unique, trois dresseurs.
