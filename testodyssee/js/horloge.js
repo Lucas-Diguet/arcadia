@@ -262,11 +262,14 @@ export const GRAINES_SALLES = { est: 648, est2: 636, ouest: 428, nord: 559 };
 /** pose le labyrinthe d'une salle dans sa carte */
 function poserLabyrinthe(r, L) {
   const tuile = { '.': T.FLOOR, v: T.LEDGE, '>': T.LEDGE_E, '<': T.LEDGE_W }, sol = new Map();
-  L.plan.forEach((l, y) => { if (y < 2) return; [...l].forEach((c, x) => {
-    if (x < 1 || x >= SALLE_N - 1) return;
+  // hors de la salle : la muraille tout le long de ses bords (deux cases d'épaisseur), puis plus rien (ni les bords de la carte)
+  const dedans = (x, y) => L.plan[y]?.[x] !== undefined && L.plan[y][x] !== ' ';
+  const muraille = (x, y) => { for (let b = -2; b <= 2; b++) for (let a = -2; a <= 2; a++) if (dedans(x + a, y + b)) return true; return false; };
+  L.plan.forEach((l, y) => [...l].forEach((c, x) => {
+    if (c === ' ') { r.set(x, y, T.BLOCK); sol.set(cle(x, y), muraille(x, y) ? 'muraille_' + ((x * 7 + y * 13) % 3) : 'void'); return; }
     r.set(x, y, tuile[c] ?? T.BLOCK);
-    if (c === '#') sol.set(cle(x, y), 'sol_carillon_bas'); else if (c === ' ') sol.set(cle(x, y), 'void');
-  }); });
+    if (c === '#') sol.set(cle(x, y), 'sol_carillon_bas');
+  }));
   r.solArene = sol; r.style = 'carillon';
 }
 /** les labyrinthes des trois salles (une fois) */

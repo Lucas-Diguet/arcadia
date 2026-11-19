@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.42 — 19 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge : les salles du mur ne ressemblent plus à une grande carte carrée. Une muraille de pierre les borde des deux côtés et en suit la courbe, et au-delà il n'y a plus rien.
+
 ## 6.41 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : dans les salles du mur, tout ce qui fait sortir est maintenant au bout de la salle, contre le mur d'extrémité, et non plus au milieu d'un couloir. Ça vaut pour la sortie vers la plateforme (un paillasson), le bout du tube de cuivre qui sort du mur, la grille et les coffres des clés. Le faux paillasson en bas des salles a disparu.
 

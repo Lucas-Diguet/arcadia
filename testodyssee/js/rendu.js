@@ -112,6 +112,10 @@ const TUILES = {
   sol_carillon(x, r) { planchesCarillon(x, r); },
   sol_carillon_bas(x, r) { sol_bas(x, r); },
   // une rambarde : barrière de bois clair cerclée de sombre, poteaux, ombre portée, et des chevrons gravés dans le sens du saut
+  // la muraille de la tour, autour des salles du mur : grosses pierres grises vues de dessus (trois variantes)
+  muraille_0(x, r) { muraille(x, r, 0); },
+  muraille_1(x, r) { muraille(x, r, 1); },
+  muraille_2(x, r) { muraille(x, r, 2); },
   // le bout du tube de cuivre (Tour de l'Horloge), qui sort du mur d'extrémité d'une salle ; n : il vient du mur du haut
   tube_n(x, r) { boutTube(x, r, 0); },
   tube_e(x, r) { boutTube(x, r, Math.PI / 2); },
@@ -166,6 +170,21 @@ function planchesCarillon(x, r) {
     const y = j * 8, dec = (j * 13) % 32;
     for (let i = -1; i < 2; i++) { const t = r(); x.fillStyle = t < 0.33 ? '#b06036' : t < 0.66 ? '#a85a32' : '#ba683c'; x.fillRect(i * 32 + dec + 1, y + 1, 30, 6); x.fillStyle = 'rgba(255,220,170,0.12)'; x.fillRect(i * 32 + dec + 1, y + 1, 30, 1); x.fillStyle = '#5a2e18'; x.fillRect(i * 32 + dec, y, 1, 8); }
   }
+}
+/** pierres de taille de la muraille (Tour de l'Horloge), en rangs décalés */
+function muraille(x, r, v) {
+  x.fillStyle = '#3a3640'; x.fillRect(0, 0, 32, 32);
+  const tons = ['#6e6a72', '#77737b', '#66626a', '#7e7a82'];
+  for (let j = 0; j < 4; j++) {
+    const dec = ((j + v) % 2) * 8;
+    for (let i = -1; i < 3; i++) {
+      const bx = i * 16 + dec, by = j * 8;
+      x.fillStyle = tons[(i + j + v + 4) % 4]; x.fillRect(bx + 1, by + 1, 14, 6);
+      x.fillStyle = 'rgba(255,255,255,0.12)'; x.fillRect(bx + 1, by + 1, 14, 1);
+      x.fillStyle = 'rgba(0,0,0,0.2)'; x.fillRect(bx + 1, by + 6, 14, 1);
+    }
+  }
+  if (r() < 0.4) { x.fillStyle = 'rgba(70,90,60,0.35)'; x.fillRect(Math.floor(r() * 24), Math.floor(r() * 26), 6, 4); }   // un peu de mousse
 }
 /** le bout du tube de cuivre, vu de dessus : le tuyau sort du mur (en haut), sa bride, et l'ouverture sombre vers la salle */
 function boutTube(x, r, angle) {
