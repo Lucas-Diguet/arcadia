@@ -1213,10 +1213,10 @@ for (const l of Object.values(lieux).flat()) {
     const V = world.maps[Hm.VESTIBULE], d = world.maps[Hm.DEHORS], [sx, sy] = Hm.placeSortie();
     const porte = [...d.warps.values()].find((w) => w.map === Hm.VESTIBULE);
     const vu = new Set([porte.x + ',' + porte.y]), f = [[porte.x, porte.y]];
-    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const a = x + dx, b = y + dy, k = a + ',' + b; if (vu.has(k) || !walkable(V.get(a, b)) || (Hm.dansLeTube(a, b) && !Hm.sousLeTube(a))) continue; vu.add(k); if (!V.warpAt(a, b)) f.push([a, b]); } }
-    const bouts = [V.warpAt(1, Hm.TUBE_Y), V.warpAt(Hm.VW - 2, Hm.TUBE_Y)];
-    ok(porte && vu.has(Hm.V_HAUT.join(',')) && V.warpAt(...Hm.V_HAUT)?.map === Hm.HORLOGE && m.warpAt(sx, sy)?.map === Hm.VESTIBULE && !vu.has('1,' + Hm.TUBE_Y) && !vu.has((Hm.VW - 2) + ',' + Hm.TUBE_Y)
-      && bouts[0]?.map === Hm.salleId({ id: 'est2' }) && bouts[1]?.map === Hm.salleId({ id: 'est' }) && L.est.tube && L.est2.tube,
+    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const a = x + dx, b = y + dy, k = a + ',' + b; if (vu.has(k) || !walkable(V.get(a, b))) continue; vu.add(k); if (!V.warpAt(a, b)) f.push([a, b]); } }
+    const bouts = Hm.boutsDuTube(), sousPartout = [...Array(Hm.VW - 2).keys()].every((i) => vu.has((i + 1) + ',' + Hm.TUBE_Y));
+    ok(porte && vu.has(Hm.V_PORTE[0] + ',' + (Hm.V_PORTE[1] + 1)) && V.warpAt(...Hm.V_PORTE)?.map === Hm.HORLOGE && m.warpAt(sx, sy)?.map === Hm.VESTIBULE && sousPartout
+      && bouts.gauche.map === Hm.salleId({ id: 'est2' }) && bouts.droite.map === Hm.salleId({ id: 'est' }) && L.est.tube && L.est2.tube,
       'horloge : le vestibule mène au quai sous le tube, et le tube relie les deux moitiés de la salle est');
   }
   ok(L.est2.objet && L.nord.objet && L.ouest.grille && L.nord.grille && Hm.SALLES.find((s) => s.id === 'est2').objet.quoi === 'cle1' && Hm.SALLES.find((s) => s.id === 'nord').objet.quoi === 'cle', 'horloge : la clé de la grille dans la salle est, la grille entre ouest et nord, la clé du mécanisme dans la salle nord');

@@ -247,13 +247,15 @@ pas le quai (vérifié pour toutes les heures, avec et sans les blocs).
 Les salles sont dans l'épaisseur du mur (de `R_MUR` à `R_MUR2`), en secteurs de couronne, chacune sur sa carte dans le
 même repère que la tour : labyrinthes à rambardes façon Tour Carillon (`labyrinthe` : treillis dans le secteur, rambardes
 posées une à une tant qu'on n'est jamais coincé ; graines `GRAINES_SALLES`, vérifiées par `labyrintheValide`).
-On entre dans la tour par le vestibule (`VESTIBULE`, au sud dans l'épaisseur du mur) : on le traverse par le couloir du
-milieu, sous le tube de cuivre qui le barre de droite à gauche (`TUBE_Y`). La salle est est en deux moitiés (`est` et
-`est2`) reliées par ce tube : on s'y glisse par sa bouche (`entrerTube`), on y est dessiné en hauteur, on n'en descend
+On entre dans la tour par le vestibule (`VESTIBULE`, au sud dans l'épaisseur du mur) : on le traverse en passant sous le
+tube de cuivre qui le barre de droite à gauche (`TUBE_Y`), jusqu'à la porte du fond (`V_PORTE`, on y entre en marchant). La salle est est en deux moitiés (`est` et
+`est2`) reliées par ce tube : on s'y glisse par sa bouche, au bout de chaque moitié, dans le mur (`placerTube`, `entrerTube`), on y est dessiné en hauteur, on n'en descend
 pas au milieu, et l'on ressort dans l'autre moitié. Au fond de la seconde, la clé de la grille (`cle1`). La salle ouest monte jusqu'au nord :
 une grille fermée à clé y mène à la salle nord, où attend la clé du mécanisme (`cle`). Le mécanisme se prend depuis le
 bout d'une aiguille, contre la barre (`casesMecanisme`) : la clé brise les deux blocs, puis il fait monter ou descendre
 l'horloge (les aiguilles tournent de plus en plus vite, puis le décor glisse ; étages 1 et -1 à venir).
+De partout dans un labyrinthe, on peut revenir à sa porte (la grille fermée et le tube ne comptent pas comme des sorties).
+En mode test, « Aller à une salle » liste les lieux de la tour (`salles` de `js/horloge-jeu.js`).
 Dehors, en arrivant, la caméra recule pour montrer la tour en entier (`recul` de `js/horloge-jeu.js`).
 À plusieurs, l'hôte tient l'état de l'horloge (`js/horloge-jeu.js`, messages `djHor`, `djHorE`, `djHorS`) : chacun anime
 les aiguilles, et les joueurs posés sur une aiguille tournent avec elle à l'écran (`decalage`).

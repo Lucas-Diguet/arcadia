@@ -112,15 +112,6 @@ const TUILES = {
   sol_carillon(x, r) { planchesCarillon(x, r); },
   sol_carillon_bas(x, r) { sol_bas(x, r); },
   // une rambarde : barrière de bois clair cerclée de sombre, poteaux, ombre portée, et des chevrons gravés dans le sens du saut
-  // la bouche du tube de cuivre (salle est de la Tour de l'Horloge) : un anneau de cuivre autour d'un trou sombre
-  bouche_tube(x, r) {
-    sol_bas(x, r);
-    x.fillStyle = '#3a1c0a'; x.beginPath(); x.arc(16, 16, 14, 0, Math.PI * 2); x.fill();
-    x.fillStyle = '#c8783a'; x.beginPath(); x.arc(16, 16, 12.5, 0, Math.PI * 2); x.fill();
-    x.fillStyle = '#f0b070'; x.beginPath(); x.arc(15, 15, 11, Math.PI, Math.PI * 1.5); x.lineTo(15, 15); x.fill();
-    x.fillStyle = '#0e0806'; x.beginPath(); x.arc(16, 16, 8.5, 0, Math.PI * 2); x.fill();
-    x.fillStyle = 'rgba(160,220,255,0.25)'; x.beginPath(); x.arc(14, 14, 3, 0, Math.PI * 2); x.fill();
-  },
   rambarde_s(x, r) { rambarde(x, r, 's'); },
   rambarde_e(x, r) { rambarde(x, r, 'e'); },
   rambarde_w(x, r) { rambarde(x, r, 'w'); },
@@ -373,6 +364,7 @@ function poserAffiche(view, a) {
 /** une tenture accrochée sur la face sud d'un mur : tapisserie (rouge, bordure d'or, blason), portrait (cadre doré, visage sombre) */
 function poserTenture(view, a) {
   if (a.genre === 'porte') return poserPorteManoir(view, a);
+  if (a.genre === 'tube') return poserBoucheTube(view, a);
   if (a.genre === 'dessin') return poserDessin(view, a);
   if (a.genre === 'panoplie') return poserPanoplie(view, a);
   if (a.genre === 'epees' || a.genre === 'epee') return poserEpees(view, a);
@@ -498,6 +490,23 @@ function poserPorteManoir(view, a) {
   x.fillStyle = '#e0b860'; x.fillRect(13, 26, 2, 2); x.fillRect(17, 26, 2, 2);
   const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
   const H = 1.25 * Math.tan(EL), W = 0.98;
+  const geo = new THREE.PlaneGeometry(W, H); geo.translate(a.x + 0.5, H / 2, a.y + 1.01);
+  const mat = new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.5 }); mat.userData.own = true;
+  view.root.add(new THREE.Mesh(geo, mat));
+}
+
+/** la bouche du tube de cuivre (Tour de l'Horloge) sur la face d'un mur : une grosse bride ronde, le verre, le noir dedans */
+function poserBoucheTube(view, a) {
+  const c = document.createElement('canvas'); c.width = 32; c.height = 34;
+  const x = c.getContext('2d'), cx = 16, cy = 17;
+  const rond = (r, col) => { x.fillStyle = col; x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill(); };
+  rond(16, '#4a2410'); rond(15, '#c8783a'); rond(12.5, '#8a4a1e');
+  x.fillStyle = '#f0b070'; x.beginPath(); x.arc(cx, cy, 14.5, Math.PI * 1.05, Math.PI * 1.6); x.arc(cx, cy, 12.5, Math.PI * 1.6, Math.PI * 1.05, true); x.fill();
+  for (let k = 0; k < 8; k++) { const t = (k * Math.PI) / 4; x.fillStyle = '#5a2c10'; x.fillRect(cx + Math.cos(t) * 13.8 - 1, cy + Math.sin(t) * 13.8 - 1, 2, 2); }
+  rond(11, '#120a06'); rond(9, '#0a0604');
+  x.fillStyle = 'rgba(170,220,255,0.28)'; x.beginPath(); x.ellipse(cx - 3, cy - 4, 5, 3, -0.5, 0, Math.PI * 2); x.fill();
+  const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
+  const H = 1.05 * Math.tan(EL), W = 0.98;
   const geo = new THREE.PlaneGeometry(W, H); geo.translate(a.x + 0.5, H / 2, a.y + 1.01);
   const mat = new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.5 }); mat.userData.own = true;
   view.root.add(new THREE.Mesh(geo, mat));

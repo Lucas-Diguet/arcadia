@@ -1,5 +1,12 @@
 # Journal des versions — Arcadia
 
+## 6.39 — 19 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge :
+  - en mode test, « Aller à une salle » mène directement au vestibule, au quai, aux plateformes et aux quatre salles du mur ;
+  - les labyrinthes des salles est et ouest permettent toujours de faire demi-tour jusqu'à la porte, même sans la clé de la grille ;
+  - le vestibule a une vraie porte au fond vers la salle des aiguilles, et l'on passe sous le tube partout ;
+  - le tube : ses bouches sont au bout des deux moitiés de la salle est, dans le mur comme des portes, et l'on voit bien le joueur à l'intérieur, derrière la vitre.
+
 ## 6.38 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : quand on tire un levier vers un bloc de pierre, l'aiguille part quand même, heurte le bloc dans un choc qui secoue l'écran, puis revient à sa place (avec ceux qui sont dessus).
 

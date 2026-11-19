@@ -135,7 +135,7 @@ export class TestGame extends Game {
     if (this.donjons?.dansUnDonjon()) opts.push(['JOURNAL', 'journal'], ['QUITTER LE DONJON', 'quitter']);
     if (this.ile?.zoneIci()) opts.push(['CONSTRUIRE', 'construire']);
     if (this.ile?.essai) opts.push(['ABANDONNER L\'ESSAI', 'abandon']);
-    if (this.modeTest && this.donjons?.sallesDuDonjon().length > 1) opts.push(['ALLER À UNE SALLE', 'salle']);
+    if (this.modeTest && (this.donjons?.sallesDuDonjon().length > 1 || this.horloge?.salles().length)) opts.push(['ALLER À UNE SALLE', 'salle']);
     if (this.donjons?.dansLeReflet()) opts.push(['REVENIR AU DÉBUT DE LA SALLE', 'debut']);
     opts.push(['CARTE', 'map'], ['CHANGER DE LIEU', 'lieu'], [this.modeTest ? 'MODE TEST : OUI' : 'MODE TEST : NON', 'test'], [this.noEnc ? 'SAUVAGES : NON' : 'SAUVAGES : OUI', 'sauvages'], [this.traverseMurs ? 'TRAVERSER LES MURS : OUI' : 'TRAVERSER LES MURS : NON', 'murs'], ['OPTIONS', 'opt'], ['FERMER', 'close']);
     let idx = Math.min(this._menuIdx || 0, opts.length - 1);
@@ -165,7 +165,7 @@ export class TestGame extends Game {
           this.traverseMurs = !this.traverseMurs; opts[r][0] = this.traverseMurs ? 'TRAVERSER LES MURS : OUI' : 'TRAVERSER LES MURS : NON';
           await this.ui.say(this.traverseMurs ? 'Tu peux traverser les murs.' : 'Les murs t\'arrêtent de nouveau.');
         }
-        else if (k === 'salle') { if (await this.donjons.allerSalle()) break; }
+        else if (k === 'salle') { if (this.horloge?.salles().length ? await this.horloge.allerSalle() : await this.donjons.allerSalle()) break; }
         else if (k === 'quitter') { if (await this.donjons.quitter()) break; }
         else if (k === 'opt') await optionsScreen(this);
         else if (k === 'debut') { if (await this.ui.yesNo('Revenir à l\'entrée de la salle ? Copycat reprendra sa place.')) { await this.donjons.recommencerSalle(); break; } }

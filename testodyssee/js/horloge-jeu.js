@@ -4,7 +4,7 @@
 // À plusieurs, l'hôte du salon tient l'état de l'horloge : une action demande le mouvement à l'hôte (message djHor), qui
 // la valide et l'annonce à tous (djHorE) ; chacun anime l'horloge et emporte son propre joueur s'il est sur l'aiguille.
 import * as THREE from 'three';
-import { HORLOGE, DEHORS, VESTIBULE, VW, TUBE_Y, C, LEVIERS, NOMS, appliquer, caseHorloge, casesMecanisme, placeLevier, tourner, emporter, heure, dansLeTube, sousLeTube } from './horloge.js';
+import { HORLOGE, DEHORS, VESTIBULE, VW, TUBE_Y, C, LEVIERS, NOMS, appliquer, caseHorloge, casesMecanisme, placeLevier, tourner, emporter, heure, dansLeTube, boutsDuTube, V_PORTE, VH, VESTIBULE as VEST, SALLES, PLATEFORMES, salleId, labyrinthes, placeArrivee, caseSur } from './horloge.js';
 import { creerHorloge, poserHorloge } from './horloge-vue.js';
 
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -28,9 +28,10 @@ export class Horloge {
     const place = v.place.bind(v);
     v.place = (a, x, y, hop = 0, ...r) => {
       const d = this.decalage(x, y);
-      // dans le vestibule, qui est dans le tube de cuivre y est dessiné en hauteur (soi : on le sait ; les autres : s'ils
-      // sont sur la rangée du tube hors du couloir qui passe dessous)
-      if (this.game.mapObj?.id === VESTIBULE && Math.round(y) === TUBE_Y && (a === v.actors.get('player') ? this.tube : !sousLeTube(Math.round(x)))) hop += TUBE_H;
+      // dans le vestibule, qui est dans le tube de cuivre y est dessiné en hauteur (soi : on le sait ; les autres : on le
+      // devine, celui qui arrive sur la rangée du tube par un pas de côté ou en apparaissant y est, celui qui y arrive
+      // par un pas vers le haut ou le bas passe dessous)
+      if (this.game.mapObj?.id === VESTIBULE && this.dansTube(a, x, y, a === v.actors.get('player'))) hop += TUBE_H;
       place(a, d ? x + d[0] : x, d ? y + d[1] : y, hop, ...r);
     };
     const update = v.update.bind(v);
@@ -81,32 +82,73 @@ export class Horloge {
    *  n'y monte pas (on passe dessous par le couloir du milieu) */
   avantPas(d) {
     if (this.ici() && this.anim) return true;
-    const g = this.game, p = g.player;
-    if (g.mapObj?.id !== VESTIBULE || p.move || !d) return false;
+    const g = this.game, p = g.player, m = g.mapObj;
+    if (p.move || !d || g.busy || !m) return false;
     const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[d], tx = p.x + dx, ty = p.y + dy;
-    if (this.tube ? dy !== 0 : dansLeTube(tx, ty) && !sousLeTube(tx)) { p.dir = d; p.walking = false; return true; }
+    const arret = () => { p.dir = d; p.walking = false; return true; };
+    // la bouche du tube, au bout de la salle est : on s'y glisse en marchant dedans
+    if (m.tube && tx === m.tube.x && ty === m.tube.y) { arret(); this.entrerTube(...m.tube.vers); return true; }
+    if (m.id !== VESTIBULE) return false;
+    if (this.tube) {
+      if (dy !== 0) return arret();   // on ne descend pas du tube au milieu
+      if (tx <= 1 || tx >= VW - 2) { const b = boutsDuTube()[tx <= 1 ? 'gauche' : 'droite']; arret(); g.warp(b); return true; }   // au bout, on ressort dans la salle
+      return false;
+    }
+    // la porte du fond : on y entre en marchant dedans
+    if (tx === V_PORTE[0] && ty === V_PORTE[1]) { arret(); g.warp(g.mapObj.warpAt(tx, ty)); return true; }
     return false;
+  }
+  /** quelqu'un posé en (x, y) dans le vestibule est-il dans le tube ? */
+  dansTube(a, x, y, moi) {
+    const cx = Math.round(x), cy = Math.round(y), ici = cy === TUBE_Y;
+    if (moi) return ici && this.tube;
+    const avant = a._tube;
+    if (!avant || avant.x !== cx || avant.y !== cy) a._tube = { x: cx, y: cy, dedans: ici && (!avant || (avant.y === cy && avant.dedans)) };
+    return a._tube.dedans;
   }
   /** se glisser dans le tube de cuivre (depuis la salle est) : on arrive dans le vestibule, dans le tube */
   async entrerTube(x, dir) {
     const g = this.game;
-    if (!await g.ui.yesNo('Un gros tube de cuivre s\'enfonce dans le mur. S\'y glisser ?')) return true;
     this.tube = true;
     await g.warp({ map: VESTIBULE, x, y: TUBE_Y, dir });
     this.tube = true;
+    return true;
+  }
+  /** mode test : les lieux de la tour où l'on peut aller directement (si l'on est dans la tour) */
+  salles() {
+    const id = this.game.mapObj?.id; if (!id?.startsWith(HORLOGE) || id === DEHORS) return [];
+    const L = labyrinthes(), [ax, ay] = placeArrivee(), pf = (p) => { const P = PLATEFORMES.find((q) => q.id === p); const [x, y] = caseSur(p, P.r1 - 0.5, 0); return { map: HORLOGE, x, y, dir: 'down' }; };
+    return [
+      { nom: 'Le vestibule', to: { map: VEST, x: V_PORTE[0], y: VH - 2, dir: 'up' } },
+      { nom: 'Le quai (salle des aiguilles)', to: { map: HORLOGE, x: ax, y: ay, dir: 'up' } },
+      ...PLATEFORMES.filter((p) => p.id !== 'sud').map((p) => ({ nom: p.nom, to: pf(p.id) })),
+      ...SALLES.map((s) => ({ nom: s.nom, to: { map: salleId(s), x: L[s.id].entree[0], y: L[s.id].entree[1], dir: 'up' } })),
+    ];
+  }
+  async allerSalle() {
+    const g = this.game, l = this.salles(); if (!l.length) return false;
+    const r = await g.ui.list({ title: 'Aller dans la tour', items: [...l.map((s) => ({ label: s.nom })), { label: 'Retour' }], cls: 'shop', cancel: l.length });
+    if (r < 0 || r >= l.length) return false;
+    this.tube = false;
+    await g.warp(l[r].to, 'exit');
     return true;
   }
   /** le tube du vestibule, en volume : verre épais cerclé de cuivre, d'un mur à l'autre */
   poserTube() {
     const v = this.game.view;
     if (this.tube3d?.root === v.root) return;
-    const T = new THREE.Group(), y = TUBE_H + 0.6, z = TUBE_Y + 0.55, L = VW - 1;
-    const verre = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.72, L, 20, 1, true).rotateZ(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#a8dcff', transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }));
-    verre.position.set(L / 2 + 0.5, y, z); T.add(verre);
-    const fond = new THREE.Mesh(new THREE.BoxGeometry(L, 0.08, 1.0), new THREE.MeshBasicMaterial({ color: '#7a4a22' })); fond.position.set(L / 2 + 0.5, TUBE_H - 0.04, z); T.add(fond);
+    // le verre est dessiné après les personnages : celui qui est dans le tube paraît bien dedans, derrière la vitre
+    const R = 1.05, T = new THREE.Group(), y = TUBE_H + R - 0.15, z = TUBE_Y + 0.5, L = VW - 1;
+    const fondTube = new THREE.Mesh(new THREE.CylinderGeometry(R, R, L, 24, 1, true, Math.PI / 2, Math.PI).rotateZ(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#3a5a6a', transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide }));
+    fondTube.position.set(L / 2 + 0.5, y, z); T.add(fondTube);
+    const verre = new THREE.Mesh(new THREE.CylinderGeometry(R, R, L, 24, 1, true, -Math.PI / 2, Math.PI).rotateZ(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#b8e4ff', transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide }));
+    verre.position.set(L / 2 + 0.5, y, z); verre.renderOrder = 50; T.add(verre);
+    const reflet = new THREE.Mesh(new THREE.BoxGeometry(L, 0.08, 0.04), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.45, depthWrite: false }));
+    reflet.position.set(L / 2 + 0.5, y + R * 0.55, z + R * 0.83); reflet.renderOrder = 51; T.add(reflet);
+    const fond = new THREE.Mesh(new THREE.BoxGeometry(L, 0.08, 1.2), new THREE.MeshBasicMaterial({ color: '#7a4a22' })); fond.position.set(L / 2 + 0.5, TUBE_H - 0.04, z); T.add(fond);
     const cuivre = new THREE.MeshBasicMaterial({ color: '#c8783a' });
-    for (let x = 1; x <= L; x += 2) { const o = new THREE.Mesh(new THREE.TorusGeometry(0.76, 0.07, 6, 20), cuivre); o.rotation.y = Math.PI / 2; o.position.set(x, y, z); T.add(o); }
-    for (const x of [0.6, L + 0.4]) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.3, 20).rotateZ(Math.PI / 2), cuivre); b.position.set(x, y, z); T.add(b); }
+    for (let x = 1; x <= L; x += 3) { const o = new THREE.Mesh(new THREE.TorusGeometry(R + 0.04, 0.07, 6, 24), cuivre); o.rotation.y = Math.PI / 2; o.position.set(x, y, z); o.renderOrder = 52; T.add(o); }
+    for (const x of [0.6, L + 0.4]) { const b = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.25, R + 0.25, 0.3, 24).rotateZ(Math.PI / 2), cuivre); b.position.set(x, y, z); T.add(b); }
     for (const x of [3, 8, 15, 20]) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.2, TUBE_H, 0.2), new THREE.MeshBasicMaterial({ color: '#6a4426' })); s.position.set(x, TUBE_H / 2, z); T.add(s); }
     v.root.add(T); this.tube3d = { root: v.root, T };
   }
