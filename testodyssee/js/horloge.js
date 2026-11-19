@@ -286,6 +286,7 @@ export function construireHorloge(world) {
     if (s.pf) {
       const [px, py] = caseSur(s.pf, exterieur(pf(s.pf)), 0);
       r.set(...L.tapis, T.MAT); r.warp(...L.tapis, { map: HORLOGE, x: px, y: py, dir: 'down', step: true });
+      r.solArene.set(cle(...L.tapis), 'sortie_salle');   // bien visible (rendu.js)
       r.exitX = L.tapis[0]; r.exitY = L.tapis[1];
     }
     // la bouche du tube de cuivre (salle est) : il traverse le vestibule et mène à l'autre moitié de la salle
