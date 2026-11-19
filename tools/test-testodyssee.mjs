@@ -1227,6 +1227,37 @@ for (const l of Object.values(lieux).flat()) {
   Hm.appliquer(m, m.horloge);
 }
 
+/* ---------------- la Course de la Vallée ---------------- */
+{
+  const V = await import('../testodyssee/js/donjons/vallee.js'), def = V.default, plan = def.salles.find((s) => s.id === 'v1').plan;
+  const L = V.LARGEUR, couloir = (i) => plan.map((r) => r.slice(i * (L - 1), i * (L - 1) + L).replace(/[LMRS]/g, '.'));
+  const [g, c, d] = [0, 1, 2].map(couloir);
+  ok(plan.every((r) => r.length === 3 * L - 2) && JSON.stringify(g) === JSON.stringify(c) && JSON.stringify(c) === JSON.stringify(d), 'vallée : trois couloirs identiques côte à côte');
+  // chaque couloir se termine : on pousse les rochers, on saute les rebords dans leur sens, les dresseurs battus laissent passer
+  const P = V.COULOIR, H = P.length, sol = new Set('.rzuvwGL'), at = (x, y) => P[y]?.[x] ?? '#';
+  const trouve = (ch) => { const o = []; P.forEach((r, y) => [...r].forEach((q, x) => { if (q === ch) o.push([x, y]); })); return o; };
+  const [dep] = trouve('L'), rochers = trouve('●').map(String), but = new Set(trouve('z').map(String));
+  const SENS = { '▼': [0, 1], '▶': [1, 0], '◀': [-1, 0] };
+  const cleE = (p, B) => p + '|' + [...B].sort().join(';');
+  const vus = new Set([cleE(dep, rochers)]), file = [[dep, new Set(rochers)]];
+  let fini = false;
+  for (let i = 0; i < file.length && i < 400000 && !fini; i++) {
+    const [[x, y], B] = file[i];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const tx = x + dx, ty = y + dy, q = at(tx, ty); let np = null, nb = B;
+      if (B.has(tx + ',' + ty)) { const bx = tx + dx, by = ty + dy; if (sol.has(at(bx, by)) && at(bx, by) !== 'z' && !B.has(bx + ',' + by)) { np = [tx, ty]; nb = new Set(B); nb.delete(tx + ',' + ty); nb.add(bx + ',' + by); } }
+      else if (sol.has(q)) np = [tx, ty];
+      else if (SENS[q] && SENS[q][0] === dx && SENS[q][1] === dy && sol.has(at(tx + dx, ty + dy)) && !B.has((tx + dx) + ',' + (ty + dy))) np = [tx + dx, ty + dy];
+      if (!np) continue;
+      if (but.has(String(np))) { fini = true; break; }
+      const k = cleE(np, nb); if (!vus.has(k)) { vus.add(k); file.push([np, nb]); }
+    }
+  }
+  ok(fini && trouve('c').length === 1 && trouve('u').length && trouve('v').length && trouve('w').length && rochers.length >= 3 && Object.keys(SENS).every((k) => trouve(k).length), 'vallée : un couloir se termine (rochers, rebords, trois dresseurs, un cairn)');
+  const C = await import('../testodyssee/js/donjon/course.js');
+  ok(JSON.stringify(C.voiesPour(2)) === '["g","d"]' && JSON.stringify(C.voiesPour(3)) === '["g","c","d"]' && def.joueurs.min === 2 && def.joueurs.max === 3, 'vallée : à deux, les plateaux ; à trois, le fond de la vallée aussi');
+}
+
 /* ---------------- Poussière-Ville (prototype du Far West) et la Grande Course ---------------- */
 {
   const F = await import('../testodyssee/js/farwest.js'), m = world.maps[F.FARWEST];

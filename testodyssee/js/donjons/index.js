@@ -12,10 +12,11 @@ import tombeau from './tombeau.js';
 import contes from './contes.js';
 import fonderie from './fonderie.js';
 import course from './course.js';
+import vallee from './vallee.js';
 import cristal from './cristal.js';
 import champions from './champions.js';
 import areneInsecte from './arene-insecte.js';
 import arenePoison from './arene-poison.js';
 import chateau from './chateau.js';
 
-export const DONJONS = [crypte, didier, miroirs, voies, pyramide, mine, train, temple, tombeau, contes, chateau, fonderie, cristal, course, champions, areneInsecte, arenePoison];
+export const DONJONS = [crypte, didier, miroirs, voies, pyramide, mine, train, temple, tombeau, contes, chateau, fonderie, cristal, course, vallee, champions, areneInsecte, arenePoison];

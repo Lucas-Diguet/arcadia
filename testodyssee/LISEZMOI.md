@@ -214,6 +214,17 @@ remis à zéro à chaque course). On ne voit pas les autres coureurs (ni leur no
 `fin:<graine>:<joueur>` ; le premier arrivé gagne, les autres sont prévenus. Le tableau du départ et de l'arrivée montre
 les résultats de la course en cours.
 
+### La Course de la Vallée (donjon, 2 ou 3 joueurs)
+
+Une course comme la Grande Course (mêmes règles, `js/donjon/course.js` : départ commun lancé par l'arbitre, pénalité de
+dix secondes par défaite, arrivées partagées, le premier gagne), mais chacun dans son couloir (`js/donjons/vallee.js`) :
+une vallée encaissée, le couloir du milieu au fond, les deux autres sur les plateaux de chaque côté (`reliefVallee`).
+On voit les autres courir sans pouvoir les rejoindre. Les trois couloirs sont identiques (`COULOIR`) : rochers à pousser
+(sans Force), labyrinthe de rebords à sens unique, trois dresseurs (un par couloir, chacun le sien), un cairn qui remet
+les rochers en place si l'on s'est coincé, la ligne d'arrivée en haut. L'arbitre donne les couloirs (`voies` des données
+de la salle `c0`, `voiesPour` : à deux les plateaux, à trois le fond aussi) et chacun est posé au départ du sien
+(`placerDansVoie`). `test-testodyssee.mjs` vérifie que les couloirs sont identiques et qu'un couloir se termine.
+
 ### Poussière-Ville (prototype du Far West)
 
 `js/farwest.js` (sans DOM : la rue, l'enclos, les cibles, `trajet` d'une balle) et `js/farwest-jeu.js`. En arrivant, on

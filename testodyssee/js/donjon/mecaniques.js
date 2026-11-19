@@ -125,7 +125,7 @@ export const Mecaniques = {
     const g = this.game, d = [...this.defs.values()].find((q) => this.estDans(q)); if (!d || g.busy || !g.state) return false;
     const p = g.player, m = g.mapObj, e = this.etats[d.id];
     for (const n of g.npcs) {
-      const k = Object.keys(d.pnj).find((c) => `${d.id}:${d.pnj[c].id}` === n.id), def = k && d.pnj[k];
+      const k = Object.keys(d.pnj || {}).find((c) => `${d.id}:${d.pnj[c].id}` === n.id), def = k && d.pnj[k];
       if (!def?.vue || battu(e, d, k) || prisPar(e, d, k)) continue;
       const [dx, dy] = DIRS[n.dir];
       for (let s = 1; s <= def.vue; s++) {

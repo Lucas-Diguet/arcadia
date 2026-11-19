@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.37 — 19 novembre 2026
+- **TestOdyssée** — Nouveau donjon, la Course de la Vallée, à 2 ou 3 joueurs : chacun court dans son couloir, celui du milieu au fond de la vallée et les deux autres sur les plateaux. On voit les autres courir sans pouvoir les rejoindre.
+  - Les trois couloirs sont identiques : rochers à pousser, labyrinthe de rebords à sens unique, trois dresseurs.
+  - Un cairn remet les rochers en place si on s'est coincé, et une défaite coûte dix secondes. Le premier arrivé en haut gagne.
+
 ## 6.36 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : on n'arrive plus directement dans la salle des aiguilles. On traverse d'abord un vestibule creusé dans le mur, sous un grand tube de cuivre vitré. Ce tube coupe la salle est en deux : on s'y glisse depuis la première moitié et on le parcourt au-dessus du vestibule pour rejoindre l'autre moitié, où se trouve la clé de la grille.
 
