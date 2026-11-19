@@ -54,13 +54,12 @@ export class Horloge {
     const th = ((this.D[q] - A.de[q]) * Math.PI) / 6, vx = x - C[0], vy = y - C[1];
     return [vx * Math.cos(th) - vy * Math.sin(th) - vx, vx * Math.sin(th) + vy * Math.cos(th) - vy];
   }
-  /** devant la tour, en arrivant : la caméra recule pour la montrer en entier, puis revient */
+  /** en entrant dans la tour : la caméra recule pour la montrer en entier, puis on passe la porte (entrerTour) */
   recul() {
     const g = this.game, v = g.view, m = g.mapObj;
-    if (m?.id !== DEHORS) { this.dehors = null; return; }
-    if (!this.dehors) this.dehors = { debut: performance.now() };
-    const t = (performance.now() - this.dehors.debut) / 1000 - 0.6;   // on laisse d'abord l'écran s'ouvrir
-    const f = lisse(t / 1.6) - lisse((t - 4.2) / 1.6);
+    if (m?.id !== DEHORS || !this.dehors) { this.dehors = null; return; }
+    const t = (performance.now() - this.dehors.debut) / 1000;
+    const f = lisse(t / 1.4);
     if (f <= 0) return;
     const cam = v.camera;
     if (v._ortho) {
@@ -90,6 +89,8 @@ export class Horloge {
     if (m.tube && tx === m.tube.x && ty === m.tube.y) { arret(); this.entrerTube(...m.tube.vers); return true; }
     // la porte d'une salle du mur, vers sa plateforme : on y entre en marchant dedans
     if (m.porte && tx === m.porte[0] && ty === m.porte[1]) { arret(); g.warp(m.warpAt(tx, ty)); return true; }
+    // dehors, la porte de la tour : la caméra recule pour montrer toute la tour, puis on entre
+    if (m.id === DEHORS) { const w = m.warpAt(tx, ty); if (w?.map === VEST) { arret(); this.entrerTour(w); return true; } return false; }
     if (m.id !== VESTIBULE) return false;
     if (this.tube) {
       if (dy !== 0) return arret();   // on ne descend pas du tube au milieu
@@ -99,6 +100,13 @@ export class Horloge {
     // la porte du fond : on y entre en marchant dedans
     if (tx === V_PORTE[0] && ty === V_PORTE[1]) { arret(); g.warp(g.mapObj.warpAt(tx, ty)); return true; }
     return false;
+  }
+  /** la porte de la tour : la caméra recule (recul), on regarde la tour un instant, puis on entre */
+  async entrerTour(w) {
+    const g = this.game; if (this.dehors) return;
+    g.busy = true;
+    try { this.dehors = { debut: performance.now() }; await attendre(2600); } finally { g.busy = false; }
+    await g.warp(w);
   }
   /** quelqu'un posé en (x, y) dans le vestibule est-il dans le tube ? */
   dansTube(a, x, y, moi) {
@@ -296,17 +304,11 @@ export class Horloge {
     }
     return false;
   }
-  /** en arrivant dans la salle : où l'on est, et à quoi servent les leviers */
-  async arrivee() {
+  /** en arrivant dans la salle : on demande l'état de l'horloge à l'hôte (sans texte) */
+  arrivee() {
     if (!this.ici() || this.vu) return;
     this.vu = true;
-    const g = this.game, S = this.salon;
-    if (S && !S.hote) S.H.send('host', { t: 'djHor?' });   // l'état de l'horloge chez l'hôte
-    g.busy = true;
-    await attendre(300);
-    try { await g.ui.say(['Une horloge gigantesque, au creux de la tour. Ses aiguilles sont des passerelles.',
-      'Sur chaque plateforme, le levier rouge fait tourner la grande aiguille d\'une heure, le bleu l\'aiguille fine.',
-      'Celui qui se tient sur une aiguille est emporté avec elle... mais il faut quelqu\'un d\'autre au levier.',
-      'Deux blocs de pierre empêchent les aiguilles d\'atteindre la corniche nord.']); } finally { g.busy = false; }
+    const S = this.salon;
+    if (S && !S.hote) S.H.send('host', { t: 'djHor?' });
   }
 }

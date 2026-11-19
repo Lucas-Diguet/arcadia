@@ -257,7 +257,7 @@ l'horloge (les aiguilles tournent de plus en plus vite, puis le décor glisse ; 
 Tout ce qui fait sortir d'une salle (paillasson vers la plateforme, bout du tube, grille, coffre) est au bout de la salle,
 contre le mur d'extrémité (`auBout`, le couloir y est creusé). De partout dans un labyrinthe, on peut revenir à sa porte (la grille fermée et le tube ne comptent pas comme des sorties).
 En mode test, « Aller à une salle » liste les lieux de la tour (`salles` de `js/horloge-jeu.js`).
-Dehors, en arrivant, la caméra recule pour montrer la tour en entier (`recul` de `js/horloge-jeu.js`).
+En passant la porte de la tour, la caméra recule pour la montrer en entier, puis on entre (`entrerTour`, `recul` de `js/horloge-jeu.js`).
 À plusieurs, l'hôte tient l'état de l'horloge (`js/horloge-jeu.js`, messages `djHor`, `djHorE`, `djHorS`) : chacun anime
 les aiguilles, et les joueurs posés sur une aiguille tournent avec elle à l'écran (`decalage`).
 Dessin : `js/horloge-vue.js` ; rambardes et planchers : tuiles `sol_carillon`, `sol_carillon_bas`, `rambarde_*` de

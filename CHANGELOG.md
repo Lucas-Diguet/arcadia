@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.43 — 19 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge : plus de texte qui s'ouvre tout seul en entrant dans la salle des aiguilles. La caméra ne recule plus à l'arrivée devant la tour, mais quand on passe sa porte : on voit toute la tour, puis on entre.
+
 ## 6.42 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : les salles du mur ne ressemblent plus à une grande carte carrée. Une muraille de pierre les borde des deux côtés et en suit la courbe, et au-delà il n'y a plus rien.
 
