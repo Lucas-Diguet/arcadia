@@ -1,11 +1,16 @@
 // testodyssee/js/horloge.js — la Tour de l'Horloge, niveau 0 (futur donjon, au moins deux joueurs). Une horloge
-// gigantesque au creux de la tour, tout est à la même hauteur. Au centre, la barre du pivot (on n'y marche pas) ; autour,
-// trois aiguilles : la grande et large, la grande et fine (la plus longue) et la petite (qui servira aux étages -1 et 1).
-// Contre le mur, des plateformes : les grandes touchent la pointe des deux grandes aiguilles, les corniches seulement
-// celle de l'aiguille fine. Sur chaque plateforme, deux leviers font tourner une aiguille d'une heure ; celui qui se tient
-// sur l'aiguille est emporté avec elle, mais il ne peut pas tirer le levier lui-même : seul, on ne quitte pas le quai.
-// Trois petites salles dans le mur, et la clé du mécanisme central (qui fera monter ou descendre l'horloge vers les
-// étages 1 et -1). Logique sans DOM ici ; le dessin est dans horloge-vue.js, les règles du jeu dans horloge-jeu.js.
+// gigantesque au creux de la tour, tout est à la même hauteur. Au centre, la barre du pivot (on n'y marche pas) et le
+// mécanisme central ; autour, trois aiguilles : la grande et large, la grande et fine (la plus longue) et la petite (qui
+// servira aux étages -1 et 1). Contre le mur, quatre plateformes : sud (le quai), est, ouest, et la corniche nord, que
+// seule l'aiguille fine atteint. Deux blocs de pierre, entre est et nord et entre ouest et nord, arrêtent les aiguilles :
+// la corniche nord est isolée tant que le mécanisme central ne les a pas brisés.
+// Sur chaque plateforme, deux leviers font tourner une aiguille d'une heure ; celui qui se tient sur l'aiguille est emporté
+// avec elle, mais ne peut pas tirer le levier lui-même : seul, on ne quitte pas le quai.
+// Les salles sont dans l'épaisseur du mur, en secteurs de couronne, labyrinthes à rambardes (façon Tour Carillon) :
+// la salle est fait le tour par le bas jusqu'à l'ouest (la clé de la grille au fond) ; la salle ouest monte jusqu'au nord,
+// où une grille fermée mène à la salle nord (la clé du mécanisme au fond). Le mécanisme, sur la barre du pivot, brise
+// les deux blocs, puis fait monter ou descendre l'horloge (étages 1 et -1 à venir).
+// Logique sans DOM ici ; le dessin est dans horloge-vue.js, les règles du jeu dans horloge-jeu.js.
 import { room } from '../../odyssee/js/world/interiors.js';
 import { GameMap, rng } from '../../odyssee/js/world/mapgen.js';
 import { T } from '../../odyssee/js/world/tiles.js';
@@ -13,8 +18,8 @@ import { T } from '../../odyssee/js/world/tiles.js';
 export const HORLOGE = 'labo:horloge';
 export const DEHORS = 'labo:horloge:dehors';
 export const W = 50, H = 48;
-/** centre du cadran (le milieu de cette case), rayon de la barre du pivot, rayon du mur de la tour */
-export const C = [25, 24], R_PIVOT = 3, R_MUR = 22;
+/** centre du cadran (le milieu de cette case), rayon de la barre du pivot ; le mur de la tour va de R_MUR à R_MUR2 */
+export const C = [25, 24], R_PIVOT = 3, R_MUR = 22, R_MUR2 = 32;
 /** les aiguilles : jusqu'où on y marche (en cases), demi-largeur de leurs cases */
 export const AIG = { grande: { r: 17.6, l: 0.75 }, fine: { r: 19.6, l: 0.45 }, petite: { r: 11.6, l: 0.75 } };
 export const NOMS = { grande: 'la grande aiguille', fine: 'l\'aiguille fine', petite: 'la petite aiguille' };
@@ -23,17 +28,20 @@ export const sens = (k) => { const a = (k * Math.PI) / 6; return [Math.sin(a), -
 const cle = (x, y) => x + ',' + y;
 const centre = () => [C[0] + 0.5, C[1] + 0.5];
 export const heure = (k) => ((Math.round(k) % 12) + 12) % 12;
+/** l'heure (à virgule, de 0 à 12) d'un point vu depuis un centre */
+const heureDe = (dx, dy) => ((Math.atan2(dx, -dy) / (Math.PI / 6)) % 12 + 12) % 12;
 
-/** les plateformes : à l'heure k, du rayon r0 au rayon r1, demi-largeur l ; les corniches ne touchent que l'aiguille fine */
+/** les plateformes : à l'heure k, du rayon r0 au rayon r1, demi-largeur l ; la corniche ne touche que l'aiguille fine */
 export const PLATEFORMES = [
-  { id: 'quai', k: 6, r0: 18.3, r1: 21.4, l: 5.5, nom: 'Le quai' },
-  { id: 'dix', k: 10, r0: 18.3, r1: 21.4, l: 3.5, nom: 'La plateforme de dix heures' },
-  { id: 'deux', k: 2, r0: 18.3, r1: 21.4, l: 3.5, nom: 'La plateforme de deux heures' },
-  { id: 'midi', k: 0, r0: 20, r1: 21.6, l: 2.5, nom: 'La corniche de midi', corniche: true },
+  { id: 'sud', k: 6, r0: 18.3, r1: 21.4, l: 5.5, nom: 'Le quai (sud)' },
+  { id: 'est', k: 2, r0: 18.3, r1: 21.4, l: 3.5, nom: 'La plateforme est' },
+  { id: 'ouest', k: 10, r0: 18.3, r1: 21.4, l: 3.5, nom: 'La plateforme ouest' },
+  { id: 'nord', k: 0, r0: 20, r1: 21.6, l: 2.5, nom: 'La corniche nord', corniche: true },
 ];
+const pf = (id) => PLATEFORMES.find((q) => q.id === id);
 /** une place sur une plateforme : r (rayon), t (de côté, dans le sens des aiguilles) */
-export function caseSur(pf, r, t) {
-  const p = PLATEFORMES.find((q) => q.id === pf), [dx, dy] = sens(p.k), [cx, cy] = centre();
+export function caseSur(id, r, t) {
+  const p = pf(id), [dx, dy] = sens(p.k), [cx, cy] = centre();
   return [Math.floor(cx + dx * r - dy * t), Math.floor(cy + dy * r + dx * t)];
 }
 const exterieur = (p) => p.r1 - 0.5;
@@ -42,23 +50,12 @@ export const LEVIERS = PLATEFORMES.flatMap((p) => [
   { pf: p.id, quoi: 'grande', t: -(p.l - 0.5), nom: 'Le levier rouge (la grande aiguille)' },
   { pf: p.id, quoi: 'fine', t: p.l - 0.5, nom: 'Le levier bleu (l\'aiguille fine)' },
 ]);
-export const placeLevier = (L) => { const p = PLATEFORMES.find((q) => q.id === L.pf); return caseSur(p.id, exterieur(p), L.t); };
-/** les trois salles du mur : une porte au fond de leur plateforme */
-export const SALLES = [
-  { id: 'dix', pf: 'dix', nom: 'La salle de dix heures' },
-  { id: 'deux', pf: 'deux', nom: 'La salle de deux heures' },
-  { id: 'midi', pf: 'midi', nom: 'La salle de midi' },
-];
-export const salleId = (s) => `${HORLOGE}:salle:${s.id}`;
-export const placePorte = (s) => { const p = PLATEFORMES.find((q) => q.id === s.pf); return caseSur(p.id, p.r1 + 0.7, 0); };
-/** la clé du mécanisme central (sur la corniche de midi) et le mécanisme (sur le quai) */
-export const CLE = { pf: 'midi', t: -1 };
-export const placeCle = () => { const p = PLATEFORMES.find((q) => q.id === CLE.pf); return caseSur(p.id, exterieur(p), CLE.t); };
-export const MECANISME = { pf: 'quai', t: 2.5 };
-export const placeMecanisme = () => caseSur('quai', exterieur(PLATEFORMES[0]), MECANISME.t);
+export const placeLevier = (L) => caseSur(L.pf, exterieur(pf(L.pf)), L.t);
+/** les blocs de pierre qui arrêtent les aiguilles (heures interdites tant qu'ils sont là), et leur rayon */
+export const BLOCS = [1, 11], R_BLOC = 14;
 /** la sortie de la tour, derrière le quai ; l'arrivée, au bord du quai */
-export const placeSortie = () => caseSur('quai', PLATEFORMES[0].r1 + 0.7, 0);
-export const placeArrivee = () => caseSur('quai', exterieur(PLATEFORMES[0]), 0);
+export const placeSortie = () => caseSur('sud', pf('sud').r1 + 0.7, 0);
+export const placeArrivee = () => caseSur('sud', exterieur(pf('sud')), 0);
 
 /** les cases d'une bande qui part du centre dans la direction de l'heure k, du rayon r0 au rayon r1, de demi-largeur l */
 export function bande(k, r0, r1, l) {
@@ -81,35 +78,38 @@ export function casesPivot() {
   for (let y = C[1] - 4; y <= C[1] + 4; y++) for (let x = C[0] - 4; x <= C[0] + 4; x++) if (Math.hypot(x + 0.5 - cx, y + 0.5 - cy) < R_PIVOT) PIVOT.add(cle(x, y));
   return PIVOT;
 }
+/** les cases du bord de la barre, d'où l'on se sert du mécanisme central (depuis le bout d'une aiguille) */
+export function casesMecanisme() {
+  const piv = casesPivot();
+  return [...piv].map((k) => k.split(',').map(Number)).filter(([x, y]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => !piv.has(cle(x + a, y + b))));
+}
 const PF_CASES = new Map(PLATEFORMES.map((p) => [p.id, bande(p.k, p.r0, p.r1, p.l)]));
 export const casesPlateforme = (id) => PF_CASES.get(id);
 
-/** l'état de départ : les deux grandes aiguilles sur six heures (vers le quai), la petite sur trois heures, pas de clé */
-export const depart = () => ({ grande: 6, fine: 6, petite: 3, niv: 0, cle: false });
+/** l'état de départ : les deux grandes aiguilles sur six heures (vers le quai), la petite sur trois heures, les blocs en place */
+export const depart = () => ({ grande: 6, fine: 6, petite: 3, niv: 0, cle1: false, cle: false, blocs: true });
 export const AIGUILLES = ['grande', 'fine', 'petite'];
 
-/** ce qu'il y a dans une case : { quoi: 'pf', id } ou { quoi: <aiguilles qui la couvrent> } ou null (le vide) */
+/** ce qu'il y a dans une case : { quoi: 'pf', id } ou { quoi: 'aiguille', sur: [aiguilles] } ou null (le vide) */
 export function caseHorloge(E, x, y) {
   const k = cle(x, y);
   for (const p of PLATEFORMES) if (PF_CASES.get(p.id).has(k)) return { quoi: 'pf', id: p.id };
   const sur = AIGUILLES.filter((a) => casesAiguille(a, E[a]).has(k));
   return sur.length ? { quoi: 'aiguille', sur } : null;
 }
-/** les cases qu'on ne traverse pas : leviers, clé (tant qu'elle est là), mécanisme */
-export function obstacles(E) {
-  const s = new Set(LEVIERS.map((L) => cle(...placeLevier(L))));
-  if (!E.cle) s.add(cle(...placeCle()));
-  s.add(cle(...placeMecanisme()));
-  return s;
-}
+/** les cases qu'on ne traverse pas : les leviers */
+export const obstacles = () => new Set(LEVIERS.map((L) => cle(...placeLevier(L))));
 /** pose les cases praticables de la carte selon l'état (le vide est infranchissable) */
 export function appliquer(m, E) {
-  const obs = obstacles(E);
-  const portes = new Set(SALLES.map((s) => cle(...placePorte(s))));
+  const obs = obstacles(), portes = new Set(SALLES.map((s) => cle(...placePorte(s))));
   for (let y = 2; y < H; y++) for (let x = 1; x < W - 1; x++) m.set(x, y, portes.has(cle(x, y)) || (caseHorloge(E, x, y) && !obs.has(cle(x, y))) ? T.FLOOR : T.BLOCK);
 }
-/** l'état après un coup de levier (quoi : l'aiguille, s : +1 dans le sens des aiguilles, -1 à l'envers) */
-export const tourner = (E, quoi, s) => ({ ...E, [quoi]: heure(E[quoi] + s) });
+/** l'état après un coup de levier (quoi : l'aiguille, s : +1 dans le sens des aiguilles, -1 à l'envers) ; null si un bloc l'arrête */
+export function tourner(E, quoi, s) {
+  const h = heure(E[quoi] + s);
+  if (E.blocs && quoi !== 'petite' && BLOCS.includes(h)) return null;
+  return { ...E, [quoi]: h };
+}
 /** où se retrouve, après le passage de E à E2, celui qui était sur la case (x, y) : emporté par l'aiguille qui tourne
  *  sous ses pieds (même distance au centre, même côté), sinon il ne bouge pas */
 export function emporter(E, E2, x, y) {
@@ -122,27 +122,44 @@ export function emporter(E, E2, x, y) {
   return cases.sort((p, q) => Math.hypot(p[0] + 0.5 - vise[0], p[1] + 0.5 - vise[1]) - Math.hypot(q[0] + 0.5 - vise[0], q[1] + 0.5 - vise[1]))[0];
 }
 
-/* ---------------- les salles du mur : des labyrinthes à rambardes, comme la Tour Carillon ---------------- */
-// Un labyrinthe de passerelles de bois ; certaines rambardes ne se franchissent que dans un sens (on saute par-dessus,
-// vers le bas, la gauche ou la droite, jamais vers le haut). Un mauvais saut ramène en arrière ; l'objet est au fond.
-// Plan : '#' mur ou vide, '.' plancher, 'v' '>' '<' rambardes, 'O' l'objet, 'S' l'escalier de service.
-export const SALLE_W = 19, SALLE_H = 18, SALLE_ENTREE = [10, 16];
-const MI = 8, MJ = 7;   // cases du labyrinthe : (2 + 2i, 3 + 2j)
+/* ---------------- les salles du mur : secteurs de couronne, labyrinthes à rambardes (Tour Carillon) ---------------- */
+// Chaque salle a sa carte, dessinée dans le même repère que la tour (centre au milieu de la carte), entre R_MUR + 1 et
+// R_MUR2 - 1. Plan : '#' mur (plancher du dessous), ' ' hors de la salle, '.' passerelle, 'v' '>' '<' rambardes (on saute
+// par-dessus vers le bas, la droite ou la gauche, jamais vers le haut).
+export const SALLE_N = 2 * R_MUR2 + 3, SC = R_MUR2 + 1, SR0 = R_MUR + 1, SR1 = R_MUR2 - 1;
+/** de : heure où la salle commence, a : où elle finit (dans le sens des aiguilles) ; entree : porte de la plateforme ;
+ *  objet : la clé (cle1 : celle de la grille, cle : celle du mécanisme) ; grille : la porte fermée vers une autre salle */
+export const SALLES = [
+  { id: 'est', nom: 'La salle est', pf: 'est', de: 2, a: 9.6, entree: 2.15, objet: { quoi: 'cle1', k: 9.35 } },
+  { id: 'ouest', nom: 'La salle ouest', pf: 'ouest', de: 10, a: 11.97, entree: 10.15, grille: { vers: 'nord', k: 11.8 } },
+  { id: 'nord', nom: 'La salle nord', pf: 'nord', de: 11.97, a: 1.85, entree: 0, objet: { quoi: 'cle', k: 1.6 }, grille: { vers: 'ouest', k: 12.15 } },
+];
+export const salleId = (s) => `${HORLOGE}:salle:${s.id}`;
+export const placePorte = (s) => caseSur(s.pf, pf(s.pf).r1 + 0.7, 0);
+/** le point (rayon r, heure k) dans une carte de salle */
+const pointSalle = (r, k) => { const [dx, dy] = sens(k); return [SC + 0.5 + dx * r, SC + 0.5 + dy * r]; };
+/** une case d'une carte de salle est-elle dans la salle s (avec une marge en cases) ? */
+function dansSalle(s, x, y, marge = 0) {
+  const dx = x + 0.5 - (SC + 0.5), dy = y + 0.5 - (SC + 0.5), r = Math.hypot(dx, dy);
+  if (r < SR0 + marge || r > SR1 - marge) return false;
+  const long = ((s.a - s.de) % 12 + 12) % 12, h = ((heureDe(dx, dy) - s.de) % 12 + 12) % 12, m = (marge / r) * 6 / Math.PI;
+  return h >= m && h <= long - m;
+}
 function alea(g) { let a = g >>> 0 || 1; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const DIR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-/** les pas possibles depuis (x, y) dans un plan : on marche sur '.', 'O' n'est pas franchissable, une rambarde se saute dans son sens */
+/** les pas possibles depuis (x, y) dans un plan : on marche sur '.', une rambarde se saute dans son sens */
 export function pasPlan(P, x, y) {
   const out = [];
   for (const [dx, dy] of DIR4) {
     const c = P[y + dy]?.[x + dx];
-    if (c === '.' || c === 'S') out.push([x + dx, y + dy]);
-    else if ((c === 'v' && dy === 1) || (c === '>' && dx === 1) || (c === '<' && dx === -1)) { const d = P[y + 2 * dy]?.[x + 2 * dx]; if (d === '.' || d === 'S') out.push([x + 2 * dx, y + 2 * dy]); }
+    if (c === '.') out.push([x + dx, y + dy]);
+    else if ((c === 'v' && dy === 1) || (c === '>' && dx === 1) || (c === '<' && dx === -1)) { if (P[y + 2 * dy]?.[x + 2 * dx] === '.') out.push([x + 2 * dx, y + 2 * dy]); }
   }
   return out;
 }
 /** distances (en pas) depuis une case, ou vers elle (inverse) */
 export function distancesPlan(P, x0, y0, inverse = false) {
-  const cases = []; P.forEach((l, y) => [...l].forEach((c, x) => { if (c === '.' || c === 'S') cases.push([x, y]); }));
+  const cases = []; P.forEach((l, y) => [...l].forEach((c, x) => { if (c === '.') cases.push([x, y]); }));
   const succ = new Map(cases.map(([x, y]) => [x + ',' + y, pasPlan(P, x, y)]));
   const pred = new Map(cases.map(([x, y]) => [x + ',' + y, []]));
   for (const [k, l] of succ) for (const [a, b] of l) pred.get(a + ',' + b)?.push(k.split(',').map(Number));
@@ -150,84 +167,120 @@ export function distancesPlan(P, x0, y0, inverse = false) {
   for (let i = 0; i < f.length; i++) { const [x, y] = f[i], d = D.get(x + ',' + y); for (const [a, b] of vois.get(x + ',' + y) || []) if (!D.has(a + ',' + b)) { D.set(a + ',' + b, d + 1); f.push([a, b]); } }
   return D;
 }
-/** le labyrinthe d'une graine (tableau de lignes) et la case de l'objet */
-export function labyrinthe(graine) {
-  const r = alea(graine), G = Array.from({ length: SALLE_H }, (_, y) => Array.from({ length: SALLE_W }, () => '#'));
-  const X = (i) => 2 + 2 * i, Y = (j) => 3 + 2 * j;
-  for (let j = 0; j < MJ; j++) for (let i = 0; i < MI; i++) G[Y(j)][X(i)] = '.';
-  // un labyrinthe parfait (en profondeur), depuis l'entrée, puis quelques murs ouverts en plus (des boucles)
-  const vu = new Set(), pile = [[4, MJ - 1]]; vu.add('4,' + (MJ - 1));
-  while (pile.length) {
-    const [i, j] = pile[pile.length - 1], v = DIR4.map(([a, b]) => [i + a, j + b]).filter(([a, b]) => a >= 0 && b >= 0 && a < MI && b < MJ && !vu.has(a + ',' + b));
-    if (!v.length) { pile.pop(); continue; }
-    const [a, b] = v[Math.floor(r() * v.length)]; G[(Y(j) + Y(b)) / 2][(X(i) + X(a)) / 2] = '.'; vu.add(a + ',' + b); pile.push([a, b]);
-  }
-  for (let j = 0; j < MJ; j++) for (let i = 0; i < MI; i++) for (const [a, b] of [[1, 0], [0, 1]]) if (i + a < MI && j + b < MJ && r() < 0.22) G[Y(j) + b][X(i) + a] = '.';
-  // des passages deviennent des rambardes à sens unique
-  for (let j = 0; j < MJ; j++) for (let i = 0; i < MI; i++) for (const [a, b] of [[1, 0], [0, 1]]) {
-    if (i + a >= MI || j + b >= MJ) continue;
-    const y = Y(j) + b, x = X(i) + a; if (G[y][x] !== '.' || r() > 0.38) continue;
-    G[y][x] = b ? 'v' : r() < 0.5 ? '>' : '<';
-  }
-  // l'entrée, l'escalier de service
-  G[SALLE_ENTREE[1]][SALLE_ENTREE[0]] = '.'; G[16][2] = 'S';
-  const P = G.map((l) => l.join(''));
-  // l'objet : sur la rangée du haut, la case la plus loin de l'entrée
-  const D = distancesPlan(P, ...SALLE_ENTREE);
-  let obj = null; for (let i = 0; i < MI; i++) { const k = X(i) + ',' + Y(0); if (D.has(k) && (!obj || D.get(k) > D.get(obj))) obj = k; }
-  return { plan: P, objet: obj?.split(',').map(Number) || null };
+/** le nœud du labyrinthe (coordonnées impaires) le plus proche d'un point */
+function noeudPres(P, [px, py]) {
+  let best = null, bd = 1e9;
+  for (let y = 1; y < SALLE_N; y += 2) for (let x = 1; x < SALLE_N; x += 2) if (P[y]?.[x] === '.') { const d = Math.hypot(x + 0.5 - px, y + 0.5 - py); if (d < bd) { bd = d; best = [x, y]; } }
+  return best;
 }
-/** un labyrinthe convient : objet et escalier atteints, jamais coincé (on revient toujours à l'entrée), assez de faux pas */
-export function labyrintheValide(L) {
-  if (!L.objet) return false;
-  const P = L.plan, D = distancesPlan(P, ...SALLE_ENTREE), R = distancesPlan(P, ...SALLE_ENTREE, true);
-  const [ox, oy] = L.objet, V = distancesPlan(P, ox, oy, true);
-  if (!D.has('2,16') || [...D.keys()].some((k) => !R.has(k))) return false;
-  // les rambardes qui éloignent de l'objet : des pièges
-  let pieges = 0, ramb = 0;
+/** une case de mur voisine d'un nœud, du côté d'un point (pour y poser un objet sans couper le labyrinthe) */
+function murVoisin(P, [x, y], [px, py]) {
+  return DIR4.map(([a, b]) => [x + a, y + b]).filter(([a, b]) => P[b]?.[a] === '#' || P[b]?.[a] === ' ')
+    .sort((u, v) => Math.hypot(u[0] + 0.5 - px, u[1] + 0.5 - py) - Math.hypot(v[0] + 0.5 - px, v[1] + 0.5 - py))[0];
+}
+const placer = (G, k) => { const P = G.map((l) => l.join('')), n = noeudPres(P, pointSalle((SR0 + SR1) / 2, k)); return { noeud: n, case: murVoisin(P, n, pointSalle(SR1 + 2, k)) }; };
+/** on n'y est jamais coincé : de partout où l'on va depuis l'entrée, on revient à l'entrée ou à la grille ; l'objet et la grille sont atteints */
+function sur(s, L) {
+  const P = L.plan, D = distancesPlan(P, ...L.entree);
+  const sorties = [L.entree, ...(L.grille ? [L.grille.noeud] : [])].map((n) => distancesPlan(P, n[0], n[1], true));
+  if ([...D.keys()].some((k) => !sorties.some((R) => R.has(k)))) return false;
+  return [L.objet, L.grille].filter(Boolean).every((b) => b.case && D.has(cle(...b.noeud)));
+}
+/** le labyrinthe d'une salle pour une graine : plan, entrée (nœud et paillasson), objet et grille (nœud devant, case du décor) */
+export function labyrinthe(s, graine) {
+  const r = alea(graine), N = SALLE_N, G = Array.from({ length: N }, (_, y) => Array.from({ length: N }, (_, x) => (dansSalle(s, x, y) ? '#' : ' ')));
+  const noeud = (x, y) => x % 2 === 1 && y % 2 === 1 && dansSalle(s, x, y, 0.6);
+  for (let y = 1; y < N; y += 2) for (let x = 1; x < N; x += 2) if (noeud(x, y)) G[y][x] = '.';
+  const entree = noeudPres(G.map((l) => l.join('')), pointSalle(SR0 + 0.6, s.entree));
+  // un labyrinthe parfait (en profondeur) depuis l'entrée, puis quelques murs ouverts en plus (des boucles)
+  const vu = new Set([cle(...entree)]), pile = [entree], voisins = (x, y) => DIR4.map(([a, b]) => [x + 2 * a, y + 2 * b]).filter(([a, b]) => noeud(a, b));
+  while (pile.length) {
+    const [x, y] = pile[pile.length - 1], v = voisins(x, y).filter(([a, b]) => !vu.has(cle(a, b)));
+    if (!v.length) { pile.pop(); continue; }
+    const [a, b] = v[Math.floor(r() * v.length)]; G[(y + b) / 2][(x + a) / 2] = '.'; vu.add(cle(a, b)); pile.push([a, b]);
+  }
+  for (let y = 1; y < N; y += 2) for (let x = 1; x < N; x += 2) if (noeud(x, y)) for (const [a, b] of [[2, 0], [0, 2]]) if (noeud(x + a, y + b) && r() < 0.3) G[y + b / 2][x + a / 2] = '.';
+  // des passages deviennent des rambardes à sens unique, un par un et seulement si l'on n'est jamais coincé
+  // (de partout, on revient à l'entrée ou à la grille) et si l'objet reste atteignable
+  const cand = [];
+  for (let y = 1; y < N; y += 2) for (let x = 1; x < N; x += 2) if (noeud(x, y)) for (const [a, b] of [[2, 0], [0, 2]]) if (noeud(x + a, y + b) && G[y + b / 2][x + a / 2] === '.') cand.push([x + a / 2, y + b / 2, b ? 'v' : null]);
+  for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [cand[i], cand[j]] = [cand[j], cand[i]]; }
+  const base = { entree, objet: s.objet ? placer(G, s.objet.k) : null, grille: s.grille ? placer(G, s.grille.k) : null };
+  let n = 0;
+  for (const [x, y, v] of cand) {
+    if (n >= 60) break;
+    G[y][x] = v || (r() < 0.5 ? '>' : '<');
+    if (sur(s, { ...base, plan: G.map((l) => l.join('')) })) n++; else G[y][x] = '.';
+  }
+  const P = G.map((l) => l.join(''));
+  // le paillasson de l'entrée : la case voisine de l'entrée la plus proche du centre de la tour
+  const tapis = DIR4.map(([a, b]) => [entree[0] + a, entree[1] + b]).sort((u, v) => Math.hypot(u[0] - SC, u[1] - SC) - Math.hypot(v[0] - SC, v[1] - SC))[0];
+  return { plan: P, entree, tapis, objet: base.objet, grille: base.grille };
+}
+/** un labyrinthe convient : objet et grille atteints depuis l'entrée, jamais coincé (on revient toujours à l'entrée ou à
+ *  la grille), assez de faux pas (des rambardes qui éloignent du but) */
+export function labyrintheValide(s, L) {
+  if (!sur(s, L)) return null;
+  const P = L.plan, [ex, ey] = L.entree, D = distancesPlan(P, ex, ey);
+  const but = (L.objet || L.grille).noeud, V = distancesPlan(P, but[0], but[1], true);
+  let pieges = 0;
   P.forEach((l, y) => [...l].forEach((c, x) => {
     if (!'v<>'.includes(c)) return;
-    const [dx, dy] = c === 'v' ? [0, 1] : c === '>' ? [1, 0] : [-1, 0], a = (x - dx) + ',' + (y - dy), b = (x + dx) + ',' + (y + dy);
-    if (!D.has(a)) return; ramb++;
-    if ((V.get(b) ?? 99) - (V.get(a) ?? 99) >= 8) pieges++;
+    const [dx, dy] = c === 'v' ? [0, 1] : c === '>' ? [1, 0] : [-1, 0], a = cle(x - dx, y - dy), b = cle(x + dx, y + dy);
+    if (D.has(a) && (V.get(b) ?? 999) - (V.get(a) ?? 999) >= 8) pieges++;
   }));
-  return V.get(SALLE_ENTREE.join(',')) >= 34 && pieges >= 4 && ramb >= 10;
+  const loin = V.get(cle(ex, ey)) ?? 0, taille = ((s.a - s.de) % 12 + 12) % 12;
+  return { pieges, loin, taille, ok: pieges >= Math.round(1 + taille / 2) && loin >= 8 * taille };
 }
-/** les graines retenues (cherchées par tools/test-testodyssee.mjs, qui vérifie qu'elles conviennent toujours) */
-export const GRAINES_SALLES = { dix: 390, deux: 1087, midi: 1192 };
-export const OBJETS_SALLES = { dix: 'pp-up', deux: 'max-elixir', midi: 'rare-candy' };
-/** pose un labyrinthe dans la carte d'une salle */
-function poserLabyrinthe(r, L, id) {
-  const tuile = { '.': T.FLOOR, v: T.LEDGE, '>': T.LEDGE_E, '<': T.LEDGE_W, '#': T.BLOCK, S: T.STAIRS };
-  L.plan.forEach((l, y) => { if (y < 2 || y >= SALLE_H - 1) return; [...l].forEach((c, x) => { if (x > 0 && x < SALLE_W - 1) r.set(x, y, tuile[c] ?? T.BLOCK); }); });
-  for (let x = 1; x < SALLE_W - 1; x++) if (x !== SALLE_ENTREE[0]) r.set(x, SALLE_H - 1, T.BLOCK);   // le bas de la salle, sauf la porte
-  r.item(L.objet[0], L.objet[1], OBJETS_SALLES[id], 1, `${HORLOGE}:${id}:objet`);
-  // les passerelles en planches ; entre elles, le plancher du dessous (posé de biais), où l'on ne descend pas
-  const sol = new Map();
-  L.plan.forEach((l, y) => [...l].forEach((c, x) => { if (c === '#' && y >= 2 && !(y === SALLE_H - 1 && x === SALLE_ENTREE[0]) && x > 0 && x < SALLE_W - 1) sol.set(x + ',' + y, 'sol_carillon_bas'); }));
+/** les graines retenues (cherchées hors du jeu ; tools/test-testodyssee.mjs vérifie qu'elles conviennent toujours) */
+export const GRAINES_SALLES = { est: 375, ouest: 400, nord: 288 };
+/** pose le labyrinthe d'une salle dans sa carte */
+function poserLabyrinthe(r, L) {
+  const tuile = { '.': T.FLOOR, v: T.LEDGE, '>': T.LEDGE_E, '<': T.LEDGE_W }, sol = new Map();
+  L.plan.forEach((l, y) => { if (y < 2 || y >= SALLE_N - 1) return; [...l].forEach((c, x) => {
+    if (x < 1 || x >= SALLE_N - 1) return;
+    r.set(x, y, tuile[c] ?? T.BLOCK);
+    if (c === '#') sol.set(cle(x, y), 'sol_carillon_bas'); else if (c === ' ') sol.set(cle(x, y), 'void');
+  }); });
   r.solArene = sol; r.style = 'carillon';
 }
+/** les labyrinthes des trois salles (une fois) */
+let LABS = null;
+export const labyrinthes = () => (LABS ||= Object.fromEntries(SALLES.map((s) => [s.id, labyrinthe(s, GRAINES_SALLES[s.id])])));
 
 export function construireHorloge(world) {
   const m = room(HORLOGE, W, H, { floor: 'cave', music: 'dmhh', wall: 'wall_cendre', name: 'Tour de l\'Horloge' });
   m.zone(0, 0, W - 1, H - 1, { name: 'Tour de l\'Horloge', music: 'dmhh' });
   m.horloge = depart();
   appliquer(m, m.horloge);
-  // leviers, clé et mécanisme : on s'en sert de face (horloge-jeu.js)
-  for (const [x, y] of [...LEVIERS.map(placeLevier), placeCle(), placeMecanisme()]) m.object(x, y, { use: (api) => api.game.horloge?.utiliser(x, y) });
+  // leviers et mécanisme central (sur le bord de la barre) : on s'en sert de face (horloge-jeu.js)
+  for (const [x, y] of [...LEVIERS.map(placeLevier), ...casesMecanisme()]) m.object(x, y, { use: (api) => api.game.horloge?.utiliser(x, y) });
   world.maps[HORLOGE] = m;
-  // les trois salles du mur, vides pour l'instant ; un escalier de service y redescend vers le quai
-  const [ax, ay] = placeArrivee();
+  const [ax, ay] = placeArrivee(), labs = labyrinthes(), cartes = {};
+  // les salles du mur
   for (const s of SALLES) {
-    const r = room(salleId(s), SALLE_W, SALLE_H, { floor: 'wood', music: 'dmhh', wall: 'wall_cendre', name: s.nom, exitX: SALLE_ENTREE[0] });
-    r.zone(0, 0, SALLE_W - 1, SALLE_H - 1, { name: s.nom, music: 'dmhh' });
-    poserLabyrinthe(r, labyrinthe(GRAINES_SALLES[s.id]), s.id);
-    const p = PLATEFORMES.find((q) => q.id === s.pf), [px, py] = caseSur(p.id, exterieur(p), 0);
-    r.warp(r.exitX, r.exitY, { map: HORLOGE, x: px, y: py, dir: 'down' });
-    r.warp(2, 16, { map: HORLOGE, x: ax, y: ay, dir: 'up' });
-    world.maps[salleId(s)] = r;
+    const L = labs[s.id];
+    const r = room(salleId(s), SALLE_N, SALLE_N, { floor: 'wood', music: 'dmhh', wall: 'wall_cendre', name: s.nom });
+    r.zone(0, 0, SALLE_N - 1, SALLE_N - 1, { name: s.nom, music: 'dmhh' });
+    poserLabyrinthe(r, L);
+    // l'entrée : un paillasson qui ramène à la plateforme
+    const [px, py] = caseSur(s.pf, exterieur(pf(s.pf)), 0);
+    r.set(...L.tapis, T.MAT); r.warp(...L.tapis, { map: HORLOGE, x: px, y: py, dir: 'down', step: true });
+    r.exitX = L.tapis[0]; r.exitY = L.tapis[1];
+    if (L.objet) {
+      const [ox, oy] = L.objet.case, quoi = s.objet.quoi;
+      r.set(ox, oy, T.BLOCK); r.prop('coffre', ox, oy);
+      r.object(ox, oy, { use: (api) => api.game.horloge?.prendre(quoi) });
+    }
+    world.maps[salleId(s)] = cartes[s.id] = r;
     const [dx, dy] = placePorte(s);
-    m.warp(dx, dy, { map: salleId(s), x: r.exitX, y: r.exitY - 1, dir: 'up', step: true });   // on entre en marchant dans la porte
+    m.warp(dx, dy, { map: salleId(s), x: L.entree[0], y: L.entree[1], dir: 'up', step: true });   // on entre en marchant dans la porte
+  }
+  // la grille entre la salle ouest et la salle nord (la clé trouvée dans la salle est l'ouvre)
+  for (const s of SALLES) if (s.grille) {
+    const L = labs[s.id], r = cartes[s.id], [gx, gy] = L.grille.case, [bx, by] = labs[s.grille.vers].grille.noeud;
+    r.set(gx, gy, T.BLOCK); r.prop('porte_grille', gx, gy);
+    r.object(gx, gy, { use: (api) => api.game.horloge?.grille(salleId({ id: s.grille.vers }), bx, by) });
   }
   // dehors : la Tour de l'Horloge (la tour qui se défait, labo3d.js) ; on entre sur le quai
   const d = new GameMap(DEHORS, 41, 34, { outdoor: true, fill: T.TREE, name: 'Tour de l\'Horloge', music: 'route' });

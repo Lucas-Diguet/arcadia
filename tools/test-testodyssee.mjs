@@ -1176,39 +1176,43 @@ for (const l of Object.values(lieux).flat()) {
   const atteint = (E, x0, y0) => {
     Hm.appliquer(m, E);
     const vu = new Set([x0 + ',' + y0]), f = [[x0, y0]];
-    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const a = x + dx, b = y + dy, k = a + ',' + b; if (!vu.has(k) && walkable(m.get(a, b))) { vu.add(k); f.push([a, b]); } } }
+    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const a = x + dx, b = y + dy, k = a + ',' + b; if (!vu.has(k) && walkable(m.get(a, b)) && !m.warpAt(a, b)) { vu.add(k); f.push([a, b]); } } }
     return vu;
   };
   const pres = (vu, [x, y]) => N4.some(([dx, dy]) => vu.has((x + dx) + ',' + (y + dy)));
   const surPf = (vu, id) => [...Hm.casesPlateforme(id)].some((k) => vu.has(k));
   const cases = (q, k) => [...Hm.casesAiguille(q, k)].map((c) => c.split(',').map(Number));
   const [ax, ay] = Hm.placeArrivee();
-  // la pointe de chaque grande aiguille touche les plateformes ; les corniches, seulement l'aiguille fine
-  const touche = (q, p) => { const E = { ...Hm.depart(), grande: (p.k + 6) % 12, fine: (p.k + 6) % 12, [q]: p.k }; const c = cases(q, p.k).sort((u, v) => Math.hypot(u[0] - Hm.C[0], u[1] - Hm.C[1]) - Math.hypot(v[0] - Hm.C[0], v[1] - Hm.C[1]))[0]; return surPf(atteint(E, ...c), p.id); };
-  ok(m && walkable(m.get(ax, ay)) && Hm.PLATEFORMES.every((p) => touche('fine', p) && touche('grande', p) === !p.corniche), 'horloge : la grande aiguille touche les plateformes, l\'aiguille fine aussi les corniches');
+  // la pointe de chaque grande aiguille touche les plateformes ; la corniche nord, seulement l'aiguille fine
+  const touche = (q, p) => { const E = { ...Hm.depart(), blocs: false, grande: (p.k + 6) % 12, fine: (p.k + 6) % 12, [q]: p.k }; const c = cases(q, p.k).sort((u, v) => Math.hypot(u[0] - Hm.C[0], u[1] - Hm.C[1]) - Math.hypot(v[0] - Hm.C[0], v[1] - Hm.C[1]))[0]; return surPf(atteint(E, ...c), p.id); };
+  ok(m && walkable(m.get(ax, ay)) && Hm.PLATEFORMES.every((p) => touche('fine', p) && touche('grande', p) === !p.corniche), 'horloge : la grande aiguille touche les plateformes, l\'aiguille fine aussi la corniche nord');
   ok([...Array(12).keys()].every((k) => { const s = Hm.casesAiguille('fine', k), [d] = s, vu = new Set([d]), f = [d.split(',').map(Number)]; while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const kk = (x + dx) + ',' + (y + dy); if (s.has(kk) && !vu.has(kk)) { vu.add(kk); f.push([x + dx, y + dy]); } } } return vu.size === s.size; }), 'horloge : l\'aiguille fine se suit d\'un bout à l\'autre à chaque heure');
-  // seul : quelle que soit l'heure des aiguilles, on ne quitte pas le quai à pied
+  // seul : quelle que soit l'heure des aiguilles (blocs ou pas), on ne quitte pas le quai à pied
   let seul = true;
-  for (let g = 0; g < 12; g++) for (let f = 0; f < 12; f++) { const vu = atteint({ ...Hm.depart(), grande: g, fine: f }, ax, ay); if (Hm.PLATEFORMES.some((p) => p.id !== 'quai' && surPf(vu, p.id))) seul = false; }
-  const a0 = atteint(Hm.depart(), ax, ay), objets = [...Hm.LEVIERS.map(Hm.placeLevier), Hm.placeCle(), Hm.placeMecanisme(), ...Hm.SALLES.map(Hm.placePorte), Hm.placeSortie()].map(String);
-  ok(seul && Hm.LEVIERS.filter((L) => L.pf === 'quai').every((L) => pres(a0, Hm.placeLevier(L))) && pres(a0, Hm.placeMecanisme()) && pres(a0, Hm.placeSortie()) && new Set(objets).size === objets.length,
-    'horloge : seul, on ne quitte jamais le quai ; leviers, mécanisme et sortie à portée');
-  // à deux : A sur la grande aiguille, B au levier ; puis A ramène l'aiguille pour B ; l'aiguille fine mène B à la corniche
+  for (const blocs of [true, false]) for (let g = 0; g < 12; g++) for (let f = 0; f < 12; f++) { const vu = atteint({ ...Hm.depart(), blocs, grande: g, fine: f }, ax, ay); if (Hm.PLATEFORMES.some((p) => p.id !== 'sud' && surPf(vu, p.id))) seul = false; }
+  const a0 = atteint(Hm.depart(), ax, ay), objets = [...Hm.LEVIERS.map(Hm.placeLevier), ...Hm.SALLES.map(Hm.placePorte), Hm.placeSortie()].map(String);
+  ok(seul && Hm.LEVIERS.filter((L) => L.pf === 'sud').every((L) => pres(a0, Hm.placeLevier(L))) && pres(a0, Hm.placeSortie()) && new Set(objets).size === objets.length,
+    'horloge : seul, on ne quitte jamais le quai ; leviers et sortie à portée');
+  // les blocs : tant qu'ils sont là, aucune grande aiguille ne va sur 11 h, midi ou 1 h ; ensuite, si
   let E = Hm.depart();
+  ok(!Hm.tourner({ ...E, fine: 2 }, 'fine', -1) && !Hm.tourner({ ...E, grande: 10 }, 'grande', 1) && Hm.tourner({ ...E, blocs: false, fine: 2 }, 'fine', -1)?.fine === 1, 'horloge : les blocs arrêtent les aiguilles entre est, nord et ouest');
+  // à deux : A sur la grande aiguille, B au levier, jusqu'à l'est ; puis l'ouest (par le bas, les blocs barrent le haut)
   const pointe = (q, k, vu) => cases(q, k).filter((c) => vu.has(String(c)) && Hm.caseHorloge(E, ...c).quoi !== 'pf').sort((u, v) => Math.hypot(v[0] - Hm.C[0], v[1] - Hm.C[1]) - Math.hypot(u[0] - Hm.C[0], u[1] - Hm.C[1]))[0];
-  const tours = (q, s, n, qui) => { for (let i = 0; i < n; i++) { const E2 = Hm.tourner(E, q, s); if (qui) qui = Hm.emporter(E, E2, ...qui); E = E2; } return qui; };
-  let A = tours('grande', 1, 4, pointe('grande', 6, a0));
-  const okA = surPf(atteint(E, ...A), 'dix');
-  tours('grande', -1, 4);
-  let B = tours('grande', 1, 4, pointe('grande', 6, atteint(E, ax, ay)));
-  const okB = surPf(atteint(E, ...B), 'dix');
-  tours('fine', 1, 4);
-  B = tours('fine', 1, 2, pointe('fine', 10, atteint(E, ...B)));
-  const fin = atteint(E, ...B);
-  ok(okA && okB && surPf(fin, 'midi') && pres(fin, Hm.placeCle()) && pres(fin, Hm.placePorte(Hm.SALLES[2])), 'horloge : à deux, la grande aiguille mène à dix heures et l\'aiguille fine à la corniche de la clé');
-  ok(Hm.SALLES.every((s) => world.maps[Hm.salleId(s)]?.warps.size === 2), 'horloge : trois salles dans le mur, avec leur escalier de service vers le quai');
-  ok(Hm.SALLES.every((s) => { const L = Hm.labyrinthe(Hm.GRAINES_SALLES[s.id]), r = world.maps[Hm.salleId(s)]; return Hm.labyrintheValide(L) && r.get(...Hm.SALLE_ENTREE) === T.FLOOR && [...r.items?.values?.() || [1]].length > 0; }),
-    'horloge : trois labyrinthes à rambardes, l\'objet au fond, jamais coincé, des sauts qui ramènent en arrière');
+  const tours = (q, s, n, qui) => { for (let i = 0; i < n; i++) { const E2 = Hm.tourner(E, q, s); if (!E2) return null; if (qui) qui = Hm.emporter(E, E2, ...qui); E = E2; } return qui; };
+  let A = tours('grande', -1, 4, pointe('grande', 6, a0));
+  const okEst = A && surPf(atteint(E, ...A), 'est');
+  A = tours('grande', 1, 8, pointe('grande', 2, atteint(E, ...A)));
+  const okOuest = A && surPf(atteint(E, ...A), 'ouest');
+  ok(okEst && okOuest && !tours('grande', 1, 2), 'horloge : à deux, la grande aiguille mène à l\'est puis à l\'ouest par le bas, jamais au nord tant que les blocs sont là');
+  // les trois salles : secteurs de couronne, labyrinthes à rambardes jamais coinçants, clé et grille au fond
+  const L = Hm.labyrinthes();
+  ok(Hm.SALLES.every((s) => Hm.labyrintheValide(s, L[s.id])?.ok), 'horloge : trois labyrinthes à rambardes, jamais coincé, des sauts qui éloignent du but');
+  ok(Hm.SALLES.every((s) => { const r = world.maps[Hm.salleId(s)], [dx, dy] = Hm.placePorte(s), w = m.warpAt(dx, dy); return r && w?.map === Hm.salleId(s) && walkable(r.get(w.x, w.y)) && r.warpAt(...L[s.id].tapis)?.map === Hm.HORLOGE; }), 'horloge : chaque plateforme mène à sa salle et chaque salle ramène à sa plateforme');
+  ok(L.est.objet && L.nord.objet && L.ouest.grille && L.nord.grille && Hm.SALLES.find((s) => s.id === 'est').objet.quoi === 'cle1' && Hm.SALLES.find((s) => s.id === 'nord').objet.quoi === 'cle', 'horloge : la clé de la grille dans la salle est, la grille entre ouest et nord, la clé du mécanisme dans la salle nord');
+  // le mécanisme : sur le bord de la barre, atteint depuis le bout d'une aiguille
+  E = { ...Hm.depart(), grande: 6 };
+  const bout = cases('grande', 6).sort((u, v) => Math.hypot(u[0] - Hm.C[0], u[1] - Hm.C[1]) - Math.hypot(v[0] - Hm.C[0], v[1] - Hm.C[1]))[0];
+  ok(Hm.casesMecanisme().some((c) => N4.some(([dx, dy]) => c[0] + dx === bout[0] && c[1] + dy === bout[1])) && atteint(E, ax, ay).has(String(bout)), 'horloge : le mécanisme central se prend depuis le bout d\'une aiguille');
   Hm.appliquer(m, m.horloge);
 }
 

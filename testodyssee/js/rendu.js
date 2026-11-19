@@ -115,9 +115,10 @@ const TUILES = {
     for (let k = -32; k < 32; k += 8) { x.fillStyle = r() < 0.5 ? '#5a3220' : '#52301e'; x.beginPath(); x.moveTo(k, 32); x.lineTo(k + 32, 0); x.lineTo(k + 37, 0); x.lineTo(k + 5, 32); x.fill(); }
     x.fillStyle = 'rgba(0,0,0,0.25)'; for (let k = -32; k < 32; k += 8) { x.beginPath(); x.moveTo(k + 5, 32); x.lineTo(k + 37, 0); x.lineTo(k + 38, 0); x.lineTo(k + 6, 32); x.fill(); }
   },
-  rambarde_s(x, r) { planchesCarillon(x, r); x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(0, 24, 32, 8); for (const px of [3, 15, 27]) { x.fillStyle = '#6a3a1a'; x.fillRect(px, 14, 3, 12); } x.fillStyle = '#e0a858'; x.fillRect(0, 13, 32, 4); x.fillStyle = '#8a5428'; x.fillRect(0, 17, 32, 2); },
-  rambarde_e(x, r) { planchesCarillon(x, r); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(24, 0, 8, 32); for (const py of [3, 15, 27]) { x.fillStyle = '#6a3a1a'; x.fillRect(14, py, 6, 3); } x.fillStyle = '#e0a858'; x.fillRect(19, 0, 4, 32); x.fillStyle = '#8a5428'; x.fillRect(23, 0, 2, 32); },
-  rambarde_w(x, r) { planchesCarillon(x, r); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(0, 0, 8, 32); for (const py of [3, 15, 27]) { x.fillStyle = '#6a3a1a'; x.fillRect(12, py, 6, 3); } x.fillStyle = '#e0a858'; x.fillRect(9, 0, 4, 32); x.fillStyle = '#8a5428'; x.fillRect(7, 0, 2, 32); },
+  // une rambarde : barrière de bois clair cerclée de sombre, poteaux, ombre portée, et des chevrons gravés dans le sens du saut
+  rambarde_s(x, r) { rambarde(x, r, 's'); },
+  rambarde_e(x, r) { rambarde(x, r, 'e'); },
+  rambarde_w(x, r) { rambarde(x, r, 'w'); },
   sol_chambre(x, r) {
     x.fillStyle = '#5a3a22'; x.fillRect(0, 0, 32, 32);
     for (let j = 0; j < 4; j++) {
@@ -158,6 +159,25 @@ function planchesCarillon(x, r) {
     const y = j * 8, dec = (j * 13) % 32;
     for (let i = -1; i < 2; i++) { const t = r(); x.fillStyle = t < 0.33 ? '#b06036' : t < 0.66 ? '#a85a32' : '#ba683c'; x.fillRect(i * 32 + dec + 1, y + 1, 30, 6); x.fillStyle = 'rgba(255,220,170,0.12)'; x.fillRect(i * 32 + dec + 1, y + 1, 30, 1); x.fillStyle = '#5a2e18'; x.fillRect(i * 32 + dec, y, 1, 8); }
   }
+}
+/** une rambarde de la Tour de l'Horloge, dessinée vers le bas puis tournée selon son sens (s, e, w) */
+function rambarde(x, r, d) {
+  planchesCarillon(x, r);
+  x.save(); x.translate(16, 16); x.rotate(d === 'e' ? -Math.PI / 2 : d === 'w' ? Math.PI / 2 : 0); x.translate(-16, -16);
+  // chevrons gravés : le sens où l'on saute
+  x.fillStyle = 'rgba(40,16,6,0.55)';
+  for (const y0 of [3, 9]) { x.beginPath(); x.moveTo(10, y0); x.lineTo(16, y0 + 4); x.lineTo(22, y0); x.lineTo(22, y0 + 2); x.lineTo(16, y0 + 6); x.lineTo(10, y0 + 2); x.fill(); }
+  // l'ombre de la barrière sur le bord de la passerelle, et le vide juste derrière
+  x.fillStyle = 'rgba(0,0,0,0.45)'; x.fillRect(0, 25, 32, 7);
+  x.fillStyle = '#2a1408'; x.fillRect(0, 30, 32, 2);
+  // les poteaux
+  for (const px of [2, 14, 26]) { x.fillStyle = '#2a1408'; x.fillRect(px - 1, 15, 6, 12); x.fillStyle = '#7a4420'; x.fillRect(px, 16, 4, 10); x.fillStyle = '#a8642e'; x.fillRect(px, 16, 1, 10); }
+  // la lisse : bois doré, contour sombre, reflet
+  x.fillStyle = '#2a1408'; x.fillRect(0, 13, 32, 7);
+  x.fillStyle = '#e8b45a'; x.fillRect(0, 14, 32, 4);
+  x.fillStyle = '#fff0b0'; x.fillRect(0, 14, 32, 1);
+  x.fillStyle = '#a86a2a'; x.fillRect(0, 18, 32, 1);
+  x.restore();
 }
 function TUILES_TAPIS(nom, fond, motif, frange, filet) {
   const out = {};

@@ -1,5 +1,13 @@
 # Journal des versions — Arcadia
 
+## 6.35 — 19 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge, l'étage 0 prend forme :
+  - les murs de la tour sont épais, et les salles sont creusées dedans, en arc de cercle ;
+  - deux blocs de pierre empêchent les aiguilles d'atteindre la corniche nord : il faut passer par la salle est (qui fait tout le tour par le bas) pour trouver la clé de la grille, puis par la salle ouest, et la grille mène à la salle nord, où attend la clé du mécanisme central ;
+  - le mécanisme central est sur la grande barre au centre, on s'en sert depuis le bout d'une aiguille : la clé fait voler les blocs en éclats, puis l'horloge peut monter ou descendre (les aiguilles tournent de plus en plus vite, puis tout descend ou monte) ; les étages 1 et -1 restent à construire ;
+  - nouvelles rambardes, plus lisibles, avec des chevrons qui montrent le sens du saut ;
+  - en arrivant devant la tour, la caméra recule pour la montrer en entier.
+
 ## 6.34 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : on entre dans les salles du mur en marchant dans leur porte, au fond des plateformes de dix heures, de deux heures et de la corniche de midi. Le jeu ne se bloque plus en quittant la salle des aiguilles.
 

@@ -226,21 +226,25 @@ chronomètre les dix cibles (départ à l'entrée de l'enclos) et garde le recor
 ### La Tour de l'Horloge, niveau 0 (au moins deux joueurs)
 
 Au creux de la tour, une horloge gigantesque, tout à la même hauteur (`js/horloge.js`, sans DOM). Au centre, la barre
-du pivot (on n'y marche pas) ; trois aiguilles (`js/horloge-aiguilles.js`) : la grande et large, la grande et fine (la
-plus longue) et la petite (elle servira aux étages 1 et -1). Contre le mur, le quai, deux plateformes (dix et deux heures)
-que touchent les deux grandes aiguilles, et la corniche de midi, que seule l'aiguille fine atteint.
-Sur chaque plateforme, un levier rouge (grande aiguille) et un bleu (aiguille fine) la font tourner d'une heure, dans un
-sens ou dans l'autre ; celui qui se tient sur l'aiguille est emporté avec elle (`emporter`), mais ne peut pas tirer le
-levier lui-même : seul, on ne quitte pas le quai (vérifié pour toutes les heures). Trois petites salles dans le mur (dix
-heures, deux heures, midi), façon Tour Carillon de HeartGold : un labyrinthe de passerelles en planches au-dessus d'un
-plancher posé de biais, avec des rambardes qu'on ne saute que dans un sens (vers le bas, la gauche ou la droite) ; un
-mauvais saut ramène en arrière, un objet attend au fond (`labyrinthe`, graines `GRAINES_SALLES` : jamais coincé, au moins
-quatre sauts qui éloignent de l'objet, vérifié par `labyrintheValide`), et un escalier de service redescend au quai. La clé du mécanisme
-central est sur la corniche de midi ; le mécanisme, sur le quai, fera monter ou descendre l'horloge vers les étages 1 et -1
-(pas encore construits).
+du pivot (on n'y marche pas) et le mécanisme central ; trois aiguilles (`js/horloge-aiguilles.js`) : la grande et large,
+la grande et fine (la plus longue) et la petite (elle servira aux étages 1 et -1). Contre le mur, quatre plateformes :
+sud (le quai), est, ouest, et la corniche nord, que seule l'aiguille fine atteint. Deux blocs de pierre (`BLOCS`, à
+1 h et 11 h) arrêtent les aiguilles : la corniche nord est isolée tant qu'ils sont là.
+Sur chaque plateforme, un levier rouge (grande aiguille) et un bleu (aiguille fine) la font tourner d'une heure ; celui qui
+se tient sur l'aiguille est emporté avec elle (`emporter`), mais ne peut pas tirer le levier lui-même : seul, on ne quitte
+pas le quai (vérifié pour toutes les heures, avec et sans les blocs).
+Les salles sont dans l'épaisseur du mur (de `R_MUR` à `R_MUR2`), en secteurs de couronne, chacune sur sa carte dans le
+même repère que la tour : labyrinthes à rambardes façon Tour Carillon (`labyrinthe` : treillis dans le secteur, rambardes
+posées une à une tant qu'on n'est jamais coincé ; graines `GRAINES_SALLES`, vérifiées par `labyrintheValide`). La salle
+est fait le tour par le bas jusqu'à l'ouest : la clé de la grille au fond (`cle1`). La salle ouest monte jusqu'au nord :
+une grille fermée à clé y mène à la salle nord, où attend la clé du mécanisme (`cle`). Le mécanisme se prend depuis le
+bout d'une aiguille, contre la barre (`casesMecanisme`) : la clé brise les deux blocs, puis il fait monter ou descendre
+l'horloge (les aiguilles tournent de plus en plus vite, puis le décor glisse ; étages 1 et -1 à venir).
+Dehors, en arrivant, la caméra recule pour montrer la tour en entier (`recul` de `js/horloge-jeu.js`).
 À plusieurs, l'hôte tient l'état de l'horloge (`js/horloge-jeu.js`, messages `djHor`, `djHorE`, `djHorS`) : chacun anime
 les aiguilles, et les joueurs posés sur une aiguille tournent avec elle à l'écran (`decalage`).
-Dessin : `js/horloge-vue.js`. Dans la liste des lieux : « Tour de l'Horloge (prototype) » ; vérifiée par `test-testodyssee.mjs`.
+Dessin : `js/horloge-vue.js` ; rambardes et planchers : tuiles `sol_carillon`, `sol_carillon_bas`, `rambarde_*` de
+`js/rendu.js`. Dans la liste des lieux : « Tour de l'Horloge (prototype) » ; vérifiée par `test-testodyssee.mjs`.
 
 ### Le Musée des Dunes (scène du sceptre)
 
