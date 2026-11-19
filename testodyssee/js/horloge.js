@@ -105,7 +105,8 @@ export function obstacles(E) {
 /** pose les cases praticables de la carte selon l'état (le vide est infranchissable) */
 export function appliquer(m, E) {
   const obs = obstacles(E);
-  for (let y = 2; y < H; y++) for (let x = 1; x < W - 1; x++) m.set(x, y, caseHorloge(E, x, y) && !obs.has(cle(x, y)) ? T.FLOOR : T.BLOCK);
+  const portes = new Set(SALLES.map((s) => cle(...placePorte(s))));
+  for (let y = 2; y < H; y++) for (let x = 1; x < W - 1; x++) m.set(x, y, portes.has(cle(x, y)) || (caseHorloge(E, x, y) && !obs.has(cle(x, y))) ? T.FLOOR : T.BLOCK);
 }
 /** l'état après un coup de levier (quoi : l'aiguille, s : +1 dans le sens des aiguilles, -1 à l'envers) */
 export const tourner = (E, quoi, s) => ({ ...E, [quoi]: heure(E[quoi] + s) });
@@ -226,7 +227,7 @@ export function construireHorloge(world) {
     r.warp(2, 16, { map: HORLOGE, x: ax, y: ay, dir: 'up' });
     world.maps[salleId(s)] = r;
     const [dx, dy] = placePorte(s);
-    m.object(dx, dy, { use: async (api) => { await api.game.warp({ map: salleId(s), x: r.exitX, y: r.exitY - 1, dir: 'up' }); } });
+    m.warp(dx, dy, { map: salleId(s), x: r.exitX, y: r.exitY - 1, dir: 'up', step: true });   // on entre en marchant dans la porte
   }
   // dehors : la Tour de l'Horloge (la tour qui se défait, labo3d.js) ; on entre sur le quai
   const d = new GameMap(DEHORS, 41, 34, { outdoor: true, fill: T.TREE, name: 'Tour de l\'Horloge', music: 'route' });

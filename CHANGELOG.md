@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.34 — 19 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge : on entre dans les salles du mur en marchant dans leur porte, au fond des plateformes de dix heures, de deux heures et de la corniche de midi. Le jeu ne se bloque plus en quittant la salle des aiguilles.
+
 ## 6.33 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : vue du dehors, la tour est maintenant immense, à la mesure de son horloge, et sa grande porte est au niveau du sol.
 

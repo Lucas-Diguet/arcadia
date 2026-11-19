@@ -1428,8 +1428,7 @@ export class WorldView {
     const mats = new Set();
     this.root.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
-      const m = o.material; if (!m) return;
-      if (m.userData.own || m.userData.ownTint) { if (m.userData.own) m.map?.dispose(); mats.add(m); }
+      for (const m of [].concat(o.material || [])) if (m.userData?.own || m.userData?.ownTint) { if (m.userData.own) m.map?.dispose(); mats.add(m); }
     });
     for (const m of mats) m.dispose();
     // textures des façades et fenêtres de nuit de cette carte (caches refaits à chaque carte)
