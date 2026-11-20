@@ -277,7 +277,7 @@ T['ledgeW'] = over(G0, ledge_s.transpose(Image.ROTATE_270))
 # buttes d'herbe (plateaux du dehors) : le cadre « herbe sur roche » du kit (bord d'herbe tout autour, roche au pied et
 # sur les flancs), découpé sur la grille décalée d'une demi-case où il est dessiné. Pièces posées par world3d.js
 # (reliefDehors) sur les cases du bord du plateau (nbf_n, nbf_e…) et sur les cases de paroi (nbf_mur_*)
-FAL = lambda x, y: BW.crop((x, y, x + 32, y + 32))
+FAL = lambda x, y: net(BW.crop((x, y, x + 32, y + 32)))   # sans les ombres grises à demi transparentes du kit (elles faisaient des lignes en biais)
 Y0 = 14844   # haut du cadre (la lèvre d'herbe) ; le plateau fait 3 × 3 cases de x = 32 à 128, la paroi en dessous
 for nom, (fx, fy) in {'nw': (32, 0), 'n': (64, 0), 'ne': (96, 0), 'w': (32, 1), 'e': (96, 1),
                       'sw': (32, 2), 's': (64, 2), 'se': (96, 2), 'mur_w': (32, 3), 'mur_c': (64, 3), 'mur_e': (96, 3),
@@ -286,8 +286,9 @@ for nom, (fx, fy) in {'nw': (32, 0), 'n': (64, 0), 'ne': (96, 0), 'w': (32, 1), 
                       'fl_e_t': (128, 0), 'fl_e_m': (128, 1), 'fl_e_b': (128, 2), 'fl_e_mur': (128, 3)}.items():
     T['x_nbf_' + nom] = FAL(fx, Y0 + 32 * fy)
 # montagnes du dehors (world3d.js, paroiCell) : le plateau de roche du kit, 3 × 3 cases (dessus, lèvre claire, paroi au
-# sud), posé à la place des gradins façon HeartGold pour la roche brune ; la neige, le magma et la lune gardent les leurs
-for bio in ('montagne', 'terre', 'mer'):
+# sud), posé à la place des gradins façon HeartGold pour la roche brune (dehors et grottes de terre) ; la mer, la neige,
+# le magma et la lune gardent les leurs
+for bio in ('montagne', 'terre'):
     for R in range(3):
         for C in range(3):
             T[f'x_rp_{bio}_{R}{C}'] = FAL(160 + 32 * C, 14711 + 32 * R)
@@ -630,6 +631,42 @@ for nom, fichier in PERSOS.items():
             chars.alpha_composite(cadrer_pose(fr), ((d * 3 + k) * 64, y))
     faits += 1
 chars.save(os.path.join(OUT, 'chars.png'))
+
+# zones de la tenue du joueur (Options → apparence) sur les dresseurs de Noir 2 & Blanc 2 (rangées 0 et 1 de la planche) :
+# une image 768 × 128 où chaque pixel vaut sa zone (0 rien, 1 visière, 2 haut, 3 bas, 4 chaussures, 5 sac / bandoulière),
+# lue par render/tenue.js (setMasques) à la place de la détection automatique faite pour le dresseur de base
+import colorsys
+
+
+def _zone_tenue(genre, y, h, s, v):
+    if genre == 'm':   # Ludvic : visière rouge, veste bleue, bandoulière blanche, short gris, baskets rouges
+        rouge = (h < 0.085 or h > 0.95) and s >= 0.5
+        if rouge and v >= 0.4 and y < 44: return 1
+        if rouge and v >= 0.3 and y >= 53: return 4
+        if s < 0.22 and v > 0.74 and 38 <= y <= 56: return 5
+        if 0.55 <= h <= 0.72 and s >= 0.3 and v >= 0.2 and 38 <= y <= 56: return 2
+        if s <= 0.16 and 0.5 <= v <= 0.74 and 46 <= y <= 60: return 3
+        return 0
+    # Ludvina : visière blanche et rose, haut blanc, short jaune, sac rose, bottines lilas
+    rose = (h >= 0.88 or h < 0.015) and s >= 0.25
+    clair = s < 0.2 and v > 0.7
+    if 16 <= y < 37 and ((rose and v >= 0.4) or clair or (0.45 <= h <= 0.62 and s < 0.25 and v > 0.7)): return 1
+    if rose and s >= 0.35 and v >= 0.35 and 37 <= y <= 57: return 5
+    if 0.09 <= h <= 0.18 and s >= 0.35 and v >= 0.6 and y >= 44: return 3
+    if clair and 37 <= y <= 54: return 2
+    if 0.58 <= h <= 0.78 and 0.12 <= s <= 0.45 and v >= 0.5 and y >= 53: return 4
+    return 0
+
+
+tenue = Image.new('L', (chars.width, 128), 0); tq = tenue.load(); cp = chars.load()
+for g, row in (('m', 0), ('f', 1)):
+    for yy in range(64):
+        for xx in range(chars.width):
+            r, gg, b, a = cp[xx, row * 64 + yy]
+            if a < 128: continue
+            h, sat, val = colorsys.rgb_to_hsv(r / 255, gg / 255, b / 255)
+            tq[xx, row * 64 + yy] = _zone_tenue(g, yy, h, sat, val)
+tenue.save(os.path.join(OUT, 'tenue.png'))
 
 from noirblanc_masterpiece import appliquer_masterpiece
 appliquer_masterpiece(ROOT, OUT, COLS, noms, D, bat_dims)

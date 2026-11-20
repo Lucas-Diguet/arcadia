@@ -1,15 +1,32 @@
 # Journal des versions — Arcadia
 
-## 5.133 — 20 novembre 2026
-- **Odyssée** — Trois donjons à faire entre amis : la Crypte des Murmures, le Donjon des Miroirs et le Sanctuaire des Trois Voies.
+## 5.137 — 20 novembre 2026
+- **Tête de Calcul** — Nouveau : The Candidate — 31 questions de l'émission tournée en amphi (version 5.123) (Nicolas Muratore)
+
+## 5.136 — 20 novembre 2026
+- **Odyssée** — Le jeu a maintenant son propre numéro de version (Odyssée 1.0, affiché en bas de l'écran titre). À chaque mise à jour, le navigateur charge directement la nouvelle version : plus besoin de vider le cache pour voir les nouvelles villes ou les nouveaux graphismes.
+
+## 5.135 — 20 novembre 2026
+- **Odyssée** — Graphismes Noir & Blanc : la personnalisation de la tenue marche enfin sur les dresseurs de Noir 2 & Blanc 2. La visière, le haut, le bas, les chaussures et le sac prennent les couleurs choisies, de face, de profil et de dos, pour le garçon comme pour la fille, et les autres joueurs te voient avec ta tenue.
+
+## 5.134 — 20 novembre 2026
+- **Odyssée** — Trois donjons à faire entre amis, posés sur la nouvelle carte : la Crypte des Murmures, le Donjon des Miroirs et le Sanctuaire des Trois Voies.
   - En battant Hector, on reçoit la Clé de la Crypte. Elle ouvre la crypte du Cimetière des Murmures, au bout d'un sentier de la Route 2.
   - Le fossoyeur ouvre la crypte quand le groupe est prêt. Dans les deux premières salles, chaque esprit se combat par un seul joueur à la fois. Dans la Salle des Dalles, tout le groupe doit tenir les dalles en même temps.
   - Au fond, Ossarion a des PV partagés : chaque combat lui retire ce qu'on lui a infligé, et le groupe en vient à bout ensemble.
-  - Un encadré suit l'avancée salle par salle (touche N pour le cacher), et on peut quitter le donjon à tout moment.
   - Sur la Route 3, deux clairières cachent les deux autres. Au Parvis des Miroirs, un temple de glace : des miroirs qui parlent, des énigmes, une galerie de glace où l'on glisse, des faisceaux de lumière à renvoyer et un reflet qui marche à l'envers.
   - Dans la Clairière des Trois Voies, un sanctuaire à faire à trois : chacun prend son chemin, il faut s'échanger des codes pour avancer, et les salles sombres ne s'éclairent qu'autour de soi.
-  - Nouveaux combats à plusieurs : un boss dont la barre de vie est coupée en boucliers, qui se brisent un à un et le rendent plus fort, et des combats de groupe où chacun choisit le Pokémon adverse qu'il vise.
-  - Chaque donjon se refait autant qu'on veut ; sa récompense n'est donnée qu'une fois.
+  - Nouveaux combats à plusieurs : un boss dont la barre de vie est coupée en boucliers, et des combats de groupe où chacun choisit le Pokémon adverse qu'il vise.
+  - Un encadré suit l'avancée salle par salle (touche N pour le cacher) ; on peut quitter un donjon à tout moment et le refaire autant qu'on veut, sa récompense n'est donnée qu'une fois.
+- **Odyssée** — Graphismes Noir & Blanc :
+  - dans les montagnes, les sentiers sont en terre claire et vont jusqu'au pied de la roche, sans liseré d'herbe : on voit bien où l'on marche et où commence le rocher ;
+  - chaque gradin d'une montagne est un peu plus clair que celui du dessous, pour lire les marches de la roche.
+
+## 5.133 — 20 novembre 2026
+- **Odyssée** — Graphismes Noir & Blanc :
+  - les pentes de montagne en escalier n'ont plus de traits gris en biais sur leurs bords ;
+  - dans les grottes de terre (Route Victoire, Mesas, Crêtes, Sables…), les parois prennent la roche brune du jeu, sans pièces dépareillées ; les grottes marines, de magma et de glace gardent leur roche à elles.
+- **Odyssée** — Port-Orage et Givrebourg s'habillent : caisses et tonneaux près du ponton, bouée, bancs, lanternes dans la neige, jardinets et clôtures.
 
 ## 5.132 — 20 novembre 2026
 - **Odyssée** — Graphismes Noir & Blanc : les reliefs prennent enfin les vraies pièces de Noir 2 & Blanc 2.
