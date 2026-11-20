@@ -1,179 +1,95 @@
 # Journal des versions — Arcadia
 
-## 6.44 — 20 novembre 2026
+## 5.125 — 20 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : l'étage 1. Avec la clé du mécanisme, l'horloge monte, et ceux qui se tiennent sur une aiguille montent avec elle. Le mécanisme les ramène en bas.
   - Deux îlots plus près du centre, à 3 h et 9 h, ne sont atteints que par la petite aiguille, et ils arrêtent les grandes. Quatre plateformes contre le mur sont trop loin pour elle. De nouveaux leviers verts font tourner la petite aiguille, et l'on passe d'une grande aiguille à la petite quand elles sont à la même heure.
   - Les salles du mur relient deux plateformes et sont remplies de tourniquets, comme l'arène de Cimetronelle : on pousse un bras par le côté pour le faire tourner d'un quart de tour, s'il a la place. Une grille coupe les salles est et ouest en deux : elle se lève avec un levier, sur l'îlot qui est devant.
   - Au nord, un immense escalier de pierre fait tout le tour de la tour, au-dessus des autres salles, qu'on voit en dessous. Tout en haut, une grande porte en bois mène à l'étage 2. Elle est fermée pour l'instant.
-
-## 6.43 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : plus de texte qui s'ouvre tout seul en entrant dans la salle des aiguilles. La caméra ne recule plus à l'arrivée devant la tour, mais quand on passe sa porte : on voit toute la tour, puis on entre.
-
-## 6.42 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : les salles du mur ne ressemblent plus à une grande carte carrée. Une muraille de pierre les borde des deux côtés et en suit la courbe, et au-delà il n'y a plus rien.
-
-## 6.41 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : dans les salles du mur, tout ce qui fait sortir est maintenant au bout de la salle, contre le mur d'extrémité, et non plus au milieu d'un couloir. Ça vaut pour la sortie vers la plateforme (un paillasson), le bout du tube de cuivre qui sort du mur, la grille et les coffres des clés. Le faux paillasson en bas des salles a disparu.
-
-## 6.40 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : dans les salles du mur, la sortie vers la plateforme est maintenant une vraie porte dans le mur, comme celle du vestibule. On y entre en marchant dedans.
-
-## 6.39 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge :
   - en mode test, « Aller à une salle » mène directement au vestibule, au quai, aux plateformes et aux quatre salles du mur ;
   - les labyrinthes des salles est et ouest permettent toujours de faire demi-tour jusqu'à la porte, même sans la clé de la grille ;
   - le vestibule a une vraie porte au fond vers la salle des aiguilles, et l'on passe sous le tube partout ;
   - le tube : ses bouches sont au bout des deux moitiés de la salle est, dans le mur comme des portes, et l'on voit bien le joueur à l'intérieur, derrière la vitre.
-
-## 6.38 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : quand on tire un levier vers un bloc de pierre, l'aiguille part quand même, heurte le bloc dans un choc qui secoue l'écran, puis revient à sa place (avec ceux qui sont dessus).
-
-## 6.37 — 19 novembre 2026
 - **TestOdyssée** — Nouveau donjon, la Course de la Vallée, à 2 ou 3 joueurs : chacun court dans son couloir, celui du milieu au fond de la vallée et les deux autres sur les plateaux. On voit les autres courir sans pouvoir les rejoindre.
   - Les trois couloirs sont identiques : rochers à pousser, labyrinthe de rebords à sens unique, trois dresseurs.
   - Un cairn remet les rochers en place si on s'est coincé, et une défaite coûte dix secondes. Le premier arrivé en haut gagne.
-
-## 6.36 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : on n'arrive plus directement dans la salle des aiguilles. On traverse d'abord un vestibule creusé dans le mur, sous un grand tube de cuivre vitré. Ce tube coupe la salle est en deux : on s'y glisse depuis la première moitié et on le parcourt au-dessus du vestibule pour rejoindre l'autre moitié, où se trouve la clé de la grille.
-
-## 6.35 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge, l'étage 0 prend forme :
   - les murs de la tour sont épais, et les salles sont creusées dedans, en arc de cercle ;
   - deux blocs de pierre empêchent les aiguilles d'atteindre la corniche nord : il faut passer par la salle est (qui fait tout le tour par le bas) pour trouver la clé de la grille, puis par la salle ouest, et la grille mène à la salle nord, où attend la clé du mécanisme central ;
   - le mécanisme central est sur la grande barre au centre, on s'en sert depuis le bout d'une aiguille : la clé fait voler les blocs en éclats, puis l'horloge peut monter ou descendre (les aiguilles tournent de plus en plus vite, puis tout descend ou monte) ; les étages 1 et -1 restent à construire ;
   - nouvelles rambardes, plus lisibles, avec des chevrons qui montrent le sens du saut ;
   - en arrivant devant la tour, la caméra recule pour la montrer en entier.
-
-## 6.34 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : on entre dans les salles du mur en marchant dans leur porte, au fond des plateformes de dix heures, de deux heures et de la corniche de midi. Le jeu ne se bloque plus en quittant la salle des aiguilles.
-
-## 6.33 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : vue du dehors, la tour est maintenant immense, à la mesure de son horloge, et sa grande porte est au niveau du sol.
-
-## 6.32 — 18 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : les trois salles du mur sont devenues des labyrinthes de passerelles, comme dans une tour ancienne. Certaines rambardes ne se sautent que dans un sens : un mauvais saut ramène en arrière. Un objet attend au fond de chaque salle.
-
-## 6.31 — 18 novembre 2026
 - **TestOdyssée** — Nouvelles musiques : le Sanctuaire des Trois Voies et la Tour de l'Horloge ont chacun la leur.
-
-## 6.30 — 18 novembre 2026
 - **TestOdyssée** — La Tour de l'Horloge devient un vrai étage, à deux joueurs ou plus :
   - trois aiguilles géantes autour du pivot, toutes à la même hauteur que les plateformes ;
   - sur chaque plateforme, un levier rouge et un levier bleu font tourner la grande aiguille ou l'aiguille fine d'une heure : celui qui se tient dessus est emporté, mais il faut un coéquipier au levier ;
   - l'aiguille fine, la plus longue, est la seule à atteindre la corniche de midi, où attend la clé du mécanisme central ;
   - trois petites salles dans le mur de la tour.
   - Le joueur tourne maintenant avec l'aiguille au lieu de rester un instant dans le vide.
-
-## 6.29 — 18 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge à plusieurs : quand un joueur tire un levier, les aiguilles tournent chez tout le monde, et celui qui se tient dessus est emporté avec elles. En arrivant dans la salle, on retrouve l'horloge telle que les autres l'ont laissée.
-
-## 6.28 — 18 novembre 2026
 - **TestOdyssée** — La Tour de l'Horloge se dresse dans le labo : une tour de pierre qui se défait, ses étages flottant au-dessus du vide autour d'un cadran suspendu. On y entre à pied pour rejoindre la salle des aiguilles.
-
-## 6.27 — 18 novembre 2026
 - **TestOdyssée** — Sanctuaire des Trois Voies : le sanctuaire a enfin son vrai bâtiment, taillé dans la roche, avec ses trois niches à flammes au-dessus de la porte et ses marches.
   - Les panneaux d'entrée des donjons ne se posent plus sur les marches des bâtiments.
-
-## 6.26 — 18 novembre 2026
 - **TestOdyssée** — Temple des Éléments : dans la Salle des Clés, les trois portes colorées du bas ont disparu ; ce sont maintenant de simples sorties, qui ramènent toujours au bout de chaque chemin.
-
-## 6.25 — 18 novembre 2026
 - **TestOdyssée** — Donjon des Miroirs : on monte les marches du palais et c'est devant la porte, en haut, qu'on l'ouvre avec la Clé des Miroirs (et non plus au pied de l'escalier).
-
-## 6.24 — 18 novembre 2026
 - **TestOdyssée** — Bois des Contes, armurerie : les armures sont redessinées en plus grand et plus détaillées (heaume à visière, tabard rouge, épée plantée devant), et des épées sont accrochées aux murs, croisées sur leur écusson ou posées sur des crochets.
-
-## 6.23 — 18 novembre 2026
 - **TestOdyssée** — Bois des Contes : une armurerie au premier étage de la maison de la vieille dame, avec ses armures sur pied, ses râteliers d'armes et son enclume, et aux murs des tapisseries, des portraits et des panoplies d'épées croisées.
-
-## 6.22 — 18 novembre 2026
 - **TestOdyssée** — Bois des Contes : les chambres d'enfants de la maison de la vieille dame sont refaites.
   - La chambre de la petite fille : papier peint rose à fleurs, tapis rose, et un goûter de poupées et de peluches autour de la table.
   - La chambre du petit garçon : papier peint bleu à étoiles, tapis bleu, chevaux à bascule et cubes éparpillés.
   - Des dessins d'enfants sont punaisés aux murs.
-
-## 6.21 — 18 novembre 2026
 - **TestOdyssée** — Bois des Contes : le débarras de la vieille dame est entièrement refait.
   - Une pièce immense et sombre, encombrée de malles, caisses, tonneaux, armoires, étagères, miroirs et tableaux.
   - Trois murs de vieilleries barrent le chemin du chaudron : à chaque fois, il faut pousser caisses, tonneaux, chaises ou miroirs avec Force pour ouvrir le passage.
-
-## 6.20 — 18 novembre 2026
 - **TestOdyssée** — Bois des Contes : la maison de la vieille dame devient un vrai manoir.
   - Le hall est sombre et cossu : parquet, tapisseries rouges, portraits, tapis rouge de l'entrée au grand escalier, salon au coin du feu.
   - Les couloirs des étages vont maintenant de gauche à droite, avec dix portes de manoir dans le mur : on les ouvre en leur faisant face.
-
-## 6.19 — 18 novembre 2026
 - **TestOdyssée** — Donjon des Miroirs : un nouveau palais de marbre blanc sur le Parvis enneigé, avec ses colonnes de cristal, ses hauts miroirs et ses obélisques de glace.
   - Copycat a enfin son vrai visage : un mime au masque blanc et au béret, en combinaison de losanges miroir, qui marche quand il te suit en reflet.
-
-## 6.18 — 17 novembre 2026
 - **TestOdyssée** — Nouveau donjon en construction : le Château de Noirval, seul ou en groupe.
   - Devant le pont-levis, une mère dont la fille a été enlevée par le seigneur du château.
   - Dans le Grand Hall, le seigneur s'enferme dans la tour centrale avec sa prisonnière. Sa porte demande quatre sceaux, un au sommet de chaque tour.
   - La Tour du Faucon est ouverte : six étages de gardes et, tout en haut, le capitaine et le premier sceau. Les trois autres tours arrivent bientôt.
-
-## 6.17 — 17 novembre 2026
 - **TestOdyssée** — Poussière-Ville a de vrais bâtiments de western : un saloon à balcon, une banque en briques, le bureau du shérif et son étoile, le magasin général et une petite maison de planches.
-
-## 6.16 — 17 novembre 2026
 - **TestOdyssée** — Temple des Éléments : le temple est maintenant taillé dans une falaise, avec une coulée de lave à gauche, une cascade à droite et la forêt au sommet.
   - Dans la Salle des Clés, une nouvelle porte imposante garde le Gardien : chaque clé posée allume sa gemme (rouge, bleue, verte), et la porte s'ouvre à la troisième.
 - **TestOdyssée** — Les Routes Victoire des jeux d'origine quittent le labo.
-
-## 6.15 — 17 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la grande porte du tombeau est bien fermée, battants de bronze et barre en travers. Un gardien de plus se tient juste devant.
-
-## 6.14 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : le manoir en pain d'épice retrouve une taille plus raisonnable, trois maisons de large. La clairière se resserre autour de lui.
-
-## 6.13 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : le manoir en pain d'épice perd ses tours pour ressembler moins à un château. Ses ailes s'allongent jusqu'aux deux bouts.
-
-## 6.12 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : la maison en pain d'épice devient un manoir, trois fois plus large.
   - Trois étages, deux ailes, un grand pignon avec balcon au centre et deux tours rondes à toit pointu.
   - La clairière s'agrandit pour lui faire de la place.
-
-## 6.11 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : la vieille dame a enfin une vraie maison en pain d'épice, en volumes et bien plus grande.
   - Toit en tablettes de chocolat couvert de boules de gomme, glaçage qui coule, fenêtres en sucre filé, sucres d'orge et sucettes.
   - Dans son jardin, un puits couvert et une cabane à outils, eux aussi en volumes.
-
-## 6.10 — 16 novembre 2026
 - **TestOdyssée** — Nouveau donjon : la Grande Course, de 1 à 4 joueurs.
   - Tout le monde part en même temps, affronte les mêmes dresseurs et résout les mêmes énigmes. Le premier à franchir la ligne gagne.
   - On ne voit pas les autres coureurs. Perdre un combat coûte dix secondes.
 - **TestOdyssée** — Poussière-Ville (prototype) : une rue de western et le stand de tir du shérif.
   - Chacun choisit sa touche de tir en arrivant. On tire droit devant soi sur dix cibles, chronomètre en main.
-
-## 6.9 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : le labyrinthe de haies n'est plus plongé dans le noir.
-
-## 6.8 — 16 novembre 2026
 - **TestOdyssée** — Salle de l'Horloge (prototype) : une horloge gigantesque suspendue dans le vide, dont les aiguilles sont des passerelles.
   - Des leviers font tourner chaque aiguille ; la vis du centre fait tourner les deux et les fait monter ou descendre d'un étage, en emportant ceux qui sont dessus.
   - On ne passe d'une aiguille à une plateforme qu'à la même hauteur. Un coffre attend tout en haut, à midi.
-
-## 6.7 — 16 novembre 2026
 - **TestOdyssée** — Nouvelles musiques :
   - Tombeau du Roi Sans Nom : le combat contre le roi.
   - Bois des Contes : le labyrinthe de haies, la forêt du Chaperon rouge, la clairière et le jardin de la maison en pain d'épice.
-
-## 6.6 — 16 novembre 2026
 - **TestOdyssée** — Temple des Éléments : un panneau à côté de chaque porte des trois voies (Voie du Feu, de l'Eau, de la Forêt). Les portes de la Salle des Clés reprennent leur ancien dessin.
-
-## 6.5 — 16 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom, la sépulture :
   - On y voit un peu plus loin autour de soi en entrant.
   - Le chef de Sable-Noir attend hors du cercle des flambeaux, les yeux tournés vers le sarcophage.
-
-## 6.4 — 16 novembre 2026
 - **TestOdyssée** — Musée des Dunes : le sceptre est exposé dans une petite salle, rien que pour lui.
-
-## 6.3 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : un caillou posé juste derrière une haie est caché par elle, au lieu d'apparaître devant.
-
-## 6.2 — 16 novembre 2026
 - **TestOdyssée** — Musée des Dunes : un vrai musée à l'antique.
   - Tout en longueur : on passe d'une salle à l'autre, du hall à la Galerie des Fossiles (avec les statues de Ptéra, Kabutops, Amonistar, Charkos…), puis aux caravanes et aux écrits anciens. Le sceptre est tout au bout.
   - Plus de garde devant l'arène : c'est le guide, à l'intérieur, qui dit que le champion est parti au musée.
@@ -187,23 +103,15 @@
 - **TestOdyssée** — Temple des Éléments : nouvelles portes pour les chemins du Feu, de l'Eau et de la Plante.
 - **TestOdyssée** — Sanctuaire des Trois Voies : on voit plus loin dans les salles sombres.
 - **TestOdyssée** — Bois des Contes : les sacs de cailloux sont sur la place, devant l'entrée du labyrinthe.
-
-## 6.1 — 16 novembre 2026
 - **TestOdyssée** — Donjon des Miroirs : nouveaux dessins.
   - Les miroirs de poche, les miroirs sur pied de la Salle du Brasier et la grande porte de la Salle du Reflet sont redessinés.
   - Le brasier devient un vieux fourneau à charbon en fonte noire.
   - Copycat a une nouvelle apparence, sur le terrain comme en combat.
   - La pancarte du classement est dans la première salle, celle du miroir qui parle.
-
-## 6.0 — 16 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la sépulture change de visage.
   - Le sarcophage d'or et les grands brasiers de l'autel ont de nouveaux dessins ; le sarcophage est vide quand le roi se dresse.
   - En combat, le roi a un nouveau portrait, et son nom ne s'écrit plus « Roi Roi Sans Nom ».
-
-## 5.99 — 16 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la roche fissurée roule du côté où tu la pousses avec Force (si la place est prise, elle part sur le côté).
-
-## 5.98 — 16 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : une aide pour les casse-têtes de la sépulture.
   - Battu, le chef de Sable-Noir demande à voir le trésor. Au troisième brasier rallumé, il te rejoint et se poste près du sarcophage.
   - Il peut simplifier les billes du scribe ou les dalles-soleils, ou les résoudre à ta place : demande-lui, puis va devant la stèle.
@@ -211,8 +119,6 @@
   - Dehors, le tombeau est un grand temple de pharaon.
   - En mode test, chaque casse-tête de la sépulture peut être passé.
 - **TestOdyssée** — Pyramide de l'Ascension : une vraie pyramide à degrés, avec son portail, ses obélisques et ses brasiers.
-
-## 5.97 — 16 novembre 2026
 - **TestOdyssée** — Le labo reprend les nouveautés d'Arcadia jusqu'à la 5.96 (sprites, textures et décors d'Odyssée, espèces, objets, CT, Backrooms, Hub), sans rien perdre de ses donjons.
 - **TestOdyssée** — Un musée ouvre aux Dunes d'Ocre (nouveau lieu « Musée des Dunes »). On y admire des fossiles, des antiquités, et le Sceptre du Roi Sans Nom sous sa vitrine.
   - Dans la salle du sceptre, un homme en noir parle tout seul... L'arène de la ville reste fermée tant qu'on ne l'a pas croisé.
@@ -558,6 +464,138 @@
   - Un brasier à rallumer avec les Feux Follets des Pokémon Feu, puis des miroirs à tourner pour envoyer la lumière sur deux soleils.
   - Copycat, ton reflet, refait tous tes pas en miroir dans un grand labyrinthe vu de plus haut : rejoins-le pour affronter ta propre équipe.
   - À la fin : un Bouchon d'Or (IV au maximum) et un Éclat de Miroir.
+
+## 5.124 — 19 novembre 2026
+- **Odyssée** — Graphismes Noir & Blanc :
+  - la Boutique passe aussi en vrai style Noir 2 & Blanc 2 : carrelage gris à losanges, comptoir bleu à façade argentée avec sa caisse enregistreuse, présentoirs blancs garnis ;
+  - au Dojo de Mamadou, on ne peut plus marcher à travers l'appareil de soin ;
+  - le sol du coin salon des Centres Pokémon ne risque plus de scintiller contre l'ombre des murs ;
+  - crédits complétés (planches d'UltimoSpriter et de ditto209).
+
+## 5.123 — 19 novembre 2026
+- Correction : restauration sprites authentiques Gen 5 + interieur Centre Pokemon 5G (Amiel)
+
+## 5.122 — 19 novembre 2026
+- Correction : corrections d'audit (icones objets/HUD, audio/cinematiques, sauvegardes, habitants, tests) (Amiel)
+- Correction : corrections critiques (PNJ nb_sportif/nb_linebacker, batiments troues/coupes, decors healer/vase/caisses/squelette) (Amiel)
+- Correction : corrections haute priorite (desert, monuments 2x2, lumieres nocturnes, emprises/tours, tenue sac, persos) (Amiel)
+- Nouveau : interieurs, comptoirs, mobilier Gen 5 et neige boutiques (#10-#11) (Amiel)
+
+## 5.121 — 18 novembre 2026
+- Nouveau : sprite sur mesure de Maitre Mamadou et mascotte bouc noir en veste en cuir du Dojo (Amiel)
+
+## 5.120 — 18 novembre 2026
+- **Odyssée** — L'éveil de Lugia Obscur devient une vraie cinématique de jeu, en sept plans et format cinéma (on peut toujours la passer) :
+  - la mer déchaînée sous l'éclipse, la pluie, la foudre, le Sanctuaire des Marées sur son rocher ;
+  - le Prisme Noir qui se fissure au rythme d'un cœur qui s'emballe, puis vole en éclats au ralenti, et l'onde de choc qui court sur la mer ;
+  - la mer qui tourbillonne, une colonne d'eau noire qui jaillit, une silhouette qui s'y élève… et un œil rouge qui s'allume ;
+  - la colonne qui éclate, Lugia Obscur qui se révèle et pousse son cri sous une tornade d'ombre ;
+  - l'Aéroblast chargé face à toi et tiré droit sur l'écran, puis Lugia devant l'éclipse avec son titre ;
+  - une bande-son écrite pour la scène : orage, tonnerre à chaque éclair, battements de cœur, verre brisé, chœur, tambours, cuivres et grand accord final.
+
+## 5.119 — 18 novembre 2026
+- **Odyssée** — Cinématiques des légendaires et des boss retravaillées :
+  - le légendaire s'élève d'abord en silhouette noire, puis se révèle en couleur dans un éclair blanc ;
+  - les auras, les éclairs, les rubans d'énergie et le sceau rayonnent d'une vraie lueur, qui s'emballe au bris du sceau et à l'apogée ;
+  - la caméra glisse sans à-coup d'un plan à l'autre et se resserre sur l'adversaire juste avant le combat ;
+  - chaque éclair illumine toute la scène, et le Pokémon ou le dresseur reste net au milieu de son aura.
+- **Odyssée** — Poker multijoueur : la table ne se fige plus quand l'hôte la ferme ou qu'un joueur n'a plus de jetons. Sans jetons, on reste à table pour regarder la main et on peut partir à la fin de chaque main.
+- **Odyssée** — Graphismes Noir & Blanc : un personnage qui se tient juste à côté d'un bâtiment n'est plus à moitié caché par le bord du toit.
+
+## 5.118 — 18 novembre 2026
+- **Odyssée** — Combats Duo (2v2) et Trio (3v3) plus solides :
+  - un combat ne s'interrompt plus (« Le combat a été interrompu ») quand un Pokémon est mis K.O. alors que son dresseur n'a plus de remplaçant ;
+  - Vampigraine ne fait plus planter le combat quand celui qui l'a lancée a quitté le terrain ;
+  - les combats en double contre des Pokémon sauvages tournent sans erreur ;
+  - au Club Tactique, le dresseur adverse apparaît bien en début de combat.
+- **Odyssée** — Graphismes Noir & Blanc : derrière l'Arène des Dunes d'Ocre et celle de Cendrelune, le sol redevient du sable et de la cendre (au lieu d'un carré d'herbe verte).
+- **Poké Duel** — **Lutte** fait son apparition : un Pokémon qui n'a plus aucun PP (ou bloqué par un objet Choix sur une attaque vide) lutte (50 de puissance, sans type, contrecoup d'un quart de ses PV). Un bouton « Lutte » s'affiche quand plus rien d'autre n'est possible, et les combats en double ne peuvent plus tourner sans fin.
+
+## 5.117 — 18 novembre 2026
+- **Odyssée** — Graphismes Noir & Blanc revus de fond en comble : 20 nouveaux bâtiments dans le style Noir 2 & Blanc 2 (toutes les villes sont maintenant en 2D), pavés sous les gratte-ciel de Métropole et Voltacité, rochers du désert ensablés, sapins enneigés sur la côte de Givrebourg, arbres posés proprement sur l'herbe, hautes herbes givrées, tenues du garçon et de la fille corrigées.
+
+## 5.116 — 18 novembre 2026
+- **Odyssée** — Déploiement général des **cinématiques d’introduction en 3D temps réel** et des **musiques épiques dédiées** pour chaque Pokémon légendaire et boss majeur du jeu :
+  - **Cinématiques 3D thématiques** : chaque légendaire (Groudon, Kyogre, Rayquaza, Arceus, Ho-Oh, Odyssor, les Oiseaux et Bêtes légendaires, le trio des Lacs, Dialga, Palkia, Giratina, Darkrai, les Régis et les gardiens d’après-Ligue) ainsi que chaque grand adversaire (les 15 Champions d’Arène, le Conseil 4, Maître Célestine, les chefs et admins des Teams Éclipse et Brume, les combats décisifs face aux Rivaux, les boss des Raids Co-op, la Finale du Dojo de Mamadou et le sommet de la Tour de Combat) disposent désormais d’un sanctuaire, d’un sceau fracturable et d’effets élémentaires 3D propres à leur thème (volcan, glace, foudre, cosmos, abysse, forêt, torii dojo, faille de raid, Ligue Céleste).
+  - **Bandes-son sur mesure pendant l’animation et le combat** : musiques synthétisées dynamiques synchronisées à chaque cinématique, suivies de six nouveaux thèmes de combat exclusifs (Conseil 4, Légendaires cosmiques, Légendaires élémentaires, Abysses et Odyssor, Raids Co-op et Finale du Dojo de Mamadou) et de la correction du thème musical de la Team Éclipse et de son chef Nocturne en combat.
+
+## 5.115 — 18 novembre 2026
+- **Odyssée** — Cadrage affiné de la cinématique 3D de **Lugia Obscur** : la caméra reste à l’intérieur du cercle des piliers du Sanctuaire dès les premières images et le bouton Passer reste dégagé du sous-titre sur les écrans compacts.
+
+## 5.114 — 18 novembre 2026
+- **Odyssée** — Cinématique d’éveil de **Lugia Obscur** entièrement recréée en **3D temps réel** :
+  - Scène 3D interactive du Sanctuaire des Marées (océan agité animé par vagues sous l’éclipse, autel octogonal et huit piliers runiques illuminés, éclairs et nuées de particules tourbillonnantes).
+  - Animation du **Prisme Noir** qui se fissure puis explose en éclats cristallins, suivie de l’envol et du plongeon de Lugia Obscur entouré d’ailes et de rubans d’énergie obscure en 3D, sans chargement vidéo externe.
+
+## 5.113 — 18 novembre 2026
+- **Odyssée & Hub** — Correctifs multijoueur, HUD et cinématiques suite à un audit complet :
+  - **Multijoueur & Amis** : rejoindre le salon d'un ami depuis le jeu ramène désormais directement dans son salon Arcadia sans perdre l'identité de compte ami ; la navigation au clavier (`↑` / `↓` puis `Entrée` / `Espace`) fonctionne sur toutes les actions du menu Amis, les statuts de duel et de tenue s'actualisent sans délai, et quitter ou interrompre un combat en mode Spectateur rend toujours les commandes normalement.
+  - **HUD** : mise à jour immédiate de l'objet rapide `[Y]` (avec prise en charge directe du Vélo par défaut et disparition dès épuisement), du niveau maximal affiché et des objectifs de quêtes suivies ; masquage propre des étiquettes des joueurs pendant les transitions d'écran.
+  - **Cinématiques & dialogues** : les cinématiques respectent le mode muet et le volume choisi ; si une vidéo est bloquée ou indisponible, la scène d'éveil animée de Lugia Obscur continue sans se couper prématurément et ne bloque plus l'état du jeu ni aucun effet visuel après avoir été passée ; sur mobile, les boutons tactiles ne recouvrent plus la cinématique d'ouverture.
+
+## 5.112 — 18 novembre 2026
+- **Odyssée** — Correctifs de fiabilité multijoueur suite à audit :
+  - Correction du rôle d'hôte en **Tournoi en direct** lorsque l'organisateur joue côté droit d'un duel contre un autre joueur humain, et ouverture instantanée du **Mode Spectateur** même si la demande arrive pendant l'introduction du combat.
+  - Gestion propre des départs en **Poker Texas Hold'em multijoueur** (sortie immédiate d'un joueur qui abandonne et mise à jour de la table pour les mains suivantes).
+  - Contrôle de propriété du remplaçant adverse en **Multi 2v2 à 4 joueurs** et messages d'abandon adaptés à chaque mode.
+
+## 5.111 — 18 novembre 2026
+- **Odyssée** — Finition et présentation enrichie du multijoueur :
+  - **Nouvel onglet Salon Multi** dans l'écran Amis & Connexion (accolé aux actions directes **Combat**, **Raid Co-op**, **Échange**, **Domaine** et **Observer** sur chaque dresseur en ligne) pour lancer en un clic Raids Co-op, Multi 2v2 à 4 joueurs, Tournoi, Dojo de Mamadou, Poker Multijoueur ou visite de Domaine.
+  - **Menus unifiés et lisibles** auprès des joueurs sur la carte, de Maître Mamadou et du Club Tactique, avec indication du type et du statut Pokédex des Boss de Raid.
+  - **Visuels enrichis en combat et en tournoi** : aura et segments visuels pour le Bouclier Mystique des Boss de Raid, bannières de format dédiées, arbre de tournoi éliminatoire en deux colonnes avec portraits des participants, distinction humain/IA au Poker Hold'em et présence des Pokémon résidents avec sortie rapide chez le Gardien du Domaine.
+
+## 5.110 — 18 novembre 2026
+- **Odyssée** — Cinq nouvelles activités multijoueurs dans la région et au Dojo :
+  - **Raids de Boss Co-op** (exclusivement à 2 ou 3 joueurs) face à un Boss géant doté d'un Bouclier Mystique et de 2 actions par tour, avec Points du Dojo, Super Bonbons et possibilité de capturer le Boss après la victoire.
+  - **Combat Multi 2v2 à 4 joueurs** : deux équipes de deux dresseurs humains s'affrontent en direct (1 Pokémon actif et 1 remplaçant chacun).
+  - **Tournoi en direct à 4 places** au Dojo et au Club Tactique : tableau éliminatoire complété au besoin par les Champions de la région, suivi des matchs en cours en mode Spectateur et récompenses pour le vainqueur et le finaliste.
+  - **Tables de Poker Texas Hold'em multijoueurs** au Casino de Métropole (2 à 4 joueurs humains autour du tapis, avec place tournante et jetons de courtoisie).
+  - **Visite du Domaine des amis & Dresseur Gardien** : visite le Domaine bâti d'un ami connecté, récupère son panier d'accueil (Baies Sitrus et matériaux) et défie son équipe Gardienne en Duel ou en Duo.
+
+## 5.109 — 18 novembre 2026
+- **Odyssée & Poké Duel** — Intelligence artificielle de combat nettement renforcée en Solo (1v1), Duo (2v2) et Trio (3v3) : les dresseurs et bots envoient désormais le meilleur remplaçant disponible après un K.O. (selon les résistances de types, talents et contre-attaques), savent rappeler un Pokémon bloqué sur une immunité ou totalement contré, réagissent aux menaces de K.O. rapide avec leurs attaques prioritaires ou `Abri`, exploitent les capacités multi-coups et à dégâts fixes avec précision, évitent les altérations d'état et baisses de stats inutiles face aux talents ou écrans protecteurs, et coordonnent leurs cibles ainsi que leur contrôle de vitesse en combats à plusieurs.
+
+## 5.108 — 18 novembre 2026
+- **Odyssée** — Nouveau donjon multijoueur : le **Dojo de Mamadou** ouvre ses portes à Port-Granit (accessible dès le 6e Badge), avec un bâtiment inédit dessiné dans les deux styles graphiques (**Odyssée** en 3D et **Noir & Blanc**), un repère sur la boussole locale et son grand hall intérieur complet. Les défis se disputent **exclusivement en coopération multijoueur** : **Duo Co-op (2v2)** à 2 joueurs humains contre 2 stratèges, ou **Trio Co-op (3v3)** à 3 joueurs humains contre 3 stratèges (1 Pokémon actif sur le terrain par joueur + 1 remplaçant). Séries de 5 paliers contre des équipes coordonnées et tactiques (jusqu'au combat final contre Maître Mamadou), avec gain de Points du Dojo (PDj) et une boutique dédiée proposant objets compétitifs tenus, Méga-Gemmes et Master Ball.
+
+## 5.107 — 18 novembre 2026
+- **Odyssée** — Combats Duo (2v2) et Trio (3v3) complets (stratégies d'équipe, capacités de zone, portée des attaques en Trio, sélection de cible avec efficacité affichée et bouton Retour pour corriger son choix), jouables dès les Centres Pokémon auprès du Coach Tactique, dans les arènes et la Route Victoire, à la Tour de Combat et en PvP entre joueurs. Animations de combat enrichies sur tous les formats (animations d'attente, charges avec images rémanentes, effets spéciaux sur-mesure pour les attaques signatures et les 18 types, et particules météo).
+
+## 5.106 — 18 novembre 2026
+- **Odyssée** — Choix du style de graphismes dès le lancement d'une nouvelle aventure (Odyssée d'origine ou Noir & Blanc, ainsi que les sprites Pokémon), modifiable plus tard à tout moment dans les Options avec application immédiate en jeu, et un clin d'œil dans l'introduction du Professeur Saule.
+
+## 5.105 — 18 novembre 2026
+- Odyssée : finition chef-d'oeuvre Noir & Blanc (biomes, rivages, mobilier, monuments Gen 5) (Amiel)
+
+## 5.104 — 18 novembre 2026
+- Odyssée : finition Noir & Blanc fin de jeu (asphalte BW2, décors désert/sanctuaires/mines, correctifs sable/lave/socles d'arbres) (Amiel)
+
+## 5.103 — 17 novembre 2026
+- Odyssée : boussole/repères sur toute la carte et correctifs Noir & Blanc multi-biomes (Amiel)
+
+## 5.102 — 17 novembre 2026
+- Nouveau : boussole de ville et plan local cliquable pour trouver arènes et lieux clés (Amiel)
+
+## 5.101 — 17 novembre 2026
+- Nouveau : variété maisons et PNJ Noir & Blanc + derniers correctifs d'ancrage (Amiel)
+
+## 5.100 — 17 novembre 2026
+- Correction : ancrage au sol des personnages, objets et batiments Noir & Blanc (Amiel)
+
+## 5.99 — 17 novembre 2026
+- Correction : crash chunks Noir & Blanc, projection orthographique et fondu tramé des bâtiments (Amiel)
+
+## 5.98 — 17 novembre 2026
+- Correction : graphismes Noir & Blanc 2 complets et urbanisme des villes corrigé (Amiel)
+
+## 5.97 — 17 novembre 2026
+- **The Backrooms** — Des poissons dans les bassins des Poolrooms.
+  - Ils sautent hors de l'eau de temps en temps : on les voit, on les entend retomber.
+  - Trop de bruit au bord d'un bassin (courir, retomber d'un saut, siffler, parler fort), et l'un d'eux peut te sauter dessus.
+  - Pour t'en défaire, tape les quatre flèches affichées, dans l'ordre. Une erreur, et tout est à refaire. Au doigt : touche les flèches.
+  - Tant qu'il s'accroche, tu ne bouges plus, il te mord (tu perds de l'eau) et il se débat à grand bruit : l'entité l'entend.
+  - En mode VIP, les poissons ont un visage que vous reconnaîtrez peut-être.
 
 ## 5.96 — 16 novembre 2026
 - **Odyssée** — Les 781 espèces du Pokédex peuvent maintenant toutes être obtenues :
