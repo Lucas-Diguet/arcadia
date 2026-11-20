@@ -1,5 +1,6 @@
 // odyssee/js/audio.js — musique « chiptune » originale générée à partir de grilles d'accords, et bruitages synthétisés.
 // Aucun morceau existant n'est repris : mélodies composées par un générateur à graine (toujours les mêmes pour un thème).
+import { MUSIQUES } from '../musiques/musiques.js';
 
 const NOTE = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
 const midiOf = (n) => { const m = /^([A-G][#b]?)(-?\d)$/.exec(n); return 12 * (+m[2] + 1) + NOTE[m[1]]; };
@@ -9,6 +10,7 @@ const SCALES = { maj: [0, 2, 4, 5, 7, 9, 11], min: [0, 2, 3, 5, 7, 8, 10], dor: 
 
 /* ---------------- thèmes : tonalité, tempo, grille, caractère ---------------- */
 const at = (bar, step) => bar * 16 + step;
+
 
 export const THEMES = {
   title: { custom: 'title', key: 'B3', scale: 'min', bpm: 138, prog: ['i'], seed: 11, style: 'battle' },
@@ -50,6 +52,8 @@ export const THEMES = {
   hideout: { key: 'C3', scale: 'min', bpm: 112, prog: ['i', 'iv', 'VI', 'V', 'i', 'iv', 'VII', 'V'], seed: 195, style: 'mystery' },
   sanctuary: { key: 'A2', scale: 'min', bpm: 78, prog: ['i', 'VI', 'III', 'VII', 'i', 'iv', 'VI', 'V'], seed: 205, style: 'mystery', soft: 1 },
 };
+// les musiques en fichiers (odyssee/musiques/) : des thèmes comme les autres
+for (const [nom, M] of Object.entries(MUSIQUES)) THEMES[nom] = { ...M, url: new URL('../musiques/' + M.fichier, import.meta.url).href };
 const ROMAN = { I: 0, II: 1, III: 2, IV: 3, V: 4, VI: 5, VII: 6 };
 function chordOf(sym, key, scale) {
   const minor = sym === sym.toLowerCase();
@@ -1517,6 +1521,7 @@ export class Sound {
     if (!this.ctx) { this.pending = name; return; }
     this.stopMusic(0.25);
     if (!name || !THEMES[name]) return;
+    if (THEMES[name].url) { this.playFichier(name); return; }
     const song = this.songs[name] ||= (THEMES[name].custom && CUSTOM_COMPOSERS[THEMES[name].custom] ? CUSTOM_COMPOSERS[THEMES[name].custom]() : compose(THEMES[name]));
     const stepDur = 60 / song.bpm / 4;
     const bus = this.ctx.createGain(); bus.gain.value = 1; bus.connect(this.musicBus);
@@ -1556,8 +1561,32 @@ export class Sound {
     tick();
     this.music = st;
   }
+  /** une musique en fichier : chargée la première fois, gardée ensuite ; boucle entière, avec intro, ou une seule fois */
+  playFichier(name) {
+    const T = THEMES[name], ctx = this.ctx;
+    if (this.offline) return;
+    const bus = ctx.createGain(); bus.gain.value = 0.0001; bus.connect(this.musicBus);
+    const st = { bus, alive: true, fichier: true };
+    this.music = st;
+    this.tampons ||= {};
+    this.tampons[T.url] ||= fetch(T.url).then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then((a) => new Promise((ok, ko) => ctx.decodeAudioData(a, ok, ko)));
+    this.tampons[T.url].then((buf) => {
+      if (!st.alive) return;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      if (T.boucle !== false) { src.loop = true; if (Array.isArray(T.boucle)) { src.loopStart = T.boucle[0]; src.loopEnd = Math.min(T.boucle[1], buf.duration); } }
+      src.connect(bus); src.start();
+      const t = ctx.currentTime; bus.gain.setValueAtTime(0.0001, t); bus.gain.linearRampToValueAtTime(T.volume ?? 1, t + 0.4);
+      st.src = src;
+    }).catch((e) => {
+      console.warn(`Musique « ${name} » introuvable (${T.fichier}) :`, e.message || e);
+      delete this.tampons[T.url];
+      if (st.alive && T.secours && this.current === name) { this.current = null; this.play(T.secours); this.current = name; }
+    });
+  }
   stopMusic(fade = 0.2) {
     const st = this.music; if (!st) return; st.alive = false; clearTimeout(st.timer);
+    if (st.src) { const src = st.src; setTimeout(() => { try { src.stop(); } catch (e) {} }, fade * 1000 + 600); }
     if (this.ctx) { const t = this.ctx.currentTime; st.bus.gain.setValueAtTime(st.bus.gain.value, t); st.bus.gain.linearRampToValueAtTime(0.0001, t + fade); setTimeout(() => st.bus.disconnect(), fade * 1000 + 600); }
     this.music = null;
   }

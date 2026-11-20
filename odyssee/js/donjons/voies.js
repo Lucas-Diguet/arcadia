@@ -94,7 +94,7 @@ export default {
   niveau: 'niv. 20 à 30',
   entree: 'Trois vertus, trois chemins. Aucun ne mène au bout sans les deux autres.',
   joueurs: { mode: 'exact', n: 3 },
-  musique: 'fairy',
+  musique: 'sanctuaire',
   equipe: 'debut',
   preparer,
   voies: VOIES,
