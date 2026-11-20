@@ -253,7 +253,7 @@ tube de cuivre qui le barre de droite à gauche (`TUBE_Y`), jusqu'à la porte du
 pas au milieu, et l'on ressort dans l'autre moitié. Au fond de la seconde, la clé de la grille (`cle1`). La salle ouest monte jusqu'au nord :
 une grille fermée à clé y mène à la salle nord, où attend la clé du mécanisme (`cle`). Le mécanisme se prend depuis le
 bout d'une aiguille, contre la barre (`casesMecanisme`) : la clé brise les deux blocs, puis il fait monter ou descendre
-l'horloge (les aiguilles tournent de plus en plus vite, puis le décor glisse ; étages 1 et -1 à venir).
+l'horloge (les aiguilles tournent de plus en plus vite, puis le décor glisse) : vers l'étage 1 (l'étage -1 est à venir).
 Tout ce qui fait sortir d'une salle (paillasson vers la plateforme, bout du tube, grille, coffre) est au bout de la salle,
 contre le mur d'extrémité (`auBout`, le couloir y est creusé). De partout dans un labyrinthe, on peut revenir à sa porte (la grille fermée et le tube ne comptent pas comme des sorties).
 En mode test, « Aller à une salle » liste les lieux de la tour (`salles` de `js/horloge-jeu.js`).
@@ -262,6 +262,32 @@ En passant la porte de la tour, la caméra recule pour la montrer en entier, pui
 les aiguilles, et les joueurs posés sur une aiguille tournent avec elle à l'écran (`decalage`).
 Dessin : `js/horloge-vue.js` ; rambardes et planchers : tuiles `sol_carillon`, `sol_carillon_bas`, `rambarde_*` de
 `js/rendu.js`. Dans la liste des lieux : « Tour de l'Horloge (prototype) » ; vérifiée par `test-testodyssee.mjs`.
+
+### La Tour de l'Horloge, étage 1
+
+L'horloge y monte avec ceux qui se tiennent sur une aiguille : ils arrivent à la même place sur leur aiguille
+(`surAiguille`, `caseSurAiguille` de `js/horloge.js`), les aiguilles à leur place d'arrivée (`NIVEAUX[1].arrivee` : la
+grande devant la plateforme de 5 h, la fine devant celle de 7 h, la petite sous la grande). Ceux qui restent en bas
+n'ont plus d'aiguille. L'état dit à quel étage est l'horloge (`niv`) ; la salle des aiguilles de chaque étage a sa carte
+(`NIVEAUX`, `labo:horloge:1`). Le mécanisme ramène à l'étage 0.
+La salle des aiguilles (`PLATEFORMES1`, `LEVIERS1`) : deux îlots de la petite aiguille, à 3 h et 9 h, plus près du centre,
+sur le chemin des grandes aiguilles, qu'ils arrêtent (elles viennent buter et reviennent) ; quatre plateformes contre le
+mur, à 1 h, 5 h, 7 h et 11 h, trop loin pour la petite. Les leviers verts font tourner la petite aiguille ; on passe d'une
+grande aiguille à la petite quand elles sont à la même heure. Sur chaque îlot, un levier de fer lève la grille de la salle
+du mur qui est derrière.
+Les salles du mur (`js/horloge-n1.js`) relient deux plateformes : salle sud (5 h - 7 h), salle est (1 h - 5 h), salle
+ouest (7 h - 11 h). Elles sont coupées de murs percés d'un seul passage (`coupes`), et la coupe du milieu des salles est
+et ouest est une grille (`grilleE`, `grilleO`). Dedans, façon arène de Cimetronelle : des carrefours de 3 × 3 cases reliés
+par des couloirs de trois cases, et des tourniquets au centre des carrefours (`planSalle1`, `tourniquetsTroncon`).
+Marcher dans un bras par le côté fait tourner le tourniquet d'un quart de tour, s'il a la place de balayer (`pousser`) ;
+jamais par le bout ; ils restent comme on les laisse, partagés par tous (l'hôte décide, `tq` dans l'état). Chaque tronçon
+est vérifié dans le sens où l'on traverse la salle en venant d'en bas (`depuis`) : on doit pousser pour passer, et de
+partout on revient à l'entrée et on atteint la sortie, même quand un autre joueur a laissé les tourniquets autrement
+(`analyser`, `tronconValide`). Graines : `GRAINES_N1`, cherchées par `node tools/horloge-tourniquets.mjs`.
+Au nord (11 h - 1 h), l'escalier (`ESCALIER`, `caseEscalier`) : un palier, puis un escalier de pierre qui fait tout le
+tour de la tour en s'écartant vers l'extérieur, au-dessus des autres salles (on les voit en dessous), jusqu'à la grande
+porte de l'étage 2, fermée. Dessiné en volumes dans `js/horloge-escalier.js` ; marches, contremarches, balustre et porte
+dessinés par `python3 tools/pixelforge/horloge.py` (`img/horloge/`).
 
 ### Le Musée des Dunes (scène du sceptre)
 

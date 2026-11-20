@@ -23,13 +23,15 @@ export const C = [25, 24], R_PIVOT = 3, R_MUR = 22, R_MUR2 = 32;
 /** les aiguilles : jusqu'où on y marche (en cases), demi-largeur de leurs cases */
 export const AIG = { grande: { r: 17.6, l: 0.75 }, fine: { r: 19.6, l: 0.45 }, petite: { r: 11.6, l: 0.75 } };
 export const NOMS = { grande: 'la grande aiguille', fine: 'l\'aiguille fine', petite: 'la petite aiguille' };
+/** l'étage 1 : sa carte (les salles, les tourniquets et l'escalier sont dans horloge-n1.js) */
+export const HORLOGE1 = HORLOGE + ':1';
 /** direction d'une heure (0 = midi, dans le sens des aiguilles d'une montre) : [dx, dy] sur la carte */
 export const sens = (k) => { const a = (k * Math.PI) / 6; return [Math.sin(a), -Math.cos(a)]; };
 const cle = (x, y) => x + ',' + y;
 const centre = () => [C[0] + 0.5, C[1] + 0.5];
 export const heure = (k) => ((Math.round(k) % 12) + 12) % 12;
 /** l'heure (à virgule, de 0 à 12) d'un point vu depuis un centre */
-const heureDe = (dx, dy) => ((Math.atan2(dx, -dy) / (Math.PI / 6)) % 12 + 12) % 12;
+export const heureDe = (dx, dy) => ((Math.atan2(dx, -dy) / (Math.PI / 6)) % 12 + 12) % 12;
 
 /** les plateformes : à l'heure k, du rayon r0 au rayon r1, demi-largeur l ; la corniche ne touche que l'aiguille fine */
 export const PLATEFORMES = [
@@ -38,7 +40,14 @@ export const PLATEFORMES = [
   { id: 'ouest', k: 10, r0: 18.3, r1: 21.4, l: 3.5, nom: 'La plateforme ouest' },
   { id: 'nord', k: 0, r0: 20, r1: 21.6, l: 2.5, nom: 'La corniche nord', corniche: true },
 ];
-const pf = (id) => PLATEFORMES.find((q) => q.id === id);
+/** étage 1 : deux îlots de la petite aiguille (3 h et 9 h), plus près du centre, sur le chemin des grandes aiguilles,
+ *  qu'ils arrêtent ; quatre plateformes contre le mur (1 h, 5 h, 7 h, 11 h), trop loin pour la petite */
+export const PLATEFORMES1 = [
+  ...[1, 5, 7, 11].map((k) => ({ id: 'p' + k, k, r0: 18.3, r1: 21.4, l: 3.5, nom: `La plateforme de ${k} heure${k > 1 ? 's' : ''}`, n: 1 })),
+  { id: 'i3', k: 3, r0: 12.3, r1: 15.4, l: 2.5, nom: 'L\'îlot de 3 heures', n: 1, ilot: true },
+  { id: 'i9', k: 9, r0: 12.3, r1: 15.4, l: 2.5, nom: 'L\'îlot de 9 heures', n: 1, ilot: true },
+];
+const pf = (id) => PLATEFORMES.find((q) => q.id === id) || PLATEFORMES1.find((q) => q.id === id);
 /** une place sur une plateforme : r (rayon), t (de côté, dans le sens des aiguilles) */
 export function caseSur(id, r, t) {
   const p = pf(id), [dx, dy] = sens(p.k), [cx, cy] = centre();
@@ -50,7 +59,25 @@ export const LEVIERS = PLATEFORMES.flatMap((p) => [
   { pf: p.id, quoi: 'grande', t: -(p.l - 0.5), nom: 'Le levier rouge (la grande aiguille)' },
   { pf: p.id, quoi: 'fine', t: p.l - 0.5, nom: 'Le levier bleu (l\'aiguille fine)' },
 ]);
+/** étage 1 : trois leviers sur les plateformes (rouge, vert pour la petite, bleu) ; sur les îlots, le vert et celui de la
+ *  grille de la salle du mur derrière l'îlot */
+export const LEVIERS1 = PLATEFORMES1.flatMap((p) => (p.ilot ? [
+  { pf: p.id, quoi: 'petite', t: -1.2, nom: 'Le levier vert (la petite aiguille)' },
+  { pf: p.id, quoi: p.k === 3 ? 'grilleE' : 'grilleO', t: 1.2, nom: 'Un levier de fer' },
+] : [
+  { pf: p.id, quoi: 'grande', t: -3, nom: 'Le levier rouge (la grande aiguille)' },
+  { pf: p.id, quoi: 'petite', t: 0, nom: 'Le levier vert (la petite aiguille)' },
+  { pf: p.id, quoi: 'fine', t: 3, nom: 'Le levier bleu (l\'aiguille fine)' },
+]));
 export const placeLevier = (L) => caseSur(L.pf, exterieur(pf(L.pf)), L.t);
+/** les étages : carte, plateformes, leviers, où les aiguilles arrivent quand l'horloge y monte ou descend, heures où les
+ *  grandes aiguilles ne vont pas (îlots), jusqu'où une aiguille tourne avant de heurter ce qui l'arrête */
+export const NIVEAUX = {
+  0: { carte: HORLOGE, plateformes: PLATEFORMES, leviers: LEVIERS, arrivee: { grande: 6, fine: 6, petite: 6 }, butee: 0.7 },
+  1: { carte: HORLOGE1, plateformes: PLATEFORMES1, leviers: LEVIERS1, arrivee: { grande: 5, fine: 7, petite: 5 }, interdites: [3, 9], butee: 0.42 },
+};
+/** l'étage d'une carte de la salle des aiguilles (ou null) */
+export const niveauCarte = (id) => { for (const n in NIVEAUX) if (NIVEAUX[n].carte === id) return +n; return null; };
 /** les blocs de pierre qui arrêtent les aiguilles (heures interdites tant qu'ils sont là), et leur rayon */
 export const BLOCS = [1, 11], R_BLOC = 14;
 /** la sortie de la tour, derrière le quai ; l'arrivée, au bord du quai */
@@ -83,32 +110,50 @@ export function casesMecanisme() {
   const piv = casesPivot();
   return [...piv].map((k) => k.split(',').map(Number)).filter(([x, y]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => !piv.has(cle(x + a, y + b))));
 }
-const PF_CASES = new Map(PLATEFORMES.map((p) => [p.id, bande(p.k, p.r0, p.r1, p.l)]));
+const PF_CASES = new Map([...PLATEFORMES, ...PLATEFORMES1].map((p) => [p.id, bande(p.k, p.r0, p.r1, p.l)]));
 export const casesPlateforme = (id) => PF_CASES.get(id);
 
 /** l'état de départ : les deux grandes aiguilles sur six heures (vers le quai), la petite sur trois heures, les blocs en place */
-export const depart = () => ({ grande: 6, fine: 6, petite: 3, niv: 0, cle1: false, cle: false, blocs: true });
+export const depart = () => ({ grande: 6, fine: 6, petite: 3, niv: 0, cle1: false, cle: false, blocs: true, tq: {}, grilles: {} });
 export const AIGUILLES = ['grande', 'fine', 'petite'];
 
-/** ce qu'il y a dans une case : { quoi: 'pf', id } ou { quoi: 'aiguille', sur: [aiguilles] } ou null (le vide) */
-export function caseHorloge(E, x, y) {
+/** ce qu'il y a dans une case de l'étage n : { quoi: 'pf', id } ou { quoi: 'aiguille', sur: [aiguilles] } ou null (le
+ *  vide) ; les aiguilles ne sont qu'à l'étage où est l'horloge (E.niv) */
+export function caseHorloge(E, x, y, n = E.niv || 0) {
   const k = cle(x, y);
-  for (const p of PLATEFORMES) if (PF_CASES.get(p.id).has(k)) return { quoi: 'pf', id: p.id };
+  for (const p of NIVEAUX[n].plateformes) if (PF_CASES.get(p.id).has(k)) return { quoi: 'pf', id: p.id };
+  if ((E.niv || 0) !== n) return null;
   const sur = AIGUILLES.filter((a) => casesAiguille(a, E[a]).has(k));
   return sur.length ? { quoi: 'aiguille', sur } : null;
 }
 /** les cases qu'on ne traverse pas : les leviers */
-export const obstacles = () => new Set(LEVIERS.map((L) => cle(...placeLevier(L))));
-/** pose les cases praticables de la carte selon l'état (le vide est infranchissable) */
+export const obstacles = (n = 0) => new Set(NIVEAUX[n].leviers.map((L) => cle(...placeLevier(L))));
+/** pose les cases praticables d'une carte de la salle des aiguilles selon l'état (le vide est infranchissable) ; les portes
+ *  de l'étage 1 sont gardées sur sa carte (horloge-n1.js) */
 export function appliquer(m, E) {
-  const obs = obstacles(), portes = new Set([...SALLES_PF().map((s) => cle(...placePorte(s))), cle(...placeSortie())]);
-  for (let y = 2; y < H; y++) for (let x = 1; x < W - 1; x++) m.set(x, y, portes.has(cle(x, y)) || (caseHorloge(E, x, y) && !obs.has(cle(x, y))) ? T.FLOOR : T.BLOCK);
+  const n = m.horlogeNiv || 0, obs = obstacles(n);
+  const portes = m.portesHorloge || new Set([...SALLES_PF().map((s) => cle(...placePorte(s))), cle(...placeSortie())]);
+  for (let y = 2; y < H; y++) for (let x = 1; x < W - 1; x++) m.set(x, y, portes.has(cle(x, y)) || (caseHorloge(E, x, y, n) && !obs.has(cle(x, y))) ? T.FLOOR : T.BLOCK);
 }
-/** l'état après un coup de levier (quoi : l'aiguille, s : +1 dans le sens des aiguilles, -1 à l'envers) ; null si un bloc l'arrête */
+/** l'état après un coup de levier (quoi : l'aiguille, s : +1 dans le sens des aiguilles, -1 à l'envers) ; null si un bloc
+ *  (étage 0) ou un îlot (étage 1, les grandes aiguilles seulement) l'arrête */
 export function tourner(E, quoi, s) {
-  const h = heure(E[quoi] + s);
-  if (E.blocs && quoi !== 'petite' && BLOCS.includes(h)) return null;
+  const h = heure(E[quoi] + s), n = E.niv || 0;
+  if (n === 0 && E.blocs && quoi !== 'petite' && BLOCS.includes(h)) return null;
+  if (quoi !== 'petite' && NIVEAUX[n].interdites?.includes(h)) return null;
   return { ...E, [quoi]: h };
+}
+/** la place, sur l'aiguille quoi (à l'heure k), de quelqu'un qui était à la distance r du centre et de côté t */
+export function caseSurAiguille(quoi, k, r, t) {
+  const [cx, cy] = centre(), [ex, ey] = sens(k), vise = [cx + ex * r - ey * t, cy + ey * r + ex * t];
+  const cases = [...casesAiguille(quoi, k)].map((q) => q.split(',').map(Number));
+  return cases.sort((p, q) => Math.hypot(p[0] + 0.5 - vise[0], p[1] + 0.5 - vise[1]) - Math.hypot(q[0] + 0.5 - vise[0], q[1] + 0.5 - vise[1]))[0];
+}
+/** où est, sur son aiguille, celui qui se tient en (x, y) : { quoi, r, t } (ou null s'il n'est pas sur une aiguille) */
+export function surAiguille(E, x, y, n = E.niv || 0) {
+  const c = caseHorloge(E, x, y, n); if (c?.quoi !== 'aiguille') return null;
+  const quoi = c.sur[0], [cx, cy] = centre(), [dx, dy] = sens(E[quoi]), vx = x + 0.5 - cx, vy = y + 0.5 - cy;
+  return { quoi, r: vx * dx + vy * dy, t: -vx * dy + vy * dx };
 }
 /** où se retrouve, après le passage de E à E2, celui qui était sur la case (x, y) : emporté par l'aiguille qui tourne
  *  sous ses pieds (même distance au centre, même côté), sinon il ne bouge pas */
@@ -149,15 +194,15 @@ export const salleId = (s) => `${HORLOGE}:salle:${s.id}`;
 export const placePorte = (s) => caseSur(s.pf, pf(s.pf).r1 + 0.7, 0);
 export const SALLES_PF = () => SALLES.filter((s) => s.pf);
 /** le point (rayon r, heure k) dans une carte de salle */
-const pointSalle = (r, k) => { const [dx, dy] = sens(k); return [SC + 0.5 + dx * r, SC + 0.5 + dy * r]; };
+export const pointSalle = (r, k) => { const [dx, dy] = sens(k); return [SC + 0.5 + dx * r, SC + 0.5 + dy * r]; };
 /** une case d'une carte de salle est-elle dans la salle s (avec une marge en cases) ? */
-function dansSalle(s, x, y, marge = 0) {
+export function dansSalle(s, x, y, marge = 0) {
   const dx = x + 0.5 - (SC + 0.5), dy = y + 0.5 - (SC + 0.5), r = Math.hypot(dx, dy);
   if (r < SR0 + marge || r > SR1 - marge) return false;
   const long = ((s.a - s.de) % 12 + 12) % 12, h = ((heureDe(dx, dy) - s.de) % 12 + 12) % 12, m = (marge / r) * 6 / Math.PI;
   return h >= m && h <= long - m;
 }
-function alea(g) { let a = g >>> 0 || 1; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+export function alea(g) { let a = g >>> 0 || 1; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const DIR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 /** les pas possibles depuis (x, y) dans un plan : on marche sur '.', une rambarde se saute dans son sens */
 export function pasPlan(P, x, y) {

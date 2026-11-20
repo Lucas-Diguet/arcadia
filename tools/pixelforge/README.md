@@ -49,3 +49,8 @@ dans le jeu) : les passages secrets (`passage_lac`, `passage_sec`, `passage_tunn
 obstacles (`ronces_geantes`, `vapeur`, `mur_flammes`, `mur_glace`, `arbre_mort`, `gouffre`, `grille_temple`) et les six
 objets (`tresor_braise`, `_graine`, `_fiole`, `_pierre`, `_rosee`, `_corde`), à 32 px par case, et leurs planches.
 `python3 tools/pixelforge/miroir_poche.py` : le miroir de poche du Donjon des Miroirs (`donjon/miroir_poche.png`).
+
+`python3 tools/pixelforge/horloge.py` : l'escalier de l'étage 1 de la Tour de l'Horloge (TestOdyssée), dans `testodyssee/img/horloge/` :
+le dessus d'une marche de calcaire (`marche_horloge`), la contremarche, un balustre, et la grande porte de l'étage 2
+(`porte_horloge`, 3 × 4 cases : deux battants de chêne cloutés et cerclés de fer, encadrement de pierre en plein cintre,
+cadran de laiton dans le tympan).

@@ -7,6 +7,7 @@ import { ILE, ARRIVEE } from './ile/modele.js';
 import { construireMont } from './mont/mont.js';
 import { construireMusee } from './musee.js';
 import { construireHorloge } from './horloge.js';
+import { construireNiveau1 } from './horloge-n1.js';
 import { construireFarWest } from './farwest.js';
 
 const libre = (m, x, y) => walkable(m.get(x, y)) && ![T.DOOR, T.CAVEDOOR, T.MAT, T.STAIRS].includes(m.get(x, y)) && !m.warpAt(x, y) && !m.npcs.some((n) => n.x === x && n.y === y);
@@ -37,7 +38,8 @@ export function listerLieux(world, donjons) {
   if (world.museeLieu === undefined) world.museeLieu = construireMusee(world);
   if (world.museeLieu) out.labo.push(world.museeLieu);
   // prototype : la Salle de l'Horloge (aiguilles géantes, vis)
-  out.labo.push(world.horlogeLieu ||= construireHorloge(world));
+  if (!world.horlogeLieu) { world.horlogeLieu = construireHorloge(world); construireNiveau1(world); }
+  out.labo.push(world.horlogeLieu);
   // prototype : la ville du Far West et son stand de tir
   out.labo.push(world.farwestLieu ||= construireFarWest(world));
   for (const t of Object.values(world.towns)) {

@@ -121,6 +121,12 @@ const TUILES = {
   tube_e(x, r) { boutTube(x, r, Math.PI / 2); },
   tube_s(x, r) { boutTube(x, r, Math.PI); },
   tube_o(x, r) { boutTube(x, r, -Math.PI / 2); },
+  // étage 1 : les tourniquets (bras de laiton sur un pivot de fonte, façon Cimetronelle) et la grille de fer des salles
+  tq_pivot(x, r) { tourniquet(x, r, null); },
+  tq_h(x, r) { tourniquet(x, r, 'h'); },
+  tq_v(x, r) { tourniquet(x, r, 'v'); },
+  grille_tour(x, r) { grilleTour(x, r, false); },
+  grille_ouverte(x, r) { grilleTour(x, r, true); },
   rambarde_s(x, r) { rambarde(x, r, 's'); },
   rambarde_e(x, r) { rambarde(x, r, 'e'); },
   rambarde_w(x, r) { rambarde(x, r, 'w'); },
@@ -200,6 +206,36 @@ function boutTube(x, r, angle) {
   x.fillStyle = '#0c0604'; x.beginPath(); x.ellipse(16, 27, 10, 4, 0, 0, Math.PI * 2); x.fill();   // l'ouverture
   x.fillStyle = 'rgba(160,220,255,0.3)'; x.fillRect(10, 26, 5, 1);
   x.restore();
+}
+/** un tourniquet de la Tour de l'Horloge, vu de dessus : le pivot (q = null), un bras horizontal ou vertical */
+function tourniquet(x, r, q) {
+  planchesCarillon(x, r);
+  x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(q === 'v' ? 11 : 0, q === 'h' ? 12 : 2, q === 'v' ? 12 : 32, q === 'h' ? 12 : 30);
+  if (q) {
+    x.save(); if (q === 'v') { x.translate(16, 16); x.rotate(Math.PI / 2); x.translate(-16, -16); }
+    // le bras : une barre de laiton cerclée de sombre, des rivets, un reflet
+    x.fillStyle = '#2a1608'; x.fillRect(0, 10, 32, 11);
+    x.fillStyle = '#b8862e'; x.fillRect(0, 11, 32, 8);
+    x.fillStyle = '#e8c060'; x.fillRect(0, 12, 32, 2);
+    x.fillStyle = '#7a5418'; x.fillRect(0, 17, 32, 2);
+    for (const px of [5, 15, 25]) { x.fillStyle = '#4a300c'; x.fillRect(px, 14, 3, 3); x.fillStyle = '#f8e090'; x.fillRect(px, 14, 1, 1); }
+    x.restore();
+    return;
+  }
+  // le pivot : un moyeu de fonte sur une platine, cerclé de laiton
+  x.fillStyle = '#2a1608'; x.beginPath(); x.arc(16, 16, 12, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#5a5248'; x.beginPath(); x.arc(16, 16, 10, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#c89a3a'; x.beginPath(); x.arc(16, 16, 7, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#3a2a14'; x.beginPath(); x.arc(16, 16, 3, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#f0d080'; x.fillRect(12, 11, 3, 2);
+}
+/** la grille de fer d'une salle de l'étage 1 (ouverte : relevée, on n'en voit que le linteau) */
+function grilleTour(x, r, ouverte) {
+  planchesCarillon(x, r);
+  if (ouverte) { x.fillStyle = '#26262e'; x.fillRect(0, 0, 32, 5); x.fillStyle = '#55555f'; x.fillRect(0, 1, 32, 2); return; }
+  x.fillStyle = 'rgba(0,0,0,0.4)'; x.fillRect(0, 0, 32, 32);
+  for (let k = 2; k < 32; k += 6) { x.fillStyle = '#14141a'; x.fillRect(k, 0, 4, 32); x.fillStyle = '#76767f'; x.fillRect(k + 1, 0, 2, 32); x.fillStyle = '#9c9ca6'; x.fillRect(k + 1, 0, 1, 32); }
+  for (const y of [6, 24]) { x.fillStyle = '#14141a'; x.fillRect(0, y, 32, 4); x.fillStyle = '#55555f'; x.fillRect(0, y + 1, 32, 2); }
 }
 /** une rambarde de la Tour de l'Horloge, dessinée vers le bas puis tournée selon son sens (s, e, w) */
 function rambarde(x, r, d) {

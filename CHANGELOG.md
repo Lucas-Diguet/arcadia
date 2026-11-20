@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 6.44 — 20 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge : l'étage 1. Avec la clé du mécanisme, l'horloge monte, et ceux qui se tiennent sur une aiguille montent avec elle. Le mécanisme les ramène en bas.
+  - Deux îlots plus près du centre, à 3 h et 9 h, ne sont atteints que par la petite aiguille, et ils arrêtent les grandes. Quatre plateformes contre le mur sont trop loin pour elle. De nouveaux leviers verts font tourner la petite aiguille, et l'on passe d'une grande aiguille à la petite quand elles sont à la même heure.
+  - Les salles du mur relient deux plateformes et sont remplies de tourniquets, comme l'arène de Cimetronelle : on pousse un bras par le côté pour le faire tourner d'un quart de tour, s'il a la place. Une grille coupe les salles est et ouest en deux : elle se lève avec un levier, sur l'îlot qui est devant.
+  - Au nord, un immense escalier de pierre fait tout le tour de la tour, au-dessus des autres salles, qu'on voit en dessous. Tout en haut, une grande porte en bois mène à l'étage 2. Elle est fermée pour l'instant.
+
 ## 6.43 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : plus de texte qui s'ouvre tout seul en entrant dans la salle des aiguilles. La caméra ne recule plus à l'arrivée devant la tour, mais quand on passe sa porte : on voit toute la tour, puis on entre.
 

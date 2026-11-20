@@ -1225,6 +1225,70 @@ for (const l of Object.values(lieux).flat()) {
   const bout = cases('grande', 6).sort((u, v) => Math.hypot(u[0] - Hm.C[0], u[1] - Hm.C[1]) - Math.hypot(v[0] - Hm.C[0], v[1] - Hm.C[1]))[0];
   ok(Hm.casesMecanisme().some((c) => N4.some(([dx, dy]) => c[0] + dx === bout[0] && c[1] + dy === bout[1])) && atteint(E, ax, ay).has(String(bout)), 'horloge : le mécanisme central se prend depuis le bout d\'une aiguille');
   Hm.appliquer(m, m.horloge);
+
+  /* l'étage 1 : îlots de la petite aiguille, salles à tourniquets, escalier */
+  const N1 = await import('../testodyssee/js/horloge-n1.js'), m1 = world.maps[Hm.HORLOGE1];
+  const atteint1 = (E, x0, y0, carte = m1) => {
+    Hm.appliquer(carte, E);
+    const vu = new Set([x0 + ',' + y0]), f = [[x0, y0]];
+    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const a = x + dx, b = y + dy, k = a + ',' + b; if (!vu.has(k) && walkable(carte.get(a, b)) && !carte.warpAt(a, b)) { vu.add(k); f.push([a, b]); } } }
+    return vu;
+  };
+  const E1 = { ...Hm.depart(), blocs: false, cle: true, niv: 1, ...Hm.NIVEAUX[1].arrivee };
+  const pied = (q, k) => cases(q, k).sort((u, v) => Math.hypot(u[0] - Hm.C[0], u[1] - Hm.C[1]) - Math.hypot(v[0] - Hm.C[0], v[1] - Hm.C[1]))[0];
+  const touche1 = (q, p) => surPf(atteint1({ ...E1, grande: 6, fine: 6, petite: 0, [q]: p.k }, ...pied(q, p.k)), p.id);
+  ok(m1 && Hm.PLATEFORMES1.every((p) => p.ilot ? touche1('petite', p) : touche1('grande', p) && touche1('fine', p) && !touche1('petite', p)),
+    'horloge, étage 1 : la petite aiguille touche les îlots, les grandes les plateformes du mur (trop loin pour la petite)');
+  ok([3, 9].every((h) => !Hm.tourner({ ...E1, grande: h - 1 }, 'grande', 1) && !Hm.tourner({ ...E1, fine: h + 1 }, 'fine', -1) && Hm.tourner({ ...E1, petite: h - 1 }, 'petite', 1)?.petite === h),
+    'horloge, étage 1 : les îlots arrêtent les grandes aiguilles, pas la petite');
+  // à l'arrivée : les grandes aiguilles touchent les plateformes de 5 h et 7 h, la petite est sous la grande ; avec la
+  // petite aiguille, on va de la plateforme de 5 h à l'îlot de 3 h (un joueur dessus, l'autre au levier vert)
+  {
+    let E = { ...E1 }, qui = pied('petite', 5);
+    const okArr = surPf(atteint1(E, ...pied('grande', 5)), 'p5') && surPf(atteint1(E, ...pied('fine', 7)), 'p7') && atteint1(E, ...pied('grande', 5)).has(String(qui));
+    for (let i = 0; i < 2; i++) { const E2 = Hm.tourner(E, 'petite', -1); qui = Hm.emporter(E, E2, ...qui); E = E2; }
+    ok(okArr && surPf(atteint1(E, ...qui), 'i3') && Hm.LEVIERS1.filter((L) => L.pf === 'i3').every((L) => pres(atteint1(E, ...qui), Hm.placeLevier(L))),
+      'horloge, étage 1 : à l\'arrivée, on rejoint les plateformes de 5 h et 7 h, et la petite aiguille mène à l\'îlot de 3 h et à ses leviers');
+    const info = Hm.surAiguille(E, ...qui, 1);
+    ok(info?.quoi && String(Hm.caseSurAiguille(info.quoi, E[info.quoi], info.r, info.t)) === String(qui), 'horloge : on retrouve sa place sur l\'aiguille d\'un étage à l\'autre');
+  }
+  // les portes : chaque plateforme mène à sa salle, chaque salle ramène à sa plateforme
+  const L1 = N1.salles1();
+  ok(N1.sallesEtage1().every(({ s, map }) => [[s.pfDe, 1], [s.pfA, -1]].every(([pid, c]) => {
+    const w = m1.warpAt(...N1.portePf(pid, c)), r = world.maps[map];
+    return w?.map === map && walkable(r.get(w.x, w.y)) && pres(atteint1(E1, ...N1.devantPortePf(pid, c)), N1.portePf(pid, c)) && surPf(new Set([String(N1.devantPortePf(pid, c))]), pid);
+  })) && N1.SALLES1.every((s) => ['de', 'a'].every((q) => world.maps[N1.salle1Id(s)].warpAt(...L1[s.id].bouts[q].sortie)?.map === Hm.HORLOGE1)),
+    'horloge, étage 1 : chaque plateforme mène à ses salles et chaque salle ramène à ses plateformes');
+  // les tourniquets : chaque tronçon se traverse dans son sens, en poussant, sans jamais s'y coincer
+  for (const s of N1.SALLES1) {
+    const res = L1[s.id].troncons.map((t) => N1.tronconValide(s, t));
+    ok(res.every((A) => A.ok), `horloge, étage 1 : salle ${s.id}, ${res.length} tronçons à tourniquets, poussées : ${res.map((A) => A.poussees).join(', ')}, jamais coincé`);
+  }
+  ok(L1.est.trous.some((t) => t.coupe.grille === 'grilleE') && L1.ouest.trous.some((t) => t.coupe.grille === 'grilleO') && Hm.LEVIERS1.some((L) => L.pf === 'i3' && L.quoi === 'grilleE') && Hm.LEVIERS1.some((L) => L.pf === 'i9' && L.quoi === 'grilleO'),
+    'horloge, étage 1 : une grille au milieu des salles est et ouest, levée depuis l\'îlot qui est devant');
+  // un tourniquet poussé : il tourne, ses cases changent sur la carte ; repoussé dans l'autre sens, il revient
+  {
+    const s = N1.SALLES1[0], L = L1[s.id], r = world.maps[N1.salle1Id(s)];
+    let trouve = null;
+    for (const [i, Q] of L.tourniquets.entries()) for (const [x, y, f] of N1.casesTourniquet(Q, 0)) if (f !== 'p') for (const d of N4) {
+      const px = x - d[0], py = y - d[1]; if (!N1.marchable(L.plan, px, py) || N1.occupation(L.tourniquets, []).has(px + ',' + py)) continue;
+      const r2 = N1.pousser(L.plan, L.tourniquets, [], px, py, d); if (r2 && !trouve) trouve = { i, r2, x, y };
+    }
+    const E = { ...Hm.depart(), tq: { [s.id]: trouve?.r2 } };
+    N1.appliquerSalles1(world, E);
+    const libre = trouve && walkable(r.get(trouve.x, trouve.y));
+    N1.appliquerSalles1(world, Hm.depart());
+    ok(trouve && libre && !walkable(r.get(trouve.x, trouve.y)), 'horloge, étage 1 : un tourniquet poussé tourne d\'un quart de tour et libère la case');
+  }
+  // l'escalier : du palier jusqu'à la grande porte, marche après marche ; jamais du palier au haut de l'escalier d'un pas
+  {
+    const e = world.maps[N1.ESCALIER], B = N1.boutsEscalier(), vu = new Set([String(B.ouest.case)]), f = [B.ouest.case];
+    while (f.length) { const [x, y] = f.pop(), h = N1.hauteurEscalier(x, y); for (const [dx, dy] of N4) { const a = x + dx, b = y + dy, h2 = N1.hauteurEscalier(a, b); if (h2 == null || vu.has(a + ',' + b) || !walkable(e.get(a, b)) || Math.abs(h2 - h) > 1) continue; vu.add(a + ',' + b); f.push([a, b]); } }
+    const sauts = [...vu].some((k) => { const [x, y] = k.split(',').map(Number); return N4.some(([dx, dy]) => { const h2 = N1.hauteurEscalier(x + dx, y + dy); return h2 != null && Math.abs(h2 - N1.hauteurEscalier(x, y)) > 1; }); });
+    ok(vu.has(String(B.haut)) && vu.has(String(B.est.case)) && N1.hauteurEscalier(...B.haut) > N1.ESC.haut - 0.3 && !!e.objectAt(...B.porte) && sauts && e.warpAt(...B.ouest.sortie)?.map === Hm.HORLOGE1 && e.warpAt(...B.est.sortie)?.map === Hm.HORLOGE1,
+      'horloge, étage 1 : l\'escalier fait le tour de la tour, du palier jusqu\'à la grande porte, au-dessus du palier sans y toucher');
+  }
+  Hm.appliquer(m1, m.horloge);
 }
 
 /* ---------------- la Course de la Vallée ---------------- */

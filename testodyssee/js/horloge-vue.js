@@ -4,7 +4,8 @@
 // voir le quai, et ses portes ; les plateformes, les leviers, et les deux blocs de pierre qui arrêtent les aiguilles.
 // Le décor (tout sauf les aiguilles et la barre) est dans un groupe qui glisse quand l'horloge monte ou descend.
 import * as THREE from 'three';
-import { C, R_PIVOT, R_MUR, R_MUR2, PLATEFORMES, LEVIERS, SALLES_PF, BLOCS, R_BLOC, casesPlateforme, placeLevier, placePorte, placeSortie, sens } from './horloge.js';
+import { C, R_PIVOT, R_MUR, R_MUR2, PLATEFORMES, SALLES_PF, BLOCS, R_BLOC, NIVEAUX, casesPlateforme, placeLevier, placePorte, placeSortie, sens } from './horloge.js';
+import { sallesEtage1, portePf } from './horloge-n1.js';
 import { creerAiguille } from './horloge-aiguilles.js';
 
 /** profondeur du cadran */
@@ -29,8 +30,21 @@ function levier(x, z, couleur) {
 /** hauteur du mur selon l'angle : haut au fond, bas devant (du côté de la caméra) */
 const hautMur = (a) => { const devant = -Math.cos(a); return devant > 0.35 ? 0.6 : 2.4 + 4.2 * Math.max(0, -devant + 0.35); };
 
-export function creerHorloge() {
+/** la couleur du manche d'un levier */
+const COULEUR_LEVIER = { grande: '#c84a3a', fine: '#3a7ac8', petite: '#4aa84a' };
+/** un encadrement de porte dans la face intérieure du mur, à l'angle a (radians, 0 = midi) */
+function porteMur(a) {
+  const r = R_MUR - 0.08, P = new THREE.Group(); P.position.set(CX + Math.sin(a) * r, 0, CZ - Math.cos(a) * r); P.rotation.y = -a;
+  P.add(new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.5, 0.2).translate(0, 1.25, 0), mat('#a08040')));
+  P.add(new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.2, 0.24).translate(0, 1.1, 0.02), mat('#3a2616')));
+  P.add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.3).translate(0.5, 1.1, 0.04), mat('#e0c060')));
+  return P;
+}
+
+/** la salle des aiguilles de l'étage n (0 : le quai, les blocs ; 1 : les îlots de la petite aiguille) */
+export function creerHorloge(n = 0) {
   const G = new THREE.Group(), decor = new THREE.Group(); G.add(decor);
+  const N0 = NIVEAUX[n];
   // le cadran, tout au fond : bronze sombre, couronne d'or, soixante traits
   const disque = new THREE.Mesh(new THREE.CircleGeometry(R_MUR, 64).rotateX(-Math.PI / 2), mat('#1c1712'));
   disque.position.set(CX, FOND, CZ); decor.add(disque);
@@ -74,24 +88,24 @@ export function creerHorloge() {
     r2.position.set(CX + Math.sin(a) * (R_MUR + 0.4), haut - 0.54, CZ - Math.cos(a) * (R_MUR + 0.4)); r2.rotation.y = Math.PI / 2 - a; decor.add(r2);
   }
   // les portes des salles, dans la face intérieure du mur : encadrement de laiton, battant de bois sombre
-  for (const S of SALLES_PF()) {
-    const k = PLATEFORMES.find((p) => p.id === S.pf).k, a = (k * Math.PI) / 6, r = R_MUR - 0.08;
-    const P = new THREE.Group(); P.position.set(CX + Math.sin(a) * r, 0, CZ - Math.cos(a) * r); P.rotation.y = -a;
-    P.add(new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.5, 0.2).translate(0, 1.25, 0), mat('#a08040')));
-    P.add(new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.2, 0.24).translate(0, 1.1, 0.02), mat('#3a2616')));
-    P.add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.3).translate(0.5, 1.1, 0.04), mat('#e0c060')));
-    decor.add(P);
+  const portes = n === 0 ? SALLES_PF().map(placePorte) : sallesEtage1().flatMap(({ s }) => [portePf(s.pfDe, 1), portePf(s.pfA, -1)]);
+  for (const [x, z] of portes) decor.add(porteMur(Math.atan2(x + 0.5 - CX, -(z + 0.5 - CZ))));
+  // les plateformes : une dalle de pierre par case ; les îlots de l'étage 1 sur un pilier qui monte du fond
+  for (const P of N0.plateformes) {
+    for (const key of casesPlateforme(P.id)) {
+      const [x, z] = key.split(',').map(Number), clair = (x + z) % 2 ? '#8c8270' : '#968c78';
+      decor.add(pave(x, x + 1, -0.6, 0, z, z + 1, P.corniche || P.ilot ? (clair === '#8c8270' ? '#7c7464' : '#867c6a') : clair, '#4a4236'));
+    }
+    if (P.ilot) {
+      const [dx, dy] = sens(P.k), rm = (P.r0 + P.r1) / 2, pil = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.6, -FOND - 0.6, 8), [mat('#4a4236'), mat('#5a5244'), mat('#2a241e')]);
+      pil.position.set(CX + dx * rm, (FOND - 0.6) / 2, CZ + dy * rm); decor.add(pil);
+    }
   }
-  // les plateformes : une dalle de pierre par case
-  for (const P of PLATEFORMES) for (const key of casesPlateforme(P.id)) {
-    const [x, z] = key.split(',').map(Number), clair = (x + z) % 2 ? '#8c8270' : '#968c78';
-    decor.add(pave(x, x + 1, -0.6, 0, z, z + 1, P.corniche ? (clair === '#8c8270' ? '#7c7464' : '#867c6a') : clair, '#4a4236'));
-  }
-  for (const L of LEVIERS) { const [x, z] = placeLevier(L); decor.add(levier(x, z, L.quoi === 'grande' ? '#c84a3a' : '#3a7ac8')); }
+  for (const L of N0.leviers) { const [x, z] = placeLevier(L); decor.add(levier(x, z, COULEUR_LEVIER[L.quoi] || '#8e8e9a')); }
   // la sortie et les portes : un seuil de laiton
-  for (const [x, z] of [placeSortie(), ...SALLES_PF().map(placePorte)]) decor.add(pave(x + 0.05, x + 0.95, -0.6, 0.04, z + 0.05, z + 0.95, '#7a6a40', '#4a3e22'));
-  // les deux blocs de pierre qui arrêtent les aiguilles : de gros piliers dressés depuis le fond, plus hauts que les aiguilles
-  const blocs = BLOCS.map((h) => {
+  for (const [x, z] of [...(n === 0 ? [placeSortie()] : []), ...portes]) decor.add(pave(x + 0.05, x + 0.95, -0.6, 0.04, z + 0.05, z + 0.95, '#7a6a40', '#4a3e22'));
+  // étage 0 : les deux blocs de pierre qui arrêtent les aiguilles, de gros piliers dressés depuis le fond, plus hauts que les aiguilles
+  const blocs = (n === 0 ? BLOCS : []).map((h) => {
     const B = new THREE.Group(), [dx, dy] = sens(h), entier = new THREE.Group(); B.add(entier);
     B.position.set(CX + dx * R_BLOC, 0, CZ + dy * R_BLOC); B.rotation.y = -(h * Math.PI) / 6;
     entier.add(pave(-1.3, 1.3, FOND, 1.8, -1.6, 1.6, '#8a8276', '#5a544a'));
@@ -101,13 +115,14 @@ export function creerHorloge() {
     for (let i = 0; i < 10; i++) { const e = new THREE.Mesh(new THREE.DodecahedronGeometry(0.35 + (i % 3) * 0.12, 0), mat(i % 2 ? '#8a8276' : '#6a6458')); e.visible = false; e.userData.v = [Math.cos(i * 2.4) * 3, 4 + (i % 4), Math.sin(i * 2.4) * 3]; B.add(e); eclats.push(e); }
     decor.add(B); return { B, entier, eclats };
   });
-  return { G, decor, aig, blocs };
+  return { G, decor, aig, blocs, n };
 }
 
 /** l'horloge à l'état affiché D ({ grande, fine, petite } en heures, à virgule pendant que ça tourne ; blocs ; casse de 0 à 1
  *  pendant qu'ils se brisent ; envY : décalage du décor pendant que l'horloge monte ou descend) */
 export function poserHorloge(H, D) {
-  for (const q of ['grande', 'fine', 'petite']) H.aig[q].rotation.y = -(D[q] * Math.PI) / 6;
+  // les aiguilles ne sont qu'à l'étage où est l'horloge (pendant qu'elle monte ou descend, à celui qu'elle quitte)
+  for (const q of ['grande', 'fine', 'petite']) { H.aig[q].rotation.y = -(D[q] * Math.PI) / 6; H.aig[q].visible = (D.vueNiv ?? D.niv ?? 0) === H.n; }
   H.decor.position.y = D.envY || 0;
   const c = D.casse || 0;
   for (const { B, entier, eclats } of H.blocs) {
