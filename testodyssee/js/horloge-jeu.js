@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { HORLOGE, HORLOGE1, DEHORS, VESTIBULE, VW, TUBE_Y, C, NOMS, NIVEAUX, niveauCarte, appliquer, caseHorloge, casesMecanisme, placeLevier, tourner, emporter, heure, surAiguille, caseSurAiguille, boutsDuTube, V_PORTE, VH, VESTIBULE as VEST, SALLES, PLATEFORMES, PLATEFORMES1, salleId, labyrinthes, placeArrivee, caseSur } from './horloge.js';
 import { ESCALIER, SALLES1, salle1Id, salles1, hauteurEscalier, caseEscalier, pasEscalier, milieuEscalier, boutsEscalier, pousser, occupation, appliquerSalles1 } from './horloge-n1.js';
 import { creerHorloge, poserHorloge } from './horloge-vue.js';
+import { HORLOGE_M1, SALLES_M1, salleM1Id, devantPorteM1, pasM1, BAS_SOL, balancier, appliquerSallesM1, CHAINES_DEPART } from './horloge-m1.js';
 import { creerEscalier } from './horloge-escalier.js';
 
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -35,6 +36,7 @@ export class Horloge {
       // par un pas vers le haut ou le bas passe dessous)
       if (this.game.mapObj?.id === VESTIBULE && this.dansTube(a, x, y, a === v.actors.get('player'))) hop += TUBE_H;
       // sur l'escalier, chacun à la hauteur de sa marche ; sur les marches, au milieu de l'escalier
+      if (this.game.mapObj?.id === HORLOGE_M1 && this.E && caseHorloge(this.E, Math.round(x), Math.round(y), -1)?.quoi !== 'aiguille') hop -= BAS_SOL;
       if (this.game.mapObj?.id === ESCALIER) {
         const M = milieuEscalier(x, y);
         if (M) return place(a, M.x, M.y, hop + M.h, ...r);
@@ -127,6 +129,8 @@ export class Horloge {
       if (d2 !== d) { this.guide = true; try { g.tryStep(d2); } finally { this.guide = false; } p.dir = d; return true; }
     }
     if (m.id === ESCALIER) { const a = hauteurEscalier(p.x, p.y), b = hauteurEscalier(tx, ty); if (a != null && b != null && Math.abs(a - b) > 1) return arret(); return false; }
+    // étage -1 : on ne passe du dessus d'une aiguille au sol (et l'inverse) que par son échelle
+    if (m.id === HORLOGE_M1 && this.E && !pasM1(this.E, p.x, p.y, tx, ty)) return arret();
     // une salle à tourniquets : marcher dans un bras le fait tourner (si rien ne le gêne), puis on avance
     if (m.tourniquets) {
       const rots = this.E?.tq?.[m.horlogeSalle] || [];
@@ -188,7 +192,7 @@ export class Horloge {
   /** mode test : les lieux de la tour où l'on peut aller directement (si l'on est dans la tour) */
   salles() {
     const id = this.game.mapObj?.id; if (!id?.startsWith(HORLOGE) || id === DEHORS) return [];
-    const L = labyrinthes(), L1 = salles1(), B = boutsEscalier(), [ax, ay] = placeArrivee();
+    const g = this.game, L = labyrinthes(), L1 = salles1(), B = boutsEscalier(), [ax, ay] = placeArrivee();
     const pf = (P, map) => { const [x, y] = caseSur(P.id, (P.r0 + P.r1) / 2, 0); return { map, x, y, dir: 'down' }; };
     return [
       { nom: 'Le vestibule', to: { map: VEST, x: V_PORTE[0], y: VH - 2, dir: 'up' } },
@@ -197,6 +201,8 @@ export class Horloge {
       ...SALLES.map((s) => ({ nom: s.nom, to: { map: salleId(s), x: L[s.id].entree[0], y: L[s.id].entree[1], dir: 'up' } })),
       ...PLATEFORMES1.map((p) => ({ nom: 'Étage 1 : ' + p.nom.replace(/^L/, 'l'), to: pf(p, HORLOGE1) })),
       ...SALLES1.map((s) => { const c = L1[s.id].bouts[s.depuis === 'a' ? 'a' : 'de'].case; return { nom: s.nom, to: { map: salle1Id(s), x: c[0], y: c[1], dir: 'up' } }; }),
+      { nom: 'Étage -1 : devant la salle des contrepoids', to: { map: HORLOGE_M1, ...(() => { const [x, y] = devantPorteM1(SALLES_M1[0]); return { x, y, dir: 'up' }; })() } },
+      ...SALLES_M1.map((s) => { const c = g.world.maps[salleM1Id(s)]?.planM1.porte.case || [0, 0]; return { nom: 'Étage -1 : ' + s.nom.replace(/^L/, 'l'), to: { map: salleM1Id(s), x: c[0], y: c[1], dir: 'up' } }; }),
       { nom: 'L\'escalier (en bas)', to: { map: ESCALIER, x: B.ouest.case[0], y: B.ouest.case[1], dir: 'right' } },
       { nom: 'L\'escalier (en haut, la grande porte)', to: { map: ESCALIER, x: B.haut[0], y: B.haut[1], dir: 'right' } },
     ];
@@ -233,6 +239,7 @@ export class Horloge {
     const g = this.game, v = g.view, m = this.ici();
     if (g.mapObj?.id === VESTIBULE) { if (v.root) this.poserTube(); }
     else this.tube = false;
+    this.balanciers();
     if (g.mapObj?.id === ESCALIER && v.root && this.esc?.root !== v.root) { v.root.add(creerEscalier()); this.esc = { root: v.root }; v.scene.background?.set?.('#07060a'); }
     if (!m || !v.root) return;
     if (!this.D) this.D = { ...this.E };
@@ -290,9 +297,10 @@ export class Horloge {
       // un bloc de pierre l'arrête : l'aiguille part, bute contre lui et revient
       if (!E2) { E2 = { ...E }; duree = 1.5; fx = 'bute'; s = act.s; quoi = act.quoi; }
     }
-    else if ((act.a === 'cle1' || act.a === 'cle') && !E[act.a]) { E2 = { ...E, [act.a]: true }; duree = 0; }
+    else if (['cle1', 'cle', 'piece', 'cle2'].includes(act.a) && !E[act.a]) { E2 = { ...E, [act.a]: true }; duree = 0; }
+    else if (act.a === 'chaine' && act.i >= 0 && act.i < 4) { const b = (E.poids || CHAINES_DEPART).slice(); b[act.i] ^= 1; E2 = { ...E, poids: b }; duree = 0; }
     else if (act.a === 'meca' && E.cle && E.blocs) { E2 = { ...E, blocs: false }; duree = 1.6; fx = 'casse'; }
-    else if (act.a === 'niveau' && E.cle && !E.blocs && (act.s === 1 || act.s === -1)) {
+    else if (act.a === 'niveau' && E.cle && !E.blocs && (act.s === 1 || act.s === -1) && !((E.niv || 0) + act.s === 1 && !E.piece)) {
       // vers un étage construit : les aiguilles y arrivent à leur place ; sinon l'horloge fait ses tours et revient
       const n = (E.niv || 0) + act.s, N = NIVEAUX[n];
       E2 = N ? { ...E, niv: n, ...N.arrivee } : { ...E }; duree = 9; fx = 'niveau'; s = act.s;
@@ -315,7 +323,7 @@ export class Horloge {
     if (m.t === 'djHorN' && deHote) { const r = this.attente; this.attente = null; r?.(); return; }
     if (m.t === 'djHor?' && S.hote) { S.H.send(from, { t: 'djHorS', E: this.E }); return; }
     if (m.t === 'djHorE' && deHote && m.E2) {
-      for (const [k, txt] of [['cle1', 'Quelqu\'un a trouvé la clé de la grille.'], ['cle', 'Quelqu\'un a trouvé la clé du mécanisme central.']]) if (m.E2[k] && !this.E[k]) this.game.ui.toast(txt, 1800);
+      for (const [k, txt] of [['cle1', 'Quelqu\'un a trouvé la clé de la grille.'], ['cle', 'Quelqu\'un a trouvé la clé du mécanisme central.'], ['piece', 'Quelqu\'un a trouvé la pièce du mécanisme central.'], ['cle2', 'Quelqu\'un a trouvé la clé de la grande porte.']]) if (m.E2[k] && !this.E[k]) this.game.ui.toast(txt, 1800);
       for (const k of ['grilleE', 'grilleO']) if (m.E2.grilles?.[k] && !this.E.grilles?.[k]) this.game.ui.toast('Une grille de fer s\'est levée dans les murs.', 1800);
       this.bouger(m.E2, m.duree, m.fx, m.s, m.quoi).then(() => { const r = this.attente; this.attente = null; r?.(); }); return;
     }
@@ -354,7 +362,7 @@ export class Horloge {
     if (fx === 'niveau' && net.niv === depuis) await g.ui.say(`L'étage ${depuis + s} n'est pas encore construit : l'horloge est revenue à l'étage ${depuis}.`);
     // celui qui était sur une aiguille arrive avec elle à l'autre étage, à la même place sur l'aiguille
     if (passager) {
-      const [x, y] = caseSurAiguille(passager.quoi, net[passager.quoi], passager.r, passager.t);
+      const [x, y] = caseSurAiguille(passager.quoi, net[passager.quoi], passager.r, passager.t, NIVEAUX[net.niv].rSol ?? Infinity);
       this.vu = false;
       await g.warp({ map: NIVEAUX[net.niv].carte, x, y, dir: p.dir || 'down' });
     }
@@ -364,7 +372,7 @@ export class Horloge {
   appliquerTout() {
     const g = this.game, E = this.E, W = g.world.maps;
     for (const n in NIVEAUX) if (W[NIVEAUX[n].carte]) appliquer(W[NIVEAUX[n].carte], E);
-    const ch = appliquerSalles1(g.world, E)[g.mapObj?.id];
+    const ch = { ...appliquerSalles1(g.world, E), ...appliquerSallesM1(g.world, E) }[g.mapObj?.id];
     if (ch && g.view) for (const [x, y] of ch) g.view.rebuildAt(x, y);
   }
   /** la grande porte, en haut de l'escalier */
@@ -379,9 +387,37 @@ export class Horloge {
     const g = this.game, E = this.E; if (!E) return false;
     if (E[quoi]) { await g.ui.say('Le coffre est vide.'); return true; }
     g.sound.sfx('item');
-    await g.ui.say(quoi === 'cle1' ? 'Dans le coffre, une petite clé de fer : la clé de la grille !' : 'Dans le coffre, une grosse clé de laiton : la clé du mécanisme central !');
+    await g.ui.say({ cle1: 'Dans le coffre, une petite clé de fer : la clé de la grille !', cle: 'Dans le coffre, une grosse clé de laiton : la clé du mécanisme central !', piece: ['Dans le coffre, une grande roue dentée de laiton : la pièce qui manque au mécanisme central !', 'Avec elle, l\'horloge pourra monter à l\'étage 1.'], cle2: ['Dans le coffre, une clé de fer immense, presque aussi longue qu\'un bras.', 'Elle doit ouvrir la grande porte, tout en haut de l\'escalier de l\'étage 1.'] }[quoi]);
     await this.demander({ a: quoi });
     return true;
+  }
+  /** une chaîne de la salle des contrepoids : un poids descend dans sa fosse, l'autre remonte */
+  async chaine(i) {
+    const g = this.game;
+    if (!await g.ui.yesNo('Une lourde chaîne pend du plafond, reliée à deux contrepoids. La tirer ?')) return true;
+    g.sound.sfx('door');
+    await this.demander({ a: 'chaine', i });
+    return true;
+  }
+  /** la salle des balanciers : chacun voit les balanciers au même rythme (l'heure de l'ordinateur) ; celui qu'un
+   *  balancier touche revient au début de la salle */
+  balanciers() {
+    const g = this.game, m = g.mapObj; if (m?.horlogeM1 !== 'balanciers' || !g.view) return;
+    const t = Date.now() / 1000, avant = m._bal || new Set(), maint = new Set();
+    for (const L of m.planM1.lignes) for (const [x, y] of balancier(L, t)) maint.add(x + ',' + y);
+    for (const k of new Set([...avant, ...maint])) {
+      if (avant.has(k) === maint.has(k)) continue;
+      const [x, y] = k.split(',').map(Number), mur = m.planM1.plan[y][x] === '#';
+      m.solArene.set(k, maint.has(k) ? (mur ? 'balancier_mur' : 'balancier') : (mur ? 'rail_mur' : 'rail'));
+      g.view.rebuildAt(x, y);
+    }
+    m._bal = maint;
+    const p = g.player, ici = (x, y) => maint.has(Math.round(x) + ',' + Math.round(y));
+    if (!g.busy && !this.touche && (ici(p.x, p.y) || (p.move && ici(p.move.tx, p.move.ty)))) {
+      this.touche = true; g.sound.sfx('bump'); g.ui.toast('Le balancier te renvoie au début de la salle !', 1600);
+      const [x, y] = m.planM1.porte.case;
+      g.warp({ map: m.id, x, y, dir: 'up' }).finally(() => { this.touche = false; });
+    }
   }
   /** la grille entre la salle ouest et la salle nord */
   async grille(vers, x, y) {
@@ -415,8 +451,10 @@ export class Horloge {
         if (await ui.yesNo('La clé entre dans la serrure du mécanisme central. La tourner ?')) await this.demander({ a: 'meca' });
         return true;
       }
+      if (n === -1 && caseHorloge(E, g.player.x, g.player.y, -1)?.quoi !== 'aiguille') { await ui.say('Du sol, le mécanisme est hors de portée : il faut se tenir sur une aiguille.'); return true; }
       const choix = [[n + 1, 1], [n - 1, -1]].filter(([k]) => k >= -1 && k <= 1);
       const r = await ui.ask('Le mécanisme central. Faire bouger l\'horloge ?', [...choix.map(([k, s]) => `${s > 0 ? 'Monter' : 'Descendre'} à l'étage ${k}`), 'Ne rien faire']);
+      if (r >= 0 && r < choix.length && choix[r][0] === 1 && !E.piece) { await ui.say(['Le mécanisme grince et s\'arrête net : une grande roue dentée manque dans les engrenages.', 'Sans elle, l\'horloge ne peut pas monter. Elle doit être quelque part sous la tour.']); return true; }
       if (r >= 0 && r < choix.length) await this.demander({ a: 'niveau', s: choix[r][1] });
       return true;
     }

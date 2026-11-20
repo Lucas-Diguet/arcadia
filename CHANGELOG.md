@@ -1,5 +1,13 @@
 # Journal des versions — Arcadia
 
+## 6.48 — 20 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge, l'étage -1 : le mécanisme central fait descendre l'horloge au sous-sol.
+  - Les aiguilles y sont posées sur le sol, comme de longues poutres. On marche dessus, mais on n'en descend et on n'y remonte que par l'échelle accrochée à chacune.
+  - La grande et la fine coupent la salle en deux. En arrivant, elles barrent les portes des deux salles du mur. Le levier qui déplace une aiguille est toujours dans l'autre moitié de la salle : il faut être deux.
+  - La salle des contrepoids : des fosses en travers, et des chaînes qui font descendre un poids dans une fosse pendant qu'un autre remonte. Au bout, la pièce qui manquait au mécanisme central : sans elle, l'horloge ne monte plus à l'étage 1.
+  - La salle des balanciers : des murs percés d'une ouverture, balayée par un balancier qui bat au même rythme pour tout le monde. Touché, on revient au début. Au bout, la clé de la grande porte, en haut de l'escalier de l'étage 1.
+  - Cinq dresseurs : trois sur le sol, un dans chaque salle. Pour remonter, il faut se tenir sur une aiguille.
+
 ## 6.47 — 20 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge, le grand escalier : la caméra tourne avec l'escalier. On reste au milieu des marches, et la flèche du haut fait toujours avancer tout droit à l'écran, tout le long du tour. En haut, la vue revient face à la grande porte.
 

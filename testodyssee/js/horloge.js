@@ -9,7 +9,7 @@
 // Les salles sont dans l'épaisseur du mur, en secteurs de couronne, labyrinthes à rambardes (façon Tour Carillon) :
 // la salle est fait le tour par le bas jusqu'à l'ouest (la clé de la grille au fond) ; la salle ouest monte jusqu'au nord,
 // où une grille fermée mène à la salle nord (la clé du mécanisme au fond). Le mécanisme, sur la barre du pivot, brise
-// les deux blocs, puis fait monter ou descendre l'horloge (étages 1 et -1 à venir).
+// les deux blocs, puis fait monter ou descendre l'horloge (étage 1 : horloge-n1.js, étage -1 : horloge-m1.js).
 // Logique sans DOM ici ; le dessin est dans horloge-vue.js, les règles du jeu dans horloge-jeu.js.
 import { room } from '../../odyssee/js/world/interiors.js';
 import { GameMap, rng } from '../../odyssee/js/world/mapgen.js';
@@ -69,7 +69,9 @@ export const LEVIERS1 = PLATEFORMES1.flatMap((p) => (p.ilot ? [
   { pf: p.id, quoi: 'petite', t: 0, nom: 'Le levier vert (la petite aiguille)' },
   { pf: p.id, quoi: 'fine', t: 3, nom: 'Le levier bleu (l\'aiguille fine)' },
 ]));
-export const placeLevier = (L) => caseSur(L.pf, exterieur(pf(L.pf)), L.t);
+export const placeLevier = (L) => (L.rh ? caseRayon(...L.rh) : caseSur(L.pf, exterieur(pf(L.pf)), L.t));
+/** la case au rayon r, à l'heure h (leviers posés sur le sol de l'étage -1) */
+export const caseRayon = (r, h) => { const [dx, dy] = sens(h), [cx, cy] = centre(); return [Math.floor(cx + dx * r), Math.floor(cy + dy * r)]; };
 /** les étages : carte, plateformes, leviers, où les aiguilles arrivent quand l'horloge y monte ou descend, heures où les
  *  grandes aiguilles ne vont pas (îlots), jusqu'où une aiguille tourne avant de heurter ce qui l'arrête */
 export const NIVEAUX = {
@@ -114,7 +116,7 @@ const PF_CASES = new Map([...PLATEFORMES, ...PLATEFORMES1].map((p) => [p.id, ban
 export const casesPlateforme = (id) => PF_CASES.get(id);
 
 /** l'état de départ : les deux grandes aiguilles sur six heures (vers le quai), la petite sur trois heures, les blocs en place */
-export const depart = () => ({ grande: 6, fine: 6, petite: 3, niv: 0, cle1: false, cle: false, blocs: true, tq: {}, grilles: {} });
+export const depart = () => ({ grande: 6, fine: 6, petite: 3, niv: 0, cle1: false, cle: false, blocs: true, tq: {}, grilles: {}, piece: false, cle2: false, poids: null });
 export const AIGUILLES = ['grande', 'fine', 'petite'];
 
 /** ce qu'il y a dans une case de l'étage n : { quoi: 'pf', id } ou { quoi: 'aiguille', sur: [aiguilles] } ou null (le
@@ -122,9 +124,12 @@ export const AIGUILLES = ['grande', 'fine', 'petite'];
 export function caseHorloge(E, x, y, n = E.niv || 0) {
   const k = cle(x, y);
   for (const p of NIVEAUX[n].plateformes) if (PF_CASES.get(p.id).has(k)) return { quoi: 'pf', id: p.id };
-  if ((E.niv || 0) !== n) return null;
+  // étage -1 (horloge-m1.js) : un sol jusqu'au rayon rSol, les aiguilles posées dessus
+  const rSol = NIVEAUX[n].rSol, r = rSol && Math.hypot(x + 0.5 - C[0] - 0.5, y + 0.5 - C[1] - 0.5);
+  if (rSol && (r > rSol || r < R_PIVOT)) return null;
+  if ((E.niv || 0) !== n) return rSol ? { quoi: 'sol' } : null;
   const sur = AIGUILLES.filter((a) => casesAiguille(a, E[a]).has(k));
-  return sur.length ? { quoi: 'aiguille', sur } : null;
+  return sur.length ? { quoi: 'aiguille', sur } : rSol ? { quoi: 'sol' } : null;
 }
 /** les cases qu'on ne traverse pas : les leviers */
 export const obstacles = (n = 0) => new Set(NIVEAUX[n].leviers.map((L) => cle(...placeLevier(L))));
@@ -141,12 +146,13 @@ export function tourner(E, quoi, s) {
   const h = heure(E[quoi] + s), n = E.niv || 0;
   if (n === 0 && E.blocs && quoi !== 'petite' && BLOCS.includes(h)) return null;
   if (quoi !== 'petite' && NIVEAUX[n].interdites?.includes(h)) return null;
+  const B = NIVEAUX[n].bornes?.[quoi]; if (B && (h < B[0] || h > B[1])) return null;   // étage -1 : jusqu'où l'aiguille va
   return { ...E, [quoi]: h };
 }
 /** la place, sur l'aiguille quoi (à l'heure k), de quelqu'un qui était à la distance r du centre et de côté t */
-export function caseSurAiguille(quoi, k, r, t) {
+export function caseSurAiguille(quoi, k, r, t, rMax = Infinity) {
   const [cx, cy] = centre(), [ex, ey] = sens(k), vise = [cx + ex * r - ey * t, cy + ey * r + ex * t];
-  const cases = [...casesAiguille(quoi, k)].map((q) => q.split(',').map(Number));
+  const cases = [...casesAiguille(quoi, k)].map((q) => q.split(',').map(Number)).filter(([x, y]) => Math.hypot(x + 0.5 - cx, y + 0.5 - cy) <= rMax);
   return cases.sort((p, q) => Math.hypot(p[0] + 0.5 - vise[0], p[1] + 0.5 - vise[1]) - Math.hypot(q[0] + 0.5 - vise[0], q[1] + 0.5 - vise[1]))[0];
 }
 /** où est, sur son aiguille, celui qui se tient en (x, y) : { quoi, r, t } (ou null s'il n'est pas sur une aiguille) */
@@ -162,8 +168,8 @@ export function emporter(E, E2, x, y) {
   const a = c?.quoi === 'aiguille' && c.sur.find((q) => heure(E2[q]) !== heure(E[q])); if (!a) return [x, y];
   const [cx, cy] = centre(), [dx, dy] = sens(E[a]), vx = x + 0.5 - cx, vy = y + 0.5 - cy;
   const r = vx * dx + vy * dy, t = -vx * dy + vy * dx, [ex, ey] = sens(E2[a]);
-  const vise = [cx + ex * r - ey * t, cy + ey * r + ex * t];
-  const cases = [...casesAiguille(a, E2[a])].map((k) => k.split(',').map(Number));
+  const vise = [cx + ex * r - ey * t, cy + ey * r + ex * t], rMax = NIVEAUX[E.niv || 0]?.rSol ?? Infinity;
+  const cases = [...casesAiguille(a, E2[a])].map((k) => k.split(',').map(Number)).filter(([q, w]) => Math.hypot(q + 0.5 - cx, w + 0.5 - cy) <= rMax);
   return cases.sort((p, q) => Math.hypot(p[0] + 0.5 - vise[0], p[1] + 0.5 - vise[1]) - Math.hypot(q[0] + 0.5 - vise[0], q[1] + 0.5 - vise[1]))[0];
 }
 

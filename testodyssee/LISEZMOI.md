@@ -277,17 +277,31 @@ grande aiguille à la petite quand elles sont à la même heure. Sur chaque îlo
 du mur qui est derrière.
 Les salles du mur (`js/horloge-n1.js`) relient deux plateformes : salle sud (5 h - 7 h), salle est (1 h - 5 h), salle
 ouest (7 h - 11 h). Elles sont coupées de murs percés d'un seul passage (`coupes`), et la coupe du milieu des salles est
-et ouest est une grille (`grilleE`, `grilleO`). Dedans, façon arène de Cimetronelle : des carrefours de 3 × 3 cases reliés
-par des couloirs de trois cases, et des tourniquets au centre des carrefours (`planSalle1`, `tourniquetsTroncon`).
+et ouest est une grille (`grilleE`, `grilleO`). Dedans, façon arène de Cimetronelle : des murs en travers (cloisons de
+bois brun), percés d'ouvertures que ferment des tourniquets (`planSalle1`, `barrieresTroncon`), dessinés par
+`python3 tools/pixelforge/tourniquets.py`.
 Marcher dans un bras par le côté fait tourner le tourniquet d'un quart de tour, s'il a la place de balayer (`pousser`) ;
 jamais par le bout ; ils restent comme on les laisse, partagés par tous (l'hôte décide, `tq` dans l'état). Chaque tronçon
-est vérifié dans le sens où l'on traverse la salle en venant d'en bas (`depuis`) : on doit pousser pour passer, et de
-partout on revient à l'entrée et on atteint la sortie, même quand un autre joueur a laissé les tourniquets autrement
-(`analyser`, `tronconValide`). Graines : `GRAINES_N1`, cherchées par `node tools/horloge-tourniquets.mjs`.
+est vérifié : on doit pousser pour passer, chaque tourniquet sert, et de partout on rejoint ses deux bouts, par où qu'on
+soit entré, même quand un autre joueur a laissé les tourniquets autrement (`analyser`, `tronconValide`, `noterTroncon`). Graines : `GRAINES_N1`, cherchées par `node tools/horloge-tourniquets.mjs`.
 Au nord (11 h - 1 h), l'escalier (`ESCALIER`, `caseEscalier`) : un palier, puis un escalier de pierre qui fait tout le
 tour de la tour en s'écartant vers l'extérieur, au-dessus des autres salles (on les voit en dessous), jusqu'à la grande
-porte de l'étage 2, fermée. Dessiné en volumes dans `js/horloge-escalier.js` ; marches, contremarches, balustre et porte
+porte de l'étage 2 (palier `palierHaut`), fermée sans la clé du -1. Haut fait monter, bas descendre (`pasEscalier`) ; on est
+dessiné au milieu des marches et la caméra tourne avec l'escalier (`milieuEscalier`, `cameraEscalier`). Dessiné en volumes dans `js/horloge-escalier.js` ; marches, contremarches, balustre et porte
 dessinés par `python3 tools/pixelforge/horloge.py` (`img/horloge/`).
+
+### La Tour de l'Horloge, étage -1
+
+`js/horloge-m1.js` (`labo:horloge:-1`). Le mécanisme y descend depuis l'étage 0 ; pour monter à l'étage 1, il lui faut la
+pièce trouvée ici (`piece`). Les aiguilles sont posées sur un sol de pierre (`rSol`) : on marche sur leur dessus, mais on
+ne passe de l'une au sol (ou l'inverse) que par son échelle, accrochée du côté où elle tourne (`echelle`, `pasM1`) ; on ne
+se sert du mécanisme que debout sur une aiguille. La grande (1 h à 5 h) et la fine (7 h à 11 h) coupent la salle en deux
+secteurs (`bornes`) ; en arrivant (grande à 3 h, fine à 9 h), elles barrent les portes des deux salles du mur. Dans chaque
+secteur, le levier de l'aiguille qui borde l'autre (`LEVIERS_M1`) : il faut être deux. Trois dresseurs sur le sol.
+Salle des contrepoids (porte à 3 h, la pièce au bout) : trois fosses en travers, quatre chaînes qui échangent deux poids
+(`CHAINES`, état `poids`, au moins trois chaînes à tirer, jamais coincé : `resoudreContrepoids`). Salle des balanciers
+(porte à 9 h, la clé de la grande porte `cle2` au bout) : des murs percés d'une ouverture que balaie un balancier, au même
+rythme chez tous (l'heure de l'ordinateur, `balancier`) ; touché, on revient au début. Un dresseur dans chacune.
 
 ### Le Musée des Dunes (scène du sceptre)
 

@@ -1302,6 +1302,40 @@ for (const l of Object.values(lieux).flat()) {
     ok(bas && sommet && monte && descend && B.porte[1] === B.haut[1] - 1 && N1.caseEscalier(...B.haut)?.quoi === 'palierHaut', 'horloge, étage 1 : sur l\'escalier, haut fait monter jusqu\'au palier de la grande porte et bas redescendre jusqu\'en bas');
   }
   Hm.appliquer(m1, m.horloge);
+  /* l'étage -1 : les aiguilles posées sur le sol, leurs échelles, les deux salles du mur */
+  {
+    const M1 = await import('../testodyssee/js/horloge-m1.js');
+    const E = { ...Hm.depart(), niv: -1, blocs: false, cle: true, ...Hm.NIVEAUX[-1].arrivee };
+    const pied = (q, e) => M1.echelle(q, e[q]).pied, lev = (q) => Hm.placeLevier(M1.LEVIERS_M1.find((L) => L.quoi === q));
+    const porte = (S, s) => S.has(M1.devantPorteM1(s).join(',')), [CP, BAL] = M1.SALLES_M1;
+    const sec = (e) => [M1.secteur(e, ...pied('grande', e)), M1.secteur(e, ...pied('fine', e))];
+    const [G0, F0] = sec(E);
+    ok(!G0.has(pied('fine', E).join(',')) && !porte(G0, CP) && !porte(F0, CP) && !porte(G0, BAL) && !porte(F0, BAL)
+      && M1.atteint(G0, lev('fine')) && !M1.atteint(G0, lev('grande')) && M1.atteint(F0, lev('grande')) && !M1.atteint(F0, lev('fine')),
+      'horloge, étage -1 : la grande et la fine coupent la salle en deux ; elles barrent les deux portes ; chaque secteur a le levier de l\'aiguille de l\'autre');
+    const apres = (q, h) => sec({ ...E, [q]: h });
+    ok(porte(apres('fine', 10)[0], BAL) && porte(apres('fine', 8)[1], BAL) && porte(apres('grande', 2)[0], CP) && porte(apres('grande', 4)[1], CP),
+      'horloge, étage -1 : tourner une aiguille ouvre la porte qu\'elle barrait, d\'un côté ou de l\'autre');
+    // seul, depuis l'échelle de la grande, on n'atteint jamais le levier de la grande ni l'autre secteur, où que soit la fine
+    ok([7, 8, 9, 10, 11].every((f) => { const e = { ...E, fine: f }, S = M1.secteur(e, ...pied('grande', e)); return !M1.atteint(S, lev('grande')) && !S.has(pied('fine', e).join(',')); }),
+      'horloge, étage -1 : seul, on ne fait pas tourner l\'aiguille qui borde son propre secteur (il faut être deux)');
+    ok(Hm.tourner(E, 'grande', 3) === null && Hm.tourner({ ...E, grande: 5 }, 'grande', 1) === null && Hm.tourner({ ...E, fine: 7 }, 'fine', -1) === null && !!Hm.tourner(E, 'grande', 1),
+      'horloge, étage -1 : la grande va de 1 h à 5 h, la fine de 7 h à 11 h');
+    ok(M1.pasM1(E, ...M1.echelle('grande', 3).main, ...pied('grande', E)) && !M1.pasM1(E, ...Hm.caseSurAiguille('grande', 3, 10, 0), ...Hm.caseSurAiguille('grande', 3, 10, 0).map((v, i) => v + (i ? 3 : 0)))
+      && !M1.pasM1(E, ...M1.devantPorteM1(BAL), ...M1.porteM1(BAL)),
+      'horloge, étage -1 : on ne descend d\'une aiguille que par son échelle, et une aiguille ne mène pas dans une porte');
+    const cp = M1.resoudreContrepoids();
+    ok(cp.jamaisCoince && cp.min >= 3, `horloge, étage -1 : salle des contrepoids, ${cp.min} chaînes à tirer au moins, jamais coincé`);
+    const B = M1.planBalanciers(), P = B.plan, dans = (x, y) => P[y]?.[x] === '.';
+    const vu = new Set([String(B.porte.case)]), f = [B.porte.case];
+    while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const a = x + dx, b = y + dy; if (dans(a, b) && !vu.has(a + ',' + b)) { vu.add(a + ',' + b); f.push([a, b]); } } }
+    const balaie = B.lignes.every((L) => { const ouv = L.cases.filter(([x, y]) => P[y][x] === '.'); const t = new Set(); for (let k = 0; k < 60; k++) for (const [x, y] of M1.balancier(L, (k / 60) * L.periode)) t.add(x + ',' + y); return ouv.length >= 2 && ouv.every(([x, y]) => t.has(x + ',' + y)); });
+    ok(B.lignes.length >= 4 && N4.some(([dx, dy]) => vu.has((B.coffre.case[0] + dx) + ',' + (B.coffre.case[1] + dy))) && balaie,
+      `horloge, étage -1 : salle des balanciers, ${B.lignes.length} murs percés que balaie un balancier, le coffre au bout`);
+    const w = world.maps[M1.HORLOGE_M1];
+    ok(w && M1.SALLES_M1.every((s) => w.warpAt(...M1.porteM1(s))?.map === M1.salleM1Id(s) && world.maps[M1.salleM1Id(s)]?.warpAt(...world.maps[M1.salleM1Id(s)].porte)?.map === M1.HORLOGE_M1),
+      'horloge, étage -1 : les portes mènent aux salles du mur, et les salles ramènent au sol');
+  }
 }
 
 /* ---------------- la Course de la Vallée ---------------- */

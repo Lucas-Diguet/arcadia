@@ -133,6 +133,16 @@ const TUILES = {
   // étage 1 : les tourniquets (barrières de bois peint et poteau coiffé de laiton, façon Cimetronelle, dessinés par
   // tools/pixelforge/tourniquets.py) et la grille de fer des salles
   ...Object.fromEntries(TQ.map((k) => [k, imageSurPlancher(k)])),
+  // étage -1 : dalles du sous-sol, fosses et contrepoids, chaînes, rails et balanciers
+  sol_sous(x, r) { dallesSous(x, r); },
+  fosse(x, r) { x.fillStyle = '#0a0806'; x.fillRect(0, 0, 32, 32); x.fillStyle = '#1a1410'; x.fillRect(0, 0, 32, 5); x.fillStyle = 'rgba(255,255,255,0.05)'; for (let k = 0; k < 6; k++) x.fillRect(r() * 30 | 0, 8 + (r() * 22 | 0), 2, 1); },
+  poids(x, r) { x.fillStyle = '#0a0806'; x.fillRect(0, 0, 32, 32); x.fillStyle = '#26262c'; x.fillRect(1, 1, 30, 30); x.fillStyle = '#4a4a54'; x.fillRect(3, 3, 26, 26); x.fillStyle = '#6a6a76'; x.fillRect(3, 3, 26, 3); x.fillStyle = '#c8962e'; x.fillRect(13, 13, 6, 6); x.fillStyle = '#3a2408'; x.fillRect(15, 15, 2, 2); },
+  chaine_a(x, r) { chaine(x, r, false); },
+  chaine_b(x, r) { chaine(x, r, true); },
+  rail(x, r) { dallesSous(x, r); x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(0, 13, 32, 6); x.fillStyle = '#7a6a40'; x.fillRect(0, 15, 32, 2); },
+  rail_mur(x, r) { sol_bas(x, r); x.fillStyle = '#7a6a40'; x.fillRect(0, 15, 32, 2); },
+  balancier(x, r) { dallesSous(x, r); boule(x); },
+  balancier_mur(x, r) { sol_bas(x, r); boule(x); },
   grille_tour(x, r) { grilleTour(x, r, false); },
   grille_ouverte(x, r) { grilleTour(x, r, true); },
   rambarde_s(x, r) { rambarde(x, r, 's'); },
@@ -214,6 +224,25 @@ function boutTube(x, r, angle) {
   x.fillStyle = '#0c0604'; x.beginPath(); x.ellipse(16, 27, 10, 4, 0, 0, Math.PI * 2); x.fill();   // l'ouverture
   x.fillStyle = 'rgba(160,220,255,0.3)'; x.fillRect(10, 26, 5, 1);
   x.restore();
+}
+/** les dalles de pierre du sous-sol de la Tour de l'Horloge */
+function dallesSous(x, r) {
+  x.fillStyle = '#4a4238'; x.fillRect(0, 0, 32, 32);
+  for (const [a, b] of [[0, 0], [16, 0], [0, 16], [16, 16]]) { const t = r(); x.fillStyle = t < 0.33 ? '#6e6454' : t < 0.66 ? '#685e50' : '#74695a'; x.fillRect(a + 1, b + 1, 14, 14); x.fillStyle = 'rgba(255,240,210,0.1)'; x.fillRect(a + 1, b + 1, 14, 1); }
+}
+/** une chaîne qui pend au mur (tirée : plus bas, avec son anneau) */
+function chaine(x, r, tiree) {
+  sol_bas(x, r);
+  const bas = tiree ? 28 : 20;
+  for (let y = 0; y < bas; y += 4) { x.fillStyle = '#2a2a30'; x.fillRect(13, y, 6, 4); x.fillStyle = '#8a8a96'; x.fillRect(14, y + 1, 4, 2); }
+  x.fillStyle = '#c8962e'; x.fillRect(10, bas, 12, 3); x.fillRect(10, bas - 6, 3, 9); x.fillRect(19, bas - 6, 3, 9);
+}
+/** la masse d'un balancier, vue de dessus */
+function boule(x) {
+  x.fillStyle = 'rgba(0,0,0,0.4)'; x.beginPath(); x.arc(18, 19, 13, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#5a3a14'; x.beginPath(); x.arc(16, 16, 13, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#c8962e'; x.beginPath(); x.arc(16, 16, 11, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#f0d070'; x.beginPath(); x.arc(12, 12, 4, 0, Math.PI * 2); x.fill();
 }
 /** la grille de fer d'une salle de l'étage 1 (ouverte : relevée, on n'en voit que le linteau) */
 function grilleTour(x, r, ouverte) {
