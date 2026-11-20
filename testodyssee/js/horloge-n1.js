@@ -29,6 +29,18 @@ export function casesTourniquet(Q, rot) {
   for (const [dx, dy, L] of Q.bras) { const [a, b] = quarts([dx, dy], rot); for (let k = 1; k <= L; k++) out.push([Q.x + a * k, Q.y + b * k, a ? 'h' : 'v', k === L]); }
   return out;
 }
+/** les pièces à dessiner d'un tourniquet (tools/pixelforge/tourniquets.py) : clé « x,y » → tq_pivot_<NESO> (avec l'amorce
+ *  des bras présents), tq_h / tq_v (bras du milieu), tq_h_e / tq_h_o / tq_v_n / tq_v_s (bout arrondi du côté indiqué) */
+export function piecesTourniquet(Q, rot) {
+  const M = new Map(), dirs = new Set();
+  for (const [dx, dy, L] of Q.bras) {
+    const [a, b] = quarts([dx, dy], rot);
+    dirs.add(b < 0 ? 'N' : a > 0 ? 'E' : b > 0 ? 'S' : 'O');
+    for (let k = 1; k <= L; k++) M.set(cle(Q.x + a * k, Q.y + b * k), k < L ? (a ? 'tq_h' : 'tq_v') : a ? (a > 0 ? 'tq_h_e' : 'tq_h_o') : b > 0 ? 'tq_v_s' : 'tq_v_n');
+  }
+  M.set(cle(Q.x, Q.y), 'tq_pivot_' + [...'NESO'].map((c) => (dirs.has(c) ? c : '-')).join(''));
+  return M;
+}
 /** case → numéro du tourniquet qui l'occupe */
 export function occupation(TS, rots) {
   const M = new Map();
@@ -220,7 +232,7 @@ export function barrieresTroncon(s, t, graine) {
   const r = alea(graine), N = t.plan.length, sol = (x, y) => t.plan[y]?.[x] === '.';
   const arcs = []; t.plan.forEach((l, y) => [...l].forEach((c, x) => { if (c === '.') arcs.push(arcDe(s, x, y)); }));
   const a0 = Math.min(...arcs), a1 = Math.max(...arcs), L = a1 - a0, nb = Math.max(1, Math.round(L / 5.5));
-  const murs = new Set(), TS = [], pris = new Set();
+  const murs = new Map(), TS = [], pris = new Set();
   for (let b = 0; b < nb; b++) {
     const a = a0 + L * (b + 0.35 + r() * 0.3) / nb, RM = SR0 + 1 + r() * (SR1 - SR0 - 2);
     const h = s.de + (a / RM) / (Math.PI / 6), [px, py] = pointSalle(RM, h), vx = px - (SC + 0.5), vy = py - (SC + 0.5);
@@ -251,9 +263,10 @@ export function barrieresTroncon(s, t, graine) {
       TS.push({ x, y, bras }); n++;
     }
     if (!n) continue;
-    run.forEach(([x, y], q) => { pris.add(cle(x, y)); if (!libres.has(q)) murs.add(cle(x, y)); });
+    run.forEach(([x, y], q) => { pris.add(cle(x, y)); if (!libres.has(q)) murs.set(cle(x, y), hz ? 'h' : 'v'); });
   }
-  return { murs: [...murs].map((k) => k.split(',').map(Number)), tourniquets: TS };
+  // murs : [x, y, sens de la cloison ('h' : est-ouest, 'v' : nord-sud)]
+  return { murs: [...murs].map(([k, o]) => [...k.split(',').map(Number), o]), tourniquets: TS };
 }
 /** le plan d'un tronçon avec des murs en plus */
 export const avecMurs = (plan, murs) => { const G = plan.map((l) => [...l]); for (const [x, y] of murs) G[y][x] = '#'; return G.map((l) => l.join('')); };
@@ -279,10 +292,11 @@ export function salles1() {
   SALLES_N1 = {};
   for (const s of SALLES1) {
     const [g, ...gs] = GRAINES_N1[s.id], L = planSalle1(s, g), G = L.plan.map((l) => [...l]);
+    L.cloisons = new Map();
     L.troncons.forEach((t, k) => {
       const B = barrieresTroncon(s, t, gs[k] ?? 0);
       t.tourniquets = B.tourniquets; t.plan = avecMurs(t.plan, B.murs);
-      for (const [x, y] of B.murs) G[y][x] = '#';
+      for (const [x, y, o] of B.murs) { G[y][x] = '#'; L.cloisons.set(cle(x, y), o); }
     });
     L.plan = G.map((l) => l.join(''));
     L.tourniquets = L.troncons.flatMap((t) => t.tourniquets);
@@ -391,6 +405,7 @@ export function construireNiveau1(world) {
     L.plan.forEach((l, y) => [...l].forEach((c, x) => {
       r.set(x, y, sol[c]);
       if (c === ' ') solA.set(cle(x, y), muraille(x, y) ? 'muraille_' + ((x * 7 + y * 13) % 3) : 'void');
+      else if (c === '#' && L.cloisons.has(cle(x, y))) solA.set(cle(x, y), cloison(L.cloisons, x, y));   // une cloison de bois
       else if (c === '#') solA.set(cle(x, y), 'sol_carillon_bas');   // le plancher du dessous, comme à l'étage 0
       else if (c === 'G') solA.set(cle(x, y), 'grille_tour');
       else solA.set(cle(x, y), 'sol_carillon');
@@ -419,6 +434,11 @@ export function construireNiveau1(world) {
   // tout l'étage dans l'état commun
   appliquerSalles1(world, E);
 }
+/** la pièce d'une cloison (tools/pixelforge/tourniquets.py) : cl_h / cl_v, bout arrondi du côté où elle s'arrête */
+function cloison(C, x, y) {
+  const o = C.get(cle(x, y)), [a, b] = o === 'h' ? [C.get(cle(x - 1, y)) === 'h', C.get(cle(x + 1, y)) === 'h'] : [C.get(cle(x, y - 1)) === 'v', C.get(cle(x, y + 1)) === 'v'];
+  return 'cl_' + o + (a && b ? '' : !a && !b ? '_x' : o === 'h' ? (a ? '_e' : '_o') : (a ? '_s' : '_n'));
+}
 /** pose les tourniquets et les grilles des salles de l'étage 1 selon l'état ; renvoie les cases changées par carte */
 export function appliquerSalles1(world, E) {
   const L1 = salles1(), changees = {};
@@ -426,7 +446,7 @@ export function appliquerSalles1(world, E) {
     const r = world.maps[salle1Id(s)]; if (!r) continue;
     const L = L1[s.id], rots = E.tq?.[s.id] || [], ch = [];
     const voulu = new Map();
-    L.tourniquets.forEach((Q, i) => { for (const [x, y, f, finBras] of casesTourniquet(Q, rots[i] || 0)) voulu.set(cle(x, y), f === 'p' ? 'tq_pivot' : 'tq_' + f + (finBras ? '' : '')); });
+    L.tourniquets.forEach((Q, i) => { for (const [k, v] of piecesTourniquet(Q, rots[i] || 0)) voulu.set(k, v); });
     const avant = r._tq || new Map();
     for (const k of new Set([...avant.keys(), ...voulu.keys()])) {
       if (avant.get(k) === voulu.get(k)) continue;

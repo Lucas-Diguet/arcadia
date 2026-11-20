@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.46 — 20 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge, étage 1 : les tourniquets sont redessinés à la manière de l'arène de Cimetronelle dans Pokémon Émeraude. Des barrières de bois peint en crème et bleu tournent autour d'un gros poteau coiffé de laiton, et les cloisons fixes sont des palissades de bois brun.
+
 ## 6.45 — 20 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge, étage 1 :
   - Sur le grand escalier, on monte comme dans la Tour des Cieux : il suffit d'aller vers le haut, et l'on suit les marches tout le tour de la tour. Vers le bas, on redescend ; à gauche et à droite, on change de côté.

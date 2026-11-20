@@ -21,6 +21,15 @@ const REVELE = 'floor_gymWater';
 
 /** tuiles du labo ajoutées à l'atlas d'Odyssée, à la suite des siennes : les murs du tombeau (grès orangé, vieilles pierres) */
 function hasard(g) { let s = g >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+/** les pièces des tourniquets de la Tour de l'Horloge (testodyssee/img/horloge/, PixelForge), posées sur le plancher */
+const IMG_HORLOGE = new URL('../img/horloge/', import.meta.url).href;
+const TQ = ['tq_h', 'tq_v', 'tq_h_e', 'tq_h_o', 'tq_v_n', 'tq_v_s', ...['h', 'h_e', 'h_o', 'h_x', 'v', 'v_n', 'v_s', 'v_x'].map((k) => 'cl_' + k), ...[...Array(16).keys()].map((m) => 'tq_pivot_' + [...'NESO'].map((c, i) => (m >> (3 - i)) & 1 ? c : '-').join(''))];
+const IMAGES_TUILES = {};
+function imageSurPlancher(k) {
+  const f = (x, r) => { planchesCarillon(x, r); const im = IMAGES_TUILES[k]; if (im?.complete && im.naturalWidth) x.drawImage(im, 0, 0); };
+  f.image = () => { if (typeof Image === 'undefined') return null; if (!IMAGES_TUILES[k]) { IMAGES_TUILES[k] = new Image(); IMAGES_TUILES[k].src = IMG_HORLOGE + k + '.png'; } return IMAGES_TUILES[k]; };
+  return f;
+}
 const TUILES = {
   mur_tombeau(x, r) {
     // assises de blocs de grès, joints sombres, usure et petites fissures
@@ -121,10 +130,9 @@ const TUILES = {
   tube_e(x, r) { boutTube(x, r, Math.PI / 2); },
   tube_s(x, r) { boutTube(x, r, Math.PI); },
   tube_o(x, r) { boutTube(x, r, -Math.PI / 2); },
-  // étage 1 : les tourniquets (bras de laiton sur un pivot de fonte, façon Cimetronelle) et la grille de fer des salles
-  tq_pivot(x, r) { tourniquet(x, r, null); },
-  tq_h(x, r) { tourniquet(x, r, 'h'); },
-  tq_v(x, r) { tourniquet(x, r, 'v'); },
+  // étage 1 : les tourniquets (barrières de bois peint et poteau coiffé de laiton, façon Cimetronelle, dessinés par
+  // tools/pixelforge/tourniquets.py) et la grille de fer des salles
+  ...Object.fromEntries(TQ.map((k) => [k, imageSurPlancher(k)])),
   grille_tour(x, r) { grilleTour(x, r, false); },
   grille_ouverte(x, r) { grilleTour(x, r, true); },
   rambarde_s(x, r) { rambarde(x, r, 's'); },
@@ -206,28 +214,6 @@ function boutTube(x, r, angle) {
   x.fillStyle = '#0c0604'; x.beginPath(); x.ellipse(16, 27, 10, 4, 0, 0, Math.PI * 2); x.fill();   // l'ouverture
   x.fillStyle = 'rgba(160,220,255,0.3)'; x.fillRect(10, 26, 5, 1);
   x.restore();
-}
-/** un tourniquet de la Tour de l'Horloge, vu de dessus : le pivot (q = null), un bras horizontal ou vertical */
-function tourniquet(x, r, q) {
-  planchesCarillon(x, r);
-  x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(q === 'v' ? 11 : 0, q === 'h' ? 12 : 2, q === 'v' ? 12 : 32, q === 'h' ? 12 : 30);
-  if (q) {
-    x.save(); if (q === 'v') { x.translate(16, 16); x.rotate(Math.PI / 2); x.translate(-16, -16); }
-    // le bras : une barre de laiton cerclée de sombre, des rivets, un reflet
-    x.fillStyle = '#2a1608'; x.fillRect(0, 10, 32, 11);
-    x.fillStyle = '#b8862e'; x.fillRect(0, 11, 32, 8);
-    x.fillStyle = '#e8c060'; x.fillRect(0, 12, 32, 2);
-    x.fillStyle = '#7a5418'; x.fillRect(0, 17, 32, 2);
-    for (const px of [5, 15, 25]) { x.fillStyle = '#4a300c'; x.fillRect(px, 14, 3, 3); x.fillStyle = '#f8e090'; x.fillRect(px, 14, 1, 1); }
-    x.restore();
-    return;
-  }
-  // le pivot : un moyeu de fonte sur une platine, cerclé de laiton
-  x.fillStyle = '#2a1608'; x.beginPath(); x.arc(16, 16, 12, 0, Math.PI * 2); x.fill();
-  x.fillStyle = '#5a5248'; x.beginPath(); x.arc(16, 16, 10, 0, Math.PI * 2); x.fill();
-  x.fillStyle = '#c89a3a'; x.beginPath(); x.arc(16, 16, 7, 0, Math.PI * 2); x.fill();
-  x.fillStyle = '#3a2a14'; x.beginPath(); x.arc(16, 16, 3, 0, Math.PI * 2); x.fill();
-  x.fillStyle = '#f0d080'; x.fillRect(12, 11, 3, 2);
 }
 /** la grille de fer d'une salle de l'étage 1 (ouverte : relevée, on n'en voit que le linteau) */
 function grilleTour(x, r, ouverte) {
@@ -337,12 +323,17 @@ function ajouterTuiles(view) {
   for (const [u, v] of Object.values(A.cells)) n = Math.max(n, Math.round((v * SIZE - 1) / P2) * cols + Math.round((u * SIZE - 1) / P2) + 1);
   const ctx = A.canvas.getContext('2d');
   Object.entries(TUILES).forEach(([k, f], i) => {
-    const c = document.createElement('canvas'); c.width = c.height = C2; f(c.getContext('2d'), hasard(97 + i * 31));
     const cx = (n % cols) * P2, cy = Math.floor(n / cols) * P2; n++;
-    ctx.drawImage(c, cx + 1, cy + 1);
-    // bord dupliqué autour de la tuile (pas de joint visible au filtrage)
-    ctx.drawImage(c, 0, 0, C2, 1, cx + 1, cy, C2, 1); ctx.drawImage(c, 0, C2 - 1, C2, 1, cx + 1, cy + C2 + 1, C2, 1);
-    ctx.drawImage(c, 0, 0, 1, C2, cx, cy + 1, 1, C2); ctx.drawImage(c, C2 - 1, 0, 1, C2, cx + C2 + 1, cy + 1, 1, C2);
+    const poser = () => {
+      const c = document.createElement('canvas'); c.width = c.height = C2; f(c.getContext('2d'), hasard(97 + i * 31));
+      ctx.drawImage(c, cx + 1, cy + 1);
+      // bord dupliqué autour de la tuile (pas de joint visible au filtrage)
+      ctx.drawImage(c, 0, 0, C2, 1, cx + 1, cy, C2, 1); ctx.drawImage(c, 0, C2 - 1, C2, 1, cx + 1, cy + C2 + 1, C2, 1);
+      ctx.drawImage(c, 0, 0, 1, C2, cx, cy + 1, 1, C2); ctx.drawImage(c, C2 - 1, 0, 1, C2, cx + C2 + 1, cy + 1, 1, C2);
+    };
+    poser();
+    // une tuile faite d'une image : redessinée quand l'image arrive
+    const im = f.image?.(); if (im && !(im.complete && im.naturalWidth)) im.addEventListener('load', () => { poser(); if (view.texA) view.texA.needsUpdate = true; }, { once: true });
     A.cells[k] = [(cx + 1) / SIZE, (cy + 1) / SIZE, (cx + 1 + C2) / SIZE, (cy + 1 + C2) / SIZE];
   });
   if (view.texA) view.texA.needsUpdate = true;

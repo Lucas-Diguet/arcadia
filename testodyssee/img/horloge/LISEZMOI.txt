@@ -1,0 +1,7 @@
+Tour de l'Horloge (TestOdyssée) : images dessinées pixel par pixel par les scripts PixelForge du dépôt, à relancer
+plutôt que de retoucher les fichiers.
+
+- marche_horloge, contremarche_horloge, balustre_horloge, porte_horloge : python3 tools/pixelforge/horloge.py
+- tq_* (tourniquets : bras, bouts, poteau du pivot) et cl_* (cloisons fixes des salles à tourniquets) :
+  python3 tools/pixelforge/tourniquets.py, à la manière des portes tournantes de l'arène de Cimetronelle (Pokémon Émeraude),
+  dessinées à 16 px par case puis agrandies ×2.
