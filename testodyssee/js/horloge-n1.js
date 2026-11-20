@@ -136,144 +136,155 @@ export function devantPortePf(id, cote) {
 }
 /** l'heure d'une case, comptée depuis le début de la salle */
 const position = (s, x, y) => ((heureDe(x + 0.5 - (SC + 0.5), y + 0.5 - (SC + 0.5)) - s.de) % 12 + 12) % 12;
-/** le plan d'une salle (sans tourniquets), façon Cimetronelle : des carrefours de 3 × 3 cases (un tourniquet peut tourner
- *  au centre) tous les 4 cases, reliés par des couloirs d'une case, de la pierre ailleurs. Les coupes partagent la salle
- *  en tronçons ; un seul couloir passe d'un tronçon au suivant (une grille pour celle de l'îlot). Dans le plan : '.'
- *  plancher, ':' plancher où rien ne tourne (les passages, les bouts), '#' pierre, 'G' grille, ' ' hors de la salle.
- *  Renvoie aussi les tronçons (plan à lui, entrée, sortie, carrefours), les bouts et les passages */
+/** l'arc (en cases, au rayon de la case) d'une case depuis le début de la salle */
+const arcDe = (s, x, y) => (position(s, x, y) * Math.PI / 6) * Math.hypot(x + 0.5 - (SC + 0.5), y + 0.5 - (SC + 0.5));
+/** le plan d'une salle, sans ses barrières : tout le plancher de l'anneau, coupé en tronçons par des murs (les coupes),
+ *  chacun percé d'un seul passage (une grille pour celle de l'îlot), et une case à chaque bout, contre le mur d'extrémité.
+ *  Dans le plan : '.' plancher, ':' plancher où rien ne tourne (passages, bouts), '#' pierre, 'G' grille, ' ' hors de
+ *  la salle. Renvoie le plan, les tronçons ({ plan à lui, entree, sortie, cases }), les bouts et les trous (passages) */
 export function planSalle1(s, graine) {
   const r = alea(graine), N = SALLE_N;
   const dedans = (x, y) => dansSalle(s, x, y);
   const hcoupes = s.coupes.map((c) => ((c.h - s.de) % 12 + 12) % 12);
   const troncon = (x, y) => { const p = position(s, x, y); let k = 0; while (k < hcoupes.length && p > hcoupes[k]) k++; return k; };
-  // le quadrillage qui donne le plus de carrefours entiers dans la salle
-  let meilleur = null;
-  for (let oy = 0; oy < 4; oy++) for (let ox = 0; ox < 4; ox++) {
-    const hubs = [];
-    for (let y = oy; y < N; y += 4) for (let x = ox; x < N; x += 4) {
-      let ok = true; for (let b = -1; b <= 1 && ok; b++) for (let a = -1; a <= 1; a++) if (!dedans(x + a, y + b)) { ok = false; break; }
-      // un carrefour ne chevauche pas une coupe
-      if (ok && [-1, 0, 1].some((b) => [-1, 0, 1].some((a) => troncon(x + a, y + b) !== troncon(x, y)))) ok = false;
-      if (ok) hubs.push([x, y]);
-    }
-    if (!meilleur || hubs.length > meilleur.length) meilleur = hubs;
-  }
-  const hubs = meilleur.map(([x, y]) => ({ x, y, k: troncon(x, y) })), hubAt = new Map(hubs.map((h, i) => [cle(h.x, h.y), i]));
-  const aretes = [];
-  hubs.forEach((h, i) => { for (const [dx, dy] of [[4, 0], [0, 4]]) { const j = hubAt.get(cle(h.x + dx, h.y + dy)); if (j !== undefined && dedans(h.x + dx / 2, h.y + dy / 2)) aretes.push({ i, j, c: [h.x + dx / 2, h.y + dy / 2] }); } });
-  const vois = hubs.map(() => []); aretes.forEach((e, n) => { vois[e.i].push([e.j, n]); vois[e.j].push([e.i, n]); });
-  const G = Array.from({ length: N }, (_, y) => Array.from({ length: N }, (_, x) => (dedans(x, y) ? '#' : ' ')));
-  const ouvrir = (h) => { for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) G[h.y + b][h.x + a] = '.'; };
-  const plusPres = (ids, [px, py]) => ids.slice().sort((a, b) => Math.hypot(hubs[a].x - px, hubs[a].y - py) - Math.hypot(hubs[b].x - px, hubs[b].y - py))[0];
-  // un bout de la salle : du carrefour le plus proche, un couloir droit jusqu'au mur d'extrémité
-  const bout = (ids, q) => {
-    const h = q === 'de' ? s.de - 0.3 : s.a + 0.3, P = pointSalle(s.rBout, h), i = plusPres(ids, P), H0 = hubs[i];
-    const d = DIR4.slice().sort(([a, b], [c, e]) => (c * (P[0] - H0.x) + e * (P[1] - H0.y)) - (a * (P[0] - H0.x) + b * (P[1] - H0.y)))[0];
-    let x = H0.x + d[0], y = H0.y + d[1];
-    while (dedans(x + d[0], y + d[1])) { x += d[0]; y += d[1]; G[y][x] = '.'; }
-    return { hub: i, case: [x, y], sortie: [x + d[0], y + d[1]], d };
-  };
-  const nT = hcoupes.length + 1, troncons = [], trous = [], gardes = [];
-  let entreeHub = null, bouts = {};
-  for (let k = 0; k < nT; k++) {
-    const ids = hubs.map((h, i) => i).filter((i) => hubs[i].k === k);
-    if (k === 0) { bouts.de = bout(ids, 'de'); entreeHub = bouts.de.hub; }
-    // les carrefours qu'on atteint depuis l'entrée du tronçon, et un labyrinthe parfait entre eux, plus quelques boucles
-    const comp = new Set([entreeHub]), f = [entreeHub];
-    for (let n = 0; n < f.length; n++) for (const [j] of vois[f[n]]) if (hubs[j].k === k && !comp.has(j)) { comp.add(j); f.push(j); }
-    const vu = new Set([entreeHub]), pile = [entreeHub], pris = new Set();
-    while (pile.length) {
-      const i = pile[pile.length - 1], v = vois[i].filter(([j]) => comp.has(j) && !vu.has(j));
-      if (!v.length) { pile.pop(); continue; }
-      const [j, n] = v[Math.floor(r() * v.length)]; pris.add(n); vu.add(j); pile.push(j);
-    }
-    aretes.forEach((e, n) => { if (comp.has(e.i) && comp.has(e.j) && !pris.has(n) && r() < 0.15) pris.add(n); });
-    for (const i of comp) ouvrir(hubs[i]);
-    // un couloir de trois cases de large entre deux carrefours : on peut y passer de côté et pousser un bras
-    for (const n of pris) { const { c: [x, y], i, j } = aretes[n], hz = hubs[i].y === hubs[j].y; for (let u = -1; u <= 1; u++) { const [a, b] = hz ? [x, y + u] : [x + u, y]; if (G[b][a] === '#') G[b][a] = '.'; } }
-    // la sortie du tronçon : un seul couloir vers le suivant (le plus éloigné possible de l'entrée), ou le bout de la salle
-    let sortie, sortieHub;
-    if (k < nT - 1) {
-      const passages = aretes.filter((e) => (comp.has(e.i) && hubs[e.j].k === k + 1) || (comp.has(e.j) && hubs[e.i].k === k + 1));
-      const loin = (e) => { const i = comp.has(e.i) ? e.i : e.j; return Math.hypot(hubs[i].x - hubs[entreeHub].x, hubs[i].y - hubs[entreeHub].y); };
-      passages.sort((a, b) => loin(b) - loin(a));
-      if (passages.length) {
-        const e = passages[Math.floor(r() * Math.min(2, passages.length))];
-        const [x, y] = e.c; G[y][x] = s.coupes[k].grille ? 'G' : ':';
-        trous.push({ coupe: s.coupes[k], cases: [[x, y]], milieu: [x, y], avant: [], apres: [] });
-        sortie = [x, y]; sortieHub = comp.has(e.i) ? e.j : e.i;
-      } else {
-        // pas de carrefours voisins de part et d'autre de la coupe : un couloir coudé entre les deux plus proches
-        let best = null;
-        for (const i of comp) for (let j = 0; j < hubs.length; j++) if (hubs[j].k === k + 1) {
-          const a = hubs[i], b = hubs[j], d = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-          if (best && d >= best.d) continue;
-          for (const coude of [[b.x, a.y], [a.x, b.y]]) {
-            const ch = []; let [x, y] = [a.x, a.y], ok = true;
-            for (const [tx, ty] of [coude, [b.x, b.y]]) while (x !== tx || y !== ty) { x += Math.sign(tx - x); y += Math.sign(ty - y); if (!dedans(x, y)) ok = false; ch.push([x, y]); }
-            if (ok) { best = { d, i, j, ch }; break; }
-          }
-        }
-        if (!best) throw new Error(`salle ${s.id} : pas de passage après le tronçon ${k}`);
-        const hors = (x, y, h) => Math.abs(x - h.x) > 1 || Math.abs(y - h.y) > 1;
-        const ch = best.ch.filter(([x, y]) => hors(x, y, hubs[best.i]) && hors(x, y, hubs[best.j]));
-        const n0 = ch.findIndex(([x, y]) => troncon(x, y) > k), n = n0 < 0 ? ch.length - 1 : n0;
-        ch.forEach(([x, y]) => { G[y][x] = '.'; });
-        const [x, y] = ch[n]; G[y][x] = s.coupes[k].grille ? 'G' : ':';
-        trous.push({ coupe: s.coupes[k], cases: [[x, y]], milieu: [x, y], avant: ch.slice(0, n), apres: ch.slice(n + 1) });
-        sortie = [x, y]; sortieHub = best.j;
+  // distance (en cases, le long de l'anneau) à la coupe la plus proche
+  const aCoupe = (x, y) => { const p = position(s, x, y), rr = Math.hypot(x + 0.5 - (SC + 0.5), y + 0.5 - (SC + 0.5)); let m = Infinity, k = -1; hcoupes.forEach((h, n) => { const d = Math.abs(p - h) * Math.PI / 6 * rr; if (d < m) { m = d; k = n; } }); return [m, k]; };
+  const G = Array.from({ length: N }, (_, y) => Array.from({ length: N }, (_, x) => (dedans(x, y) ? (aCoupe(x, y)[0] < 0.8 ? '#' : '.') : ' ')));
+  // les passages : au rayon tiré, on traverse le mur de la coupe dans l'axe de l'anneau, d'un tronçon au suivant
+  const trous = [];
+  hcoupes.forEach((h, k) => {
+    for (let essai = 0; essai < 40; essai++) {
+      const rr = SR0 + 1.5 + r() * (SR1 - SR0 - 3), [px, py] = pointSalle(rr, s.de + h), [vx, vy] = [px - (SC + 0.5), py - (SC + 0.5)];
+      const d = Math.abs(vx) >= Math.abs(vy) ? [0, Math.sign(vx) * (s.de + h > 6 ? 1 : -1) || 1] : [Math.sign(vy) * (s.de + h > 6 ? -1 : 1) || 1, 0];
+      // d : l'axe de l'anneau à cet endroit ; on part d'une case du tronçon k et l'on avance jusqu'au tronçon k + 1
+      for (const sg of [1, -1]) {
+        const dd = [d[0] * sg, d[1] * sg];
+        let x = Math.floor(px), y = Math.floor(py);
+        while (G[y]?.[x] === '#') { x -= dd[0]; y -= dd[1]; }
+        if (G[y]?.[x] !== '.' || troncon(x, y) !== k) continue;
+        const cases = []; let ok = true;
+        for (let n = 0; n < 4; n++) { x += dd[0]; y += dd[1]; if (G[y]?.[x] === '#') cases.push([x, y]); else break; }
+        if (!cases.length || G[y]?.[x] !== '.' || troncon(x, y) !== k + 1) ok = false;
+        // le passage ne longe pas le bord de l'anneau
+        if (ok && cases.some(([a, b]) => DIR4.some(([u, v]) => (u * dd[0] + v * dd[1] === 0) && !dedans(a + u, b + v)))) ok = false;
+        if (!ok) continue;
+        for (const [a, b] of cases) G[b][a] = s.coupes[k].grille ? 'G' : ':';
+        trous.push({ coupe: s.coupes[k], cases, milieu: cases[Math.floor(cases.length / 2)], avant: [[x - dd[0] * (cases.length + 1), y - dd[1] * (cases.length + 1)]], apres: [[x, y]] });
+        essai = 99; break;
       }
-    } else { bouts.a = bout([...comp], 'a'); sortie = bouts.a.case; }
-    const entree = k === 0 ? bouts.de.case : trous[k - 1].milieu;
-    troncons.push({ entree, sortie, comp: [...comp], hubs: [...comp].map((i) => [hubs[i].x, hubs[i].y]) });
-    entreeHub = sortieHub;
-  }
-  for (const b of [bouts.de, bouts.a]) G[b.case[1]][b.case[0]] = ':';
-  const P = G.map((l) => l.join(''));
-  // le plan de chaque tronçon : ses carrefours, ses couloirs, et les passages à ses deux bouts
-  troncons.forEach((t, k) => {
-    const garde = new Set();
-    for (const i of t.comp) for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) garde.add(cle(hubs[i].x + a, hubs[i].y + b));
-    aretes.forEach((e) => { if (t.comp.includes(e.i) && t.comp.includes(e.j)) { const hz = hubs[e.i].y === hubs[e.j].y; for (let u = -1; u <= 1; u++) garde.add(hz ? cle(e.c[0], e.c[1] + u) : cle(e.c[0] + u, e.c[1])); } });
-    const bord = (c) => { garde.add(cle(...c)); };
-    bord(t.entree); bord(t.sortie);
-    for (const c of [...(trous[k - 1]?.apres || []), ...(trous[k]?.avant || [])]) bord(c);
-    if (k === 0) { let [x, y] = hubs[bouts.de.hub] ? [hubs[bouts.de.hub].x, hubs[bouts.de.hub].y] : t.entree; while (x !== bouts.de.case[0] || y !== bouts.de.case[1]) { x += bouts.de.d[0]; y += bouts.de.d[1]; garde.add(cle(x, y)); } }
-    if (k === nT - 1) { let [x, y] = [hubs[bouts.a.hub].x, hubs[bouts.a.hub].y]; while (x !== bouts.a.case[0] || y !== bouts.a.case[1]) { x += bouts.a.d[0]; y += bouts.a.d[1]; garde.add(cle(x, y)); } }
-    t.plan = P.map((l, y) => [...l].map((c, x) => (garde.has(cle(x, y)) && c !== '#' && c !== ' ' ? (c === 'G' ? ':' : c) : ' ')).join(''));
+    }
+    if (trous.length !== k + 1) throw new Error(`salle ${s.id} : pas de passage dans la coupe ${k}`);
   });
+  // les bouts : la case du plancher la plus proche du point de sortie, contre le mur d'extrémité
+  const long = ((s.a - s.de) % 12 + 12) % 12;
+  const bout = (q) => {
+    const [px, py] = pointSalle(s.rBout, q === 'de' ? s.de : s.a); let best = null;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (G[y][x] === '.') for (const d of DIR4) {
+      const nx = x + d[0], ny = y + d[1], rr = Math.hypot(nx + 0.5 - (SC + 0.5), ny + 0.5 - (SC + 0.5));
+      if (dedans(nx, ny) || rr < SR0 + 0.5 || rr > SR1 - 0.5) continue;
+      const pn = position(s, nx, ny);
+      if (q === 'de' ? pn < 6 : (pn < long || pn > long + 3)) continue;
+      const dist = Math.hypot(x + 0.5 - px, y + 0.5 - py);
+      if (!best || dist < best.dist) best = { dist, case: [x, y], sortie: [nx, ny], d };
+    }
+    if (!best) throw new Error(`salle ${s.id} : pas de bout ${q}`);
+    G[best.case[1]][best.case[0]] = ':';
+    return { case: best.case, sortie: best.sortie, d: best.d };
+  };
+  const bouts = { de: bout('de'), a: bout('a') };
+  const P = G.map((l) => l.join(''));
+  const nT = hcoupes.length + 1, troncons = [];
+  for (let k = 0; k < nT; k++) {
+    const entree = k === 0 ? bouts.de.case : trous[k - 1].cases[trous[k - 1].cases.length - 1];
+    const sortie = k === nT - 1 ? bouts.a.case : trous[k].cases[0];
+    const garde = new Set([...(trous[k - 1]?.cases || []), ...(trous[k]?.cases || [])].map((c) => cle(...c)));
+    const plan = P.map((l, y) => [...l].map((c, x) => ((c === '.' || c === ':') && troncon(x, y) === k) || garde.has(cle(x, y)) ? (c === 'G' ? ':' : c) : ' ').join(''));
+    troncons.push({ entree, sortie, plan, long: Math.max(...[...plan.join('')].map((c, n) => (c === '.' ? arcDe(s, n % N, Math.floor(n / N)) : 0))) - Math.min(...[...plan.join('')].map((c, n) => (c === '.' ? arcDe(s, n % N, Math.floor(n / N)) : Infinity))) });
+  }
   return { plan: P, troncons, bouts, trous };
 }
 /** l'entrée et la sortie d'un tronçon dans le sens où l'on traverse la salle */
 export const sensTroncon = (s, t) => (s.depuis === 'a' ? [t.sortie, t.entree] : [t.entree, t.sortie]);
-/** un tronçon convient : on le traverse dans son sens, en poussant au moins un tourniquet, et l'on ne s'y coince jamais
- *  (de partout, on revient à l'entrée et l'on atteint la sortie, même quand un autre joueur a laissé les tourniquets) */
-export function tronconValide(s, t, TS = t.tourniquets) {
-  const [e, f] = sensTroncon(s, t), A = analyser(t.plan, TS, e, f, 400000, 1);
-  // un tronçon sans tourniquet (trop étroit pour qu'ils y servent) : il suffit de le traverser
+/** un tronçon convient : on le traverse en poussant au moins un tourniquet, et l'on ne s'y coince jamais : de partout,
+ *  on rejoint ses deux bouts, quelle que soit la position où un autre joueur a laissé les tourniquets, qu'on y entre par
+ *  un bout ou par l'autre */
+export function tronconValide(s, t, TS = t.tourniquets, plan = t.plan) {
+  const [e, f] = sensTroncon(s, t), A = analyser(plan, TS, e, f, 600000, 2);
   return TS.length ? A : { ...A, ok: A.figes, poussees: 0 };
 }
-/** des tourniquets dans un tronçon, tirés d'une graine : au centre de 3 à 5 de ses carrefours, de un à quatre bras d'une case */
-export function tourniquetsTroncon(t, graine) {
-  if (!graine) return [];
-  const r = alea(graine), hubs = t.hubs.slice().sort(() => r() - 0.5), n = Math.min(hubs.length, 3 + Math.floor(r() * 3));
-  // (pas de bras sur une case où rien ne doit tourner : devant un passage ou une sortie)
-  return hubs.slice(0, n).map(([x, y]) => {
-    const nb = [1, 1, 2, 2, 2, 3, 3, 4][Math.floor(r() * 8)];
-    return { x, y, bras: DIR4.slice().sort(() => r() - 0.5).slice(0, nb).filter(([a, b]) => t.plan[y + b][x + a] === '.').map(([a, b]) => [a, b, 1]) };
-  }).filter((Q) => Q.bras.length);
+/** les barrières d'un tronçon, tirées d'une graine, façon Cimetronelle : tous les 5 ou 6 cases le long de l'anneau, un
+ *  mur en travers de tout le tronçon, percé d'une ou deux ouvertures de trois cases ; au milieu de chaque ouverture, un
+ *  tourniquet dont deux bras la ferment (et parfois d'autres bras, ou un bras de deux cases). Renvoie { murs, tourniquets } */
+export function barrieresTroncon(s, t, graine) {
+  if (!graine) return { murs: [], tourniquets: [] };
+  const r = alea(graine), N = t.plan.length, sol = (x, y) => t.plan[y]?.[x] === '.';
+  const arcs = []; t.plan.forEach((l, y) => [...l].forEach((c, x) => { if (c === '.') arcs.push(arcDe(s, x, y)); }));
+  const a0 = Math.min(...arcs), a1 = Math.max(...arcs), L = a1 - a0, nb = Math.max(1, Math.round(L / 5.5));
+  const murs = new Set(), TS = [], pris = new Set();
+  for (let b = 0; b < nb; b++) {
+    const a = a0 + L * (b + 0.35 + r() * 0.3) / nb, RM = SR0 + 1 + r() * (SR1 - SR0 - 2);
+    const h = s.de + (a / RM) / (Math.PI / 6), [px, py] = pointSalle(RM, h), vx = px - (SC + 0.5), vy = py - (SC + 0.5);
+    // le mur suit le rayon : une ligne de la grille, celle qui est la plus proche du rayon
+    const hz = Math.abs(vx) >= Math.abs(vy), x0 = Math.floor(px), y0 = Math.floor(py);
+    if (!sol(x0, y0)) continue;
+    const pas = hz ? [1, 0] : [0, 1], run = [[x0, y0]];
+    for (const sg of [-1, 1]) { let x = x0 + pas[0] * sg, y = y0 + pas[1] * sg; while (sol(x, y)) { if (sg < 0) run.unshift([x, y]); else run.push([x, y]); x += pas[0] * sg; y += pas[1] * sg; } }
+    if (run.length < 4) continue;
+    // un mur qui touche une autre barrière, une case gardée ou un bout : on n'en met pas
+    if (run.some(([x, y]) => pris.has(cle(x, y)) || DIR4.some(([u, v]) => t.plan[y + v]?.[x + u] === ':'))) continue;
+    const ouvertures = run.length >= 8 && r() < 0.4 ? 2 : 1, libres = new Set();
+    const places = []; for (let j = 1; j < run.length - 1; j++) places.push(j);
+    places.sort(() => r() - 0.5);
+    let n = 0;
+    for (const j of places) {
+      if (n >= ouvertures) break;
+      if ([j - 2, j - 1, j, j + 1, j + 2].some((q) => libres.has(q))) continue;
+      const [x, y] = run[j], perp = hz ? [0, 1] : [1, 0];
+      // le tourniquet tourne : ses huit voisins sont du plancher
+      let ok = true; for (let v = -1; v <= 1 && ok; v++) for (let u = -1; u <= 1; u++) if (!sol(x + u, y + v)) { ok = false; break; }
+      if (!ok) continue;
+      const bras = [[pas[0], pas[1], 1], [-pas[0], -pas[1], 1]];
+      // parfois un bras de deux cases le long du mur (l'ouverture s'élargit d'autant)
+      if (r() < 0.3) { const k = r() < 0.5 ? 0 : 1, sg = k ? -1 : 1, q = j + 2 * sg; if (q > 0 && q < run.length - 1 || q === 0 || q === run.length - 1) { bras[k][2] = 2; libres.add(q); } }
+      for (const sg of [1, -1]) if (r() < 0.35) bras.push([perp[0] * sg, perp[1] * sg, r() < 0.3 ? 2 : 1]);
+      [j - 1, j, j + 1].forEach((q) => libres.add(q));
+      TS.push({ x, y, bras }); n++;
+    }
+    if (!n) continue;
+    run.forEach(([x, y], q) => { pris.add(cle(x, y)); if (!libres.has(q)) murs.add(cle(x, y)); });
+  }
+  return { murs: [...murs].map((k) => k.split(',').map(Number)), tourniquets: TS };
+}
+/** le plan d'un tronçon avec des murs en plus */
+export const avecMurs = (plan, murs) => { const G = plan.map((l) => [...l]); for (const [x, y] of murs) G[y][x] = '#'; return G.map((l) => l.join('')); };
+/** un tronçon et ses barrières : valide, et chaque tourniquet sert (sans lui, on passe en poussant moins) */
+export function noterTroncon(s, t, graine) {
+  const B = barrieresTroncon(s, t, graine);
+  if (!B.tourniquets.length) return null;
+  const plan = avecMurs(t.plan, B.murs), A = tronconValide(s, t, B.tourniquets, plan);
+  if (!A.ok || A.poussees < 2) return null;
+  for (let i = 0; i < B.tourniquets.length; i++) {
+    const S = tronconValide(s, t, B.tourniquets.filter((_, q) => q !== i), plan);
+    if (!(S.figes || S.poussees < A.poussees)) return null;
+  }
+  return { ...B, poussees: A.poussees, configs: A.configs };
 }
 /** les graines retenues (cherchées par tools/horloge-tourniquets.mjs ; tools/test-testodyssee.mjs vérifie qu'elles
  *  conviennent toujours) : celle du plan, puis une par tronçon */
-export const GRAINES_N1 = { sud: [1, 21, 144], est: [2, 0, 18, 96, 1], ouest: [1, 2, 152, 53, 29] };
+export const GRAINES_N1 = { sud: [1, 88, 958], est: [1, 259, 254, 554, 757], ouest: [1, 259, 842, 554, 1406] };
 let SALLES_N1 = null;
 /** les salles de l'étage 1, une fois : plan, tronçons, tourniquets (tous, dans l'ordre des tronçons) */
 export function salles1() {
   if (SALLES_N1) return SALLES_N1;
   SALLES_N1 = {};
   for (const s of SALLES1) {
-    const [g, ...gs] = GRAINES_N1[s.id], L = planSalle1(s, g);
-    L.troncons.forEach((t, k) => { t.tourniquets = tourniquetsTroncon(t, gs[k] ?? 0); });
+    const [g, ...gs] = GRAINES_N1[s.id], L = planSalle1(s, g), G = L.plan.map((l) => [...l]);
+    L.troncons.forEach((t, k) => {
+      const B = barrieresTroncon(s, t, gs[k] ?? 0);
+      t.tourniquets = B.tourniquets; t.plan = avecMurs(t.plan, B.murs);
+      for (const [x, y] of B.murs) G[y][x] = '#';
+    });
+    L.plan = G.map((l) => l.join(''));
     L.tourniquets = L.troncons.flatMap((t) => t.tourniquets);
     SALLES_N1[s.id] = L;
   }
@@ -287,7 +298,7 @@ export function salles1() {
 // au bord des premières marches.
 export const ESCALIER = `${HORLOGE1}:escalier`;
 /** pied de l'escalier (heure), hauteur totale, bord intérieur au départ et à l'arrivée, largeur, nombre de marches */
-export const ESC = { hs: 11.85, haut: 7, rIn0: 23.2, rIn1: 27.4, larg: 3.4, marches: 96, palier: [11.12, 26.8], pallierEst: [0.25, 0.86] };
+export const ESC = { hs: 11.85, haut: 7, rIn0: 23.2, rIn1: 27.4, larg: 3.4, marches: 96, palier: [11.12, 26.8], pallierEst: [0.25, 0.86], palierHaut: 0.3 };
 export const SALLE_ESC = { id: 'escalier', nom: 'L\'escalier (étage 1)', de: 11.14, a: 0.86, pfDe: 'p11', pfA: 'p1', rBout: 25 };
 /** t (de 0 au pied à 12 en haut), et le bord intérieur de l'escalier à ce t */
 export const rInt = (t) => ESC.rIn0 + ((ESC.rIn1 - ESC.rIn0) * t) / 12;
@@ -300,11 +311,33 @@ export function caseEscalier(x, y) {
   if (r >= rInt(t) && r <= rInt(t) + ESC.larg) { const k = Math.floor((t / 12) * ESC.marches); return { quoi: 'marche', k, h: hMarche(k) }; }
   const dans = (a, b) => ((h - a) % 12 + 12) % 12 <= ((b - a) % 12 + 12) % 12;
   if (dans(ESC.palier[0], ESC.hs) && r >= SR0 && r <= ESC.palier[1]) return { quoi: 'palier', h: 0, k: -1 };
+  // tout en haut, le palier de la grande porte : il prolonge la dernière marche, contre le mur extérieur
+  if (t <= ESC.palierHaut && r >= ESC.rIn1 - 0.2 && r <= SR1) return { quoi: 'palierHaut', h: ESC.haut, k: ESC.marches };
   if (dans(...ESC.pallierEst) && r > rInt(t) + ESC.larg && r <= SR1) { const k = Math.floor((t / 12) * ESC.marches); return { quoi: 'palierEst', k, h: hMarche(k) }; }
   return null;
 }
 /** hauteur d'une case de l'escalier (null : on n'y marche pas) */
 export const hauteurEscalier = (x, y) => caseEscalier(x, y)?.h ?? null;
+/** sur une marche, le pas de la grille qui va le mieux dans le sens voulu : d = up (monter), down (descendre), left (vers
+ *  le mur extérieur), right (vers le vide) ; en montant ou en descendant, on garde son côté de l'escalier */
+export function pasEscalier(x, y, d) {
+  const O = SC + 0.5, ox = x + 0.5 - O, oy = y + 0.5 - O, r = Math.hypot(ox, oy), T = [-oy / r, ox / r];
+  const w = { up: T, down: [-T[0], -T[1]], left: [T[1], -T[0]], right: [-T[1], T[0]] }[d];
+  const cote = (cx, cy) => { const rr = Math.hypot(cx + 0.5 - O, cy + 0.5 - O), t = ((Math.atan2(cx + 0.5 - O, -(cy + 0.5 - O)) / (Math.PI / 6) - ESC.hs) % 12 + 12) % 12; return rr - rInt(t); };
+  const ici = cote(x, y), h0 = hauteurEscalier(x, y);
+  let best = null;
+  for (const [n, [dx, dy]] of Object.entries({ up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] })) {
+    const h = hauteurEscalier(x + dx, y + dy), dot = dx * w[0] + dy * w[1];
+    if (h == null || Math.abs(h - h0) > 1 || dot < 0.05) continue;
+    // en montant ou en descendant, on reste sur les marches (jusqu'au palier du haut ou du bas) : on ne passe sur le petit
+    // palier de 1 h que de côté
+    const q = caseEscalier(x + dx, y + dy).quoi;
+    if ((d === 'up' && q !== 'marche' && q !== 'palierHaut') || (d === 'down' && q !== 'marche' && q !== 'palier')) continue;
+    const score = dot - (d === 'up' || d === 'down' ? 0.5 * Math.abs(cote(x + dx, y + dy) - ici) : 0);
+    if (!best || score > best.score) best = { n, score };
+  }
+  return best?.n || null;
+}
 /** les sorties de l'escalier, toutes dans un mur long (on les voit de face ou on y marche vers le bas) : vers la plateforme
  *  de 11 h, dans le mur intérieur au bord du palier ; vers celle de 1 h, dans le mur extérieur au fond du petit palier ;
  *  la grande porte de l'étage 2, dans le mur extérieur, tout en haut */
@@ -317,8 +350,11 @@ export function boutsEscalier() {
   };
   const ouest = vers(pres(SR0 - 1, 11.35, (c) => c?.quoi === 'palier'), -1);
   const est = vers(pres(SR1 + 1, 0.6, (c) => c?.quoi === 'palierEst'), 1);
-  const h = vers(pres(SR1 + 1, ESC.hs - 0.2, (c) => c?.quoi === 'marche' && c.k >= ESC.marches - 3), 1);
-  return { ouest, est, haut: h.case, porte: h.sortie };
+  // la grande porte : dans le mur extérieur (au nord), au milieu du palier du haut, face à la caméra
+  const hautes = []; for (let y = 0; y < SALLE_N; y++) for (let x = 0; x < SALLE_N; x++) if (caseEscalier(x, y)?.quoi === 'palierHaut' && !caseEscalier(x, y - 1)) hautes.push([x, y]);
+  hautes.sort((a, b) => a[0] - b[0]);
+  const haut = hautes[Math.floor(hautes.length / 2)];
+  return { ouest, est, haut, porte: [haut[0], haut[1] - 1], palierHaut: hautes };
 }
 
 /* ---------------- la construction ---------------- */

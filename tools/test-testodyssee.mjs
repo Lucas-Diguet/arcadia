@@ -1262,7 +1262,14 @@ for (const l of Object.values(lieux).flat()) {
   // les tourniquets : chaque tronçon se traverse dans son sens, en poussant, sans jamais s'y coincer
   for (const s of N1.SALLES1) {
     const res = L1[s.id].troncons.map((t) => N1.tronconValide(s, t));
-    ok(res.every((A) => A.ok), `horloge, étage 1 : salle ${s.id}, ${res.length} tronçons à tourniquets, poussées : ${res.map((A) => A.poussees).join(', ')}, jamais coincé`);
+    ok(res.every((A) => A.ok), `horloge, étage 1 : salle ${s.id}, ${res.length} tronçons à tourniquets, poussées : ${res.map((A) => A.poussees).join(', ')}, jamais coincé, par un bout ou par l'autre`);
+    // chaque tourniquet sert : sans lui, on traverse son tronçon en poussant moins (ou sans pousser)
+    const utiles = L1[s.id].troncons.every((t, k) => t.tourniquets.every((_, i) => { const S = N1.tronconValide(s, t, t.tourniquets.filter((_, q) => q !== i)); return S.figes || S.poussees < res[k].poussees; }));
+    // les tronçons ne communiquent que par leur passage
+    const P = L1[s.id].plan, ferme = P.map((l) => l.replace(/[:G]/g, '#'));
+    const compo = (x0, y0) => { const vu = new Set([x0 + ',' + y0]), f = [[x0, y0]]; while (f.length) { const [x, y] = f.pop(); for (const [dx, dy] of N4) { const a = x + dx, b = y + dy; if (ferme[b]?.[a] === '.' && !vu.has(a + ',' + b)) { vu.add(a + ',' + b); f.push([a, b]); } } } return vu; };
+    const seuls = L1[s.id].troncons.every((t, k) => { const c = t.plan.flatMap((l, y) => [...l].map((ch, x) => (ch === '.' && ferme[y][x] === '.' ? [x, y] : null)).filter(Boolean)); return c.length && L1[s.id].troncons.every((u, j) => j === k || !c.some(([x, y]) => u.plan[y][x] === '.' && compo(...c[0]).has(x + ',' + y))); });
+    ok(utiles && seuls, `horloge, étage 1 : salle ${s.id}, chaque tourniquet barre le chemin, et les tronçons ne se rejoignent que par leur passage`);
   }
   ok(L1.est.trous.some((t) => t.coupe.grille === 'grilleE') && L1.ouest.trous.some((t) => t.coupe.grille === 'grilleO') && Hm.LEVIERS1.some((L) => L.pf === 'i3' && L.quoi === 'grilleE') && Hm.LEVIERS1.some((L) => L.pf === 'i9' && L.quoi === 'grilleO'),
     'horloge, étage 1 : une grille au milieu des salles est et ouest, levée depuis l\'îlot qui est devant');
@@ -1287,6 +1294,12 @@ for (const l of Object.values(lieux).flat()) {
     const sauts = [...vu].some((k) => { const [x, y] = k.split(',').map(Number); return N4.some(([dx, dy]) => { const h2 = N1.hauteurEscalier(x + dx, y + dy); return h2 != null && Math.abs(h2 - N1.hauteurEscalier(x, y)) > 1; }); });
     ok(vu.has(String(B.haut)) && vu.has(String(B.est.case)) && N1.hauteurEscalier(...B.haut) > N1.ESC.haut - 0.3 && !!e.objectAt(...B.porte) && sauts && e.warpAt(...B.ouest.sortie)?.map === Hm.HORLOGE1 && e.warpAt(...B.est.sortie)?.map === Hm.HORLOGE1,
       'horloge, étage 1 : l\'escalier fait le tour de la tour, du palier jusqu\'à la grande porte, au-dessus du palier sans y toucher');
+    // comme dans la Tour des Cieux : haut fait monter jusqu'au palier de la grande porte, bas redescendre jusqu'en bas
+    let bas = null; for (let y = 0; y < Hm.SALLE_N && !bas; y++) for (let x = 0; x < Hm.SALLE_N; x++) { const q = N1.caseEscalier(x, y); if (q?.quoi === 'marche' && q.k <= 1 && N4.some(([dx, dy]) => N1.caseEscalier(x + dx, y + dy)?.quoi === 'palier')) { bas = [x, y]; break; } }
+    let sommet = null; for (const [x, y] of B.palierHaut) for (const [dx, dy] of N4) if (N1.caseEscalier(x + dx, y + dy)?.quoi === 'marche') sommet = [x + dx, y + dy];
+    const monte = (() => { let [x, y] = bas; for (let i = 0; i < 400; i++) { if (N1.caseEscalier(x, y)?.quoi === 'palierHaut') return true; const pas = N1.pasEscalier(x, y, 'up'); if (!pas) return false; const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[pas]; x += dx; y += dy; } return false; })();
+    const descend = (() => { let [x, y] = sommet; for (let i = 0; i < 400; i++) { if (N1.caseEscalier(x, y)?.quoi === 'palier') return true; const pas = N1.pasEscalier(x, y, 'down'); if (!pas) return false; const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[pas]; x += dx; y += dy; } return false; })();
+    ok(bas && sommet && monte && descend && B.porte[1] === B.haut[1] - 1 && N1.caseEscalier(...B.haut)?.quoi === 'palierHaut', 'horloge, étage 1 : sur l\'escalier, haut fait monter jusqu\'au palier de la grande porte et bas redescendre jusqu\'en bas');
   }
   Hm.appliquer(m1, m.horloge);
 }

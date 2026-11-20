@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 6.45 — 20 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge, étage 1 :
+  - Sur le grand escalier, on monte comme dans la Tour des Cieux : il suffit d'aller vers le haut, et l'on suit les marches tout le tour de la tour. Vers le bas, on redescend ; à gauche et à droite, on change de côté.
+  - En haut de l'escalier, un vrai palier devant la grande porte, qui est maintenant bien en face, dans le mur.
+  - Les salles à tourniquets sont refaites, à la manière de l'arène de Cimetronelle : des murs en travers de la salle, percés d'ouvertures que ferment des tourniquets. Chaque tourniquet barre vraiment le chemin, et l'on ne peut plus être bloqué, qu'on entre par un bout ou par l'autre, même si un autre joueur les a laissés n'importe comment.
+
 ## 6.44 — 20 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : l'étage 1. Avec la clé du mécanisme, l'horloge monte, et ceux qui se tiennent sur une aiguille montent avec elle. Le mécanisme les ramène en bas.
   - Deux îlots plus près du centre, à 3 h et 9 h, ne sont atteints que par la petite aiguille, et ils arrêtent les grandes. Quatre plateformes contre le mur sont trop loin pour elle. De nouveaux leviers verts font tourner la petite aiguille, et l'on passe d'une grande aiguille à la petite quand elles sont à la même heure.

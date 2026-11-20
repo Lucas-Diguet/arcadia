@@ -5,7 +5,7 @@
 // la valide et l'annonce à tous (djHorE) ; chacun anime l'horloge et emporte son propre joueur s'il est sur l'aiguille.
 import * as THREE from 'three';
 import { HORLOGE, HORLOGE1, DEHORS, VESTIBULE, VW, TUBE_Y, C, NOMS, NIVEAUX, niveauCarte, appliquer, caseHorloge, casesMecanisme, placeLevier, tourner, emporter, heure, surAiguille, caseSurAiguille, boutsDuTube, V_PORTE, VH, VESTIBULE as VEST, SALLES, PLATEFORMES, PLATEFORMES1, salleId, labyrinthes, placeArrivee, caseSur } from './horloge.js';
-import { ESCALIER, SALLES1, salle1Id, salles1, hauteurEscalier, boutsEscalier, pousser, occupation, appliquerSalles1 } from './horloge-n1.js';
+import { ESCALIER, SALLES1, salle1Id, salles1, hauteurEscalier, caseEscalier, pasEscalier, boutsEscalier, pousser, occupation, appliquerSalles1 } from './horloge-n1.js';
 import { creerHorloge, poserHorloge } from './horloge-vue.js';
 import { creerEscalier } from './horloge-escalier.js';
 
@@ -103,6 +103,13 @@ export class Horloge {
     // la bouche du tube, au bout de la salle est : on s'y glisse en marchant dedans
     if (m.tube && tx === m.tube.x && ty === m.tube.y) { arret(); this.entrerTube(...m.tube.vers); return true; }
     // l'escalier : pas d'une marche à une autre bien plus haute ou plus basse (le haut de l'escalier passe au-dessus du palier)
+    // sur les marches, comme dans la Tour des Cieux : haut fait monter l'escalier, bas le descendre, quel que soit le sens
+    // où il tourne à cet endroit ; gauche et droite font changer de côté de l'escalier
+    if (m.id === ESCALIER && !this.guide && caseEscalier(p.x, p.y)?.quoi === 'marche') {
+      const d2 = pasEscalier(p.x, p.y, d);
+      if (!d2) return arret();
+      if (d2 !== d) { this.guide = true; try { g.tryStep(d2); } finally { this.guide = false; } return true; }
+    }
     if (m.id === ESCALIER) { const a = hauteurEscalier(p.x, p.y), b = hauteurEscalier(tx, ty); if (a != null && b != null && Math.abs(a - b) > 1) return arret(); return false; }
     // une salle à tourniquets : marcher dans un bras le fait tourner (si rien ne le gêne), puis on avance
     if (m.tourniquets) {

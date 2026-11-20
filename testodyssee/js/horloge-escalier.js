@@ -76,7 +76,7 @@ export function creerEscalier() {
   }
   // ---- le mur de la tour : extérieur haut au fond (nord), bas devant ; intérieur haut devant (au sud de l'escalier, il est
   // derrière lui pour la caméra), bas au fond ; arcades contre le mur du fond
-  const NM = 120, haut = ESC.haut + 4.5;
+  const NM = 120, haut = ESC.haut + 4.5, BP = boutsEscalier().porte, hPorte = ((Math.atan2(BP[0] + 0.5 - O, -(BP[1] + 0.5 - O)) / (Math.PI / 6)) % 12 + 12) % 12;
   for (let i = 0; i < NM; i++) {
     const h = (i / NM) * 12, a = (h * Math.PI) / 6, devant = -Math.cos(a);
     const t = ((h - ESC.hs) % 12 + 12) % 12, ici = hMarche(Math.floor((t / 12) * N));
@@ -85,7 +85,7 @@ export function creerEscalier() {
       const yh = auFond ? haut : Math.max(0.6, (fondNord ? ici : 0) + 0.9);
       const [x, z] = pt((r0 + r1) / 2, h), lt = ((Math.PI * 2 * r1) / NM) * 1.06, clair = i % 2 ? '#6a6052' : '#726858';
       G.add(pave(x, z, h, r1 - r0, lt, BAS, yh, [mat('#4a4238'), mat('#4a4238'), mat(clair), dessous, mat('#5a5244'), mat('#5a5244')]));
-      if (auFond && fondNord && i % 5 === 0) { const [px, pz] = pt(SR1 + 0.2, h); G.add(pave(px, pz, h, 0.6, 0.9, BAS, haut, [pierre, pierreS, pierre, dessous, pierre, pierreS])); }
+      if (auFond && fondNord && i % 5 === 0 && Math.abs(((h - hPorte + 6) % 12 + 12) % 12 - 6) > 0.4) { const [px, pz] = pt(SR1 + 0.2, h); G.add(pave(px, pz, h, 0.6, 0.9, BAS, haut, [pierre, pierreS, pierre, dessous, pierre, pierreS])); }
     }
   }
   // ---- les portes : vers les plateformes (au bout des paliers) et la grande porte de l'étage 2, tout en haut
@@ -108,9 +108,9 @@ export function creerEscalier() {
     G.add(P);
   }
   {
-    // la grande porte, dans le mur du fond, face à la dernière marche
-    const [x, y] = B.porte;
-    const P = new THREE.Group(); P.position.set(x + 0.5, ESC.haut, y + 0.5); P.rotation.y = Math.atan2(B.haut[0] - x, B.haut[1] - y);
+    // la grande porte, dans le mur du fond (au nord), au bout du palier du haut, contre la face du mur
+    const [x] = B.porte;
+    const P = new THREE.Group(); P.position.set(x + 0.5, ESC.haut, B.haut[1] + 0.02);
     const pl = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 4.27), new THREE.MeshBasicMaterial({ map: T.porte, transparent: true, alphaTest: 0.5 }));
     pl.position.set(0, 4.27 / 2, 0.05); P.add(pl);
     G.add(P);
