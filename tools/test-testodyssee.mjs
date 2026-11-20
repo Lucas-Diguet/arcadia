@@ -1336,6 +1336,15 @@ for (const l of Object.values(lieux).flat()) {
     ok(w && M1.SALLES_M1.every((s) => w.warpAt(...M1.porteM1(s))?.map === M1.salleM1Id(s) && world.maps[M1.salleM1Id(s)]?.warpAt(...world.maps[M1.salleM1Id(s)].porte)?.map === M1.HORLOGE_M1),
       'horloge, étage -1 : les portes mènent aux salles du mur, et les salles ramènent au sol');
   }
+  /* l'étage 2 : cinq horloges ; il faut être trois */
+  {
+    const N2 = await import('../testodyssee/js/horloge-n2.js');
+    const [r1, r2, r3] = [1, 2, 3].map((n) => N2.resoudre(n));
+    ok(!r1.ok && !r2.ok && !r2.trop && r3.ok, `horloge, étage 2 : seul ou à deux, on n'atteint jamais l'arrivée (${r2.etats} états) ; à trois, si`);
+    const m2 = world.maps[N2.HORLOGE2], B = N1.boutsEscalier();
+    ok(m2 && m2.warpAt(...N2.PORTE2)?.map === N1.ESCALIER && N2.HORLOGES2.every((q, i) => N2.casesAig2(q, q.h).every(([x, y]) => walkable(m2.get(x, y)))),
+      'horloge, étage 2 : la porte ramène en haut de l\'escalier ; les aiguilles sont praticables à leur heure');
+  }
 }
 
 /* ---------------- la Course de la Vallée ---------------- */

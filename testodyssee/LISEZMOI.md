@@ -303,6 +303,19 @@ Salle des contrepoids (porte à 3 h, la pièce au bout) : trois fosses en traver
 (porte à 9 h, la clé de la grande porte `cle2` au bout) : des murs percés d'une ouverture que balaie un balancier, au même
 rythme chez tous (l'heure de l'ordinateur, `balancier`) ; touché, on revient au début. Un dresseur dans chacune.
 
+### La Tour de l'Horloge, étage 2 (à trois)
+
+`js/horloge-n2.js` (`labo:horloge:2`), derrière la grande porte de l'escalier, ouverte par la clé du -1 (`cle2`). Cinq
+petites horloges au-dessus du vide (`HORLOGES2`), une aiguille chacune, de couleur (dessin `js/horloge2-vue.js`), qui
+tourne d'une heure à chaque coup de son levier (état `h2`, l'hôte décide) en emportant ceux qui sont dessus
+(`emporter2`) ; chacune ne va qu'entre deux heures (`de`, `a`) et ne passe ni sur une plateforme ni sur une autre
+aiguille (`tourner2`). Quand le bout d'une aiguille touche celui d'une autre, on passe de l'une à l'autre. Leviers
+(`LEVIERS2`) : ceux des horloges 1, 3 et 5 sur l'entrée, ceux des 2 et 4 sur la plateforme de l'est. Le voyage de
+l'entrée à l'arrivée passe par les cinq horloges dans l'ordre : il faut un joueur à l'entrée, un sur la plateforme de
+l'est (on y va par l'horloge 1) et un qui voyage. `resoudre(n)` explore tout : seul ou à deux, on n'arrive jamais ; à
+trois, si (vérifié par `test-testodyssee.mjs`). À l'arrivée, le grand levier (`pont`) met en marche les monte-charges
+de l'entrée et de l'est, et le coffre donne le Rouage du Temps ; l'étage 3 est à venir.
+
 ### Le Musée des Dunes (scène du sceptre)
 
 `js/musee.js` ajoute un musée aux Dunes d'Ocre, dans le labo seulement (le vrai jeu n'est pas touché) : le bâtiment se

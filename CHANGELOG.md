@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 6.49 — 20 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge, l'étage 2, à trois : la clé trouvée au -1 ouvre la grande porte en haut de l'escalier.
+  - Derrière, cinq horloges au-dessus du vide, avec une aiguille chacune, sur laquelle on marche. Chaque aiguille a sa couleur, et son levier la même. Un coup de levier la fait tourner d'une heure en emportant ceux qui sont dessus. Quand deux aiguilles se touchent par le bout, on passe de l'une à l'autre.
+  - Les leviers sont partagés entre l'entrée et une plateforme à l'est. Pour traverser les cinq horloges jusqu'à l'arrivée, il faut quelqu'un à l'entrée, quelqu'un à l'est et quelqu'un qui fait le voyage : à deux, c'est impossible.
+  - À l'arrivée, un grand levier met en marche les monte-charges qui y amènent les autres, et un coffre attend. L'étage 3 viendra plus tard.
+
 ## 6.48 — 20 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge, l'étage -1 : le mécanisme central fait descendre l'horloge au sous-sol.
   - Les aiguilles y sont posées sur le sol, comme de longues poutres. On marche dessus, mais on n'en descend et on n'y remonte que par l'échelle accrochée à chacune.
