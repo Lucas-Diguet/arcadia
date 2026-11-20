@@ -333,12 +333,13 @@ export function caseEscalier(x, y) {
 /** hauteur d'une case de l'escalier (null : on n'y marche pas) */
 export const hauteurEscalier = (x, y) => caseEscalier(x, y)?.h ?? null;
 /** sur une marche, le pas de la grille qui va le mieux dans le sens voulu : d = up (monter), down (descendre), left (vers
- *  le mur extérieur), right (vers le vide) ; en montant ou en descendant, on garde son côté de l'escalier */
+ *  le mur extérieur), right (vers le vide) ; en montant ou en descendant, on reste au milieu de l'escalier, et l'on n'en
+ *  sort de côté que vers le petit palier de 1 h */
 export function pasEscalier(x, y, d) {
   const O = SC + 0.5, ox = x + 0.5 - O, oy = y + 0.5 - O, r = Math.hypot(ox, oy), T = [-oy / r, ox / r];
   const w = { up: T, down: [-T[0], -T[1]], left: [T[1], -T[0]], right: [-T[1], T[0]] }[d];
   const cote = (cx, cy) => { const rr = Math.hypot(cx + 0.5 - O, cy + 0.5 - O), t = ((Math.atan2(cx + 0.5 - O, -(cy + 0.5 - O)) / (Math.PI / 6) - ESC.hs) % 12 + 12) % 12; return rr - rInt(t); };
-  const ici = cote(x, y), h0 = hauteurEscalier(x, y);
+  const h0 = hauteurEscalier(x, y);
   let best = null;
   for (const [n, [dx, dy]] of Object.entries({ up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] })) {
     const h = hauteurEscalier(x + dx, y + dy), dot = dx * w[0] + dy * w[1];
@@ -347,10 +348,21 @@ export function pasEscalier(x, y, d) {
     // palier de 1 h que de côté
     const q = caseEscalier(x + dx, y + dy).quoi;
     if ((d === 'up' && q !== 'marche' && q !== 'palierHaut') || (d === 'down' && q !== 'marche' && q !== 'palier')) continue;
-    const score = dot - (d === 'up' || d === 'down' ? 0.5 * Math.abs(cote(x + dx, y + dy) - ici) : 0);
+    if ((d === 'left' || d === 'right') && q === 'marche') continue;   // de côté : seulement vers le petit palier de 1 h
+    const score = dot - (d === 'up' || d === 'down' ? 0.5 * Math.abs(cote(x + dx, y + dy) - ESC.larg / 2) : 0);
     if (!best || score > best.score) best = { n, score };
   }
   return best?.n || null;
+}
+/** sur les marches, on est dessiné au milieu de l'escalier, à sa hauteur exacte, et la caméra tourne avec lui (comme
+ *  dans la Tour des Cieux) : pour une position à virgule (x, y) de la carte, { x, y } ramenés au milieu de l'escalier,
+ *  h (hauteur), cap (angle de la caméra : on regarde dans le sens de la montée) ; null hors des marches */
+export function milieuEscalier(x, y) {
+  const q0 = caseEscalier(Math.floor(x), Math.floor(y)), q1 = caseEscalier(Math.ceil(x), Math.ceil(y));
+  if (q0?.quoi !== 'marche' || q1?.quoi !== 'marche') return null;
+  const O = SC + 0.5, ox = x + 0.5 - O, oy = y + 0.5 - O, a = Math.atan2(ox, -oy);
+  const t = ((a / (Math.PI / 6) - ESC.hs) % 12 + 12) % 12, r = rInt(t) + ESC.larg / 2;
+  return { x: O + Math.sin(a) * r - 0.5, y: O - Math.cos(a) * r - 0.5, h: (ESC.haut * t) / 12, cap: a + Math.PI / 2 };
 }
 /** les sorties de l'escalier, toutes dans un mur long (on les voit de face ou on y marche vers le bas) : vers la plateforme
  *  de 11 h, dans le mur intérieur au bord du palier ; vers celle de 1 h, dans le mur extérieur au fond du petit palier ;

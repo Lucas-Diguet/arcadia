@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.47 — 20 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge, le grand escalier : la caméra tourne avec l'escalier. On reste au milieu des marches, et la flèche du haut fait toujours avancer tout droit à l'écran, tout le long du tour. En haut, la vue revient face à la grande porte.
+
 ## 6.46 — 20 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge, étage 1 : les tourniquets sont redessinés à la manière de l'arène de Cimetronelle dans Pokémon Émeraude. Des barrières de bois peint en crème et bleu tournent autour d'un gros poteau coiffé de laiton, et les cloisons fixes sont des palissades de bois brun.
 

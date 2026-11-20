@@ -5,7 +5,7 @@
 // la valide et l'annonce à tous (djHorE) ; chacun anime l'horloge et emporte son propre joueur s'il est sur l'aiguille.
 import * as THREE from 'three';
 import { HORLOGE, HORLOGE1, DEHORS, VESTIBULE, VW, TUBE_Y, C, NOMS, NIVEAUX, niveauCarte, appliquer, caseHorloge, casesMecanisme, placeLevier, tourner, emporter, heure, surAiguille, caseSurAiguille, boutsDuTube, V_PORTE, VH, VESTIBULE as VEST, SALLES, PLATEFORMES, PLATEFORMES1, salleId, labyrinthes, placeArrivee, caseSur } from './horloge.js';
-import { ESCALIER, SALLES1, salle1Id, salles1, hauteurEscalier, caseEscalier, pasEscalier, boutsEscalier, pousser, occupation, appliquerSalles1 } from './horloge-n1.js';
+import { ESCALIER, SALLES1, salle1Id, salles1, hauteurEscalier, caseEscalier, pasEscalier, milieuEscalier, boutsEscalier, pousser, occupation, appliquerSalles1 } from './horloge-n1.js';
 import { creerHorloge, poserHorloge } from './horloge-vue.js';
 import { creerEscalier } from './horloge-escalier.js';
 
@@ -34,21 +34,37 @@ export class Horloge {
       // devine, celui qui arrive sur la rangée du tube par un pas de côté ou en apparaissant y est, celui qui y arrive
       // par un pas vers le haut ou le bas passe dessous)
       if (this.game.mapObj?.id === VESTIBULE && this.dansTube(a, x, y, a === v.actors.get('player'))) hop += TUBE_H;
-      // sur l'escalier, chacun à la hauteur de sa marche
-      if (this.game.mapObj?.id === ESCALIER) hop += this.hEsc(x, y);
+      // sur l'escalier, chacun à la hauteur de sa marche ; sur les marches, au milieu de l'escalier
+      if (this.game.mapObj?.id === ESCALIER) {
+        const M = milieuEscalier(x, y);
+        if (M) return place(a, M.x, M.y, hop + M.h, ...r);
+        hop += this.hEsc(x, y);
+      }
       place(a, d ? x + d[0] : x, d ? y + d[1] : y, hop, ...r);
     };
     const update = v.update.bind(v);
     v.update = (dt, x, y, ...r) => {
-      update(dt, x, y, ...r);
+      const esc = y != null && this.game.mapObj?.id === ESCALIER, M = esc ? milieuEscalier(x, y) : null;
+      update(dt, M ? M.x : x, M ? M.y : y, ...r);
       const d = y != null && this.decalage(x, y);
       if (d) { v.camera.position.x += d[0]; v.camera.position.z += d[1]; v.camera.updateMatrixWorld(); }
-      if (y != null && this.game.mapObj?.id === ESCALIER) { v.camera.position.y += this.hEsc(x, y); v.camera.updateMatrixWorld(); }
+      if (esc) this.cameraEscalier(dt, M ? M.h : this.hEsc(x, y), M?.cap ?? 0);
+      else this.cap = 0;
       this.recul();
     };
     // le sol et les murs de la carte ne se dessinent pas : seulement les volumes de l'horloge
     const render = v.render.bind(v);
     v.render = () => { if (this.ici() || this.game.mapObj?.id === ESCALIER) for (const c of v.chunks?.values() || []) c.visible = false; render(); };
+  }
+  /** sur l'escalier : la caméra tourne autour de soi pour regarder dans le sens de la montée (cap), en douceur, et monte
+   *  avec la marche (h) ; sur les paliers, elle revient face au nord */
+  cameraEscalier(dt, h, cap) {
+    const v = this.game.view, f = v.focus, c = v.camera.position;
+    let e = cap - (this.cap || 0); e = Math.atan2(Math.sin(e), Math.cos(e));
+    this.cap = (this.cap || 0) + e * Math.min(1, dt * 5);
+    const dx = c.x - f.x, dz = c.z - f.z, dh = Math.hypot(dx, dz);
+    c.x = f.x - Math.sin(this.cap) * dh; c.z = f.z + Math.cos(this.cap) * dh; c.y += h;
+    v.camera.lookAt(f.x, f.y + h, f.z); v.camera.updateMatrixWorld();
   }
   /** la hauteur de l'escalier sous (x, y), à virgule pendant qu'on marche d'une case à l'autre */
   hEsc(x, y) {
@@ -108,7 +124,7 @@ export class Horloge {
     if (m.id === ESCALIER && !this.guide && caseEscalier(p.x, p.y)?.quoi === 'marche') {
       const d2 = pasEscalier(p.x, p.y, d);
       if (!d2) return arret();
-      if (d2 !== d) { this.guide = true; try { g.tryStep(d2); } finally { this.guide = false; } return true; }
+      if (d2 !== d) { this.guide = true; try { g.tryStep(d2); } finally { this.guide = false; } p.dir = d; return true; }
     }
     if (m.id === ESCALIER) { const a = hauteurEscalier(p.x, p.y), b = hauteurEscalier(tx, ty); if (a != null && b != null && Math.abs(a - b) > 1) return arret(); return false; }
     // une salle à tourniquets : marcher dans un bras le fait tourner (si rien ne le gêne), puis on avance
