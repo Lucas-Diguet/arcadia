@@ -135,7 +135,7 @@ export const Miroirs = {
 
   async lireEnigme(d, o = {}) {
     const ui = this.game.ui, E = o.enigme ? d.enigmes[o.enigme] : d.enigme;
-    const img = E.image && el('div', 'box starter-pic testody-horloge', `<img src="${new URL('../../img/' + E.image, import.meta.url).href}" alt="">`);
+    const img = E.image && el('div', 'box starter-pic testody-horloge', `<img src="${new URL('../../img/donjons/' + E.image, import.meta.url).href}" alt="">`);
     if (img) ui.root.appendChild(img);
     try { await ui.say(E.texte); } finally { img?.remove(); }
   },
