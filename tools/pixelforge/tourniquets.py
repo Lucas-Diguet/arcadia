@@ -11,6 +11,8 @@
 # tq_h_e.png, tq_h_o.png          bout d'un bras est-ouest, arrondi à l'est (le pivot est à l'ouest) ou à l'ouest
 # tq_v_n.png, tq_v_s.png          bout d'un bras nord-sud, arrondi au nord ou au sud
 # tq_pivot_<NESO>.png             le pivot, avec l'amorce des bras qui en partent (N, E, S, O présents ou '-')
+# pilier.png                      un pilier de pierre, qui arrête les bras
+# bloc_<n>.png                    un bloc de pierre des murs (n : voisins bloc en haut 1, bas 2, gauche 4, droite 8)
 # apercu_tourniquets.png          planche d'aperçu, agrandie
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -110,6 +112,47 @@ def pivot(T, arms):
     T.p(7, 5, FONTE[1]); T.p(8, 5, FONTE[1]); T.p(7, 6, FONTE[2]); T.p(8, 6, FONTE[0])
 
 
+PIERRE = rampe('#1e1a16', '#3e3830', '#5e564a', '#7a7060', '#958a76', '#b0a48c')
+
+
+def pilier(T):
+    """un pilier de pierre (il arrête les bras) : socle carré, fût rond, chapiteau cerclé de laiton, ombre portée"""
+    cx = 7.5
+    for y in range(N):
+        for x in range(N):
+            if ((x - cx - 1.5) / 6.0) ** 2 + ((y - 12.5) / 2.6) ** 2 <= 1 and T.vide(x, y): T.p(x, y, OMBRE)
+    for y in range(10, 14):
+        for x in range(2, 14): T.p(x, y, PIERRE[0] if y == 13 or x in (2, 13) else PIERRE[2] if y > 10 else PIERRE[3])
+    for y in range(4, 11):
+        for x in range(3, 13):
+            d = (x - cx) / 4.8
+            if abs(d) <= 1: T.p(x, y, PIERRE[0] if abs(d) > 0.86 else PIERRE[4] if d < -0.3 else PIERRE[3] if d < 0.3 else PIERRE[2])
+    for x in range(3, 13): T.p(x, 7, LAITON[2] if x not in (3, 12) else LAITON[0])
+    for y in range(N):
+        for x in range(N):
+            r = ((x - cx) / 5.6) ** 2 + ((y - 3.6) / 3.0) ** 2
+            if r <= 1: T.p(x, y, PIERRE[0] if r > 0.75 else PIERRE[5] if (x < cx and y < 3.6) else PIERRE[4])
+
+
+def bloc(T, haut, bas, gauche, droite):
+    """un bloc de pierre taillée (mur des coupes) : dessus clair, joints ; face avant visible s'il n'y a pas de bloc en dessous"""
+    for y in range(N):
+        for x in range(N): T.p(x, y, PIERRE[3] if (x + y) % 7 else PIERRE[4])
+    for x in range(N): T.p(x, 7, PIERRE[2])
+    for y in range(0, 7): T.p(8, y, PIERRE[2])
+    for y in range(8, N): T.p(3, y, PIERRE[2]); T.p(12, y, PIERRE[2])
+    if not haut:
+        for x in range(N): T.p(x, 0, PIERRE[0]); T.p(x, 1, PIERRE[5])
+    if not gauche:
+        for y in range(N): T.p(0, y, PIERRE[0])
+    if not droite:
+        for y in range(N): T.p(15, y, PIERRE[0])
+    if not bas:
+        for y in range(11, 15):
+            for x in range(N): T.p(x, y, PIERRE[1] if y < 14 else PIERRE[0])
+        for x in range(0, N, 4): T.p(x, 12, PIERRE[0])
+
+
 def agrandir(T):
     a = np.repeat(np.repeat(T.a, 2, axis=0), 2, axis=1)
     U = Toile(N * 2, N * 2); U.a = a; return U
@@ -140,6 +183,10 @@ def main():
             else:
                 for x in range(3, 12): T.p(x, 7, BRUN[0])
             pieces['cl_' + o + suf] = T
+    T = Toile(N, N); pilier(T); pieces['pilier'] = T
+    for m in range(16):
+        h, b_, g, d = [(m >> k) & 1 for k in range(4)]
+        T = Toile(N, N); bloc(T, h, b_, g, d); pieces['bloc_%d' % m] = T
     import itertools
     for m in itertools.product([0, 1], repeat=4):
         arms = ''.join(c if b else '-' for c, b in zip('NESO', m))

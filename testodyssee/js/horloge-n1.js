@@ -48,7 +48,8 @@ export function occupation(TS, rots) {
   return M;
 }
 /** dans un plan : on marche sur '.', ':' et 'G' (grille ouverte) ; un tourniquet ne balaie que '.' */
-export const balayable = (P, x, y) => P[y]?.[x] === '.';
+/** un bras peut passer sur toute case de plancher : seuls l'arrêtent ce qu'on voit (cloisons, piliers, murs, autres bras, joueurs) */
+export const balayable = (P, x, y) => { const c = P[y]?.[x]; return c === '.' || c === ':' || c === 'G'; };
 export const marchable = (P, x, y, ouverte = true) => { const c = P[y]?.[x]; return c === '.' || c === ':' || (c === 'G' && ouverte); };
 /** celui qui est en (px, py) fait un pas d (direction) dans le bras d'un tourniquet : les nouvelles rotations (copie), ou
  *  null si rien ne tourne (pas un bras, poussé par le bout, ou un bras qui heurte quelque chose) ; autres : cases occupées
@@ -232,7 +233,7 @@ export function barrieresTroncon(s, t, graine) {
   const r = alea(graine), N = t.plan.length, sol = (x, y) => t.plan[y]?.[x] === '.';
   const arcs = []; t.plan.forEach((l, y) => [...l].forEach((c, x) => { if (c === '.') arcs.push(arcDe(s, x, y)); }));
   const a0 = Math.min(...arcs), a1 = Math.max(...arcs), L = a1 - a0, nb = Math.max(1, Math.round(L / 5.5));
-  const murs = new Map(), TS = [], pris = new Set();
+  const murs = new Map(), TS = [], pris = new Set(), piliers = [];
   for (let b = 0; b < nb; b++) {
     const a = a0 + L * (b + 0.35 + r() * 0.3) / nb, RM = SR0 + 1 + r() * (SR1 - SR0 - 2);
     const h = s.de + (a / RM) / (Math.PI / 6), [px, py] = pointSalle(RM, h), vx = px - (SC + 0.5), vy = py - (SC + 0.5);
@@ -261,11 +262,14 @@ export function barrieresTroncon(s, t, graine) {
       for (const sg of [1, -1]) if (r() < 0.35) bras.push([perp[0] * sg, perp[1] * sg, r() < 0.3 ? 2 : 1]);
       [j - 1, j, j + 1].forEach((q) => libres.add(q));
       TS.push({ x, y, bras }); n++;
+      // parfois un pilier dans un coin du tourniquet, comme à Cimetronelle : les bras ne passent plus de ce côté
+      if (r() < 0.55) { const [cu, cv] = [[1, 1], [1, -1], [-1, 1], [-1, -1]][Math.floor(r() * 4)]; piliers.push([x + cu, y + cv]); }
     }
     if (!n) continue;
     run.forEach(([x, y], q) => { pris.add(cle(x, y)); if (!libres.has(q)) murs.set(cle(x, y), hz ? 'h' : 'v'); });
   }
-  // murs : [x, y, sens de la cloison ('h' : est-ouest, 'v' : nord-sud)]
+  for (const [x, y] of piliers) if (sol(x, y) && !murs.has(cle(x, y))) murs.set(cle(x, y), 'p');
+  // murs : [x, y, sens de la cloison ('h' : est-ouest, 'v' : nord-sud) ou 'p' (pilier)]
   return { murs: [...murs].map(([k, o]) => [...k.split(',').map(Number), o]), tourniquets: TS };
 }
 /** le plan d'un tronçon avec des murs en plus */
@@ -284,7 +288,7 @@ export function noterTroncon(s, t, graine) {
 }
 /** les graines retenues (cherchées par tools/horloge-tourniquets.mjs ; tools/test-testodyssee.mjs vérifie qu'elles
  *  conviennent toujours) : celle du plan, puis une par tronçon */
-export const GRAINES_N1 = { sud: [1, 88, 958], est: [1, 259, 254, 554, 757], ouest: [1, 259, 842, 554, 1406] };
+export const GRAINES_N1 = { sud: [1, 204, 12], est: [1, 1362, 596, 759, 116], ouest: [1, 1362, 596, 759, 599] };
 let SALLES_N1 = null;
 /** les salles de l'étage 1, une fois : plan, tronçons, tourniquets (tous, dans l'ordre des tronçons) */
 export function salles1() {
@@ -418,7 +422,7 @@ export function construireNiveau1(world) {
       r.set(x, y, sol[c]);
       if (c === ' ') solA.set(cle(x, y), muraille(x, y) ? 'muraille_' + ((x * 7 + y * 13) % 3) : 'void');
       else if (c === '#' && L.cloisons.has(cle(x, y))) solA.set(cle(x, y), cloison(L.cloisons, x, y));   // une cloison de bois
-      else if (c === '#') solA.set(cle(x, y), 'sol_carillon_bas');   // le plancher du dessous, comme à l'étage 0
+      else if (c === '#') { const m = (q, w) => L.plan[w]?.[q] === '#' && !L.cloisons.has(cle(q, w)); solA.set(cle(x, y), 'bloc_' + (m(x, y - 1) | m(x, y + 1) << 1 | m(x - 1, y) << 2 | m(x + 1, y) << 3)); }   // un mur de pierre (les coupes)
       else if (c === 'G') solA.set(cle(x, y), 'grille_tour');
       else solA.set(cle(x, y), 'sol_carillon');
     }));
@@ -448,7 +452,8 @@ export function construireNiveau1(world) {
 }
 /** la pièce d'une cloison (tools/pixelforge/tourniquets.py) : cl_h / cl_v, bout arrondi du côté où elle s'arrête */
 function cloison(C, x, y) {
-  const o = C.get(cle(x, y)), [a, b] = o === 'h' ? [C.get(cle(x - 1, y)) === 'h', C.get(cle(x + 1, y)) === 'h'] : [C.get(cle(x, y - 1)) === 'v', C.get(cle(x, y + 1)) === 'v'];
+  const o = C.get(cle(x, y)); if (o === 'p') return 'pilier';
+  const [a, b] = o === 'h' ? [C.get(cle(x - 1, y)) === 'h', C.get(cle(x + 1, y)) === 'h'] : [C.get(cle(x, y - 1)) === 'v', C.get(cle(x, y + 1)) === 'v'];
   return 'cl_' + o + (a && b ? '' : !a && !b ? '_x' : o === 'h' ? (a ? '_e' : '_o') : (a ? '_s' : '_n'));
 }
 /** pose les tourniquets et les grilles des salles de l'étage 1 selon l'état ; renvoie les cases changées par carte */

@@ -280,7 +280,9 @@ ouest (7 h - 11 h). Elles sont coupées de murs percés d'un seul passage (`coup
 et ouest est une grille (`grilleE`, `grilleO`). Dedans, façon arène de Cimetronelle : des murs en travers (cloisons de
 bois brun), percés d'ouvertures que ferment des tourniquets (`planSalle1`, `barrieresTroncon`), dessinés par
 `python3 tools/pixelforge/tourniquets.py`.
-Marcher dans un bras par le côté fait tourner le tourniquet d'un quart de tour, s'il a la place de balayer (`pousser`) ;
+Marcher dans un bras par le côté fait tourner le tourniquet d'un quart de tour, s'il a la place de balayer (`pousser`) :
+seul l'arrête ce qu'on voit, une cloison, un mur de pierre (les coupes, tuiles `bloc_<n>`), un pilier posé dans un coin
+du tourniquet (`'p'` dans les murs de `barrieresTroncon`, tuile `pilier`), un autre bras ou un joueur ;
 jamais par le bout ; ils restent comme on les laisse, partagés par tous (l'hôte décide, `tq` dans l'état). Chaque tronçon
 est vérifié : on doit pousser pour passer, chaque tourniquet sert, et de partout on rejoint ses deux bouts, par où qu'on
 soit entré, même quand un autre joueur a laissé les tourniquets autrement (`analyser`, `tronconValide`, `noterTroncon`). Graines : `GRAINES_N1`, cherchées par `node tools/horloge-tourniquets.mjs`.

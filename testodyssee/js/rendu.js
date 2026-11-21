@@ -23,7 +23,7 @@ const REVELE = 'floor_gymWater';
 function hasard(g) { let s = g >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
 /** les pièces des tourniquets de la Tour de l'Horloge (testodyssee/img/horloge/, PixelForge), posées sur le plancher */
 const IMG_HORLOGE = new URL('../img/horloge/', import.meta.url).href;
-const TQ = ['tq_h', 'tq_v', 'tq_h_e', 'tq_h_o', 'tq_v_n', 'tq_v_s', ...['h', 'h_e', 'h_o', 'h_x', 'v', 'v_n', 'v_s', 'v_x'].map((k) => 'cl_' + k), ...[...Array(16).keys()].map((m) => 'tq_pivot_' + [...'NESO'].map((c, i) => (m >> (3 - i)) & 1 ? c : '-').join(''))];
+const TQ = ['tq_h', 'tq_v', 'tq_h_e', 'tq_h_o', 'tq_v_n', 'tq_v_s', ...['h', 'h_e', 'h_o', 'h_x', 'v', 'v_n', 'v_s', 'v_x'].map((k) => 'cl_' + k), 'pilier', ...[...Array(16).keys()].map((m) => 'bloc_' + m), ...[...Array(16).keys()].map((m) => 'tq_pivot_' + [...'NESO'].map((c, i) => (m >> (3 - i)) & 1 ? c : '-').join(''))];
 const IMAGES_TUILES = {};
 function imageSurPlancher(k) {
   const f = (x, r) => { planchesCarillon(x, r); const im = IMAGES_TUILES[k]; if (im?.complete && im.naturalWidth) x.drawImage(im, 0, 0); };

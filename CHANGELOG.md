@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.50 — 21 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge, étage 1 : un tourniquet ne se bloque plus sans raison. S'il refuse de tourner, c'est qu'un de ses bras bute contre quelque chose qu'on voit : une cloison, un mur de pierre, un pilier, un autre tourniquet ou un joueur.
+  - Des piliers de pierre dans les coins de certains tourniquets les empêchent de tourner d'un côté, comme à Cimetronelle.
+  - Les murs entre les salles sont maintenant de vrais murs de pierre, et les parcours des trois salles ont été refaits.
+
 ## 6.49 — 20 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge, l'étage 2, à trois : la clé trouvée au -1 ouvre la grande porte en haut de l'escalier.
   - Derrière, cinq horloges au-dessus du vide, avec une aiguille chacune, sur laquelle on marche. Chaque aiguille a sa couleur, et son levier la même. Un coup de levier la fait tourner d'une heure en emportant ceux qui sont dessus. Quand deux aiguilles se touchent par le bout, on passe de l'une à l'autre.
