@@ -26,6 +26,9 @@ export function abilitiesOf(sp) {
  *  IV et sa nature (il garde le même emplacement en évoluant) ; le talent caché est rare (environ une fois sur 25) */
 export function getAbility(m) {
   if (!m) return null;
+  // une Méga-Évolution a son propre talent (Sécheresse de Méga-Dracaufeu Y…), même si celui de la forme de base est imposé
+  // (une Méga imaginée par des fans sans talent à elle garde celui du Pokémon)
+  if (m.megaFrom && TALENTS_ESPECES[m.sp] && TALENTS_ESPECES[m.sp] !== TALENTS_ESPECES[m.megaFrom]) return ui(TALENTS_ESPECES[m.sp][0]);
   if (m.ability && ABILITIES[m.ability]) return ABILITIES[m.ability];
   const [a, b, h] = abilitiesOf(m.sp), iv = m.iv || [0, 0, 0, 0, 0, 0];
   const seed = iv.reduce((s, x, k) => s + x * (k + 3), 0) + (m.nat || 0) * 7;

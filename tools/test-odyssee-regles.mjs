@@ -126,5 +126,11 @@ let fails = 0; const ok = (c, msg) => { console.log((c ? '  ✓ ' : '  ✗ ') + 
   const { buildWorld: _ } = { buildWorld }; void _;
   ok(!!w.maps['plateau:ligue'].npcs.find((n) => n.def?.script === 'tourCombat' || n.script === 'tourCombat'), 'le Maître de la Tour de Combat attend dans le hall de la Ligue');
 }
+{ // Méga-Évolution d'un Pokémon au talent imposé : la forme Méga prend son propre talent (Sécheresse de Méga-Dracaufeu Y)
+  seed = 3; const z = mk('Dracaufeu', 100, ['solar-beam'], { item: 'charizardite-y', ability: 'blaze' });
+  const b = trainer(z, mk('Ronflex', 100, ['splash'])); b.sides[0].mega = true;
+  const e = texts(b.playerAction({ type: 'move', idx: 0, mega: true }));
+  ok(b.weather === 'sun' && !e.some((t) => /absorbe la lumière/.test(t)), 'Méga-Dracaufeu Y au talent Brasier imposé amène le soleil, Lance-Soleil part tout de suite');
+}
 console.log(fails ? `\nRÈGLES DE COMBAT : ${fails} échec(s)` : '\nRÈGLES DE COMBAT : OK');
 process.exit(fails ? 1 : 0);

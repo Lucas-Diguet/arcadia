@@ -5,6 +5,7 @@
   - Le Sanctuaire des Trois Voies a enfin sa musique.
   - Donjon des Miroirs : l'horloge de l'énigme de la deuxième salle s'affiche.
   - Donjon des Miroirs : les Funécire et les Sorbébé de la Salle du Brasier sont au niveau 15 (ils étaient au-dessus du niveau 30).
+- **Odyssée** — Combat : un Pokémon qui méga-évolue prend toujours le talent de sa forme Méga, même quand son talent de base a été choisi (Méga-Dracaufeu Y amène bien le soleil).
 
 ## 5.155 — 22 novembre 2026
 - **Odyssée** — 18 nouvelles médailles, avec leurs récompenses, et cinq nouveaux onglets dans les Trophées (Odyssée 2.9) :
