@@ -1986,6 +1986,8 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   // Peau Féérique
   { const a = mk(700, ['hyper-voice'], { ability: 'pixilate' }), b = combat([a], [mk(149, ['splash'])]); ok(b.moveType(0, MOVES[id('hyper-voice')]) === 'fairy', 'combat du labo : Peau Féérique rend Mégaphone de type Fée'); }
   // Vulné-Assurance
+  // Méga-Évolution d'un Pokémon au talent imposé (équipe Soleil) : la forme Méga prend son propre talent
+  { const z = mk(6, ['solar-beam'], { item: 'charizardite-y', ability: 'blaze' }), b = combat([z], [mk(143, ['splash'])]); b.sides[0].mega = true; b.playerAction({ type: 'move', idx: 0, mega: true }); ok(b.weather === 'sun', 'combat du labo : Méga-Dracaufeu Y (talent Brasier imposé) amène le soleil par Sécheresse'); }
   // duel entre joueurs avec objets Choix : un choix refusé ne part pas chez l'autre, et un choix interdit reçu quand même
   // est joué comme l'attaque bloquée, à l'identique des deux côtés (sinon les deux combats divergent)
   {

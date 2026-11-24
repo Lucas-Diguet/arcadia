@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.53 — 24 novembre 2026
+- **TestOdyssée** — Combat : un Pokémon qui méga-évolue prend le talent de sa forme Méga, même dans les équipes des champions. Le Méga-Dracaufeu Y de l'équipe Soleil amène bien le soleil, et Lance-Soleil part sans se charger.
+
 ## 6.52 — 24 novembre 2026
 - **TestOdyssée** — Donjon des Miroirs : les Funécire et les Sorbébé de la Salle du Brasier sont au niveau 15.
 
