@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.52 — 24 novembre 2026
+- **TestOdyssée** — Donjon des Miroirs : les Funécire et les Sorbébé de la Salle du Brasier sont au niveau 15.
+
 ## 6.51 — 24 novembre 2026
 - **Odyssée et TestOdyssée** — Combat entre joueurs : choisir une attaque interdite ne coupe plus le combat en deux.
   - Avec un objet Choix (Bandeau, Lunettes, Mouchoir), un piège, une Provoc ou une attaque sans PP, le message s'affiche et on choisit autre chose ; rien n'est envoyé à l'adversaire tant que le choix n'est pas valable.

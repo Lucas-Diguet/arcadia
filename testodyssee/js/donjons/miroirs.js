@@ -232,7 +232,7 @@ export default {
   },
   // rencontres de la Salle du Brasier : [espèce, niveau min, niveau max, poids]
   // salle du brasier, tant qu'il n'est pas allumé : Pokémon qui se promènent (espèce, niveaux, combien dans la salle)
-  errants: [[607, 30, 33, 5], [582, 30, 33, 2]],
+  errants: [[607, 15, 15, 5], [582, 15, 15, 2]],
   feu: [607, 608], glace: [582, 583, 615],
 
   textes: {
