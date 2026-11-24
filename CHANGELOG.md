@@ -1,9 +1,98 @@
 # Journal des versions — Arcadia
 
-## 5.139 — 20 novembre 2026
-- **Odyssée** — Donjons :
+## 5.156 — 24 novembre 2026
+- **Odyssée** — Donjons (Odyssée 3.0) :
   - Le Sanctuaire des Trois Voies a enfin sa musique.
   - Donjon des Miroirs : l'horloge de l'énigme de la deuxième salle s'affiche.
+  - Donjon des Miroirs : les Funécire et les Sorbébé de la Salle du Brasier sont au niveau 15 (ils étaient au-dessus du niveau 30).
+
+## 5.155 — 22 novembre 2026
+- **Odyssée** — 18 nouvelles médailles, avec leurs récompenses, et cinq nouveaux onglets dans les Trophées (Odyssée 2.9) :
+  - Boss : vaincre un premier boss, les admins et le chef de l'Éclipse, ceux de la Brume, le dernier boss de la Tour de combat.
+  - Raids : gagner un raid, en gagner 10, vaincre un boss à l'aura dorée, capturer un boss de raid.
+  - Légendaires : en capturer 1, 5 puis 10 différents.
+  - Dojo de Mamadou : 1 puis 10 victoires, une série de 5 en Duo ou en Trio.
+  - Donjons : la Crypte des Murmures, le Donjon des Miroirs, le Sanctuaire des Trois Voies, puis les trois.
+  - Ce que ta partie a déjà accompli compte : légendaires capturés, donjons finis, Dojo, Brume et Éclipse vaincues.
+  - Correction : capturer un boss de raid du Dojo n'interrompt plus la fin du combat.
+
+## 5.154 — 22 novembre 2026
+- **Odyssée** — Petites corrections (Odyssée 2.7) :
+  - À la pêche, un bip et la bulle « ! » quand ça mord (c'était muet).
+  - La Carte de Dresseur compte les médailles sur 36, comme l'écran des trophées (elle affichait 32).
+  - Une médaille débloquée pendant un combat ou une évolution s'affiche après la scène, plus au milieu.
+  - L'aide des touches explique que la sauvegarde est automatique (elle parlait d'un bouton Sauver qui n'existe pas).
+
+## 5.153 — 22 novembre 2026
+- **Odyssée** — En combat, le Pokémon adverse a les pattes posées sur son socle au lieu de flotter au-dessus ; ceux qui lévitent (Fantominus, Smogo…) restent en l'air (Odyssée 2.6).
+
+## 5.152 — 22 novembre 2026
+- **Odyssée** — L'écran de combat est plus net : tous ses pixels ont la même taille, quelle que soit la taille de la fenêtre (Odyssée 2.5).
+
+## 5.151 — 22 novembre 2026
+- **Odyssée** — Écran titre plus sobre : « Appuie sur Entrée », la version en petit dans un coin (Odyssée 2.4).
+  - Dans la cinématique d'ouverture, le bouton « Passer » est en haut à droite et ne cache plus les sous-titres.
+
+## 5.150 — 22 novembre 2026
+- **Odyssée** — En combat, les Pokémon respirent sans se déformer : ils montent et descendent d'un bloc, leurs pixels ne tremblent plus (Odyssée 2.3).
+  - La barre des touches ne passe plus devant la boîte de texte quand un message s'ouvre.
+
+## 5.149 — 22 novembre 2026
+- **Odyssée** — Une présentation plus proche d'un vrai jeu Pokémon (Odyssée 2.2) :
+  - Plus rien par-dessus la carte au premier lancement : le HUD et la barre des touches se montrent avec U, ou dans Options → HUD (masqué, petit, moyen ou grand).
+  - Les pièces qui tiennent à l'écran (maisons, Centre Pokémon, boutiques) s'affichent en entier dès qu'on entre, au lieu de couper le comptoir en haut.
+  - Le prénom se choisit sur un clavier en grille façon DS (majuscules, minuscules, accents), aux flèches ou en tapant directement.
+  - Le choix des graphismes prend le style des menus du jeu, et le texte du professeur n'est plus décalé dans sa boîte.
+
+## 5.148 — 22 novembre 2026
+- **Odyssée** — L'image reste nette quelle que soit la largeur de la fenêtre : une colonne de pixels ne tressaute plus quand le décor défile (Odyssée 2.1).
+
+## 5.147 — 22 novembre 2026
+- **Odyssée** — le jeu démarre encore plus vite : une partie de la carte est préparée d'avance, l'écran de chargement dure environ 7 secondes de moins (Odyssée 2.0).
+
+## 5.146 — 22 novembre 2026
+- **Odyssée** — le jeu démarre presque deux fois plus vite : l'écran de chargement dure une quinzaine de secondes de moins (Odyssée 1.9).
+
+## 5.145 — 21 novembre 2026
+- **Odyssée** — Avec les graphismes Noir & Blanc, les donjons (Crypte des Murmures, Donjon des Miroirs, Sanctuaire des Trois Voies) retrouvent leur roche d'origine (Odyssée 1.8).
+
+## 5.144 — 21 novembre 2026
+- **Odyssée** — Grottes plus lisibles (Odyssée 1.7).
+  - Dans les grottes sombres, le halo de lumière autour du joueur est bien plus grand, avec ou sans Flash.
+  - Avec les graphismes Noir & Blanc, la roche des grottes a son propre dessin, teinté selon la grotte (mine, grotte marine, magma, glace).
+
+## 5.143 — 21 novembre 2026
+- **Odyssée** — Avec les graphismes Noir & Blanc, les montagnes reprennent le dessin d'Odyssée (Odyssée 1.6).
+  - Gradins, falaises et sommets enneigés sont les mêmes qu'avec les graphismes de base, leurs roches passées en brun clair comme le reste du relief Noir & Blanc.
+  - Les mines et les zones de roche brune aussi.
+
+## 5.142 — 20 novembre 2026
+- **Odyssée** — Récap à la fin de chaque raid (Odyssée 1.5).
+  - Classement de l'escouade par dégâts infligés au boss, avec la part de chacun, les dégâts encaissés, les soins et les K.O.
+  - Des titres pour le combat : plus gros frappeur, coup le plus fort, mur de l'escouade, soigneur, toujours debout.
+  - Le même récap s'affiche chez tous les joueurs, en cas de victoire comme de défaite.
+
+## 5.141 — 20 novembre 2026
+- **Odyssée** — Boss de raid : l'escouade apparaît dans sa tenue, et les Pokémon sont bien posés (Odyssée 1.4).
+  - Dans la présentation avant le combat, chaque joueur apparaît avec les couleurs de sa tenue, et avec les graphismes choisis (Odyssée ou Noir & Blanc).
+  - En combat, les Pokémon de l'escouade sont de nouveau sur leurs socles, et le bas de leur sprite passe sous la boîte de texte comme dans les jeux DS, au lieu d'apparaître coupé.
+
+## 5.140 — 20 novembre 2026
+- **Odyssée** — Une vraie entrée en scène pour les boss de raid (Odyssée 1.3).
+  - Avant le combat, l'escouade se présente : le portrait et le nom de chaque joueur, chacun avec sa couleur, face au boss dans son aura.
+  - Plus de dresseur en face : le boss sort de l'ombre en rugissant, puis chaque joueur envoie son Pokémon à son tour (« J1 envoie Dracaufeu ! »).
+  - Écran de combat plus propre : les Pokémon de l'escouade restent dans le cadre, les fiches des joueurs sont regroupées à droite et ne cachent plus le boss.
+  - Le bandeau d'annonce disparaît quand le raid commence.
+  - Correction : après une cinématique de boss (champion, légendaire, raid), l'écran ne reste plus noir pendant le combat.
+
+## 5.139 — 20 novembre 2026
+- **Odyssée** — Les boss de raid se jouent vraiment en coop, et les légendaires sont nouveaux (Odyssée 1.2).
+  - Combat double, triple ou quadruple : de 2 à 4 joueurs contre le boss, tous les joueurs connectés devant être là. Face à quatre joueurs, il frappe trois fois par tour.
+  - Chaque boss a une aura : bleue pour un Pokémon moyen, rouge pour un Pokémon puissant, dorée pour un légendaire. On la voit sur la route et en combat.
+  - Les légendaires de raid viennent d'ailleurs : Tokorico, Tokopisco, Solgaleo, Lunala, Necrozma, Zacian, Zamazenta et Regidrago. On ne les croise nulle part ailleurs, et ils sont plus rares que les autres boss.
+  - Après une victoire, chacun a un seul lancer de Hyper Ball, avec peu de chances : 30 % (aura bleue), 18 % (rouge), 10 % (or). Le Pokémon capturé arrive à ton niveau max.
+  - Un légendaire capturé perd une bonne part de sa puissance : ses stats ressemblent à celles d'un bon Pokémon classique, à peine plus fort.
+  - Récompenses selon l'aura : 6, 9 ou 14 Points du Dojo et 2, 3 ou 4 Super Bonbons. Plus d'Hyper Balls ni de Master Ball offertes.
 
 ## 5.138 — 20 novembre 2026
 - **Odyssée** — Les boss de raid surgissent dans la région (Odyssée 1.1).

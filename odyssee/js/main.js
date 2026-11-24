@@ -1,6 +1,7 @@
 // odyssee/js/main.js — démarrage : images dessinées, rendu basse résolution, écran titre (Odyssor sur la mer),
 // nouvelle partie / continuer, aide des touches
 import * as THREE from 'three';
+import { clavierNom } from './ui/clavier.js';
 import { WorldView } from './render/world3d.js';
 import { setArt } from './render/textures.js';
 import { packActif, solChoix, choisirSol, choisirSprites, aChoisiGfx, marquerGfxChoisi } from './gfx.js';
@@ -171,6 +172,9 @@ async function boot() {
     // l'écran (arêtes des bâtiments et du relief nettes en 4K) ; textures, sprites et particules gardent leurs pixels
     if (renduNatif()) { renderer.setSize(iw * scale, ih * scale, false); view.resize(iw * scale, ih * scale, scale); }
     else { renderer.setSize(iw, ih, false); view.resize(iw, ih, 1); }
+    // affiché à un multiple exact de l'image (quitte à déborder d'un pixel hors de l'écran) : étiré sur une largeur
+    // impaire, il perdait une colonne de pixels, qui tressautait quand le décor défilait
+    canvas.style.width = iw * scale + 'px'; canvas.style.height = ih * scale + 'px';
     // l'interface garde son propre pas de pixel
     const ui = Math.max(2, Math.round(innerHeight / 270));
     document.documentElement.style.setProperty('--px', ui + 'px');
@@ -220,7 +224,7 @@ async function boot() {
   /* ---------------- écran titre ---------------- */
   for (;;) {
     sound.play('title');
-    const title = el('div', 'title-scr', `<canvas class="title-cv" width="256" height="192"></canvas><div class="logo"><div class="logo-main">ODYSSÉE</div></div><div class="press">${matchMedia('(pointer: coarse)').matches ? 'Touche l\'écran' : 'Appuie sur F ou Entrée'}</div><div class="title-foot">H : aide des touches · Odyssée ${VERSION_ODYSSEE}</div>`);
+    const title = el('div', 'title-scr', `<canvas class="title-cv" width="256" height="192"></canvas><div class="logo"><div class="logo-main">ODYSSÉE</div></div><div class="press">${matchMedia('(pointer: coarse)').matches ? 'Touche l\'écran' : 'Appuie sur Entrée'}</div><div class="title-foot">v${VERSION_ODYSSEE}</div>`);
     uiRoot.appendChild(title);
     const stopSea = titleSea(title.querySelector('canvas'), art.title);
     // au clavier, à la manette, ou d'un simple toucher (ou clic) sur l'écran titre
@@ -379,7 +383,7 @@ async function onlineScreen(ui, cloud, info) {
 async function playIntroVideo(ui, input, sound) {
   sound.play(null);
   await ui.fade(true, 250);
-  const s = el('div', 'screen cine-scr', '<video class="cine-vid" src="img/intro.mp4" playsinline preload="auto"></video><button type="button" class="cine-skip">Passer la cinématique (Entrée / Échap)</button>');
+  const s = el('div', 'screen cine-scr', '<video class="cine-vid" src="img/intro.mp4" playsinline preload="auto"></video><button type="button" class="cine-skip">Passer ▸</button>');
   uiRoot.appendChild(s);
   const vid = s.querySelector('.cine-vid'), skipBtn = s.querySelector('.cine-skip');
   vid.muted = !!sound.muted || (sound.vol ?? 0.7) <= 0;
@@ -467,56 +471,10 @@ function chooseGenderCard(ui, input, sound, parent) {
   });
 }
 
+/** la carte d'enregistrement de l'introduction : le prénom, sur le clavier en grille (ui/clavier.js) */
 function chooseTrainerName(ui, input, sound, gender, parent) {
-  return new Promise((resolve) => {
-    const def = gender === 'f' ? 'Lyra' : 'Ethan';
-    const presets = gender === 'f'
-      ? ['Lyra', 'Céleste', 'Aurore', 'Marina', 'Luna', 'Iris']
-      : ['Ethan', 'Sacha', 'Léo', 'Orion', 'Marin', 'Solal'];
-    const spr = gender === 'f' ? 'img/dresseurs/player_f.png' : 'img/dresseurs/player_m.png';
-    const card = el('div', 'intro-idcard', `
-      <div class="intro-id-left">
-        <img src="${spr}" alt="">
-        <div class="intro-id-badge">BOURG-AUBE · LIGUE D'ODYSSÉE</div>
-      </div>
-      <div class="intro-id-right">
-        <div class="intro-id-head">Carte d'enregistrement · Quel est ton prénom ?</div>
-        <input class="intro-id-in" maxlength="10" spellcheck="false" autocomplete="off" value="${esc(def)}">
-        <div class="intro-id-chips">
-          ${presets.map((p) => `<button type="button" class="intro-id-chip" data-name="${esc(p)}">${esc(p)}</button>`).join('')}
-        </div>
-        <div class="intro-id-foot">
-          <span class="intro-id-hint">Tape ton prénom (max 10 lettres) ou choisis une suggestion</span>
-          <button type="button" class="intro-id-ok">Valider ▸</button>
-        </div>
-      </div>
-    `);
-    parent.appendChild(card);
-    const inp = card.querySelector('.intro-id-in');
-    const okBtn = card.querySelector('.intro-id-ok');
-    setTimeout(() => { inp.focus(); inp.select(); }, 30);
-    const pop = input.push(() => {});
-    const submit = () => {
-      const v = inp.value.trim() || def;
-      pop();
-      card.remove();
-      sound.sfx('select');
-      resolve(v);
-    };
-    card.querySelectorAll('.intro-id-chip').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        sound.sfx('blip');
-        inp.value = btn.dataset.name;
-        inp.focus();
-      });
-    });
-    okBtn.addEventListener('click', (e) => { e.stopPropagation(); submit(); });
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); submit(); }
-      e.stopPropagation();
-    });
-  });
+  return clavierNom(ui, { titre: 'Quel est ton prénom ?', def: gender === 'f' ? 'Lyra' : 'Ethan', max: 10,
+    sprite: gender === 'f' ? 'img/dresseurs/player_f.png' : 'img/dresseurs/player_m.png', parent });
 }
 
 async function intro(game, ui, sound) {

@@ -9,6 +9,26 @@ import { TYPE_COL, TYPE_FR, STATUS_FR, hpCol, partyScreen, bagScreen } from './s
 import { typeEff } from '../core/battle.js';
 import { moveDesc } from '../data/moveDescriptions.js';
 import { playMoveVfx, TYPE_FX } from './battleVfx.js';
+import { auraFrames, AURA_PAD } from '../render/aura.js';
+import { TALENTS_ESPECES } from '../data/talents.js';
+
+/** vide transparent sous les pattes d'un sprite (en pixels de l'image), mesuré une fois par image */
+const PIEDS = new Map();
+function videSous(img) {
+  const k = img?.src || img; if (!img) return 0;
+  if (PIEDS.has(k)) return PIEDS.get(k);
+  let v = 0;
+  try {
+    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+    const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height).data;
+    bas: for (let y = c.height - 1; y >= 0; y--) { for (let i = 0; i < c.width; i++) if (d[(y * c.width + i) * 4 + 3] > 32) break bas; v++; }
+    if (v >= c.height) v = 0;
+  } catch (e) { v = 0; }
+  PIEDS.set(k, v); return v;
+}
+/** les Pokémon qui lévitent (Fantominus, Smogo…) gardent la hauteur de leur sprite : ils flottent au-dessus du socle */
+const levite = (sp) => (TALENTS_ESPECES[sp] || TALENTS_ESPECES[SPECIES[sp]?.base] || []).includes('levitate');
 
 const BH = 192;
 const BALL_COL = { 'poke-ball': ['#e83838', '#f4f4f4'], 'great-ball': ['#3870e8', '#f4f4f4'], 'ultra-ball': ['#303030', '#f0c830'], 'master-ball': ['#8a3ac8', '#f4f4f4'], 'gs-ball': ['#d8a830', '#c8c8d0'] };
@@ -113,20 +133,33 @@ export class BattleView {
   /* ---------------- positions par format (1v1, 2v2, 3v3) ---------------- */
   posFor(side, slot = 0) {
     const W = this.W, sl = this.slots || 1;
-    if (this.battle?.isRaid && side === 1 && slot === 0) return { x: Math.round(W * 0.67), y: 74 };
+    if (this.battle?.isRaid && side === 0 && sl >= 2) {   // l'escouade en arc devant le boss
+      // comme dans les jeux DS : le bas des sprites de dos (coupé net) passe sous la boîte de texte, chacun sur son socle
+      const P = { 2: [[0.2, 131], [0.43, 132]], 3: [[0.13, 128], [0.3, 129], [0.47, 130]], 4: [[0.1, 126], [0.24, 126], [0.38, 127], [0.52, 127]] }[Math.min(4, sl)];
+      const [fx, y] = P[slot] || P[0];
+      return { x: Math.round(W * fx), y };
+    }
+    // boss de raid : plus bas qu'un adversaire ordinaire, pour que sa tête (et son aura) restent dans le cadre
+    if (this.battle?.isRaid && side === 1 && slot === 0) return { x: Math.round(W * (this.battle.monde ? 0.6 : 0.68)), y: 92 };
     if (sl === 1) return side === 1 ? { x: Math.round(W * 0.71), y: 86 } : { x: Math.round(W * 0.26), y: 140 };
     if (sl === 2) {
       const fx = [0.50, 0.74], fy = [65, 74], px = [0.16, 0.39], py = [118, 126];
       return side === 1 ? { x: Math.round(W * fx[slot]), y: fy[slot] } : { x: Math.round(W * px[slot]), y: py[slot] };
+    }
+    if (sl === 4) {   // raid à quatre : les joueurs en arc devant le boss
+      const px = [0.12, 0.25, 0.38, 0.51], py = [104, 110, 116, 122];
+      return side === 1 ? { x: Math.round(W * 0.68), y: 92 } : { x: Math.round(W * px[slot]), y: py[slot] };
     }
     const fx = [0.39, 0.56, 0.73], fy = [58, 65, 72], px = [0.12, 0.28, 0.44], py = [110, 116, 122];
     return side === 1 ? { x: Math.round(W * fx[slot]), y: fy[slot] } : { x: Math.round(W * px[slot]), y: py[slot] };
   }
   scaleFor(side, slot = 0) {
     const sl = this.slots || 1;
-    if (this.battle?.isRaid && side === 1 && slot === 0) return 1.22;
+    if (this.battle?.isRaid && side === 0 && sl >= 2) return { 2: [0.74, 0.72], 3: [0.66, 0.65, 0.64], 4: [0.6, 0.59, 0.58, 0.57] }[Math.min(4, sl)][slot] ?? 0.6;
+    if (this.battle?.isRaid && side === 1 && slot === 0) return 1.0;
     if (sl === 1) return 1;
     if (sl === 2) return side === 1 ? (slot === 0 ? 0.80 : 0.86) : (slot === 0 ? 0.86 : 0.80);
+    if (sl === 4) return side === 1 ? 0.7 : [0.74, 0.7, 0.66, 0.62][slot];
     return side === 1 ? [0.68, 0.73, 0.78][slot] : [0.78, 0.73, 0.68][slot];
   }
   ePos(slot = 0) { return this.posFor(1, slot); }
@@ -141,6 +174,7 @@ export class BattleView {
   frame = () => {
     if (!this.alive) return;
     const x = this.ctx, W = this.W, s = this.st, now = performance.now();
+    x.setTransform(this.k || 1, 0, 0, this.k || 1, 0, 0);   // coordonnées de la scène (W × 192)
     x.imageSmoothingEnabled = false;
     x.clearRect(0, 0, W, BH);
     x.save(); x.translate(Math.round(s.shakeX), Math.round(s.shakeY));
@@ -203,9 +237,9 @@ export class BattleView {
       const low = mon && mon.hp > 0 && mon.hp <= mon.stats[0] * 0.25;
       const spd = slp ? 0.002 : low ? 0.0075 : 0.0046;
       const wave = Math.sin(now * spd + phaseOff);
-      const idleAnim = o.dy === 0 && o.scale === 1 && !mon?.hp === false;
-      const breathX = idleAnim ? 1 + wave * (slp ? 0.018 : 0.024) : 1;
-      const breathY = idleAnim ? 1 - wave * (slp ? 0.022 : 0.03) : 1;
+      // respiration : le sprite monte et descend d'un pixel entier (drawY arrondi), sans jamais être étiré : un sprite
+      // redimensionné à chaque image fait onduler ses pixels
+      const breathX = 1, breathY = 1;
       const jitX = par && Math.sin(now * 0.03 + phaseOff) > 0.92 ? (Math.sin(now) > 0 ? 1 : -1) : 0;
 
       const w = img.width * o.scale * bs * (o.sx || 1) * breathX;
@@ -213,7 +247,13 @@ export class BattleView {
       const dy = o.dy + (o.dy === 0 && o.scale === 1 ? wave * 1.1 : 0);
       x.save(); x.globalAlpha = o.alpha;
       if (o.clipY != null) { x.beginPath(); x.rect(0, 0, W, cy + o.clipY); x.clip(); }
-      const drawX = Math.round(cx + o.dx + jitX), drawY = Math.round(cy + dy);
+      // pattes au milieu de l'ombre (6 px au-dessus de l'ancre des sprites de face), quelle que soit la marge du sprite
+      const sol = o.pied != null ? o.pied * (h / img.height) - 6 : 0;
+      const drawX = Math.round(cx + o.dx + jitX), drawY = Math.round(cy + dy + sol);
+      if (o.aura && !o.rot && !(o.white > 0.5) && !o.dark) {
+        const fr = o.aura[Math.floor(now / 130) % o.aura.length], kx = w / img.width, ky = h / img.height;
+        x.drawImage(fr, Math.round(drawX - w / 2 - AURA_PAD * kx), Math.round(drawY - h - AURA_PAD * ky), Math.round(fr.width * kx), Math.round(fr.height * ky));
+      }
       if (o.rot) { x.translate(drawX, drawY); x.rotate(o.rot); x.drawImage(img, Math.round(-w / 2), Math.round(-h), Math.round(w), Math.round(h)); }
       else x.drawImage(img, Math.round(drawX - w / 2), Math.round(drawY - h), Math.round(w), Math.round(h));
       if (o.white > 0.01 && o.white < 1 && o.img) {
@@ -395,8 +435,12 @@ export class BattleView {
   /* ---------------- interface HTML ---------------- */
   buildDom() {
     const sl = this.slots || 1;
-    const r = el('div', `battle slots-${sl}${sl > 1 ? ' multi' : ''}`); this.root = r;
-    const cv = el('canvas', 'bcv'); cv.width = this.W; cv.height = BH; r.appendChild(cv);
+    const r = el('div', `battle slots-${sl}${sl > 1 ? ' multi' : ''}${this.battle?.monde ? ' raid-monde' : ''}`); this.root = r;
+    // dessiné à un multiple entier de la scène (192 px de haut ×4 en 720p), au pixel près, puis à peine réduit par le
+    // navigateur pour remplir l'écran : tous les pixels ont la même taille (agrandi directement ×3,75, ils faisaient
+    // tantôt 3, tantôt 4 points)
+    this.k = Math.max(1, Math.ceil(innerHeight / BH));
+    const cv = el('canvas', 'bcv'); cv.width = this.W * this.k; cv.height = BH * this.k; r.appendChild(cv);
     this.ctx = cv.getContext('2d');
     if (sl === 1) {
       r.insertAdjacentHTML('beforeend', `
@@ -429,12 +473,12 @@ export class BattleView {
             <div class="bh-boosts"></div>
           </div>`;
       const fmtCls = this.battle?.isRaid ? ' raid' : this.battle?.is4p ? ' multi4p' : '';
-      const fmtTxt = this.battle?.isRaid ? '🐉 RAID CO-OP · BOSS' : this.battle?.is4p ? '⚔️ MULTI 2V2 · 4 JOUEURS' : sl === 3 ? 'TRIO · 3V3' : 'DUO · 2V2';
+      const fmtTxt = this.battle?.isRaid ? (this.battle.monde ? `💥 BOSS DE RAID · ${sl} JOUEURS` : '🐉 RAID CO-OP · BOSS') : this.battle?.is4p ? '⚔️ MULTI 2V2 · 4 JOUEURS' : sl === 3 ? 'TRIO · 3V3' : 'DUO · 2V2';
       r.insertAdjacentHTML('beforeend', `
         <div class="battle-format-badge${fmtCls}">${fmtTxt}</div>
         <div class="bhud-stack foe">
           <div class="bhud-party-strip foe"><div class="bh-balls"></div></div>
-          ${Array.from({ length: sl }, (_, k) => cardHtml(1, k)).join('')}
+          ${Array.from({ length: this.battle?.isRaid ? 1 : sl }, (_, k) => cardHtml(1, k)).join('')}
         </div>
         <div class="bhud-stack me">
           ${Array.from({ length: sl }, (_, k) => cardHtml(0, k)).join('')}
@@ -829,10 +873,23 @@ export class BattleView {
     const jobs = [this.loadBattleDecor(this.kind, o.night)];
     for (let sl = 0; sl < this.slots; sl++) jobs.push(this.loadSide(1, sl), this.loadSide(0, sl));
     await Promise.all(jobs);
-    this.st.trainer.img = await loadImg(ASSETS.trainer(battle.sides[1].trainer.bs));
+    const L = o.lineup;   // boss de raid : pas de dresseur en face, le boss est là d'emblée
+    if (!L) this.st.trainer.img = await loadImg(ASSETS.trainer(battle.sides[1].trainer.bs));
     requestAnimationFrame(this.frame);
-    this.st.trainer.visible = true;
+    const oB = this.spriteObj(1, 0);
+    if (L) { oB.visible = true; oB.dark = true; } else this.st.trainer.visible = true;
     await this.tween(700, (u) => { const e = ease(u); this.st.eSlide = -this.W * (1 - e); this.st.pSlide = this.W * (1 - e); });
+    if (L) {
+      await this.raidLineup(L);
+      // le boss sort de l'ombre : rugissement, éclats aux couleurs de son aura
+      const boss = battle.monAt(1, 0), c = this.sprCenter(1, 0);
+      oB.dark = false; oB.white = 1; this.setHud(1, boss, boss.hp, 0);
+      this.sound.cry(ASSETS.cry(boss.sp));
+      const teinte = { bleu: ['#7fd0ff', '#2a6fe0', '#ffffff'], rouge: ['#ff7a6a', '#c0101e', '#ffffff'], or: ['#ffe680', '#e09a00', '#ffffff'] }[L.boss.aura] || ['#ffffff'];
+      this.burst(c.x, c.y, teinte, 34, { speed: 3 });
+      await this.tween(380, (u) => { oB.white = 1 - u; oB.dx = Math.sin(u * 40) * 3 * (1 - u); });
+      oB.white = 0; oB.dx = 0;
+    }
     await this.play(battle.start());
 
     const mySlot = battle.mySlot ?? 0;
@@ -895,7 +952,48 @@ export class BattleView {
     if (!m) { o.img = null; o.visible = false; return; }
     o.img = await loadImg(side === 1 ? ASSETS.front(m.sp, m.shiny, m.shadow) : ASSETS.back(m.sp, m.shiny, m.shadow));
     o.whiteImg = null; o.darkImg = null;
+    // l'adversaire pose ses pattes sur le socle (le sprite a un vide transparent dessous, différent pour chaque espèce)
+    o.pied = side === 1 && o.img && !levite(m.sp) ? videSous(o.img) : null;
+    // boss de raid : son aura (bleue, rouge ou or) ondule derrière lui
+    o.aura = side === 1 && this.battle.aura && o.img ? auraFrames(o.img, this.battle.aura).frames : null;
     if (!o.img) { const c = document.createElement('canvas'); c.width = c.height = 80; const x = c.getContext('2d'); x.fillStyle = TYPE_COL[SPECIES[m.sp].t[0]]; x.beginPath(); x.arc(40, 50, 24, 0, 7); x.fill(); x.fillStyle = '#fff'; x.font = '20px sans-serif'; x.fillText('?', 34, 58); o.img = c; }
+  }
+  /** boss de raid : l'escouade se présente (portrait et nom de chaque joueur) face au boss, puis s'efface */
+  async raidLineup(L) {
+    const n = L.joueurs.length;
+    const ov = el('div', `raid-lineup aura-${L.boss.aura || 'or'} n${n}`);
+    ov.innerHTML = `
+      <div class="rl-bande"></div>
+      <div class="rl-titre">ESCOUADE DE RAID</div>
+      <div class="rl-equipe">${L.joueurs.map((j, k) => `
+        <div class="rl-joueur${j.moi ? ' moi' : ''}" style="--k:${k}">
+          <div class="rl-portrait"><img src="${j.portrait || ASSETS.trainer(j.bs)}" alt=""></div>
+          <div class="rl-nom">${esc(j.name)}${j.moi ? '<i>toi</i>' : ''}</div>
+        </div>`).join('')}</div>
+      <div class="rl-vs">VS</div>
+      <div class="rl-boss">
+        <div class="rl-boss-img"><img src="${ASSETS.front(L.boss.sp)}" alt=""></div>
+        <div class="rl-boss-nom">${esc(L.boss.title)}</div>
+        <div class="rl-boss-sous">${esc(L.boss.rang)} · N.${L.boss.lvl}</div>
+      </div>`;
+    this.root.appendChild(ov);
+    let passe = false;
+    const pop = this.ui.input.push((k) => { if (k === 'a' || k === 'b') passe = true; });
+    const attendre = async (ms) => { for (let t = 0; t < ms && !passe; t += 40) await wait(40); };
+    try {
+      await wait(30); ov.classList.add('in');
+      await attendre(260);
+      for (let k = 0; k < n && !passe; k++) { this.sound.sfx('select'); await attendre(200); }
+      if (!passe) { this.sound.sfx('bang'); ov.classList.add('vs'); }
+      await attendre(380);
+      ov.classList.add('boss');
+      await attendre(1500);
+    } finally {
+      pop();
+      ov.classList.add('out');
+      await wait(320);
+      ov.remove();
+    }
   }
   close() { this.alive = false; this.targetHint = null; this.root?.remove(); this.ui.closeDialog(); this.game.input.clearDirs?.(); }
 

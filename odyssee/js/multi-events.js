@@ -6,7 +6,8 @@
 import { SPECIES } from './data/species.js';
 import { MOVES } from './data/moves.js';
 import { ITEMS } from './core/items.js';
-import { createMon, monName, isFainted, healFull } from './core/mon.js';
+import { createMon, monName, isFainted, healFull, refreshStats } from './core/mon.js';
+import { tenueCode, tenueDecode, tenueValide, tenueOrigine, composer } from './render/tenue.js';
 import { Battle } from './core/battle.js';
 import { battleCopy, validMon } from './core/pvp.js';
 import { MEGA_RING } from './core/mega.js';
@@ -25,7 +26,7 @@ import {
   guestWaitHost,
   createCoopNet,
 } from './dojo-mamadou.js';
-import { bossParId, capacitesBoss, niveauBoss, RAID_ESSAIS, RAID_PORTEE, RAID_PV } from './raid-monde.js';
+import { bossParId, capacitesBoss, niveauBoss, rangDe, formatRaid, joueursDuFormat, RAID_ESSAIS, RAID_PORTEE, RAID_PV, RAID_MAX_JOUEURS } from './raid-monde.js';
 
 /* ======================================================================
    1. RAIDS DE BOSS / ANTRES LÉGENDAIRES CO-OP (2 OU 3 JOUEURS VS BOSS)
@@ -41,7 +42,7 @@ export const RAID_BOSSES = [
 ];
 
 /** Construit un Boss de Raid géant avec PV x3 (Duo) ou x4 (Trio) */
-// opts.monde : boss de raid de la région (raid-monde.js) : son niveau est déjà calculé (lvl), ses PV ×4 (duo) ou ×5 (trio)
+// opts.monde : boss de raid de la région (raid-monde.js) : son niveau est déjà calculé (lvl), ses PV multipliés selon le nombre de joueurs (RAID_PV)
 export function buildRaidBossChallenge(bossIdx = 0, slots = 2, lvl = 55, seed = 1, opts = {}) {
   const boss = opts.def || RAID_BOSSES[bossIdx % RAID_BOSSES.length] || RAID_BOSSES[0];
   const r = seededRng(seed >>> 0);
@@ -56,14 +57,15 @@ export function buildRaidBossChallenge(bossIdx = 0, slots = 2, lvl = 55, seed = 
     shiny: false,
     rng: r,
   });
-  const hpMult = opts.monde ? RAID_PV[slots >= 3 ? 3 : 2] : slots >= 3 ? 4 : 3;
-  mon.stats[0] = Math.max(mon.stats[0], mon.stats[0] * hpMult);
+  const hpMult = opts.monde ? RAID_PV[Math.max(2, Math.min(4, slots))] : slots >= 3 ? 4 : 3;
+  mon.stats[0] = Math.max(mon.stats[0], Math.round(mon.stats[0] * hpMult));
   mon.hp = mon.stats[0];
   return {
     boss,
     bossLvl,
     hpMult,
     monde: !!opts.monde,
+    aura: opts.monde ? rangDe(boss).aura : null,
     name: boss.title,
     party: [mon],
     trainer: {
@@ -85,14 +87,16 @@ export function buildRaidBossChallenge(bossIdx = 0, slots = 2, lvl = 55, seed = 
 
 /**
  * Moteur de Raid Co-op : 2 ou 3 joueurs sur `side 0` vs 1 Boss géant unique sur `side 1` (`slot 0`).
- * Le Boss agit deux fois par tour et lève un Bouclier Mystique à <= 60% PV.
+ * Le Boss agit deux fois par tour (trois fois face à quatre joueurs ; face à deux, sa seconde frappe ne vient qu'un tour
+ * sur deux) et lève un Bouclier Mystique à <= 60% PV.
  */
 export class RaidCoopBattle extends CoopDojoBattle {
   constructor(o) {
     super(o);
     this.isRaid = true;
     this.monde = !!o.foe?.monde;   // boss de raid de la région
-    this.shieldMax = this.slots >= 3 ? 6 : 4;
+    this.shieldMax = this.slots >= 4 ? 8 : this.slots >= 3 ? 6 : 4;
+    this.aura = o.foe?.aura || null;   // couleur de l'aura du boss (vue de combat)
     this.shield = {
       active: false,
       triggered: false,
@@ -101,10 +105,36 @@ export class RaidCoopBattle extends CoopDojoBattle {
     };
     this.sides[1].activeSlots = Array(this.slots).fill(-1);
     this.sides[1].activeSlots[0] = 0;
+    // récap de fin de combat, par joueur : dégâts infligés au boss, subis, soins, K.O., plus gros coup, attaques lancées
+    const n = Math.max(1, this.ownerNames.length);
+    this.recap = Array.from({ length: n }, () => ({ inflige: 0, subi: 0, soin: 0, ko: 0, max: 0, attaques: 0 }));
+  }
+
+  /** joueur à qui appartient le Pokémon de l'escouade à cet emplacement */
+  ownerAt(slot) { const idx = this.sides[0].activeSlots[slot]; return idx >= 0 ? this.owners[idx] : null; }
+
+  useMoveRef(attRef, a, actedSet) {
+    if (attRef.side === 0) { const o = this.ownerAt(attRef.slot); if (o != null && this.recap[o]) this.recap[o].attaques++; }
+    return super.useMoveRef(attRef, a, actedSet);
   }
 
   hp(ref, delta, cause) {
     const r = this.norm(ref);
+    // l'escouade : ce qu'encaisse ou regagne chaque joueur (et ses K.O.)
+    if (r.side === 0) {
+      const o = this.ownerAt(r.slot), m = this.act(r), avant = m?.hp ?? 0;
+      const fait = super.hp(r, delta, cause);
+      const R = o != null && this.recap[o];
+      if (R && m) {
+        if (fait > 0) R.subi += fait;
+        else if (fait < 0) {   // un soin : compté pour le joueur qui l'a lancé (lui-même ou un allié)
+          const l = this.lastUser, ol = l && l.side === 0 && !cause ? this.ownerAt(l.slot) : o;
+          if (this.recap[ol ?? o]) this.recap[ol ?? o].soin -= fait;
+        }
+        if (avant > 0 && m.hp <= 0) R.ko++;
+      }
+      return fait;
+    }
     if (r.side === 1 && delta < 0) {
       const boss = this.monAt(1, 0);
       if (boss && boss.hp > 0) {
@@ -117,6 +147,9 @@ export class RaidCoopBattle extends CoopDojoBattle {
         }
       }
       const dealt = super.hp(r, delta, cause);
+      // dégâts au boss : au joueur dont le Pokémon vient d'attaquer (les dégâts indirects, météo ou poison, ne comptent pas)
+      const l = this.lastUser, ol = l && l.side === 0 && !cause ? this.ownerAt(l.slot) : null;
+      if (ol != null && this.recap[ol] && dealt > 0) { this.recap[ol].inflige += dealt; this.recap[ol].max = Math.max(this.recap[ol].max, dealt); }
       const after = this.monAt(1, 0);
       if (this.shield.active && !cause && after && after.hp > 0) {
         this.shield.hp = Math.max(0, this.shield.hp - 1);
@@ -145,6 +178,28 @@ export class RaidCoopBattle extends CoopDojoBattle {
     return super.hp(ref, delta, cause);
   }
 
+  /** ouverture d'un boss de la région : pas de dresseur ; le boss est déjà là, puis chaque joueur envoie son Pokémon */
+  start() {
+    if (!this.monde) return super.start();
+    const t = this.sides[1].trainer;
+    const evs = super.start().filter((e) => !(e.t === 'send'
+      || (e.t === 'msg' && (/lance un combat/.test(e.text) || e.text.startsWith(`${t.cls} ${t.name} envoie`) || e.text.startsWith('En avant !')))));
+    const out = [{ t: 'msg', text: `${this.sides[1].name} surgit, entouré d'une aura ${{ bleu: 'bleue', rouge: 'rouge', or: 'dorée' }[this.aura] || 'mystérieuse'} !` }];
+    for (const sl of this.aliveSlots(0)) {
+      const idx = this.sides[0].activeSlots[sl];
+      out.push({ t: 'msg', text: `${this.ownerNames[this.owners[idx]] || 'Un allié'} envoie ${monName(this.monAt(0, sl))} !` });
+      out.push({ t: 'send', side: 0, slot: sl, idx });
+    }
+    return out.concat(evs);
+  }
+
+  /** un boss géant : tous les joueurs l'atteignent, et il les atteint tous (pas de distance en combat triple ou quadruple) */
+  isAdjacent() { return true; }
+  validFoeTargets(attRef) {
+    const opp = 1 - attRef.side;
+    return this.aliveSlots(opp).map((slot) => ({ side: opp, slot }));
+  }
+
   /** Le Boss joue deux actions distinctes par tour (visant si possible deux alliés différents) */
   foeChooseAll() {
     const aliveFoe = this.aliveSlots(1);
@@ -162,28 +217,31 @@ export class RaidCoopBattle extends CoopDojoBattle {
     // boss de la région face à deux joueurs : sa seconde frappe ne vient qu'un tour sur deux
     if (this.monde && this.slots < 3 && this.turn % 2 === 1) return out;
 
-    const firstTarget = first?.targetSlot ?? pAlive[0];
-    const altTargets = pAlive.filter((s) => s !== firstTarget);
-    const targetSlot = altTargets.length ? altTargets[0] : pAlive[0];
+    // frappes en plus : une (deux face à quatre joueurs), chacune sur un joueur pas encore visé si possible
+    const extra = this.monde && this.slots >= 4 ? 2 : 1;
+    const vises = new Set([first?.targetSlot ?? pAlive[0]]);
     const usable = this.usableMoves({ side: 1, slot: sl });
     if (!usable.length) return out;
-
-    // Choisit la meilleure capacité offensive pour la 2e frappe du Boss
-    let bestMvIdx = usable[0];
-    let bestScore = -1e9;
-    const defMon = this.monAt(0, targetSlot);
-    for (const k of usable) {
-      const mId = boss.moves[k]?.id;
-      const mv = MOVES[mId];
-      if (!mv || mv.c === 'status') continue;
-      let sc = (mv.p || 50) * (this.effOn({ side: 1, slot: sl }, { side: 0, slot: targetSlot }, mv.t) || 1);
-      if (k !== first?.slot && first?.type === 'move') sc += 8;
-      if (defMon && SPECIES[boss.sp]?.t?.includes(mv.t)) sc *= 1.35;
-      if (sc > bestScore) { bestScore = sc; bestMvIdx = k; }
+    for (let n = 0; n < extra; n++) {
+      const libres = pAlive.filter((s) => !vises.has(s));
+      const targetSlot = libres.length ? libres[0] : pAlive[n % pAlive.length];
+      vises.add(targetSlot);
+      // la meilleure capacité offensive contre ce joueur
+      let bestMvIdx = usable[0];
+      let bestScore = -1e9;
+      const defMon = this.monAt(0, targetSlot);
+      for (const k of usable) {
+        const mId = boss.moves[k]?.id;
+        const mv = MOVES[mId];
+        if (!mv || mv.c === 'status') continue;
+        let sc = (mv.p || 50) * (this.effOn({ side: 1, slot: sl }, { side: 0, slot: targetSlot }, mv.t) || 1);
+        if (k !== first?.slot && first?.type === 'move') sc += 8;
+        if (defMon && SPECIES[boss.sp]?.t?.includes(mv.t)) sc *= 1.35;
+        if (sc > bestScore) { bestScore = sc; bestMvIdx = k; }
+      }
+      const chosenMove = boss.moves[bestMvIdx];
+      out.push({ i: 1, side: 1, slot: sl, a: { type: 'move', id: chosenMove.id, slot: bestMvIdx, targetSide: 0, targetSlot } });
     }
-    const chosenMove = boss.moves[bestMvIdx];
-    const second = { type: 'move', id: chosenMove.id, slot: bestMvIdx, targetSide: 0, targetSlot };
-    out.push({ i: 1, side: 1, slot: sl, a: second });
     return out;
   }
 
@@ -214,32 +272,129 @@ async function selectPeersForRoom(ui, freePeers, neededPeers, labelPrefix) {
   return selected;
 }
 
-async function offerRaidCapture(game, bossData) {
-  const st = game.state, ui = game.ui;
-  const want = await ui.yesNo(`${bossData.boss.title} est affaibli ! Lancer une Hyper Ball pour le capturer ?`);
-  if (!want) return;
-  const caught = createMon(bossData.boss.sp, bossData.bossLvl, { iv: [31, 31, 31, 31, 31, 31], shiny: false });
+/** après la victoire : chaque joueur tente sa chance une fois. Peu de chances (selon le rang du boss), au niveau max
+ *  du joueur ; un légendaire capturé est bridé (stats d'un bon Pokémon classique, raid-monde.js). */
+/** code de la tenue du joueur (vide s'il porte la tenue d'origine), pour que les autres la voient */
+const codeTenue = (st) => (st.tenue && !tenueOrigine(tenueValide(st.tenue, st.gender)) ? tenueCode(tenueValide(st.tenue, st.gender)) : undefined);
+
+/** portrait d'un joueur pour la présentation de l'escouade : son personnage de face, dans sa tenue (null : image par défaut) */
+function portraitJoueur(game, genre, tn) {
+  try {
+    const v = game.view, T = tn ? tenueDecode(tn) : null, g = T?.genre || genre, b = v?.baseDe?.(g);
+    if (!b) return null;
+    const src = T ? composer(b.src, b.sx, b.sy, T) : b.src, sx = T ? 0 : b.sx, sy = T ? 0 : b.sy;
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const x = c.getContext('2d', { willReadFrequently: true }); x.imageSmoothingEnabled = false;
+    x.drawImage(src, sx + 64, sy, 64, 64, 0, 0, 64, 64);   // de face, à l'arrêt
+    // recadré sur le personnage
+    const d = x.getImageData(0, 0, 64, 64).data; let x0 = 64, y0 = 64, x1 = -1, y1 = -1;
+    for (let y = 0; y < 64; y++) for (let i = 0; i < 64; i++) if (d[(y * 64 + i) * 4 + 3] > 20) { x0 = Math.min(x0, i); y0 = Math.min(y0, y); x1 = Math.max(x1, i); y1 = Math.max(y1, y); }
+    if (x1 < 0) return null;
+    const o = document.createElement('canvas'); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1;
+    o.getContext('2d').drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height);
+    return o.toDataURL();
+  } catch (e) { return null; }
+}
+
+/** fin d'un raid : le classement de l'escouade (dégâts infligés au boss, encaissés, soins, K.O., plus gros coup)
+ *  et les titres du combat ; A pour continuer */
+async function recapRaid(game, battle, { victoire, boss, rosters, mySlot, aura }) {
+  const ui = game.ui, R = battle.recap, total = Math.max(1, R.reduce((a, x) => a + x.inflige, 0));
+  const COUL = ['#4aa8ff', '#ff5a5a', '#4ade80', '#ffd23a'];
+  const fmt = (n) => Math.round(n).toLocaleString('fr-FR');
+  const joueurs = rosters.map((r, k) => ({ k, name: String(r.name || 'Dresseur').slice(0, 12), moi: r.slot === mySlot, ...(R[k] || { inflige: 0, subi: 0, soin: 0, ko: 0, max: 0, attaques: 0 }) }));
+  const classes = [...joueurs].sort((a, b) => b.inflige - a.inflige || a.ko - b.ko);
+  // les titres : chacun au meilleur dans sa catégorie (seulement s'il y a quelque chose à saluer)
+  const UNITE = { inflige: ' dégâts', max: ' en un seul coup', subi: ' encaissés', soin: ' PV soignés' };
+  const titre = (cle, ico, nom, mieux = 'max') => {
+    const v = joueurs.map((j) => j[cle]); const best = mieux === 'max' ? Math.max(...v) : Math.min(...v);
+    if (mieux === 'max' && best <= 0) return null;
+    const qui = joueurs.filter((j) => j[cle] === best); if (qui.length === joueurs.length && joueurs.length > 1) return null;
+    return { ico, nom, qui: qui.map((j) => j.name).join(' et '), val: cle === 'ko' && mieux === 'min' ? (best === 0 ? 'jamais K.O.' : `${best} K.O.`) : fmt(best) + (UNITE[cle] || '') };
+  };
+  const titres = [
+    titre('inflige', '💥', 'Plus gros frappeur'),
+    titre('max', '⚡', 'Coup le plus fort'),
+    titre('subi', '🛡️', 'Le mur de l\'escouade'),
+    titre('soin', '💚', 'Le soigneur'),
+    titre('ko', '🌟', 'Toujours debout', 'min'),
+  ].filter(Boolean);
+  const ov = document.createElement('div');
+  ov.className = `raid-recap aura-${aura || 'or'}${victoire ? ' gagne' : ' perdu'}`;
+  ov.innerHTML = `
+    <div class="rr-panneau">
+      <div class="rr-tete"><b>${victoire ? 'VICTOIRE !' : 'LE BOSS TIENT BON…'}</b><span>${esc(boss)} · ${battle.turn} tour${battle.turn > 1 ? 's' : ''}</span></div>
+      <div class="rr-liste">
+        <div class="rr-ligne rr-entete"><span></span><span>Joueur</span><span>Dégâts au boss</span><span>Subis</span><span>Soins</span><span>K.O.</span></div>
+        ${classes.map((j, rang) => `
+          <div class="rr-ligne${j.moi ? ' moi' : ''}" style="--c:${COUL[j.k % 4]};--d:${rang * 0.12}s">
+            <span class="rr-rang">${['🥇', '🥈', '🥉'][rang] || rang + 1}</span>
+            <span class="rr-nom">${esc(j.name)}${j.moi ? ' <i>toi</i>' : ''}</span>
+            <span class="rr-deg"><i style="width:${Math.round(100 * j.inflige / total)}%"></i><b>${fmt(j.inflige)}</b><small>${Math.round(100 * j.inflige / total)} %</small></span>
+            <span>${fmt(j.subi)}</span><span>${fmt(j.soin)}</span><span>${j.ko}</span>
+          </div>`).join('')}
+      </div>
+      ${titres.length ? `<div class="rr-titres">${titres.map((t, i) => `<div class="rr-titre" style="--d:${0.5 + i * 0.12}s"><span>${t.ico}</span><b>${t.nom}</b><em>${esc(t.qui)}</em><small>${t.val}</small></div>`).join('')}</div>` : ''}
+      <div class="rr-pied">A : continuer</div>
+    </div>`;
+  ui.root.appendChild(ov);
+  game.sound.sfx(victoire ? 'medal' : 'select');
+  requestAnimationFrame(() => ov.classList.add('in'));
+  await wait(500);
+  await new Promise((res) => {
+    let fini = false;
+    const fin = () => { if (fini) return; fini = true; pop(); res(); };
+    const pop = game.input.push((k) => { if (k === 'a' || k === 'b' || k === 'cancel') fin(); });
+    ov.addEventListener('click', fin, { once: true });
+  });
+  ov.classList.remove('in');
+  await wait(250);
+  ov.remove();
+}
+
+/** raids gagnés (et boss légendaires vaincus, boss capturés) : pour les médailles */
+function noterRaid(st, legende) {
+  const R = (st.raids ||= { gagnes: 0, legendes: 0, captures: 0 });
+  R.gagnes++; if (legende) R.legendes++;
+}
+
+async function offerRaidCapture(game, bossData, def) {
+  const st = game.state, ui = game.ui, rang = rangDe(def);
+  const who = { speaker: 'Boss de raid', face: 'drakos' };
+  if (st.party.length >= 6 && st.box.length >= 300) { await ui.say('Plus de place dans le PC : impossible de tenter la capture.', who); return; }
+  const want = await ui.yesNo(`${bossData.boss.title} est à terre ! Lancer une Hyper Ball ? (une seule tentative, ${Math.round(rang.capture * 100)} % de chances)`, who);
+  if (!want) { await ui.say(`${bossData.boss.title} se relève et disparaît.`, who); return; }
+  game.sound.sfx('throw');
+  if (Math.random() >= rang.capture) {
+    await ui.say([`La Hyper Ball tremble… et ${bossData.boss.title} s'en échappe !`, 'Il prend la fuite. Ce sera pour une prochaine fois.'], who);
+    return;
+  }
+  const lvl = Math.min(bossData.bossLvl, game.levelCap());
+  const caught = createMon(bossData.boss.sp, lvl);
   caught.moves = bossData.party[0].moves.map((m) => m.id).filter((id) => MOVES[id]).map((id) => ({ id, pp: MOVES[id].pp, maxPp: MOVES[id].pp }));
   caught.ability = bossData.boss.ability || null;
+  if (def?.legend) { caught.bride = true; refreshStats(caught); }   // def manque pour les raids du Dojo
   caught.ball = 'ultra-ball';
   caught.ot = st.name;
-  caught.met = 'Antre de Raid';
+  caught.met = 'Boss de raid';
   healFull(caught);
   game.markCaught(caught.sp);
   game.sound.sfx('item');
   if (st.party.length < 6) {
     st.party.push(caught);
-    await ui.say(`${monName(caught)} rejoint ton équipe !`);
+    await ui.say(`${monName(caught)} rejoint ton équipe !`, who);
   } else {
     st.box.push(caught);
-    await ui.say(`${monName(caught)} a été transféré dans ton PC !`);
+    await ui.say(`${monName(caught)} a été transféré dans ton PC !`, who);
   }
+  if (def?.legend) await ui.say(`Loin de son monde, ${monName(caught)} a perdu une bonne part de sa puissance…`, who);
+  (st.raids ||= { gagnes: 0, legendes: 0, captures: 0 }).captures++;
   game.save(true);
 }
 
 async function runRaidBattleSession(game, { rid, bossIdx, format, rosters, mySlot, hostId, peerIds, lvl, seed, monde, k, bossKey }) {
   const ui = game.ui, st = game.state, D = ensureDojo(st);
-  const slots = format === 'triple' ? 3 : 2;
+  const slots = monde ? joueursDuFormat(format) : format === 'triple' ? 3 : 2;
   const isHost = mySlot === 0;
   const ownerNames = rosters.map((r) => String(r.name || 'Dresseur').slice(0, 12));
   const { party, owners, ownerNames: sqNames } = buildCoopSquadParty(rosters);
@@ -249,6 +404,8 @@ async function runRaidBattleSession(game, { rid, bossIdx, format, rosters, mySlo
   const who = { speaker: monde ? 'Boss de raid' : 'Raid Co-op', face: 'drakos' };
   const RM = game.raidMonde;
   if (monde && RM) { RM.compterEssai(k); game.save(true); }
+  // le bandeau d'annonce ne doit pas rester par-dessus la rencontre
+  document.querySelectorAll('.raid-monde-annonce').forEach((b) => b.remove());
 
   await ui.say(monde
     ? `${ownerNames.join(', ')} affrontent ${bossData.name} (N.${bossData.bossLvl} · PV ×${bossData.hpMult}) ! Essai ${RM ? RM.suivi(k).essais : 1} sur ${RAID_ESSAIS}.`
@@ -290,7 +447,14 @@ async function runRaidBattleSession(game, { rid, bossIdx, format, rosters, mySlo
   st.party = battle.sides[0].party;
   let res;
   try {
-    res = await game.bv.runCoopDojo(battle, coopNet, { bg: bossData.boss.bg || 'cave', night: true });
+    res = await game.bv.runCoopDojo(battle, coopNet, {
+      bg: bossData.boss.bg || 'cave', night: true,
+      // présentation de l'escouade avant que chacun envoie son Pokémon
+      lineup: monde ? {
+        joueurs: rosters.map((r) => ({ name: String(r.name || 'Dresseur').slice(0, 12), bs: r.bs === 'player_f' ? 'player_f' : 'player_m', portrait: portraitJoueur(game, r.bs === 'player_f' ? 'f' : 'm', r.tn), moi: r.slot === mySlot })),
+        boss: { sp: bossData.boss.sp, title: bossData.boss.title, lvl: bossData.bossLvl, rang: rangDe(def).nom, aura: bossData.aura },
+      } : null,
+    });
   } finally {
     st.party = realParty;
     game.bv.pvp = false;
@@ -301,24 +465,29 @@ async function runRaidBattleSession(game, { rid, bossIdx, format, rosters, mySlo
   game.sound.current = null;
   game.updateZone();
 
+  // le récap : qui a fait quoi pendant le combat (calculé à l'identique chez tous les joueurs)
+  if (monde && battle.recap) await recapRaid(game, battle, { victoire: res === 'win', boss: bossData.boss.title, rosters, mySlot, aura: bossData.aura });
+
   if (res === 'win' && monde) {
+    const rang = rangDe(def);
     RM?.marquerVaincu(k);
-    D.pdj += def.legend ? 15 : 10;
-    game.give('rare-candy', 3);
-    game.give(def.legend ? 'master-ball' : 'ultra-ball', def.legend ? 1 : 5);
+    noterRaid(st, rang.aura === 'or');
+    D.pdj += rang.pdj;
+    game.give('rare-candy', rang.bonbons);
     game.sound.sfx('item');
     game.save(true);
     await ui.say([
       `${bossData.name} est vaincu !`,
-      `Tu remportes ${def.legend ? 15 : 10} PDj, 3 Super Bonbons et ${def.legend ? 'une Master Ball' : '5 Hyper Balls'} !`,
+      `Tu remportes ${rang.pdj} Points du Dojo et ${rang.bonbons} Super Bonbons !`,
     ], who);
-    if (!def.legend) await offerRaidCapture(game, bossData);
+    await offerRaidCapture(game, bossData, def);
   } else if (monde) {
     const reste = RM ? RM.essaisRestants(k) : 0;
     await ui.say(reste > 0
       ? [`${bossData.name} tient bon…`, `Il te reste ${reste} essai${reste > 1 ? 's' : ''}. Soignez-vous et retentez votre chance avant qu'il reparte !`]
       : [`${bossData.name} tient bon…`, 'Tu as utilisé tes 5 essais pour ce boss. Il faudra attendre le prochain !'], who);
   } else if (res === 'win') {
+    noterRaid(st, false);
     D.pdj += 5;
     game.give('rare-candy', 2);
     game.sound.sfx('item');
@@ -334,7 +503,8 @@ async function runRaidBattleSession(game, { rid, bossIdx, format, rosters, mySlo
 }
 
 /** Boss de raid de la région (raid-monde.js) : le joueur l'aborde ; tous les joueurs connectés doivent être là
- *  (deux autres au plus : le raid se joue à 2 ou 3). Niveau du boss : moyenne des niveaux max des participants + 15. */
+ *  (trois autres au plus : le raid se joue en coop, de 2 à 4 joueurs, en combat double, triple ou quadruple).
+ *  Niveau du boss : moyenne des niveaux max des participants, plus quelques niveaux selon son rang. */
 export async function lancerRaidMonde(game, R) {
   const st = game.state, ui = game.ui, link = game.link, RM = game.raidMonde;
   const who = { speaker: 'Boss de raid', face: 'drakos' };
@@ -344,7 +514,7 @@ export async function lancerRaidMonde(game, R) {
   if (reste <= 0) { await ui.say([`${def.title} te toise.`, 'Tu as déjà utilisé tes 5 essais contre ce boss. Le prochain viendra !'], who); return; }
   if (st.party.filter((m) => m && m.hp > 0).length < 2) { await ui.say([`${def.title} te toise.`, 'Il te faut au moins 2 Pokémon en forme pour l\'affronter.'], who); return; }
   const tous = link?.enabled ? [...link.others.values()] : [];
-  const besoin = Math.min(2, tous.length);
+  const besoin = Math.min(RAID_MAX_JOUEURS - 1, tous.length);
   if (besoin < 1) { await ui.say([`${def.title} te toise.`, 'Un boss de raid se combat à plusieurs : il faut au moins un autre joueur connecté.'], who); return; }
   const me = game.player;
   const proches = tous.filter((p) => p.map === 'monde' && Math.abs(p.x - me.x) + Math.abs(p.y - me.y) <= RAID_PORTEE && !p.busy && !p.pvp);
@@ -361,7 +531,7 @@ export async function lancerRaidMonde(game, R) {
   if (!ok) return;
   const choisis = proches.length === besoin ? proches : await selectPeersForRoom(ui, proches, besoin, 'Avec qui lancer le raid');
   if (!choisis) return;
-  const format = besoin === 2 ? 'triple' : 'double';
+  const format = formatRaid(besoin + 1);
   const rid = newId();
   const peerIds = choisis.map((p) => p.id);
   for (const p of choisis) link.send(p.id, { t: 'req', rid, kind: 'raid', monde: true, k: R.k, bossKey: def.id, format, name: st.name, cap: game.levelCap() });
@@ -398,8 +568,8 @@ export async function lancerRaidMonde(game, R) {
     }
     const lvl = niveauBoss([game.levelCap(), ...reps.map(({ m }) => Math.max(5, Math.min(100, m.cap | 0 || game.levelCap())))], def);
     const rosters = [
-      { slot: 0, id: link.myId, name: st.name, hasMega: !!st.bag[MEGA_RING], mons: myMons },
-      ...peerRes.map(({ pid, m }, idx) => ({ slot: idx + 1, id: pid, name: String(m.name || choisis[idx].name).slice(0, 12), hasMega: !!m.hasMega, mons: m.mons.slice(0, 2) })),
+      { slot: 0, id: link.myId, name: st.name, bs: st.gender === 'f' ? 'player_f' : 'player_m', tn: codeTenue(st), hasMega: !!st.bag[MEGA_RING], mons: myMons },
+      ...peerRes.map(({ pid, m }, idx) => ({ slot: idx + 1, id: pid, name: String(m.name || choisis[idx].name).slice(0, 12), bs: m.gender === 'f' ? 'player_f' : 'player_m', tn: typeof m.tn === 'string' ? m.tn.slice(0, 16) : undefined, hasMega: !!m.hasMega, mons: m.mons.slice(0, 2) })),
     ];
     const seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
     peerIds.forEach((pid, idx) => link.send(pid, { t: 'raid', rid, step: 'start', bossIdx: 0, format, rosters, mySlot: idx + 1, hostId: link.myId, lvl, seed, monde: true, k: R.k, bossKey: def.id }));
@@ -443,7 +613,7 @@ export async function onRaidInvite(game, from, m) {
 
     const myMons = await pickDojoPair(game, { speaker: 'Boss de raid', face: 'drakos' });
     if (!myMons) { link.send(from, { t: 'raid', rid: m.rid, step: 'quit', who: st.name }); return; }
-    link.send(from, { t: 'raid', rid: m.rid, step: 'roster', name: st.name, hasMega: !!st.bag[MEGA_RING], mons: myMons });
+    link.send(from, { t: 'raid', rid: m.rid, step: 'roster', name: st.name, gender: st.gender, tn: codeTenue(st), hasMega: !!st.bag[MEGA_RING], mons: myMons });
 
     const startMsg = await guestWaitHost(
       game, from,
