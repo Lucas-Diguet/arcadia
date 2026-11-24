@@ -300,6 +300,18 @@ export class Battle {
     if (id == null || !/^choice-/.test(m.item || '')) return null;
     return m.moves.some((q) => q.id === id && q.pp > 0) ? id : null;
   }
+  /** pourquoi le joueur ne peut pas choisir cette action (ou null). En duel, l'écran le demande avant d'envoyer son choix :
+   *  une action refusée ici ne doit jamais partir chez l'adversaire, sinon les deux combats divergent */
+  refus(a) {
+    if (this.state !== 'choose' || this.forcedAction(0) || !a) return null;
+    if (a.type === 'switch' && this.trapped(0)) return `${monName(this.me)} est pris au piège et ne peut pas être rappelé !`;
+    if (a.type !== 'move' || a.idx == null) return null;
+    const mv = this.me.moves[a.idx];
+    if (!this.usableMoves(0).length) return null;   // Lutte
+    if (!mv || mv.pp <= 0) return 'Plus de PP pour cette attaque !';
+    const lock = this.choiceLock(0);
+    return lock != null && mv.id !== lock ? `${itemName(this.me.item)} ne laisse utiliser que ${MOVES[lock].n} !` : null;
+  }
   canSwitchTo(idx) { const m = this.sides[0].party[idx]; return m && m.hp > 0 && idx !== this.sides[0].active; }
 
   /* ---------------- IA ---------------- */

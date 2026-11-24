@@ -8,6 +8,7 @@ import { construireCarte, construireSalles, passageSuivant, lirePlan, regionDe, 
 import { installerContenu, STARTERS, refusCt, OBJETS } from '../testodyssee/js/contenu.js';
 import { Raid } from '../testodyssee/js/combat/raid.js';
 import { Battle as BattleT } from '../odyssee/js/core/battle.js';
+import { PvpBattle, battleCopy } from '../odyssee/js/core/pvp.js';
 import { Groupe } from '../testodyssee/js/combat/groupe.js';
 import { nouvelEtat, appliquer, ouverte, battu, prisPar, requisDalles, requisSalle, clesDe, serrures, actifs, attendusArene, attendusSommet, areneEnCours, resoudreStarters } from '../testodyssee/js/donjon/etat.js';
 import { TEMPLE, STARTERS_TEMPLE } from '../testodyssee/js/formes.js';
@@ -1985,6 +1986,32 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   // Peau Féérique
   { const a = mk(700, ['hyper-voice'], { ability: 'pixilate' }), b = combat([a], [mk(149, ['splash'])]); ok(b.moveType(0, MOVES[id('hyper-voice')]) === 'fairy', 'combat du labo : Peau Féérique rend Mégaphone de type Fée'); }
   // Vulné-Assurance
+  // duel entre joueurs avec objets Choix : un choix refusé ne part pas chez l'autre, et un choix interdit reçu quand même
+  // est joué comme l'attaque bloquée, à l'identique des deux côtés (sinon les deux combats divergent)
+  {
+    const equipe = () => [mk(445, ['earthquake', 'stone-edge', 'swords-dance'], { item: 'choice-band' }), mk(65, ['psychic', 'shadow-ball'], { item: 'choice-specs' }), mk(130, ['waterfall', 'crunch'], { item: 'choice-scarf' })];
+    let divergent = 0, refuses = 0, forces = 0;
+    for (let g = 0; g < 30; g++) {
+      const r = R(400 + g), pa = battleCopy(equipe()), pb = battleCopy(equipe()), seed = 77 + g;
+      const A = new PvpBattle({ me: { name: 'A', party: pa }, foe: { name: 'B', party: JSON.parse(JSON.stringify(pb)) }, seed, canon: 0 });
+      const B = new PvpBattle({ me: { name: 'B', party: pb }, foe: { name: 'A', party: JSON.parse(JSON.stringify(pa)) }, seed, canon: 1 });
+      A.start(); B.start();
+      const choisir = (b, triche) => { for (;;) { const a = { type: 'move', idx: Math.floor(r() * b.me.moves.length) }; if (triche ? b.me.moves[a.idx].pp > 0 || !b.usableMoves(0).length : !b.refus(a)) return a; if (!triche) refuses++; } };
+      for (let t = 0; t < 60 && A.state !== 'over'; t++) {
+        if (A.checksum() !== B.checksum()) { divergent++; break; }
+        if (A.state === 'switch') { const p = (b) => b.need[0] ? b.sides[0].party.findIndex((m) => m.hp > 0) : null; const ia = p(A), ib = p(B); A.switchBoth(ia, ib); B.switchBoth(ib, ia); continue; }
+        // une partie sur trois, A envoie quand même ce que son écran aurait refusé (ancienne version du jeu)
+        const triche = g % 3 === 0, aa = choisir(A, triche), ab = choisir(B, false);
+        if (triche && A.refus(aa)) forces++;
+        A.remote = ab; B.remote = aa;
+        A.playerAction(aa); B.playerAction(ab);
+      }
+      if (A.checksum() !== B.checksum()) divergent++;
+    }
+    ok(refuses > 0, 'duel du labo : un objet Choix refuse bien une autre attaque avant l\'envoi');
+    ok(forces > 0, 'duel du labo : des choix interdits envoyés quand même');
+    ok(divergent === 0, `duel du labo, objets Choix : ${divergent} combats qui ne concordent plus`);
+  }
   { const a = mk(392, ['flamethrower']), d = mk(681, ['splash'], { item: 'weakness-policy' }); const b = combat([a], [d]); b.playerAction({ type: 'move', idx: 0 }); ok(isFainted(d) || b.sides[1].v.st[1] === 2, 'combat du labo : Vulné-Assurance monte l\'Attaque'); }
 }
 

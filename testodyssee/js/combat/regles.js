@@ -115,7 +115,7 @@ export function installerRegles() {
   for (const mv of ATTAQUES_COMBAT) if (!Object.values(MOVES).some((q) => q.key === mv.key)) MOVES[mv.id] = mv;
   for (const [k, o] of Object.entries(OBJETS_COMBAT)) ITEMS[k] ||= o;
   const B = Battle.prototype, orig = {};
-  for (const k of ['nm', 'hits', 'resolve', 'playerSwitch', 'playerAction', 'foeChoose', 'useMove', 'special', 'statusMove', 'inflict', 'boost', 'hp', 'stat', 'effOn', 'moveType', 'movePower', 'damageCore', 'doSwitch', 'checkFaints', 'endOfTurn', 'triggerEntry', 'doMega', 'end', 'start']) orig[k] = B[k];
+  for (const k of ['nm', 'hits', 'resolve', 'playerSwitch', 'playerAction', 'foeChoose', 'useMove', 'special', 'statusMove', 'inflict', 'boost', 'hp', 'stat', 'effOn', 'moveType', 'movePower', 'damageCore', 'doSwitch', 'checkFaints', 'endOfTurn', 'triggerEntry', 'doMega', 'end', 'start', 'refus']) orig[k] = B[k];
   // seulement le combat ordinaire (pas les duels entre joueurs ni les combats à plusieurs du labo) : les changements en plein tour
   const simple = (b) => Object.getPrototypeOf(b) === B;
   const banc = (b, i) => b.sides[i].party.findIndex((m, k) => k !== b.sides[i].active && m.hp > 0);
@@ -141,8 +141,17 @@ export function installerRegles() {
       return null;
     },
 
+    /** en duel : l'attaque interdite (objet Choix, Provoc, Veste de Combat, entrave) est refusée avant d'être envoyée */
+    refus(a) {
+      const base = orig.refus.call(this, a); if (base) return base;
+      if (this.state !== 'choose' || this.forcedAction(0) || a?.type !== 'move' || a.idx == null) return null;
+      const mv = this.me.moves[a.idx], why = mv && mv.pp > 0 && this.interdit(0, mv.id);
+      return why && this.usableMoves(0).some((k) => !this.interdit(0, this.me.moves[k].id)) ? why : null;
+    },
+
     playerAction(action) {
-      if (this.state === 'choose' && action?.type === 'move' && action.idx != null && !this.forcedAction(0)) {
+      // en duel, le refus se fait avant l'envoi (refus) : ici, l'action reçue est jouée, l'attaque bloquée remise par resolve
+      if (!this.pvp && this.state === 'choose' && action?.type === 'move' && action.idx != null && !this.forcedAction(0)) {
         const mv = this.me.moves[action.idx], why = mv && mv.pp > 0 && this.interdit(0, mv.id);
         if (why) {
           const ok = this.usableMoves(0).filter((k) => !this.interdit(0, this.me.moves[k].id));
@@ -183,7 +192,14 @@ export function installerRegles() {
 
     resolve(a, b) {
       const acts = [{ i: 0, a }, { i: 1, a: b }];
-      this._acts = [a, b]; this._agi = new Set();
+      // objet Choix : l'attaque bloquée, quoi qu'on ait choisi, à l'identique sur les deux écrans d'un duel
+      for (const x of acts) {
+        const m = this.act(x.i), v = this.sides[x.i].v, id = CHOIX.has(m?.item) ? (v.choix ?? v.choice) : null;
+        if (x.a?.type !== 'move' || x.a.id === 165 || id == null || x.a.id === id) continue;
+        const k = m.moves.findIndex((q) => q.id === id && q.pp > 0);
+        if (k >= 0) x.a = { ...x.a, id, slot: k };
+      }
+      this._acts = [acts[0].a, acts[1].a]; this._agi = new Set();
       for (const s of this.sides) { s.v.flinch = false; s.v.dmgTaken = null; }
       // Poursuite : frappe avant que l'autre ne change de Pokémon, deux fois plus fort
       for (const x of acts) {

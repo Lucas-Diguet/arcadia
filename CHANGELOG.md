@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.51 — 24 novembre 2026
+- **Odyssée et TestOdyssée** — Combat entre joueurs : choisir une attaque interdite ne coupe plus le combat en deux.
+  - Avec un objet Choix (Bandeau, Lunettes, Mouchoir), un piège, une Provoc ou une attaque sans PP, le message s'affiche et on choisit autre chose ; rien n'est envoyé à l'adversaire tant que le choix n'est pas valable.
+  - Si un choix interdit arrive quand même, les deux écrans jouent l'attaque bloquée par l'objet Choix, de la même façon.
+
 ## 6.50 — 21 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge, étage 1 : un tourniquet ne se bloque plus sans raison. S'il refuse de tourner, c'est qu'un de ses bras bute contre quelque chose qu'on voit : une cloison, un mur de pierre, un pilier, un autre tourniquet ou un joueur.
   - Des piliers de pierre dans les coins de certains tourniquets les empêchent de tourner d'un côté, comme à Cimetronelle.

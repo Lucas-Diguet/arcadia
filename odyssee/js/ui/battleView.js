@@ -678,6 +678,9 @@ export class BattleView {
         duel.broadcastEvents?.(stopEvs, true, duel.foeName);
         break;
       }
+      // une action que le moteur refuserait (objet Choix, piège, plus de PP) ne part pas chez l'adversaire
+      const why = battle.refus?.(action);
+      if (why) { await this.msg(why, { wait: true }); continue; }
       const n = battle.turn + 1, sum = battle.checksum();
       duel.sendAct(n, action, sum);
       waiting();
