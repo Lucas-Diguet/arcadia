@@ -38,7 +38,7 @@ const FEU = [
   P(218, null, 'flame-body', 'Rigide', EV0, ['rock-slide', 'flame-charge', 'flamethrower', 'amnesia']),   // Limagma
   P(662, null, 'flame-body', 'Rigide', EV0, ['flame-charge', 'peck', 'ember', 'growl']),   // Braisillon
   P(5, null, 'blaze', 'Hardi', EV0, ['fire-fang', 'metal-claw', 'dragon-breath', 'uproar']),   // Reptincel
-  P(323, 'sitrus-berry', 'solid-rock', 'Rigide', EV(252, 128, 0, 128, 0, 0), ['flamethrower', 'earthquake', 'rock-slide', 'amnesia']),   // Camérupt
+  P(323, 'sitrus-berry', 'solid-rock', 'Modeste', EV(252, 0, 0, 252, 4, 0), ['flamethrower', 'earth-power', 'power-gem', 'amnesia']),   // Camérupt
 ];
 const POISON = [
   P(24, null, 'intimidate', 'Rigide', EV0, ['poison-sting', 'bite', 'mud-slap', 'mean-look']),   // Arbok
