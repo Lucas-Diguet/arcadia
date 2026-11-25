@@ -21,14 +21,14 @@ export const NIVEAU_MAX = [20, 25, 25, 30, 35, 40, 40, 45, 50, 55, 60, 65, 70, 7
 /** les six Pokémon d'un champion au niveau de son arène : l'as (le dernier) au niveau maximum */
 const auNiveau = (equipe, arene) => { const n = NIVEAU_MAX[arene - 1]; return equipe.map((p, k) => ({ ...p, lvl: n - [3, 2, 2, 1, 1, 0][k] })); };
 
-// les neuf premières arènes : équipes données par l'auteur, niveaux compris, sans EV
+// les neuf premières arènes : équipes données par l'auteur, niveaux compris ; EV pour l'as seul (arènes 1 à 4), pour toute l'équipe (5 à 9)
 const INSECTE = [
   P(10, null, 'shield-dust', 'Rigide', EV0, ['tackle', 'string-shot', 'harden'], { lvl: 16 }),   // Chenipan
   P(13, null, 'shield-dust', 'Rigide', EV0, ['poison-sting', 'string-shot', 'bug-bite'], { lvl: 16 }),   // Aspicot
   P(664, null, 'shield-dust', 'Modeste', EV0, ['stun-spore', 'sleep-powder', 'struggle-bug'], { lvl: 18 }),   // Lépidonille
   P(14, null, 'shed-skin', 'Rigide', EV0, ['harden', 'poison-sting'], { lvl: 18 }),   // Coconfort
   P(540, null, 'swarm', 'Rigide', EV0, ['tackle', 'string-shot', 'razor-leaf'], { lvl: 19 }),   // Larveyette
-  P(416, 'sitrus-berry', 'pressure', 'Rigide', EV0, ['heal-order', 'defend-order', 'bug-bite', 'sucker-punch'], { lvl: 23 }),   // Apireine
+  P(416, 'sitrus-berry', 'pressure', 'Rigide', EV(252, 0, 128, 0, 128, 0), ['heal-order', 'defend-order', 'bug-bite', 'sucker-punch'], { lvl: 23 }),   // Apireine
 ];
 const FEU = [
   P(58, null, 'intimidate', 'Rigide', EV0, ['fire-fang', 'odor-sleuth', 'bite', 'uproar'], { lvl: 22 }),   // Caninos
@@ -36,7 +36,7 @@ const FEU = [
   P(218, null, 'flame-body', 'Rigide', EV0, ['rock-slide', 'flame-charge', 'flamethrower', 'amnesia'], { lvl: 23 }),   // Limagma
   P(662, null, 'flame-body', 'Rigide', EV0, ['flame-charge', 'peck', 'ember', 'growl'], { lvl: 24 }),   // Braisillon
   P(5, null, 'blaze', 'Hardi', EV0, ['fire-fang', 'metal-claw', 'dragon-breath', 'uproar'], { lvl: 24 }),   // Reptincel
-  P(323, 'sitrus-berry', 'solid-rock', 'Rigide', EV0, ['flamethrower', 'earthquake', 'rock-slide', 'amnesia'], { lvl: 25 }),   // Camérupt
+  P(323, 'sitrus-berry', 'solid-rock', 'Rigide', EV(252, 128, 0, 128, 0, 0), ['flamethrower', 'earthquake', 'rock-slide', 'amnesia'], { lvl: 25 }),   // Camérupt
 ];
 const POISON = [
   P(24, null, 'intimidate', 'Rigide', EV0, ['poison-sting', 'bite', 'mud-slap', 'mean-look'], { lvl: 22 }),   // Arbok
@@ -44,7 +44,7 @@ const POISON = [
   P(33, null, 'poison-point', 'Rigide', EV0, ['double-kick', 'poison-sting', 'fury-attack', 'double-hit'], { lvl: 22 }),   // Nidorino
   P(110, null, 'levitate', 'Modeste', EV0, ['poison-gas', 'smog', 'venoshock', 'haze'], { lvl: 23 }),   // Smogogo
   P(42, null, 'inner-focus', 'Rigide', EV0, ['poison-fang', 'wing-attack', 'bite', 'uproar'], { lvl: 24 }),   // Nosferalto
-  P(3, 'sitrus-berry', 'overgrow', 'Modeste', EV0, ['giga-drain', 'sludge-bomb', 'synthesis', 'leech-seed'], { lvl: 25 }),   // Florizarre
+  P(3, 'sitrus-berry', 'overgrow', 'Modeste', EV(252, 0, 0, 252, 4, 0), ['giga-drain', 'sludge-bomb', 'synthesis', 'leech-seed'], { lvl: 25 }),   // Florizarre
 ];
 const PLANTE = [
   P(71, null, 'chlorophyll', 'Hardi', EV0, ['razor-leaf', 'acid', 'sleep-powder', 'growth'], { lvl: 27 }),   // Empiflor
@@ -52,47 +52,47 @@ const PLANTE = [
   P(188, null, 'infiltrator', 'Hardi', EV0, ['mega-drain', 'stun-spore', 'synthesis', 'acrobatics'], { lvl: 28 }),   // Floravol
   P(286, null, 'poison-heal', 'Rigide', EV0, ['mach-punch', 'bullet-seed', 'spore', 'mud-slap'], { lvl: 29 }),   // Chapignon
   P(407, 'miracle-seed', 'natural-cure', 'Modeste', EV0, ['giga-drain', 'sludge-bomb', 'aromatherapy', 'synthesis'], { lvl: 29 }),   // Roserade
-  P(497, 'sitrus-berry', 'contrary', 'Modeste', EV0, ['leaf-storm', 'grass-knot', 'slam', 'mean-look'], { lvl: 30 }),   // Majaspic
+  P(497, 'sitrus-berry', 'contrary', 'Modeste', EV(4, 0, 0, 252, 0, 252), ['leaf-storm', 'grass-knot', 'slam', 'mean-look'], { lvl: 30 }),   // Majaspic
 ];
 const ROCHE = [
-  P(76, null, 'sturdy', 'Rigide', EV0, ['rock-slide', 'mud-slap', 'self-destruct', 'sucker-punch'], { lvl: 32 }),   // Grolem
-  P(526, 'hard-stone', 'sturdy', 'Rigide', EV0, ['rock-slide', 'stone-edge', 'power-gem', 'knock-off'], { lvl: 33 }),   // Gigalithe
-  P(698, null, 'refrigerate', 'Modeste', EV0, ['ice-beam', 'power-gem', 'thunder-wave', 'light-screen'], { lvl: 33 }),   // Amagara
-  P(142, 'focus-sash', 'pressure', 'Rigide', EV0, ['rock-slide', 'wing-attack', 'fire-fang', 'earthquake'], { lvl: 34 }),   // Ptéra
-  P(112, 'eviolite', 'lightning-rod', 'Rigide', EV0, ['earthquake', 'rock-slide', 'megahorn', 'hammer-arm'], { lvl: 34 }),   // Rhinoféros
-  P(464, 'leftovers', 'solid-rock', 'Rigide', EV0, ['earthquake', 'rock-slide', 'megahorn', 'hammer-arm'], { lvl: 35 }),   // Rhinastoc
+  P(76, null, 'sturdy', 'Rigide', EV(252, 252, 4, 0, 0, 0), ['rock-slide', 'mud-slap', 'self-destruct', 'sucker-punch'], { lvl: 32 }),   // Grolem
+  P(526, 'hard-stone', 'sturdy', 'Rigide', EV(252, 252, 0, 0, 4, 0), ['rock-slide', 'stone-edge', 'power-gem', 'knock-off'], { lvl: 33 }),   // Gigalithe
+  P(698, null, 'refrigerate', 'Modeste', EV(252, 0, 0, 252, 4, 0), ['ice-beam', 'power-gem', 'thunder-wave', 'light-screen'], { lvl: 33 }),   // Amagara
+  P(142, 'focus-sash', 'pressure', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['rock-slide', 'wing-attack', 'fire-fang', 'earthquake'], { lvl: 34 }),   // Ptéra
+  P(112, 'eviolite', 'lightning-rod', 'Rigide', EV(252, 252, 4, 0, 0, 0), ['earthquake', 'rock-slide', 'megahorn', 'hammer-arm'], { lvl: 34 }),   // Rhinoféros
+  P(464, 'leftovers', 'solid-rock', 'Rigide', EV(252, 252, 0, 0, 4, 0), ['earthquake', 'rock-slide', 'megahorn', 'hammer-arm'], { lvl: 35 }),   // Rhinastoc
 ];
 const NORMAL = [
-  P(424, 'silk-scarf', 'technician', 'Rigide', EV0, ['fake-out', 'dual-chop', 'pursuit', 'u-turn'], { lvl: 37 }),   // Capidextre
-  P(241, 'lum-berry', 'scrappy', 'Rigide', EV0, ['body-slam', 'milk-drink', 'gyro-ball', 'rollout'], { lvl: 38 }),   // Écrémeuh
-  P(233, 'eviolite', 'trace', 'Modeste', EV0, ['tri-attack', 'ice-beam', 'thunderbolt', 'recover'], { lvl: 38 }),   // Porygon2
-  P(398, 'life-orb', 'intimidate', 'Rigide', EV0, ['brave-bird', 'return', 'close-combat', 'u-turn'], { lvl: 39 }),   // Étouraptor
-  P(143, 'leftovers', 'thick-fat', 'Rigide', EV0, ['body-slam', 'earthquake', 'crunch', 'rest'], { lvl: 39 }),   // Ronflex
-  P(474, 'life-orb', 'adaptability', 'Modeste', EV0, ['tri-attack', 'shadow-ball', 'ice-beam', 'nasty-plot'], { lvl: 40 }),   // Porygon-Z
+  P(424, 'silk-scarf', 'technician', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['fake-out', 'dual-chop', 'pursuit', 'u-turn'], { lvl: 37 }),   // Capidextre
+  P(241, 'lum-berry', 'scrappy', 'Rigide', EV(252, 4, 252, 0, 0, 0), ['body-slam', 'milk-drink', 'gyro-ball', 'rollout'], { lvl: 38 }),   // Écrémeuh
+  P(233, 'eviolite', 'trace', 'Modeste', EV(252, 0, 0, 252, 4, 0), ['tri-attack', 'ice-beam', 'thunderbolt', 'recover'], { lvl: 38 }),   // Porygon2
+  P(398, 'life-orb', 'intimidate', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['brave-bird', 'return', 'close-combat', 'u-turn'], { lvl: 39 }),   // Étouraptor
+  P(143, 'leftovers', 'thick-fat', 'Rigide', EV(252, 252, 0, 0, 4, 0), ['body-slam', 'earthquake', 'crunch', 'rest'], { lvl: 39 }),   // Ronflex
+  P(474, 'life-orb', 'adaptability', 'Modeste', EV(4, 0, 0, 252, 0, 252), ['tri-attack', 'shadow-ball', 'ice-beam', 'nasty-plot'], { lvl: 40 }),   // Porygon-Z
 ];
 const ELECTRIK = [
-  P(135, 'magnet', 'volt-absorb', 'Modeste', EV0, ['thunderbolt', 'shadow-ball', 'baton-pass', 'agility'], { lvl: 37 }),   // Voltali
-  P(405, null, 'guts', 'Rigide', EV0, ['spark', 'crunch', 'superpower', 'volt-switch'], { lvl: 38 }),   // Luxray
-  P(309, null, 'lightning-rod', 'Rigide', EV0, ['spark', 'bite', 'thunder-wave', 'volt-switch'], { lvl: 38 }),   // Dynavolt
-  P(466, 'life-orb', 'motor-drive', 'Rigide', EV0, ['thunder-punch', 'ice-punch', 'low-kick', 'cross-chop'], { lvl: 39 }),   // Élekable
-  P(596, 'focus-sash', 'compound-eyes', 'Modeste', EV0, ['bug-buzz', 'thunder', 'sticky-web', 'energy-ball'], { lvl: 39 }),   // Mygavolt
-  P(82, 'eviolite', 'magnet-pull', 'Modeste', EV0, ['thunderbolt', 'flash-cannon', 'tri-attack', 'thunder-wave'], { lvl: 40 }),   // Magnéton
+  P(135, 'magnet', 'volt-absorb', 'Modeste', EV(4, 0, 0, 252, 0, 252), ['thunderbolt', 'shadow-ball', 'baton-pass', 'agility'], { lvl: 37 }),   // Voltali
+  P(405, null, 'intimidate', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['spark', 'crunch', 'superpower', 'volt-switch'], { lvl: 38 }),   // Luxray
+  P(309, null, 'lightning-rod', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['spark', 'bite', 'thunder-wave', 'volt-switch'], { lvl: 38 }),   // Dynavolt
+  P(466, 'life-orb', 'motor-drive', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['thunder-punch', 'ice-punch', 'low-kick', 'cross-chop'], { lvl: 39 }),   // Élekable
+  P(596, 'focus-sash', 'compound-eyes', 'Modeste', EV(4, 0, 0, 252, 0, 252), ['bug-buzz', 'thunder', 'sticky-web', 'energy-ball'], { lvl: 39 }),   // Mygavolt
+  P(82, 'eviolite', 'magnet-pull', 'Modeste', EV(252, 0, 0, 252, 4, 0), ['thunderbolt', 'flash-cannon', 'tri-attack', 'thunder-wave'], { lvl: 40 }),   // Magnéton
 ];
 const GLACE = [
-  P(478, 'focus-sash', 'cursed-body', 'Modeste', EV0, ['ice-beam', 'shadow-ball', 'spikes', 'thunder-wave'], { lvl: 42 }),   // Momartik
-  P(131, 'leftovers', 'water-absorb', 'Modeste', EV0, ['ice-beam', 'surf', 'thunderbolt', 'heal-bell'], { lvl: 43 }),   // Lokhlass
-  P(615, 'scope-lens', 'levitate', 'Modeste', EV0, ['ice-beam', 'rapid-spin', 'power-gem', 'haze'], { lvl: 43 }),   // Hexagel
-  P(473, 'choice-scarf', 'thick-fat', 'Rigide', EV0, ['icicle-crash', 'earthquake', 'ice-shard', 'superpower'], { lvl: 44 }),   // Mammochon
-  P(461, 'life-orb', 'pressure', 'Rigide', EV0, ['ice-shard', 'icicle-crash', 'knock-off', 'low-kick'], { lvl: 44 }),   // Dimoret
-  P(460, 'life-orb', 'snow-warning', 'Hardi', EV0, ['blizzard', 'energy-ball', 'ice-shard', 'earthquake'], { lvl: 45 }),   // Blizzaroi
+  P(478, 'focus-sash', 'cursed-body', 'Modeste', EV(4, 0, 0, 252, 0, 252), ['ice-beam', 'shadow-ball', 'spikes', 'thunder-wave'], { lvl: 42 }),   // Momartik
+  P(131, 'leftovers', 'water-absorb', 'Modeste', EV(252, 0, 4, 252, 0, 0), ['ice-beam', 'surf', 'thunderbolt', 'heal-bell'], { lvl: 43 }),   // Lokhlass
+  P(615, 'scope-lens', 'levitate', 'Modeste', EV(4, 0, 0, 252, 0, 252), ['ice-beam', 'rapid-spin', 'power-gem', 'haze'], { lvl: 43 }),   // Hexagel
+  P(473, 'choice-scarf', 'thick-fat', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['icicle-crash', 'earthquake', 'ice-shard', 'superpower'], { lvl: 44 }),   // Mammochon
+  P(461, 'life-orb', 'pressure', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['ice-shard', 'icicle-crash', 'knock-off', 'low-kick'], { lvl: 44 }),   // Dimoret
+  P(460, 'life-orb', 'snow-warning', 'Hardi', EV(252, 128, 0, 128, 0, 0), ['blizzard', 'energy-ball', 'ice-shard', 'earthquake'], { lvl: 45 }),   // Blizzaroi
 ];
 const PSY = [
-  P(196, 'light-clay', 'magic-bounce', 'Modeste', EV0, ['psychic', 'shadow-ball', 'light-screen', 'reflect'], { lvl: 47 }),   // Mentali
-  P(437, 'leftovers', 'levitate', 'Relax', EV0, ['gyro-ball', 'psychic', 'stealth-rock', 'trick-room'], { lvl: 48 }),   // Archéodong
-  P(579, 'life-orb', 'magic-guard', 'Modeste', EV0, ['psyshock', 'shadow-ball', 'focus-blast', 'recover'], { lvl: 48 }),   // Symbios
-  P(475, 'assault-vest', 'steadfast', 'Rigide', EV0, ['psycho-cut', 'close-combat', 'knock-off', 'stone-edge'], { lvl: 49 }),   // Gallame
-  P(282, 'choice-specs', 'trace', 'Modeste', EV0, ['moonblast', 'psychic', 'thunderbolt', 'energy-ball'], { lvl: 49 }),   // Gardevoir
-  P(65, 'life-orb', 'magic-guard', 'Modeste', EV0, ['psychic', 'shadow-ball', 'energy-ball', 'focus-blast'], { lvl: 50 }),   // Alakazam
+  P(196, 'light-clay', 'magic-bounce', 'Modeste', EV(252, 0, 128, 0, 128, 0), ['psychic', 'shadow-ball', 'light-screen', 'reflect'], { lvl: 47 }),   // Mentali
+  P(437, 'leftovers', 'levitate', 'Relax', EV(252, 0, 128, 0, 128, 0), ['gyro-ball', 'psychic', 'stealth-rock', 'trick-room'], { lvl: 48 }),   // Archéodong
+  P(579, 'life-orb', 'magic-guard', 'Modeste', EV(252, 0, 0, 252, 4, 0), ['psyshock', 'shadow-ball', 'focus-blast', 'recover'], { lvl: 48 }),   // Symbios
+  P(475, 'assault-vest', 'steadfast', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['psycho-cut', 'close-combat', 'knock-off', 'stone-edge'], { lvl: 49 }),   // Gallame
+  P(282, 'choice-specs', 'trace', 'Modeste', EV(4, 0, 0, 252, 0, 252), ['moonblast', 'psychic', 'thunderbolt', 'energy-ball'], { lvl: 49 }),   // Gardevoir
+  P(65, 'life-orb', 'magic-guard', 'Modeste', EV(4, 0, 0, 252, 0, 252), ['psychic', 'shadow-ball', 'energy-ball', 'focus-blast'], { lvl: 50 }),   // Alakazam
 ];
 
 /** un Pokémon de champion, prêt au combat (niveau 100, ou s.lvl) */
