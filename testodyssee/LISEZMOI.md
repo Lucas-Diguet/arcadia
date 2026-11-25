@@ -669,14 +669,17 @@ Demi-Tour, elle envoie le meilleur Pokémon contre celui d'en face. Cyclone et H
 ### La Place des Champions
 
 `js/donjons/champions.js`, équipes dans `js/champions.js`. Les 23 champions alignés dans l'ordre : les 18 champions
-d'arène (Insecte, Poison, Normal, Plante, Roche, Glace, Électrik, Psy, Combat, Ténèbres, Vol, Spectre, Feu, Sol, Fée,
-Acier, Dragon, Eau), le Conseil 4 et le Maître. On parle à un champion pour l'affronter : tout le monde au niveau 100,
+d'arène (Insecte, Feu, Poison, Plante, Roche, Normal, Électrik, Glace, Psy, Combat, Ténèbres, Vol, Spectre, Sol, Fée,
+Acier, Dragon, Eau), le Conseil 4 et le Maître. On parle à un champion pour l'affronter. Chaque arène a son niveau
+maximum (`NIVEAU_MAX` : 20, 25, 25, 30, 35, 40, 40, 45, 50, 55, 60, 65, 70, 75, 80, 90, 95, 100) : l'as du champion,
+toujours le dernier de son équipe, est à ce niveau, les autres un à trois niveaux en dessous (`auNiveau` ; les neuf
+premières équipes, données par l'auteur, ont leurs niveaux écrits et pas d'EV). Conseil 4 et Maître au niveau 100.
 IV à 31, soin complet sans message après le combat (objets tenus compris). Un champion sans équipe (`equipe: null`)
 dit que son équipe n'est pas prête. L'organisatrice prête l'équipe « fin de jeu » au niveau 100 (`fin100` de
 `equipes.js`) ou celle d'un champion. Une équipe : `P(espèce, objet, talent, nature, EV, attaques, { pc, shiny, iv })`
 (`iv` quand ils ne sont pas tous à 31). Le Conseil 4 a ses équipes : Soleil (Frimas), Relais (Brutus), Distorsion (Spectrel)
 et Double (Ombrelle, pensée pour un combat double mais jouée en simple tant que le moteur ne sait pas faire les doubles).
-Règles ajoutées pour elles dans `combat/regles.js` : Relais, Anneau Hydro, Distorsion, Danse Lune, Gravité, Force Ajoutée
+Règles ajoutées pour elles dans `combat/regles.js` : Picots, Toile Gluante, Regard Noir, Flair, Appel Soins, Glas de Soin, Piqûre, Brouhaha (sans les trois tours), Relais, Anneau Hydro, Distorsion, Danse Lune, Gravité, Force Ajoutée
 selon les crans, Bluff au premier tour seulement, Poing de Boxe, Rosée Âme, Roche Chaude, Herbe Mental, Ball'Météo, Orbe Flamme, Lance-Soleil sans charge au soleil.
 Démétéros Forme Totémique : forme du labo n° 10021 (`DEMETEROS_T` de `champions.js`, invisible des listes comme les Méga ;
 images et cri copiés de PokeAPI). L'IA d'une équipe Relais se renforce d'abord et ne passe que ce qu'elle a gagné elle-même.

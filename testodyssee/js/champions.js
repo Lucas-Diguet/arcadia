@@ -1,5 +1,7 @@
-// testodyssee/js/champions.js — les 23 champions de fin de jeu, dans l'ordre des arènes (18 types), puis le Conseil 4
-// et le Maître de la Ligue. Tous au niveau 100, IV à 31. Ceux qui n'ont pas encore d'équipe ne se combattent pas.
+// testodyssee/js/champions.js — les 23 champions, dans l'ordre des arènes (18 types), puis le Conseil 4 et le Maître de la
+// Ligue. Chaque arène a son niveau maximum (NIVEAU_MAX) : le meilleur Pokémon du champion (son as, toujours le dernier)
+// est à ce niveau, les autres un à trois niveaux en dessous. Conseil 4 et Maître au niveau 100. IV à 31.
+// Ceux qui n'ont pas encore d'équipe ne se combattent pas.
 // Une équipe : [espèce, objet, talent, nature, PV/Atq/Déf/AtqSpé/DéfSpé/Vit (EV), attaques, options { pc, shiny }].
 // pc : Puissance Cachée fixée, sans tenir compte des IV ({ t: type, p: puissance }) ; role : 'climat' (pose la météo,
 // l'IA le garde en vie et le renvoie quand la météo s'arrête) ; iv : les IV s'ils ne sont pas tous à 31 (PV/Atq/Déf/AtqSpé/DéfSpé/Vit).
@@ -13,6 +15,85 @@ const attaque = (key) => { const m = Object.values(MOVES).find((q) => q.key === 
 const SANS_ATQ0 = [31, 0, 31, 31, 31, 31];
 const P = (sp, item, ability, nat, ev, moves, o = {}) => ({ sp, item, ability, nat, ev, moves, ...o });
 const EV = (hp = 0, atk = 0, def = 0, spa = 0, spd = 0, spe = 0) => [hp, atk, def, spa, spd, spe];
+const EV0 = EV();
+/** niveau maximum de chaque arène (1 à 18) */
+export const NIVEAU_MAX = [20, 25, 25, 30, 35, 40, 40, 45, 50, 55, 60, 65, 70, 75, 80, 90, 95, 100];
+/** les six Pokémon d'un champion au niveau de son arène : l'as (le dernier) au niveau maximum */
+const auNiveau = (equipe, arene) => { const n = NIVEAU_MAX[arene - 1]; return equipe.map((p, k) => ({ ...p, lvl: n - [3, 2, 2, 1, 1, 0][k] })); };
+
+// les neuf premières arènes : équipes données par l'auteur, niveaux compris, sans EV
+const INSECTE = [
+  P(10, null, 'shield-dust', 'Rigide', EV0, ['tackle', 'string-shot', 'harden'], { lvl: 16 }),   // Chenipan
+  P(13, null, 'shield-dust', 'Rigide', EV0, ['poison-sting', 'string-shot', 'bug-bite'], { lvl: 16 }),   // Aspicot
+  P(664, null, 'shield-dust', 'Modeste', EV0, ['stun-spore', 'sleep-powder', 'struggle-bug'], { lvl: 18 }),   // Lépidonille
+  P(14, null, 'shed-skin', 'Rigide', EV0, ['harden', 'poison-sting'], { lvl: 18 }),   // Coconfort
+  P(540, null, 'swarm', 'Rigide', EV0, ['tackle', 'string-shot', 'razor-leaf'], { lvl: 19 }),   // Larveyette
+  P(416, 'sitrus-berry', 'pressure', 'Rigide', EV0, ['heal-order', 'defend-order', 'bug-bite', 'sucker-punch'], { lvl: 23 }),   // Apireine
+];
+const FEU = [
+  P(58, null, 'intimidate', 'Rigide', EV0, ['fire-fang', 'odor-sleuth', 'bite', 'uproar'], { lvl: 22 }),   // Caninos
+  P(37, null, 'flash-fire', 'Hardi', EV0, ['will-o-wisp', 'ember', 'iron-tail', 'screech'], { lvl: 22 }),   // Goupix
+  P(218, null, 'flame-body', 'Rigide', EV0, ['rock-slide', 'flame-charge', 'flamethrower', 'amnesia'], { lvl: 23 }),   // Limagma
+  P(662, null, 'flame-body', 'Rigide', EV0, ['flame-charge', 'peck', 'ember', 'growl'], { lvl: 24 }),   // Braisillon
+  P(5, null, 'blaze', 'Hardi', EV0, ['fire-fang', 'metal-claw', 'dragon-breath', 'uproar'], { lvl: 24 }),   // Reptincel
+  P(323, 'sitrus-berry', 'solid-rock', 'Rigide', EV0, ['flamethrower', 'earthquake', 'rock-slide', 'amnesia'], { lvl: 25 }),   // Camérupt
+];
+const POISON = [
+  P(24, null, 'intimidate', 'Rigide', EV0, ['poison-sting', 'bite', 'mud-slap', 'mean-look'], { lvl: 22 }),   // Arbok
+  P(30, null, 'poison-point', 'Rigide', EV0, ['double-kick', 'poison-sting', 'bite', 'double-hit'], { lvl: 22 }),   // Nidorina
+  P(33, null, 'poison-point', 'Rigide', EV0, ['double-kick', 'poison-sting', 'fury-attack', 'double-hit'], { lvl: 22 }),   // Nidorino
+  P(110, null, 'levitate', 'Modeste', EV0, ['poison-gas', 'smog', 'venoshock', 'haze'], { lvl: 23 }),   // Smogogo
+  P(42, null, 'inner-focus', 'Rigide', EV0, ['poison-fang', 'wing-attack', 'bite', 'uproar'], { lvl: 24 }),   // Nosferalto
+  P(3, 'sitrus-berry', 'overgrow', 'Modeste', EV0, ['giga-drain', 'sludge-bomb', 'synthesis', 'leech-seed'], { lvl: 25 }),   // Florizarre
+];
+const PLANTE = [
+  P(71, null, 'chlorophyll', 'Hardi', EV0, ['razor-leaf', 'acid', 'sleep-powder', 'growth'], { lvl: 27 }),   // Empiflor
+  P(2, null, 'overgrow', 'Rigide', EV0, ['razor-leaf', 'sleep-powder', 'leech-seed', 'take-down'], { lvl: 28 }),   // Herbizarre
+  P(188, null, 'infiltrator', 'Hardi', EV0, ['mega-drain', 'stun-spore', 'synthesis', 'acrobatics'], { lvl: 28 }),   // Floravol
+  P(286, null, 'poison-heal', 'Rigide', EV0, ['mach-punch', 'bullet-seed', 'spore', 'mud-slap'], { lvl: 29 }),   // Chapignon
+  P(407, 'miracle-seed', 'natural-cure', 'Modeste', EV0, ['giga-drain', 'sludge-bomb', 'aromatherapy', 'synthesis'], { lvl: 29 }),   // Roserade
+  P(497, 'sitrus-berry', 'contrary', 'Modeste', EV0, ['leaf-storm', 'grass-knot', 'slam', 'mean-look'], { lvl: 30 }),   // Majaspic
+];
+const ROCHE = [
+  P(76, null, 'sturdy', 'Rigide', EV0, ['rock-slide', 'mud-slap', 'self-destruct', 'sucker-punch'], { lvl: 32 }),   // Grolem
+  P(526, 'hard-stone', 'sturdy', 'Rigide', EV0, ['rock-slide', 'stone-edge', 'power-gem', 'knock-off'], { lvl: 33 }),   // Gigalithe
+  P(698, null, 'refrigerate', 'Modeste', EV0, ['ice-beam', 'power-gem', 'thunder-wave', 'light-screen'], { lvl: 33 }),   // Amagara
+  P(142, 'focus-sash', 'pressure', 'Rigide', EV0, ['rock-slide', 'wing-attack', 'fire-fang', 'earthquake'], { lvl: 34 }),   // Ptéra
+  P(112, 'eviolite', 'lightning-rod', 'Rigide', EV0, ['earthquake', 'rock-slide', 'megahorn', 'hammer-arm'], { lvl: 34 }),   // Rhinoféros
+  P(464, 'leftovers', 'solid-rock', 'Rigide', EV0, ['earthquake', 'rock-slide', 'megahorn', 'hammer-arm'], { lvl: 35 }),   // Rhinastoc
+];
+const NORMAL = [
+  P(424, 'silk-scarf', 'technician', 'Rigide', EV0, ['fake-out', 'dual-chop', 'pursuit', 'u-turn'], { lvl: 37 }),   // Capidextre
+  P(241, 'lum-berry', 'scrappy', 'Rigide', EV0, ['body-slam', 'milk-drink', 'gyro-ball', 'rollout'], { lvl: 38 }),   // Écrémeuh
+  P(233, 'eviolite', 'trace', 'Modeste', EV0, ['tri-attack', 'ice-beam', 'thunderbolt', 'recover'], { lvl: 38 }),   // Porygon2
+  P(398, 'life-orb', 'intimidate', 'Rigide', EV0, ['brave-bird', 'return', 'close-combat', 'u-turn'], { lvl: 39 }),   // Étouraptor
+  P(143, 'leftovers', 'thick-fat', 'Rigide', EV0, ['body-slam', 'earthquake', 'crunch', 'rest'], { lvl: 39 }),   // Ronflex
+  P(474, 'life-orb', 'adaptability', 'Modeste', EV0, ['tri-attack', 'shadow-ball', 'ice-beam', 'nasty-plot'], { lvl: 40 }),   // Porygon-Z
+];
+const ELECTRIK = [
+  P(135, 'magnet', 'volt-absorb', 'Modeste', EV0, ['thunderbolt', 'shadow-ball', 'baton-pass', 'agility'], { lvl: 37 }),   // Voltali
+  P(405, null, 'guts', 'Rigide', EV0, ['spark', 'crunch', 'superpower', 'volt-switch'], { lvl: 38 }),   // Luxray
+  P(309, null, 'lightning-rod', 'Rigide', EV0, ['spark', 'bite', 'thunder-wave', 'volt-switch'], { lvl: 38 }),   // Dynavolt
+  P(466, 'life-orb', 'motor-drive', 'Rigide', EV0, ['thunder-punch', 'ice-punch', 'low-kick', 'cross-chop'], { lvl: 39 }),   // Élekable
+  P(596, 'focus-sash', 'compound-eyes', 'Modeste', EV0, ['bug-buzz', 'thunder', 'sticky-web', 'energy-ball'], { lvl: 39 }),   // Mygavolt
+  P(82, 'eviolite', 'magnet-pull', 'Modeste', EV0, ['thunderbolt', 'flash-cannon', 'tri-attack', 'thunder-wave'], { lvl: 40 }),   // Magnéton
+];
+const GLACE = [
+  P(478, 'focus-sash', 'cursed-body', 'Modeste', EV0, ['ice-beam', 'shadow-ball', 'spikes', 'thunder-wave'], { lvl: 42 }),   // Momartik
+  P(131, 'leftovers', 'water-absorb', 'Modeste', EV0, ['ice-beam', 'surf', 'thunderbolt', 'heal-bell'], { lvl: 43 }),   // Lokhlass
+  P(615, 'scope-lens', 'levitate', 'Modeste', EV0, ['ice-beam', 'rapid-spin', 'power-gem', 'haze'], { lvl: 43 }),   // Hexagel
+  P(473, 'choice-scarf', 'thick-fat', 'Rigide', EV0, ['icicle-crash', 'earthquake', 'ice-shard', 'superpower'], { lvl: 44 }),   // Mammochon
+  P(461, 'life-orb', 'pressure', 'Rigide', EV0, ['ice-shard', 'icicle-crash', 'knock-off', 'low-kick'], { lvl: 44 }),   // Dimoret
+  P(460, 'life-orb', 'snow-warning', 'Hardi', EV0, ['blizzard', 'energy-ball', 'ice-shard', 'earthquake'], { lvl: 45 }),   // Blizzaroi
+];
+const PSY = [
+  P(196, 'light-clay', 'magic-bounce', 'Modeste', EV0, ['psychic', 'shadow-ball', 'light-screen', 'reflect'], { lvl: 47 }),   // Mentali
+  P(437, 'leftovers', 'levitate', 'Relax', EV0, ['gyro-ball', 'psychic', 'stealth-rock', 'trick-room'], { lvl: 48 }),   // Archéodong
+  P(579, 'life-orb', 'magic-guard', 'Modeste', EV0, ['psyshock', 'shadow-ball', 'focus-blast', 'recover'], { lvl: 48 }),   // Symbios
+  P(475, 'assault-vest', 'steadfast', 'Rigide', EV0, ['psycho-cut', 'close-combat', 'knock-off', 'stone-edge'], { lvl: 49 }),   // Gallame
+  P(282, 'choice-specs', 'trace', 'Modeste', EV0, ['moonblast', 'psychic', 'thunderbolt', 'energy-ball'], { lvl: 49 }),   // Gardevoir
+  P(65, 'life-orb', 'magic-guard', 'Modeste', EV0, ['psychic', 'shadow-ball', 'energy-ball', 'focus-blast'], { lvl: 50 }),   // Alakazam
+];
 
 /** un Pokémon de champion, prêt au combat (niveau 100, ou s.lvl) */
 export function monChampion(s, ot = '') {
@@ -45,8 +126,8 @@ const VOL = [
   P(227, 'leftovers', 'sturdy', 'Malin', EV(252, 0, 252, 0, 4, 0), ['drill-peck', 'roost', 'toxic', 'whirlwind']),
   P(472, 'toxic-orb', 'poison-heal', 'Malin', EV(252, 0, 184, 0, 0, 72), ['earthquake', 'toxic', 'protect', 'ice-fang']),
   P(398, 'choice-band', 'intimidate', 'Jovial', EV(0, 252, 4, 0, 0, 252), ['brave-bird', 'close-combat', 'double-edge', 'quick-attack']),
-  P(468, 'leftovers', 'serene-grace', 'Timide', EV(0, 0, 4, 252, 0, 252), ['air-slash', 'aura-sphere', 'thunder-wave', 'nasty-plot']),
   P(169, 'life-orb', 'infiltrator', 'Jovial', EV(0, 252, 4, 0, 0, 252), ['brave-bird', 'cross-poison', 'x-scissor', 'u-turn']),
+  P(468, 'leftovers', 'serene-grace', 'Timide', EV(0, 0, 4, 252, 0, 252), ['air-slash', 'aura-sphere', 'thunder-wave', 'nasty-plot']),
 ];
 const SPECTRE = [
   P(94, 'life-orb', 'levitate', 'Timide', EV(0, 0, 0, 252, 4, 252), ['shadow-ball', 'sludge-bomb', 'focus-blast', 'thunderbolt']),
@@ -66,35 +147,35 @@ const SOL = [
 ];
 const FEE = [
   P(36, 'leftovers', 'magic-guard', 'Calme', EV(252, 0, 0, 4, 252, 0), ['wish', 'protect', 'aromatherapy', 'moonblast']),
-  P(303, 'mawilite', 'huge-power', 'Rigide', EV(248, 252, 0, 0, 8, 0), ['swords-dance', 'sucker-punch', 'play-rough', 'iron-head']),
   P(184, 'choice-band', 'huge-power', 'Rigide', EV(252, 252, 0, 0, 4, 0), ['aqua-jet', 'play-rough', 'waterfall', 'superpower']),
   P(468, 'leftovers', 'serene-grace', 'Modeste', EV(252, 0, 0, 252, 4, 0), ['thunder-wave', 'air-slash', 'flamethrower', 'roost']),
   P(707, 'light-clay', 'prankster', 'Assuré', EV(252, 0, 252, 4, 0, 0), ['thunder-wave', 'protect', 'light-screen', 'dazzling-gleam']),
   P(700, 'choice-specs', 'pixilate', 'Modeste', EV(252, 0, 0, 252, 4, 0), ['hyper-voice', 'shadow-ball', 'psyshock', 'hidden-power'], { pc: { t: 'fire', p: 60 } }),
+  P(303, 'mawilite', 'huge-power', 'Rigide', EV(248, 252, 0, 0, 8, 0), ['swords-dance', 'sucker-punch', 'play-rough', 'iron-head']),
 ];
 const ACIER = [
   P(598, 'leftovers', 'iron-barbs', 'Relax', EV(252, 4, 252, 0, 0, 0), ['leech-seed', 'protect', 'gyro-ball', 'power-whip']),
-  P(376, 'metagrossite', 'clear-body', 'Jovial', EV(4, 252, 0, 0, 0, 252), ['bullet-punch', 'earthquake', 'zen-headbutt', 'meteor-mash']),
   P(227, 'rocky-helmet', 'sturdy', 'Malin', EV(252, 0, 232, 0, 0, 24), ['brave-bird', 'stealth-rock', 'roost', 'tailwind']),
   P(681, 'weakness-policy', 'stance-change', 'Rigide', EV(252, 252, 0, 0, 4, 0), ['kings-shield', 'swords-dance', 'sacred-sword', 'shadow-sneak']),
   P(212, 'choice-band', 'technician', 'Rigide', EV(248, 252, 0, 0, 8, 0), ['bullet-punch', 'u-turn', 'iron-head', 'knock-off']),
   P(462, 'choice-scarf', 'sturdy', 'Modeste', EV(248, 0, 0, 252, 8, 0), ['thunderbolt', 'flash-cannon', 'hidden-power', 'volt-switch'], { pc: { t: 'ice', p: 60 } }),
+  P(376, 'metagrossite', 'clear-body', 'Jovial', EV(4, 252, 0, 0, 0, 252), ['bullet-punch', 'earthquake', 'zen-headbutt', 'meteor-mash']),
 ];
 const DRAGON = [
-  P(6, 'charizardite-x', 'blaze', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['dragon-dance', 'flare-blitz', 'outrage', 'earthquake']),
   P(149, 'leftovers', 'multiscale', 'Rigide', EV(0, 252, 0, 0, 4, 252), ['dragon-dance', 'outrage', 'extreme-speed', 'roost']),
   P(373, 'choice-scarf', 'moxie', 'Naïf', EV(0, 252, 0, 4, 0, 252), ['outrage', 'earthquake', 'iron-tail', 'fire-blast']),
   P(635, 'leftovers', 'levitate', 'Timide', EV(0, 0, 0, 252, 4, 252), ['roost', 'nasty-plot', 'dark-pulse', 'earth-power']),
   P(715, 'choice-specs', 'infiltrator', 'Timide', EV(0, 0, 0, 252, 4, 252), ['u-turn', 'draco-meteor', 'boomburst', 'flamethrower']),
   P(706, 'assault-vest', 'gooey', 'Modeste', EV(248, 0, 0, 252, 8, 0), ['draco-meteor', 'sludge-wave', 'thunderbolt', 'flamethrower']),
+  P(6, 'charizardite-x', 'blaze', 'Rigide', EV(4, 252, 0, 0, 0, 252), ['dragon-dance', 'flare-blitz', 'outrage', 'earthquake']),
 ];
 const EAU = [
   P(279, 'damp-rock', 'drizzle', 'Assuré', EV(252, 0, 0, 0, 252, 0), ['u-turn', 'scald', 'roost', 'hydro-pump'], { role: 'climat' }),
-  P(260, 'swampertite', 'torrent', 'Jovial', EV(0, 252, 0, 0, 0, 252), ['waterfall', 'earthquake', 'ice-punch', 'superpower']),
   P(230, 'choice-specs', 'swift-swim', 'Modeste', EV(0, 0, 0, 252, 0, 252), ['hydro-pump', 'surf', 'draco-meteor', 'ice-beam']),
   P(658, 'expert-belt', 'protean', 'Pressé', EV(0, 0, 0, 252, 0, 252), ['ice-beam', 'hydro-pump', 'u-turn', 'gunk-shot']),
   P(594, 'leftovers', 'regenerator', 'Assuré', EV(40, 0, 216, 0, 252, 0), ['scald', 'toxic', 'wish', 'protect']),
   P(184, 'choice-band', 'huge-power', 'Rigide', EV(0, 252, 0, 0, 0, 252), ['waterfall', 'play-rough', 'aqua-jet', 'superpower']),
+  P(260, 'swampertite', 'torrent', 'Jovial', EV(0, 252, 0, 0, 0, 252), ['waterfall', 'earthquake', 'ice-punch', 'superpower']),
 ];
 
 // Démétéros Forme Totémique : une forme du labo, invisible des listes, comme les Méga
@@ -154,24 +235,24 @@ const DOUBLE = [
 // titre, nom, image (personnage d'Odyssée), type, équipe (null : pas encore prête)
 const C = (rang, cls, nom, sprite, type, equipe = null) => ({ rang, cls, nom, sprite, type, equipe });
 export const CHAMPIONS = [
-  C(1, 'Champion', 'Hector', 'hector', 'Insecte'),
-  C(2, 'Championne', 'Morgane', 'morgane', 'Poison'),
-  C(3, 'Championne', 'Margot', 'margot', 'Normal'),
-  C(4, 'Championne', 'Flora', 'flora', 'Plante'),
-  C(5, 'Champion', 'Basalte', 'basalte', 'Roche'),
-  C(6, 'Champion', 'à nommer', 'randonneuse', 'Glace'),
-  C(7, 'Championne', 'Volta', 'volta', 'Électrik'),
-  C(8, 'Championne', 'Sibylle', 'sibylle', 'Psy'),
-  C(9, 'Champion', 'à nommer', 'karateka', 'Combat', COMBAT),
-  C(10, 'Champion', 'Corbin', 'corbin', 'Ténèbres', TENEBRES),
-  C(11, 'Champion', 'Aurèle', 'aurele', 'Vol', VOL),
-  C(12, 'Champion', 'à nommer', 'medium', 'Spectre', SPECTRE),
-  C(13, 'Champion', 'Pyros', 'pyros', 'Feu'),
-  C(14, 'Champion', 'Gaspard', 'gaspard', 'Sol', SOL),
-  C(15, 'Championne', 'Lilas', 'lilas', 'Fée', FEE),
-  C(16, 'Champion', 'Ferdinand', 'ferdinand', 'Acier', ACIER),
-  C(17, 'Champion', 'Drakos', 'drakos', 'Dragon', DRAGON),
-  C(18, 'Championne', 'Marine', 'marine', 'Eau', EAU),
+  C(1, 'Champion', 'Hector', 'hector', 'Insecte', INSECTE),
+  C(2, 'Champion', 'Pyros', 'pyros', 'Feu', FEU),
+  C(3, 'Championne', 'Morgane', 'morgane', 'Poison', POISON),
+  C(4, 'Championne', 'Flora', 'flora', 'Plante', PLANTE),
+  C(5, 'Champion', 'Basalte', 'basalte', 'Roche', ROCHE),
+  C(6, 'Championne', 'Margot', 'margot', 'Normal', NORMAL),
+  C(7, 'Championne', 'Volta', 'volta', 'Électrik', ELECTRIK),
+  C(8, 'Champion', 'à nommer', 'randonneuse', 'Glace', GLACE),
+  C(9, 'Championne', 'Sibylle', 'sibylle', 'Psy', PSY),
+  C(10, 'Champion', 'à nommer', 'karateka', 'Combat', auNiveau(COMBAT, 10)),
+  C(11, 'Champion', 'Corbin', 'corbin', 'Ténèbres', auNiveau(TENEBRES, 11)),
+  C(12, 'Champion', 'Aurèle', 'aurele', 'Vol', auNiveau(VOL, 12)),
+  C(13, 'Champion', 'à nommer', 'medium', 'Spectre', auNiveau(SPECTRE, 13)),
+  C(14, 'Champion', 'Gaspard', 'gaspard', 'Sol', auNiveau(SOL, 14)),
+  C(15, 'Championne', 'Lilas', 'lilas', 'Fée', auNiveau(FEE, 15)),
+  C(16, 'Champion', 'Ferdinand', 'ferdinand', 'Acier', auNiveau(ACIER, 16)),
+  C(17, 'Champion', 'Drakos', 'drakos', 'Dragon', auNiveau(DRAGON, 17)),
+  C(18, 'Championne', 'Marine', 'marine', 'Eau', auNiveau(EAU, 18)),
   C(19, 'Conseil 4', 'Frimas', 'frimas', 'Soleil', SOLEIL),
   C(20, 'Conseil 4', 'Brutus', 'brutus', 'Relais', RELAIS),
   C(21, 'Conseil 4', 'Spectrel', 'spectrel', 'Distorsion', DISTORSION),

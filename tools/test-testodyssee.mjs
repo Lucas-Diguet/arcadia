@@ -1858,18 +1858,19 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
 
 /* ---------------- règles de combat du labo ---------------- */
 {
-  const { CHAMPIONS, equipeChampion } = await import('../testodyssee/js/champions.js');
+  const { CHAMPIONS, equipeChampion, NIVEAU_MAX } = await import('../testodyssee/js/champions.js');
   const R = (seed = 7) => { let s = seed; return () => ((s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff); };
   const mk = (sp, moves, o = {}) => { const m = createMon(sp, 100, { iv: Array(6).fill(31), nat: 12, moves: moves.map((k) => Object.values(MOVES).find((q) => q.key === k).id), shiny: false, ...o }); return m; };
   const combat = (moi, lui, o = {}) => { const b = new BattleT({ rng: R(o.seed), player: { name: 'Test', party: moi }, foe: { name: 'Champion', party: lui, trainer: { cls: 'Champion', name: 'Test', items: {}, ai: 'smart', ...o.tr } } }); b.start(); return b; };
   const id = (k) => Object.values(MOVES).find((q) => q.key === k)?.id;
   ok(['stealth-rock', 'taunt', 'knock-off', 'u-turn', 'sludge-wave', 'substitute', 'heavy-slam', 'rapid-spin', 'grass-knot', 'curse', 'wish', 'aromatherapy', 'sucker-punch', 'roost', 'dazzling-gleam', 'gyro-ball', 'tailwind', 'kings-shield', 'draco-meteor', 'surf', 'pursuit', 'destiny-bond', 'baton-pass', 'aqua-ring', 'trick-room', 'lunar-dance', 'gravity', 'sunny-day', 'bullet-seed', 'weather-ball', 'spore'].every(id), 'combat du labo : les attaques ajoutées existent');
   ok(['assault-vest', 'eject-button', 'weakness-policy', 'light-clay', 'toxic-orb', 'damp-rock', 'expert-belt', 'punching-glove', 'soul-dew', 'heat-rock', 'mental-herb', 'flame-orb'].every((k) => ITEMS[k]?.name), 'combat du labo : les objets ajoutés existent');
-  ok(CHAMPIONS.length === 23 && CHAMPIONS.filter((c) => c.equipe).length === 13 && CHAMPIONS.map((c) => c.rang).join() === Array.from({ length: 23 }, (_, i) => i + 1).join(), 'Place des Champions : 23 champions dans l\'ordre, 13 équipes prêtes (dont le Conseil 4)');
-  ok(CHAMPIONS[1].type === 'Poison' && CHAMPIONS[2].type === 'Normal' && CHAMPIONS[17].type === 'Eau', 'Place des Champions : Poison 2e, Normal 3e, Eau 18e');
+  ok(CHAMPIONS.length === 23 && CHAMPIONS.filter((c) => c.equipe).length === 22 && CHAMPIONS.map((c) => c.rang).join() === Array.from({ length: 23 }, (_, i) => i + 1).join(), 'Place des Champions : 23 champions dans l\'ordre, 22 équipes prêtes (dont le Conseil 4)');
+  ok(CHAMPIONS[1].type === 'Feu' && CHAMPIONS[2].type === 'Poison' && CHAMPIONS[5].type === 'Normal' && CHAMPIONS[9].type === 'Combat' && CHAMPIONS[17].type === 'Eau', 'Place des Champions : Feu 2e, Poison 3e, Normal 6e, Combat 10e, Eau 18e');
   for (const c of CHAMPIONS.filter((q) => q.equipe)) {
     const t = equipeChampion(c);
-    ok(t.length === 6 && t.every((m, k) => m.lvl === 100 && m.iv.join() === (c.equipe[k].iv || Array(6).fill(31)).join() && m.moves.length === 4 && m.item && m.ability), `Place des Champions : ${c.type}, six Pokémon niveau 100, IV voulus, quatre attaques, objet et talent`);
+    const max = c.rang <= 18 ? NIVEAU_MAX[c.rang - 1] : 100, lv = t.map((m) => m.lvl);
+    ok(t.length === 6 && lv[5] >= max && lv[5] <= max + 3 && lv.slice(0, 5).every((n) => n < lv[5] && n >= max - 7) && t.every((m, k) => m.iv.join() === (c.equipe[k].iv || Array(6).fill(31)).join() && m.moves.length >= 2 && m.moves.length <= 4 && m.ability) && (c.rang <= 9 || t.every((m) => m.item)) || (c.rang > 18 && lv.every((n) => n === 100)), `Place des Champions : ${c.type}, six Pokémon, l'as en dernier, au niveau ${max} (ou à peine au-dessus), les autres juste en dessous, IV voulus, attaques et talent`);
   }
   // Relais : les crans passent au suivant
   { const a = mk(143, ['splash']), d = mk(291, ['baton-pass']), d2 = mk(143, ['splash']); const b = combat([a], [d, d2], { tr: { ai: 'normal' } });
@@ -1893,6 +1894,21 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
       while (b.state === 'switch') { const j = b.sides[0].party.findIndex((q, n) => n !== b.sides[0].active && q.hp > 0); if (j < 0) break; b.playerSwitch(j); }
     }
     ok(pire <= 2, `IA : l'équipe Relais ne passe pas le relais en boucle (au plus ${pire} de suite)`); }
+  // les attaques des premières arènes : Picots, Toile Gluante, Regard Noir, Flair, Appel Soins
+  { const ia = (b, k) => { b.foeChoose = () => ({ type: 'move', id: id(k), slot: 0 }); b.playerAction({ type: 'move', idx: 0 }); delete b.foeChoose; };
+    const a = mk(143, ['splash']), a2 = mk(143, ['splash']), d = mk(596, ['spikes', 'sticky-web']); const b = combat([a, a2], [d], { tr: { ai: 'normal' } });
+    ia(b, 'spikes'); ia(b, 'spikes'); ia(b, 'sticky-web'); const pv = a2.hp;
+    b.foeChoose = () => ({ type: 'move', id: id('sticky-web'), slot: 0 }); b.playerAction({ type: 'switch', idx: 1 }); delete b.foeChoose;
+    ok(b.sides[0].picots === 2 && a2.hp === pv - Math.floor(a2.stats[0] / 6) && b.sides[0].v.st[5] === -1, 'combat du labo : deux couches de Picots blessent d\'un sixième, la Toile Gluante ralentit'); }
+  { const a = mk(143, ['splash']), a2 = mk(143, ['splash']), d = mk(24, ['mean-look']); const b = combat([a, a2], [d], { tr: { ai: 'normal' } });
+    b.foeChoose = () => ({ type: 'move', id: id('mean-look'), slot: 0 }); b.playerAction({ type: 'move', idx: 0 }); delete b.foeChoose;
+    ok(b.trapped(0) && b.sides[0].active === 0, 'combat du labo : Regard Noir empêche de changer de Pokémon'); }
+  { const a = mk(94, ['splash']), d = mk(58, ['odor-sleuth', 'bite', 'tackle']); const b = combat([a], [d], { tr: { ai: 'normal' } });
+    const ef0 = b.effOn(1, 0, 'normal'); b.foeChoose = () => ({ type: 'move', id: id('odor-sleuth'), slot: 0 }); b.playerAction({ type: 'move', idx: 0 }); delete b.foeChoose;
+    ok(ef0 === 0 && b.effOn(1, 0, 'normal') > 0, 'combat du labo : après Flair, une attaque Normal touche un Spectre'); }
+  { const a = mk(143, ['splash']), d = mk(416, ['heal-order']); const b = combat([a], [d], { tr: { ai: 'normal' } }); d.hp = 10;
+    b.foeChoose = () => ({ type: 'move', id: id('heal-order'), slot: 0 }); b.playerAction({ type: 'move', idx: 0 }); delete b.foeChoose;
+    ok(d.hp === 10 + Math.floor(d.stats[0] / 2), 'combat du labo : Appel Soins rend la moitié des PV'); }
   // Bluff : seulement au premier tour
   { const a = mk(143, ['splash']), d = mk(678, ['fake-out']); const b = combat([a], [d], { tr: { ai: 'normal' } }); b.foeChoose = () => ({ type: 'move', id: id('fake-out'), slot: 0 });
     b.playerAction({ type: 'move', idx: 0 }); const hp = a.hp; b.playerAction({ type: 'move', idx: 0 }); ok(a.hp === hp, 'combat du labo : Bluff échoue après le premier tour'); }

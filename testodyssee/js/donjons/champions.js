@@ -1,5 +1,5 @@
-// testodyssee/js/donjons/champions.js — la Place des Champions : les 23 champions de fin de jeu alignés dans l'ordre
-// (18 champions d'arène, le Conseil 4, le Maître). On parle à l'un d'eux pour l'affronter, tout le monde au niveau 100 ;
+// testodyssee/js/donjons/champions.js — la Place des Champions : les 23 champions alignés dans l'ordre (18 champions
+// d'arène, le Conseil 4, le Maître). On parle à l'un d'eux pour l'affronter, chacun au niveau de son arène ;
 // on est soigné après chaque combat, sans message. Ceux qui n'ont pas encore d'équipe ne se combattent pas.
 // L'organisatrice donne une équipe : la « fin de jeu » du labo au niveau 100, ou celle d'un champion.
 // Équipes : js/champions.js ; combats et choix d'équipe : js/donjon/arenes.js.
@@ -17,7 +17,7 @@ export default {
   id: 'champions',
   carte: 'labo:champions',
   nom: 'Place des Champions',
-  niveau: 'niv. 100',
+  niveau: 'niv. 16 à 100',
   joueurs: { mode: 'solo' },
   solo: true,
   arene: true,
@@ -28,7 +28,7 @@ export default {
   decor: {},
   objets: {
     n: { type: 'tapis', sol: true, decor: 'carpet' },
-    q: { type: 'panneau', texte: 'Place des Champions.\nParle à un champion pour l\'affronter. Tout le monde est au niveau 100.\nL\'organisatrice te prête une équipe.' },
+    q: { type: 'panneau', texte: 'Place des Champions.\nParle à un champion pour l\'affronter. Chacun est au niveau de son arène, du niveau 20 au niveau 100.\nL\'organisatrice te prête une équipe.' },
   },
   pnj: {
     ...Object.fromEntries(CHAMPIONS.map((c, i) => [LETTRES[i], { id: 'champion-' + c.rang, champion: c, toujours: true, cls: '', nom: nomChampion(c), sprite: c.sprite, dir: 'down' }])),

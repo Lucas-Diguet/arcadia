@@ -43,6 +43,15 @@ export const ATTAQUES_COMBAT = [
   A(461, 'lunar-dance', 'Danse Lune', 'psychic', 'status', 0, null, 10, { tg: 7, m: { cat: 13, u: 'danse-lune' } }),
   A(311, 'weather-ball', 'Ball\'Météo', 'normal', 'special', 50, 100, 10, {}),
   A(356, 'gravity', 'Gravité', 'psychic', 'status', 0, null, 5, { tg: 12, m: { cat: 13, u: 'gravite' } }),
+  // pour les équipes des premières arènes
+  A(450, 'bug-bite', 'Piqûre', 'bug', 'physical', 60, 100, 20),
+  A(456, 'heal-order', 'Appel Soins', 'bug', 'status', 0, null, 10, { tg: 7, m: { cat: 3, heal: 50 } }),
+  A(253, 'uproar', 'Brouhaha', 'normal', 'special', 90, 100, 10),
+  A(316, 'odor-sleuth', 'Flair', 'normal', 'status', 0, null, 40, { m: { cat: 13, u: 'flair' } }),
+  A(212, 'mean-look', 'Regard Noir', 'normal', 'status', 0, null, 5, { m: { cat: 13, u: 'regard-noir' } }),
+  A(191, 'spikes', 'Picots', 'ground', 'status', 0, null, 20, { tg: 6, m: { cat: 11, u: 'picots' } }),
+  A(564, 'sticky-web', 'Toile Gluante', 'bug', 'status', 0, null, 20, { tg: 6, m: { cat: 11, u: 'toile' } }),
+  A(215, 'heal-bell', 'Glas de Soin', 'normal', 'status', 0, null, 5, { tg: 7, m: { cat: 13, u: 'aromatherapie' } }),
 ];
 // objets tenus qui manquent à Odyssée
 const O = (name, price, desc) => ({ pocket: 'objets', price, name, desc: 'Objet à tenir. ' + desc });
@@ -115,7 +124,7 @@ export function installerRegles() {
   for (const mv of ATTAQUES_COMBAT) if (!Object.values(MOVES).some((q) => q.key === mv.key)) MOVES[mv.id] = mv;
   for (const [k, o] of Object.entries(OBJETS_COMBAT)) ITEMS[k] ||= o;
   const B = Battle.prototype, orig = {};
-  for (const k of ['nm', 'hits', 'resolve', 'playerSwitch', 'playerAction', 'foeChoose', 'useMove', 'special', 'statusMove', 'inflict', 'boost', 'hp', 'stat', 'effOn', 'moveType', 'movePower', 'damageCore', 'doSwitch', 'checkFaints', 'endOfTurn', 'triggerEntry', 'doMega', 'end', 'start', 'refus']) orig[k] = B[k];
+  for (const k of ['nm', 'hits', 'resolve', 'playerSwitch', 'playerAction', 'foeChoose', 'useMove', 'special', 'statusMove', 'inflict', 'boost', 'hp', 'stat', 'effOn', 'moveType', 'movePower', 'damageCore', 'doSwitch', 'checkFaints', 'endOfTurn', 'triggerEntry', 'doMega', 'end', 'start', 'refus', 'trapped']) orig[k] = B[k];
   // seulement le combat ordinaire (pas les duels entre joueurs ni les combats à plusieurs du labo) : les changements en plein tour
   const simple = (b) => Object.getPrototypeOf(b) === B;
   const banc = (b, i) => b.sides[i].party.findIndex((m, k) => k !== b.sides[i].active && m.hp > 0);
@@ -175,6 +184,9 @@ export function installerRegles() {
       let k;
       if ((k = has('prelevement')) != null && pv < 0.3 && !v.lien && this.stat(1, 5) > this.stat(0, 5)) return pick(k);
       if ((k = has('piege-roc')) != null && !opp.roc && vivants >= 3 && debut) return pick(k);
+      if ((k = has('toile')) != null && !opp.toile && vivants >= 3 && debut) return pick(k);
+      if ((k = has('picots')) != null && (opp.picots || 0) < 2 && vivants >= 3 && v.turns < 2) return pick(k);
+      if ((k = has('regard-noir')) != null && !opp.v.regard && debut) return pick(k);
       if ((k = has('vent-arriere')) != null && !this.sides[1].vent && debut) return pick(k);
       if ((k = has('provoc')) != null && debut && !opp.v.provoc && me.moves.some((q) => MOVES[q.id]?.c === 'status')) return pick(k);
       if ((k = has('clonage')) != null && debut && !v.clone && pv > 0.6) return pick(k);
@@ -360,6 +372,22 @@ export function installerRegles() {
           if (this.sides[cible].roc) return echec();
           this.sides[cible].roc = true; this.say(cible === 0 ? 'Des pierres pointues s\'éparpillent autour de votre équipe !' : 'Des pierres pointues s\'éparpillent autour de l\'équipe adverse !'); return true;
         }
+        case 'picots': {
+          const c = renvoi() ? i : d, S = this.sides[c];
+          if ((S.picots || 0) >= 3) return echec();
+          S.picots = (S.picots || 0) + 1; this.say(c === 0 ? 'Des picots s\'éparpillent autour de votre équipe !' : 'Des picots s\'éparpillent autour de l\'équipe adverse !'); return true;
+        }
+        case 'toile': {
+          const c = renvoi() ? i : d;
+          if (this.sides[c].toile) return echec();
+          this.sides[c].toile = true; this.say(c === 0 ? 'Une toile gluante s\'étend sous votre équipe !' : 'Une toile gluante s\'étend sous l\'équipe adverse !'); return true;
+        }
+        case 'flair': tv.flaire = true; tv.st[7] = 0; this.say(`${this.Nm(i)} flaire ${this.nm(d)} !`); return true;
+        case 'regard-noir': {
+          const c = renvoi() ? i : d, cv = this.sides[c].v;
+          if (cv.regard) return echec();
+          cv.regard = this.act(1 - c)?.uid ?? true; this.say(`${this.Nm(c)} ne peut plus s'enfuir !`); return true;
+        }
         case 'provoc': {
           const c = renvoi() ? i : d, cv = this.sides[c].v, C = this.act(c);
           if (cv.provoc > 0 || (c === d && this._cible?.actif)) return echec();
@@ -385,7 +413,7 @@ export function installerRegles() {
           this.sides[i].voeu = { t: 2, pv: Math.floor(m.stats[0] / 2), nom: this.Nm(i) }; this.say(`${this.Nm(i)} fait un vœu !`); return true;
         case 'aromatherapie':
           for (const q of this.sides[i].party) if (q.status && q.hp > 0) { q.status = null; q.slp = 0; q.tox = 0; }
-          this.ev.push({ t: 'status', side: i, status: null }); this.say('Une odeur apaisante se répand ! L\'équipe est guérie.'); return true;
+          this.ev.push({ t: 'status', side: i, status: null }); this.say(mv.key === 'heal-bell' ? 'Un carillon apaisant retentit ! L\'équipe est guérie.' : 'Une odeur apaisante se répand ! L\'équipe est guérie.'); return true;
         case 'vent-arriere':
           if (this.sides[i].vent) return echec();
           this.sides[i].vent = 4; this.say(i === 0 ? 'Un vent arrière souffle derrière votre équipe !' : 'Un vent arrière souffle derrière l\'équipe adverse !'); return true;
@@ -427,7 +455,7 @@ export function installerRegles() {
           if (banc(this, i) < 0) return echec();
           this.sides[i].danseLune = true; this.say(`${this.Nm(i)} danse sous la lune...`); this.hp(i, -m.hp); return true;
         case 'tour-rapide':
-          if (this.sides[i].roc || v.seed || v.trap) { this.sides[i].roc = false; v.seed = false; v.trap = 0; this.say(`${this.Nm(i)} se libère de ce qui l'entoure !`); }
+          if (this.sides[i].roc || this.sides[i].picots || this.sides[i].toile || v.seed || v.trap) { Object.assign(this.sides[i], { roc: false, picots: 0, toile: false }); v.seed = false; v.trap = 0; this.say(`${this.Nm(i)} se libère de ce qui l'entoure !`); }
           return false;
         default: break;
       }
@@ -488,6 +516,8 @@ export function installerRegles() {
     },
     effOn(a, d, type) {
       const v = this.sides[d].v, t = SPECIES[this.act(d).sp].t;
+      // Flair : les attaques Normal et Combat touchent un Spectre
+      if (v.flaire && t.includes('ghost') && (type === 'normal' || type === 'fighting')) { const r = t.filter((q) => q !== 'ghost'); return typeEff(type, r.length ? r : ['normal']); }
       if ((v.atterri || (this.gravite > 0 && type === 'ground')) && t.includes('flying')) return typeEff(type, t.filter((q) => q !== 'flying').length ? t.filter((q) => q !== 'flying') : ['normal']);
       return orig.effOn.call(this, a, d, type);
     },
@@ -549,6 +579,19 @@ export function installerRegles() {
         this.hp(i, -n); this.say(`Des pierres pointues blessent ${this.nm(i)} !`);
         if (isFainted(m)) this._koRoc = true;
       }
+      // Picots et Toile Gluante : seulement pour un Pokémon qui touche le sol
+      const auSol = m && !isFainted(m) && !SPECIES[m.sp].t.includes('flying') && this.ab(i) !== 'levitate' && m.item !== 'air-balloon';
+      if (auSol && this.sides[i].picots && this.ab(i) !== 'magic-guard') {
+        this.hp(i, -Math.max(1, Math.floor(m.stats[0] * [0, 1 / 8, 1 / 6, 1 / 4][this.sides[i].picots]))); this.say(`Des picots blessent ${this.nm(i)} !`);
+        if (isFainted(m)) this._koRoc = true;
+      }
+      if (auSol && !isFainted(m) && this.sides[i].toile) { this.say(`${this.Nm(i)} est pris dans une toile gluante !`); this.boost(i, 6, -1, false); }
+    },
+    /** Regard Noir : pris au piège tant que celui qui l'a lancé reste en jeu */
+    trapped(i) {
+      if (orig.trapped.call(this, i)) return true;
+      const v = this.sides[i].v, m = this.act(i);
+      return !!v.regard && v.regard === this.act(1 - i)?.uid && !SPECIES[m.sp].t.includes('ghost');
     },
     checkFaints() {
       let r = orig.checkFaints.call(this);

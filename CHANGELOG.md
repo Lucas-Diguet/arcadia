@@ -1,5 +1,10 @@
 # Journal des versions — Arcadia
 
+## 6.55 — 25 novembre 2026
+- **TestOdyssée** — Place des Champions : les neuf premiers champions ont leur équipe, et chaque champion se bat au niveau de son arène, de 20 à 100 ; son meilleur Pokémon arrive en dernier.
+  - Nouvel ordre des arènes : Insecte, Feu, Poison, Plante, Roche, Normal, Électrik, Glace, Psy, puis Combat, Ténèbres, Vol, Spectre, Sol, Fée, Acier, Dragon, Eau.
+  - Nouvelles attaques en combat : Picots, Toile Gluante, Regard Noir, Flair, Appel Soins, Glas de Soin, Piqûre et Brouhaha.
+
 ## 6.54 — 25 novembre 2026
 - **TestOdyssée** — Nouveau donjon : le Barrage de Roche-Haute (seul, fin de jeu).
 
