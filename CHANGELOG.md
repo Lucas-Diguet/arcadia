@@ -1,5 +1,9 @@
 # Journal des versions — Arcadia
 
+## 6.57 — 25 novembre 2026
+- **TestOdyssée** — Place des Champions : les champions dépassent un peu le niveau de leur arène, leur as 5 niveaux au-dessus (jusqu'au niveau 105 pour l'arène Eau).
+  - Plus de Pokémon chromatiques chez les champions ; certains champions changent de premier Pokémon (Combat, Spectre, Fée, Dragon, et Frimas du Conseil 4).
+
 ## 6.56 — 25 novembre 2026
 - **TestOdyssée** — Place des Champions : les Pokémon des neuf premiers champions sont entraînés (l'as seulement pour les quatre premières arènes, toute l'équipe ensuite), et le Luxray de l'arène Électrik retrouve Intimidation.
 

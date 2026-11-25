@@ -671,9 +671,10 @@ Demi-Tour, elle envoie le meilleur Pokémon contre celui d'en face. Cyclone et H
 `js/donjons/champions.js`, équipes dans `js/champions.js`. Les 23 champions alignés dans l'ordre : les 18 champions
 d'arène (Insecte, Feu, Poison, Plante, Roche, Normal, Électrik, Glace, Psy, Combat, Ténèbres, Vol, Spectre, Sol, Fée,
 Acier, Dragon, Eau), le Conseil 4 et le Maître. On parle à un champion pour l'affronter. Chaque arène a son niveau
-maximum (`NIVEAU_MAX` : 20, 25, 25, 30, 35, 40, 40, 45, 50, 55, 60, 65, 70, 75, 80, 90, 95, 100) : l'as du champion,
-toujours le dernier de son équipe, est à ce niveau, les autres un à trois niveaux en dessous (`auNiveau` ; les neuf
-premières équipes, données par l'auteur, ont leurs niveaux écrits ; EV pour l'as seul aux arènes 1 à 4, pour toute l'équipe aux arènes 5 à 9). Conseil 4 et Maître au niveau 100.
+maximum (`NIVEAU_MAX` : 20, 25, 25, 30, 35, 40, 40, 45, 50, 55, 60, 65, 70, 75, 80, 90, 95, 100) : le plus faible Pokémon
+du champion est à ce niveau, son as (toujours le dernier) 5 niveaux au-dessus, les autres entre les deux (`auNiveau`,
+`ecarts` quand l'ordre d'envoi n'est pas celui des niveaux) ; l'arène 1 garde les niveaux écrits par l'auteur (as au 23).
+EV pour l'as seul aux arènes 1 à 4, pour toute l'équipe ensuite. Conseil 4 et Maître au niveau 100.
 IV à 31, soin complet sans message après le combat (objets tenus compris). Un champion sans équipe (`equipe: null`)
 dit que son équipe n'est pas prête. L'organisatrice prête l'équipe « fin de jeu » au niveau 100 (`fin100` de
 `equipes.js`) ou celle d'un champion. Une équipe : `P(espèce, objet, talent, nature, EV, attaques, { pc, shiny, iv })`

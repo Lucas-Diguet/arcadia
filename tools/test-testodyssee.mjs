@@ -1870,7 +1870,7 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   for (const c of CHAMPIONS.filter((q) => q.equipe)) {
     const t = equipeChampion(c);
     const max = c.rang <= 18 ? NIVEAU_MAX[c.rang - 1] : 100, lv = t.map((m) => m.lvl);
-    ok(t.length === 6 && lv[5] >= max && lv[5] <= max + 3 && lv.slice(0, 5).every((n) => n < lv[5] && n >= max - 7) && t.every((m, k) => m.iv.join() === (c.equipe[k].iv || Array(6).fill(31)).join() && m.moves.length >= 2 && m.moves.length <= 4 && m.ability) && (c.rang <= 9 || t.every((m) => m.item)) || (c.rang > 18 && lv.every((n) => n === 100)), `Place des Champions : ${c.type}, six Pokémon, l'as en dernier, au niveau ${max} (ou à peine au-dessus), les autres juste en dessous, IV voulus, attaques et talent`);
+    ok(t.length === 6 && (c.rang === 1 ? lv[5] === 23 && lv.slice(0, 5).every((n) => n < 20) : lv[5] === max + 5 && lv.slice(0, 5).every((n) => n >= max && n < max + 5) && Math.min(...lv) === max) && t.every((m) => !m.shiny) && t.every((m, k) => m.iv.join() === (c.equipe[k].iv || Array(6).fill(31)).join() && m.moves.length >= 2 && m.moves.length <= 4 && m.ability) && (c.rang <= 9 || t.every((m) => m.item)) || (c.rang > 18 && lv.every((n) => n === 100)), `Place des Champions : ${c.type}, six Pokémon, du niveau ${max} à l'as en dernier, 5 niveaux au-dessus, IV voulus, attaques et talent`);
   }
   // Relais : les crans passent au suivant
   { const a = mk(143, ['splash']), d = mk(291, ['baton-pass']), d2 = mk(143, ['splash']); const b = combat([a], [d, d2], { tr: { ai: 'normal' } });

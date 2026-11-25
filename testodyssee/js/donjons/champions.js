@@ -17,7 +17,7 @@ export default {
   id: 'champions',
   carte: 'labo:champions',
   nom: 'Place des Champions',
-  niveau: 'niv. 16 à 100',
+  niveau: 'niv. 16 à 105',
   joueurs: { mode: 'solo' },
   solo: true,
   arene: true,
@@ -28,7 +28,7 @@ export default {
   decor: {},
   objets: {
     n: { type: 'tapis', sol: true, decor: 'carpet' },
-    q: { type: 'panneau', texte: 'Place des Champions.\nParle à un champion pour l\'affronter. Chacun est au niveau de son arène, du niveau 20 au niveau 100.\nL\'organisatrice te prête une équipe.' },
+    q: { type: 'panneau', texte: 'Place des Champions.\nParle à un champion pour l\'affronter. Chacun est au niveau de son arène, jusqu\'au niveau 105.\nL\'organisatrice te prête une équipe.' },
   },
   pnj: {
     ...Object.fromEntries(CHAMPIONS.map((c, i) => [LETTRES[i], { id: 'champion-' + c.rang, champion: c, toujours: true, cls: '', nom: nomChampion(c), sprite: c.sprite, dir: 'down' }])),
