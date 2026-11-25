@@ -24,6 +24,7 @@ import { createPoolMap, MOUTH } from './poolrooms.js';
 import { createHotelMap, WORDS, LETTERS, HIDE_R as SPOT_R, MAIL_R, KEYPAD_R, LETTER_R } from './hotel.js';
 import { createPipesMap, VALVES, PIPES_LEVEL, jetState, inJet, JET_HALF } from './level2.js';
 import { createMallMap, MALL_LEVEL, REELS, FILM_LEAD_T } from './mall.js';
+import { createOceanMap, OCEAN_LEVEL, CANS, FUEL_CAN, newRaft, raftStep, raftPlayerStep, boardRaft, levStep, packRaft, unpackRaft, seatPos } from './ocean.js';
 import { hasLineOfSight } from './nav.js';
 import { updateDoll, dollInit, dollOnFilm, DOLL_BODY } from './doll.js';
 import { planTo, move as gaitMove, faceTo, shove, stagger, feetOf, cageAt, BODY_R, roamable } from './gait.js';
@@ -94,14 +95,14 @@ export const WHISTLE_CD = 1.2;
 export const WHISTLE_HEAT = 2.5; // chaque coup compte 1 et s'oublie en 20 s : au 3e coup rapproché, l'entité vient à coup sûr
 export { CASSETTES };
 export const FUSES = 3;
-export { VALVES, PIPES_LEVEL };
+export { VALVES, PIPES_LEVEL, OCEAN_LEVEL };
 export const HOTEL_LEVEL = 4; // Level 5, le Terror Hotel (par le toboggan rouge des Poolrooms)
 export { MALL_LEVEL, REELS, FILM_LEAD_T }; // 5 : Level 17, le Mall (deux étages, engine/mall.js) ; ses 5 bobines de film, l'amorce du film
 export const LAST_LEVEL = PIPES_LEVEL; // 0 : Level 0, 1 : Level 1 (entrepôt), 2 : Level 37 (Poolrooms), 3 : Level 2 (Tuyauteries, toboggan jaune), 4 : Level 5 (Terror Hotel, toboggan rouge)
 // ⭐ Le niveau de départ d'un VIP (réglage « start » du salon, hub/games.js, ou ?level1, ?level37, ?level2, ?level5, ?level17 seul) :
 // le nom du level → son numéro dans le moteur. Il ne compte que pour un VIP (vip : compte VIP du Hub, ou hors du Hub) qui
 // a le coffre VIP ouvert (vault : le même test d'accès que le mode VIP) ; sinon, et pour un nom inconnu, le Level 0
-export const START_LEVELS = { 0: 0, 1: 1, 37: 2, 2: PIPES_LEVEL, 5: HOTEL_LEVEL, 17: MALL_LEVEL };
+export const START_LEVELS = { 0: 0, 1: 1, 37: 2, 2: PIPES_LEVEL, 5: HOTEL_LEVEL, 17: MALL_LEVEL, 7: OCEAN_LEVEL };
 export const startLevel = (name, { vip = false, vault = false } = {}) =>
   vip === true && vault === true && (typeof name === 'number' || typeof name === 'string') && Object.hasOwn(START_LEVELS, String(name)) ? START_LEVELS[String(name)] : 0;
 export const VALVE_T = 6.5; // secondes devant une vanne pour la fermer (elle revient doucement si on la lâche) : on s'expose
@@ -204,6 +205,20 @@ export const REDISGUISE_T = 6; // s de ronde, hors de vue et loin de tous, avant
 // le sprint dépend du sens : droit devant, toute la vitesse ; de côté et en arrière, moins
 export const SPRINT_SIDE = 0.72;
 export const SPRINT_BACK = 0.6;
+// Poolrooms : les poissons des bassins. Trop de bruit à moins de FISH_R m de l'un d'eux (courir, retomber d'un saut,
+// siffler, parler fort : un bruit d'au moins FISH_NOISE), et il a FISH_CHANCE par seconde de sauter sur le joueur. Il
+// s'accroche : il faut taper les FISH_KEYS flèches affichées, dans l'ordre (une erreur, et on recommence) ; tant qu'il
+// tient, on ne bouge plus, on fait du vacarme (l'entité l'entend) et il mord toutes les FISH_BITE_T secondes (FISH_BITE
+// d'eau en moins). Ensuite, ce joueur est tranquille FISH_CD secondes, ce poisson FISH_REST
+export const FISH_R = 4.5;
+export const FISH_NOISE = 0.5;
+export const FISH_CHANCE = 0.45;
+export const FISH_KEYS = 4;
+export const FISH_BITE_T = 3.5;
+export const FISH_BITE = 8;
+export const FISH_FLOOR = 10; // ses morsures ne font pas descendre l'eau sous ce niveau
+export const FISH_CD = 25;
+export const FISH_REST = 40;
 export const WHISTLE_FREEZE_R = 18; // m : un sifflet à moins de ça fige l'imposteur une seconde ou deux
 export const MIMIC_CALL = [7, 13]; // s entre deux appels (la voix volée, de vive voix ou au talkie)
 // La voix volée ne doit pas la trahir : elle ne parle avec la voix d'un vivant que s'il est à plus de MIMIC_FAR m de
@@ -298,6 +313,8 @@ const AMB_CUES = {
   // Level 17 (MALL_LEVEL) : un tube qui tinte tout près ; un rideau de fer ou une gaine ; le carillon d'une annonce au
   // loin ; rarement un reste de musique d'ambiance
   [MALL_LEVEL]: { rec: [16, 40], a: [22, 50], b: [40, 90], c: [70, 150] },
+  // Level 7 (OCEAN_LEVEL) : les bruits d'eau des Poolrooms
+  [OCEAN_LEVEL]: { rec: [20, 50], a: [5, 12], b: [14, 30], c: [24, 50] },
 };
 
 // un tirage qui ne dépend que de la graine (hôte et invités tirent pareil)
@@ -315,6 +332,7 @@ export function makeLevelMap(level, seed) {
   if (level === MALL_LEVEL) return createMallMap(seed * 17 + 3).floors;
   if (level === 2) return [createPoolMap(seed * 11 + 37)];
   if (level === PIPES_LEVEL) return [createPipesMap(seed * 11 + 29)];
+  if (level === OCEAN_LEVEL) return [createOceanMap(seed * 23 + 7)];
   return level === 1 ? [createWarehouseMap(seed * 7 + 13)] : createLevel0(seed).floors;
 }
 
@@ -748,6 +766,10 @@ export class BackroomsSim {
     // Level 17 : la grande poupée tient la place de l'entité (engine/doll.js)
     this.doll = level === MALL_LEVEL && this.hasMonster;
     if (this.doll) dollInit(this);
+    // Level 7 : le radeau, et la chose sous l'eau à la place de l'entité (engine/ocean.js)
+    this.raft = level === OCEAN_LEVEL ? newRaft(this.map) : null;
+    this.levi = level === OCEAN_LEVEL && this.hasMonster;
+    if (this.levi) this.monster.mode = 'patrol';
   }
 
   // dans l'eau (Poolrooms) on avance moins vite : 90 % dans 20 cm d'eau, 70 % dans 60 cm, 40 % au plus profond
@@ -789,6 +811,7 @@ export class BackroomsSim {
   get open() {
     if (this.level === PIPES_LEVEL) return this.valves >= VALVES;
     if (this.level === 2) return true; // Poolrooms : les toboggans sont ouverts dès l'arrivée
+    if (this.level === OCEAN_LEVEL) return true; // Level 7 : la porte n'est pas fermée ; il faut l'atteindre
     if (this.level === MALL_LEVEL) return this.film >= FILM_LEAD_T; // Level 17 : le film passe, le monte-charge de scène s'ouvre
     // (Level 1 : le courant revenu, le monte-charge doit encore descendre jusqu'à l'équipe)
     if (this.level === 1) return this.powered && !(this.liftCallT > 0);
@@ -840,7 +863,7 @@ export class BackroomsSim {
       return true;
     }
     const M = this.monster;
-    if (!this.hasMonster || this.doll || M.mode === 'chase' || M.floor !== floor) return false; // (la poupée n'écoute pas : elle guette les regards)
+    if (!this.hasMonster || this.doll || this.levi || M.mode === 'chase' || M.floor !== floor) return false; // (la poupée n'écoute pas : elle guette les regards)
     if (Math.hypot(M.x - x, M.z - z) > range) return false;
     M.mode = 'search';
     M.silent = false;
@@ -1259,9 +1282,59 @@ export class BackroomsSim {
   }
 
   // le joueur meurt : ce qu'il portait tombe là où il est (Level 1 : les fusibles), il sort de son casier
+  // Poolrooms : les poissons. Rend true tant qu'un poisson tient le joueur (il ne fait rien d'autre que le mini-jeu)
+  fishStep(P, input) {
+    const fish = this.map.fish;
+    if (!fish || !fish.length || BackroomsSim.FISH === false) return false; // (FISH = false : pas de poissons, pour les tests)
+    P.fishCd = Math.max(0, (P.fishCd || 0) - DT);
+    if (!P.fishQ) {
+      // au bord d'un bassin, en faisant du bruit, pas caché : le poisson le plus proche peut sauter
+      if (P.fishCd > 0 || (P.noise || 0) < FISH_NOISE || P.hidden >= 0 || this.arriveT > 0) return false;
+      let best = null;
+      let bd = FISH_R;
+      for (const f of fish) {
+        const d = Math.hypot(f.x - P.x, f.z - P.z);
+        if (d < bd && !(f.cd > 0)) [bd, best] = [d, f];
+      }
+      if (!best || Math.random() >= FISH_CHANCE * DT) return false;
+      best.cd = FISH_REST;
+      P.fishQ = Array.from({ length: FISH_KEYS }, () => Math.floor(Math.random() * 4)).join('');
+      P.fishI = 0;
+      P.fishT = FISH_BITE_T;
+      P.fishId = best.id;
+      this.emit({ type: 'fishOn', id: P.id, fish: best.id, x: best.x, z: best.z });
+    } else if (Number.isInteger(input.qte)) {
+      // une flèche tapée : la bonne fait avancer, une mauvaise fait tout recommencer
+      if (input.qte === +P.fishQ[P.fishI]) P.fishI++;
+      else {
+        P.fishI = 0;
+        this.emit({ type: 'fishMiss', id: P.id });
+      }
+      if (P.fishI >= P.fishQ.length) {
+        const f = fish[P.fishId] || fish[0];
+        P.fishQ = '';
+        P.fishI = 0;
+        P.fishCd = FISH_CD;
+        this.emit({ type: 'fishOff', id: P.id, fish: f.id, x: f.x, z: f.z, px: P.x, pz: P.z });
+        return false;
+      }
+    }
+    P.moving = false;
+    P.running = false;
+    P.noise = NOISE.run; // (il se débat à grand bruit : l'entité l'entend comme une course)
+    P.fishT -= DT;
+    if (P.fishT <= 0) {
+      P.fishT = FISH_BITE_T;
+      P.water = Math.max(Math.min(P.water, FISH_FLOOR), P.water - FISH_BITE); // (un poisson seul ne tue pas)
+      this.emit({ type: 'fishBite', id: P.id, x: P.x, z: P.z });
+    }
+    return true;
+  }
+
   killPlayer(P, extra = {}) {
     if (P.status !== 'alive') return;
     P.status = 'dead';
+    P.fishQ = '';
     P.cam = false;
     P.moving = false;
     P.grabT = 0;
@@ -2198,6 +2271,7 @@ export class BackroomsSim {
     }
     const cas = this.nearCassette(P);
     if (cas) return this.takeCassette(P, cas);
+    if (this.raft && boardRaft(this, P)) return;
     if (this.nearBench(P)) return this.mountReels(P);
     if (P.desk) return this.leaveDesk(P);
     const it = this.nearItem(P);
@@ -2578,6 +2652,7 @@ export class BackroomsSim {
         gd.open = want;
       }
     }
+    for (const f of this.map.fish || []) f.cd = Math.max(0, (f.cd || 0) - DT); // (Poolrooms : les poissons se reposent)
     updateDirector(this);
     updateLightsOut(this);
     if (this.level === PIPES_LEVEL) {
@@ -2585,10 +2660,12 @@ export class BackroomsSim {
       this.updateBreakers();
     }
 
+    if (this.raft) raftStep(this, DT);
     if (this.goats) {
       updateGoats(this);
       senseGoats(this);
     } else if (this.doll) updateDoll(this);
+    else if (this.levi) levStep(this, DT);
     else if (this.hasMonster) this.updateMonster(); // aux Poolrooms aussi : l'entité du Level 1 y chasse
     this.checkElevator();
   }
@@ -2610,6 +2687,11 @@ export class BackroomsSim {
     this.cassettes++;
     P.found++;
     this.makeNoise(P, NOISE.pick, 0.8);
+    // Level 7 : un bidon d'essence, aussitôt versé dans le réservoir du radeau
+    if (cas.can) {
+      if (this.raft) this.raft.fuel = Math.min(1.6, this.raft.fuel + FUEL_CAN);
+      return this.emit({ type: 'can', id: cas.id, by: P.id, count: this.cassettes, total: CANS, x: cas.x, z: cas.z, floor: 0 });
+    }
     // Level 17 : une bobine du film (elle reste à monter dans la cabine de projection)
     if (cas.reel) return this.emit({ type: 'reel', id: cas.id, by: P.id, count: this.cassettes, total: REELS, x: cas.x, z: cas.z, floor: P.floor || 0 });
     this.emit({ type: 'cassette', id: cas.id, by: P.id, count: this.cassettes, total: CASSETTES, x: cas.x, z: cas.z, floor: P.floor || 0 });
@@ -2771,6 +2853,10 @@ export class BackroomsSim {
       P.noise = NOISE.panic;
       return;
     }
+    // Poolrooms : un poisson accroché, ou qui va sauter (voir fishStep)
+    if (this.fishStep(P, input)) return;
+    // Level 7 : à bord du radeau (engine/ocean.js)
+    if (this.raft && raftPlayerStep(this, P, input)) return;
     // caché dans un casier : immobile, lampe éteinte ; Maj retient le souffle (trop longtemps, on suffoque)
     if (P.hidden >= 0) return this.stepHidden(P, input);
     // assis au poste de garde : on ne bouge plus, on passe d'une caméra à l'autre
@@ -3153,6 +3239,11 @@ export class BackroomsSim {
     } else if (map.slides && map.slides.length) {
       best = near(this.slide >= 0 ? [map.slides[this.slide]] : map.slides);
       P.sigTo = 'exit';
+    } else if (this.level === OCEAN_LEVEL) {
+      // Level 7 : le bidon le plus proche, puis la porte
+      const left = (map.cassettes || []).filter((c) => !c.collected);
+      best = near(left.length ? left : [map.exit]);
+      P.sigTo = left.length ? 'can' : 'exit';
     } else if (this.level === PIPES_LEVEL && !this.open) {
       best = (map.valves || []).filter((v) => !v.closed).reduce((b, v) => Math.min(b, Math.hypot(v.sx - P.x, v.sz - P.z)), Infinity);
     } else if ((this.level === 0 || this.level === MALL_LEVEL) && this.floors.length > 1) {
@@ -3460,8 +3551,19 @@ export class BackroomsSim {
     if (tr.length > 270) tr.splice(0, tr.length - 270);
     if (input.cam !== undefined) P.cam = !!input.cam && P.status === 'alive';
     if (this.state !== 'playing' || P.status !== 'alive' || this.departT > 0 || this.arriveT > 0) return 0;
+    // Level 7 : à bord du radeau, sa place suit le radeau (l'hôte le mène, l'instantané le donne)
+    const seat = this.raft ? this.raft.seats.indexOf(P.id) : -1;
+    if (seat >= 0) {
+      const p = seatPos(this.raft, seat);
+      P.x = p.x;
+      P.z = p.z;
+      P.moving = false;
+      if (input.yaw !== undefined) P.yaw = input.yaw;
+      if (input.pitch !== undefined) P.pitch = input.pitch;
+      return 0;
+    }
     // agrippé ou dans un casier : l'hôte décide de tout (on ne bouge pas, le regard suit l'instantané)
-    if (P.grabT > 0 || P.hidden >= 0 || P.desk) {
+    if (P.grabT > 0 || P.hidden >= 0 || P.desk || P.fishQ) {
       P.moving = false;
       P.running = false;
       if (P.hidden >= 0 && input.yaw !== undefined) P.yaw = input.yaw;
@@ -3634,9 +3736,10 @@ export class BackroomsSim {
       lt: (this.map.letters || []).map((L) => (L.posted ? 2 : L.taken ? 1 : 0)).join(''),
       // le vrai ascenseur ne se dévoile qu'une fois les cassettes trouvées
       rf: this.open ? this.realFloor : -1,
-      p: this.players.map((P) => [P.id, r2(P.x), r2(P.z), r2(P.yaw), r2(P.pitch), P.status, P.flashlight ? 1 : 0, Math.round(P.battery), Math.round(P.water * 10) / 10, P.inv.map((k) => k || '').join(','), r2(P.signal), P.running ? 1 : 0, P.moving ? 1 : 0, P.found, P.name, P.hasLamp ? 1 : 0, P.sel, P.floor, P.sigTo, P.onLadder ? 1 : 0, r2(P.lockT), r2(P.tilt), P.onBeam ? 1 : 0, P.bottles, r2(P.grabT), P.hidden, P.crouch ? 1 : 0, P.carry.join('.'), P.hurt || 0, Math.round(P.breath), P.holding ? 1 : 0, P.grabs || 0, r2(P.struggle || 0), r2(P.jy || 0), P.cam ? 1 : 0, r2(P.noise || 0), P.letters.join('.'), r2(P.detect), P.desk ? 1 : 0, P.camSel || 0]),
+      p: this.players.map((P) => [P.id, r2(P.x), r2(P.z), r2(P.yaw), r2(P.pitch), P.status, P.flashlight ? 1 : 0, Math.round(P.battery), Math.round(P.water * 10) / 10, P.inv.map((k) => k || '').join(','), r2(P.signal), P.running ? 1 : 0, P.moving ? 1 : 0, P.found, P.name, P.hasLamp ? 1 : 0, P.sel, P.floor, P.sigTo, P.onLadder ? 1 : 0, r2(P.lockT), r2(P.tilt), P.onBeam ? 1 : 0, P.bottles, r2(P.grabT), P.hidden, P.crouch ? 1 : 0, P.carry.join('.'), P.hurt || 0, Math.round(P.breath), P.holding ? 1 : 0, P.grabs || 0, r2(P.struggle || 0), r2(P.jy || 0), P.cam ? 1 : 0, r2(P.noise || 0), P.letters.join('.'), r2(P.detect), P.desk ? 1 : 0, P.camSel || 0, P.fishQ || '', P.fishI || 0, r2(P.fishT || 0)]),
       // l'entité : position, regard, mode, … et la hauteur de ses pieds (les marches, la chute dans un trou)
       // (et, pour un invité qui deviendrait l'hôte : sa minute de calme, et si la première rencontre a eu lieu)
+      raft: this.raft ? packRaft(this.raft) : null, // Level 7 : le radeau
       m: [r2(M.x), r2(M.z), r2(M.yaw), M.mode, M.silent ? 1 : 0, M.floor, M.grabbing ?? -1, r2(M.rushT || 0), M.away ? 1 : 0, r2(M.y ?? -(M.floor || 0) * FLOOR_DY), Math.round(M.dormantT || 0), this.glimpseAt === Infinity ? 1 : 0, M.inDuct ? 1 : 0, r2(M.duct && M.duct.landT > 0 ? M.duct.landT : 0), M.mimic ?? -1],
       // néons : 1 allumé, 0 éteint, 2 qui grésille (les coupures du directeur, les néons qui meurent un à un)
       ls: this.floors.map((f) => (f.lights || []).flatMap((l, i) => (l.state !== l.s0 ? [i * 3 + (l.state === 'off' ? 0 : l.state === 'flicker' ? 2 : 1)] : []))),
@@ -3747,7 +3850,7 @@ export class BackroomsSim {
     }
     const seen = new Set();
     for (const row of snap.p) {
-      const [id, x, z, yaw, pitch, status, fl, bat, water, inv, signal, running, moving, found, name, lamp, sel, floor, sigTo, onLadder, lockT, tilt, onBeam, bottles, grabT, hidden, crouch, carryN, hurt, breath, holding, grabs, struggle, jy, cam, noise, letters = '', detect = 0, desk = 0, camSel = 0] = row;
+      const [id, x, z, yaw, pitch, status, fl, bat, water, inv, signal, running, moving, found, name, lamp, sel, floor, sigTo, onLadder, lockT, tilt, onBeam, bottles, grabT, hidden, crouch, carryN, hurt, breath, holding, grabs, struggle, jy, cam, noise, letters = '', detect = 0, desk = 0, camSel = 0, fishQ = '', fishI = 0, fishT = 0] = row;
       seen.add(id);
       let P = this.players.find((q) => q.id === id);
       if (!P) {
@@ -3789,6 +3892,9 @@ export class BackroomsSim {
       } else if ((P.floor !== floor && !ownStairs) || (hideChange && hidden >= 0)) P.yaw = yaw;
       P.letters = letters ? String(letters).split('.').map(Number) : [];
       P.detect = detect;
+      P.fishQ = fishQ || '';
+      P.fishI = fishI || 0;
+      P.fishT = fishT || 0;
       if (!ownStairs) P.floor = floor || 0;
       P.status = status;
       P.flashlight = !!fl;
@@ -3848,6 +3954,7 @@ export class BackroomsSim {
     M.x = mx;
     M.z = mz;
     [, , M.yaw, M.mode] = snap.m;
+    if (snap.raft && this.raft) unpackRaft(this.raft, snap.raft);
     M.y = snap.m[9] ?? -(snap.m[5] || 0) * FLOOR_DY;
     if (now !== undefined) this.netPush('M', snap.tm, now, mx, mz, M.yaw, snap.m[5] || 0, !snap.m[8], M.y);
     M.silent = !!snap.m[4];

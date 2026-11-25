@@ -6,12 +6,22 @@
 import * as THREE from 'three';
 import { T } from '../world/tiles.js';
 import {
-  DOMAINE, PRIX_TERRAIN, PORTE_MAISON, ENTREE, CATALOGUE, ARTICLE, TOITS, HABITANTS, MATERIAUX, TALENTS, RESIDENTS, RESIDENT, RECOLTE, REPOUSSE,
-  batirDomaine, posable, emprise, caseLibre, compter, rang, etatDomaine,
+  DOMAINE, DOMAINE_AMI, PRIX_TERRAIN, PORTE_MAISON, ENTREE, CATALOGUE, ARTICLE, TOITS, HABITANTS, MATERIAUX, TALENTS, RESIDENTS, RESIDENT, RECOLTE, REPOUSSE,
+  batirDomaine, batirDomaineAmi, posable, emprise, caseLibre, compter, rang, etatDomaine,
 } from '../world/domaine.js';
 import { el, esc } from './ui.js';
+import { newId } from '../net/link.js';
+import { battleCopy, validMon } from '../core/pvp.js';
+import { healFull } from '../core/mon.js';
 
 const PROPRE = new Set([T.GRASS, T.PATH, T.PAVE, T.SAND, T.FLOWER, T.TALL, T.BRIDGE, T.ASH]);
+const NOM_TOIT = { red: 'Rouge', blue: 'Bleu', green: 'Vert', brown: 'Marron', gray: 'Gris', teal: 'Turquoise', purple: 'Violet', orange: 'Orange' };
+const NOM_HABITANT = {
+  habitant: 'Habitant', habitante: 'Habitante', vieil_homme: 'Vieil homme', dame: 'Dame',
+  gamin: 'Gamin', fillette: 'Fillette', enfant: 'Enfant', pecheur: 'Pêcheur',
+  jardinier: 'Jardinier', montagnard: 'Montagnard', randonneuse: 'Randonneuse', marin: 'Marin',
+  scientifique: 'Scientifique', kimono: 'Dame Kimono', karateka: 'Karatéka', insectomane: 'Insectomane',
+};
 const fmt = (n) => n.toLocaleString('fr-FR');
 const ICO = Object.fromEntries(MATERIAUX.map(([k, i]) => [k, i]));
 export const coutTexte = (c) => Object.entries(c || {}).filter(([, v]) => v).map(([k, v]) => `${v} ${ICO[k]}`).join(' ') || 'gratuit';
@@ -63,6 +73,8 @@ export async function allerDomaine(game) {
   const st = game.state, ui = game.ui, p = game.player;
   if (!st.domaine) return false;
   if (game.mapObj.gymLock != null && st.flags['IN:' + game.mapObj.id] && !game.libre) { await ui.say('Pas pendant un défi d\'arène !'); return false; }
+  if (game.mapObj.id === 'plateau:ligue' || game.mapObj.id.startsWith('ligue:')) { await ui.say('Pas pendant le défi de la Ligue Céleste !'); return false; }
+  if (game.donjons?.dansUnDonjon()) { await ui.say('Pas à l\'intérieur d\'un donjon !'); return false; }
   if (game.mapObj.id === DOMAINE) {
     const r = st.domaine.retour || { map: PORTE_MAISON.map, x: PORTE_MAISON.arrivee[0], y: PORTE_MAISON.arrivee[1], dir: 'left' };
     if (!(await ui.yesNo(`Revenir ${r.map === PORTE_MAISON.map ? 'à la maison' : 'là où tu étais'} ?`))) return false;
@@ -125,14 +137,150 @@ export async function architecte(game) {
   }
   for (;;) {
     const c = compter(game.mapObj.id === DOMAINE ? game.mapObj : game.world.maps[DOMAINE]);
-    const k = await ui.list({ title: `${d.nom} · ${rang(d, c)}`, items: [{ label: '🔨 Construire' }, { label: '📖 Carnet des habitats' }, { label: '🎒 Matériaux et talents' }, { label: 'Au revoir' }], cls: 'shop', cancel: 3 });
+    const items = [
+      { label: '🔨 Construire' },
+      { label: '📖 Carnet des habitats' },
+      { label: '🎒 Matériaux et talents' },
+      { label: '🌍 Visiter le Domaine d\'un ami' },
+      { label: 'Au revoir' },
+    ];
+    const k = await ui.list({ title: `${d.nom} · ${rang(d, c)}`, items, cls: 'shop', cancel: 4 });
     if (k === 0) { await chantier(game); await arrivees(game); }
     else if (k === 1) await carnet(game);
     else if (k === 2) {
       await ui.say([`Matériaux : ${MATERIAUX.map(([m, i, nom]) => `${i} ${nom} ${d.mat[m] || 0}`).join(' · ')}`,
         `Talents : ${d.talents.map((t) => TALENTS[t].nom).join(', ') || 'aucun'}.`], sp);
+    } else if (k === 3) {
+      if (await visiterDomaineAmi(game)) return;
     } else return;
   }
+}
+
+/** Visite le Domaine d'un ami connecté en mode lecture seule avec Panier d'accueil et Dresseur Gardien */
+export async function visiterDomaineAmi(game, peerArg = null) {
+  const ui = game.ui, link = game.link, p = game.player;
+  if (!link?.enabled) { await ui.say('Connecte-toi avec un ami via Amis / Connexion (F3) pour visiter son Domaine.'); return false; }
+  const peers = [...link.others.values()];
+  if (!peers.length) { await ui.say('Aucun ami connecté en ce moment pour visiter son Domaine.'); return false; }
+  let peer = peerArg;
+  if (!peer) {
+    if (peers.length === 1) peer = peers[0];
+    else {
+      const idx = await ui.list({
+        title: 'Visiter quel Domaine ?',
+        items: peers.map((q) => ({ label: q.name || 'Dresseur', right: q.zone || '' })).concat([{ label: 'Annuler' }]),
+        cancel: peers.length,
+      });
+      if (idx < 0 || idx >= peers.length) return false;
+      peer = peers[idx];
+    }
+  }
+  if (p.surf) { await ui.say('Pas en pleine mer !'); return false; }
+  const rid = newId();
+  link.send(peer.id, { t: 'domaine?', rid });
+  ui.toast(`Chargement du Domaine de ${peer.name}…`);
+  const rep = await link.wait(peer.id, (m) => m.t === 'domaine' && m.rid === rid, 8000);
+  if (rep.t !== 'domaine' || !rep.info) {
+    await ui.say(`${peer.name} n'a pas encore répondu.`);
+    return false;
+  }
+  const retour = game.mapObj.id === DOMAINE_AMI
+    ? (game.mapObj.warpAt(ENTREE.x, ENTREE.y) || { map: PORTE_MAISON.map, x: PORTE_MAISON.arrivee[0], y: PORTE_MAISON.arrivee[1], dir: 'left' })
+    : { map: game.mapObj.id, x: p.x, y: p.y, dir: p.dir };
+  batirDomaineAmi(game.world.maps, rep.info, retour);
+  await game.warp({ map: DOMAINE_AMI, x: ENTREE.arrivee[0], y: ENTREE.arrivee[1], dir: 'up' }, 'select');
+  return true;
+}
+
+/** Gardien du Domaine ami : offre le Panier de bienvenue (1 fois par ami) et propose un combat amical contre son équipe */
+export async function gardienDomaine(game, n) {
+  const st = game.state, ui = game.ui;
+  const g = n?.def?.gardien || n?.gardien || { id: 'ami', ownerName: 'Ami', nom: 'Domaine ami', gender: 'm', party: [] };
+  const who = { speaker: `Gardien · ${g.ownerName}`, face: g.gender === 'f' ? 'serena' : 'calem' };
+  const fKey = `panierAmi:${g.id}`;
+
+  if (!st.flags[fKey]) {
+    st.flags[fKey] = true;
+    game.give('sitrus-berry', 2);
+    let extra = '';
+    if (st.domaine) {
+      const d = etatDomaine(st.domaine);
+      d.mat.bois = (d.mat.bois || 0) + 3;
+      d.mat.pierre = (d.mat.pierre || 0) + 3;
+      extra = ' + 3 🪵 Bois + 3 🪨 Pierre pour ton Domaine';
+    }
+    game.sound.sfx('item');
+    game.save(true);
+    await ui.say([
+      `Bienvenue au « ${g.nom} » ! ${g.rangText ? `Ce lieu a atteint le rang : ${g.rangText} (${g.resCount || 0} Pokémon installé${(g.resCount || 0) > 1 ? 's' : ''}).` : `${g.ownerName} m'a chargé de t'accueillir comme il se doit.`}`,
+      `🎁 Panier d'accueil obtenu : 2 Baies Sitrus${extra} !`,
+    ], who);
+  }
+
+  const teamMons = (g.party || []).filter(validMon).map((m) => battleCopy([m])[0]);
+  const rentre = async () => {
+    const r = game.mapObj?.warpAt?.(ENTREE.x, ENTREE.y);
+    if (r?.map && game.warp) await game.warp(r, 'select');
+  };
+  if (!teamMons.length) {
+    const leave = await ui.ask(`Promène-toi librement dans le ${g.nom} ! ${g.ownerName} n'a pas encore laissé d'équipe Gardienne.`, ['Rester visiter', '🚪 Quitter le Domaine et rentrer'], who);
+    if (leave === 1) await rentre();
+    return;
+  }
+
+  const c = await ui.list({
+    title: `${g.nom}${g.rangText ? ' · ' + g.rangText : ''}`,
+    items: [
+      { label: '⚔️ Duel amical (1v1)', right: `${teamMons.length} Pokémon` },
+      { label: '⚔️ Duo amical (2v2)', right: `${teamMons.length} Pokémon` },
+      { label: '🚪 Quitter le Domaine et rentrer' },
+      { label: 'Continuer la visite' },
+    ],
+    cls: 'shop',
+    cancel: 3,
+  });
+  if (c === 2) { await rentre(); return; }
+  if (c !== 0 && c !== 1) return;
+  const format = c === 1 ? 'double' : 'single';
+  const minNeed = c === 1 ? 2 : 1;
+  if (st.party.filter((m) => m && m.hp > 0).length < minNeed) {
+    await ui.say(`Il te faut au moins ${minNeed} Pokémon en forme pour ce combat amical !`, who);
+    return;
+  }
+  for (const m of st.party) healFull(m);
+  const id = `gardien:${g.id}`;
+  const fake = {
+    id,
+    x: n.x,
+    y: n.y,
+    dir: n.dir,
+    sprite: n.sprite,
+    def: {
+      id,
+      sprite: n.sprite,
+      noWhiteout: true,
+      format,
+      trainer: {
+        cls: 'Gardien du Domaine',
+        name: g.ownerName,
+        ow: n.sprite,
+        bs: g.gender === 'f' ? 'serena' : 'calem',
+        team: teamMons,
+        ai: 'smart',
+        prize: 0,
+        items: {},
+        friendly: true,
+        format,
+        intro: `En garde ! Les Pokémon de ${g.ownerName} protègent le ${g.nom} !`,
+        lose: `Superbe visite et beau combat amical !`,
+      },
+    },
+  };
+  const res = await game.trainerBattle(fake, false);
+  delete st.flags['T:' + id];
+  for (const m of st.party) healFull(m);
+  if (res === 'win') await ui.say(`Tu as brillamment passé l'épreuve du ${g.nom} !`, who);
+  else await ui.say('Bien combattu ! J\'ai soigné toute ton équipe.', who);
 }
 async function carnet(game) {
   const d = game.state.domaine, ui = game.ui;
@@ -200,7 +348,7 @@ export async function chantier(game) {
       if (der?.a === art.id) return;
     }
     if (art.b) {
-      const toit = await ui.list({ title: 'Couleur du toit', items: TOITS.map((t) => ({ label: t })), cls: 'shop', cancel: -1 }); if (toit < 0) return;
+      const toit = await ui.list({ title: 'Couleur du toit', items: TOITS.map((t) => ({ label: NOM_TOIT[t] || t })), cls: 'shop', cancel: -1 }); if (toit < 0) return;
       trav.toit = TOITS[toit]; trav.nom = art.nom;
       if (!(await ui.yesNo(`Construire : ${art.nom} pour ${coutTexte(art.cout)} ?`))) return;
     } else if (art.s) {
@@ -208,7 +356,7 @@ export async function chantier(game) {
     } else if (art.n) {
       const c = compter(game.mapObj), habitants = T0.filter((t) => ARTICLE[t.a]?.n).length;
       if (habitants >= c.maisons) { game.sound.sfx('bump'); ui.toast('Il faut une maison libre pour chaque habitant'); return; }
-      const k = await ui.list({ title: 'Qui inviter ?', items: HABITANTS.map((h) => ({ label: h.replace('_', ' ') })), cls: 'shop', cancel: -1 }); if (k < 0) return;
+      const k = await ui.list({ title: 'Qui inviter ?', items: HABITANTS.map((h) => ({ label: NOM_HABITANT[h] || h.replace('_', ' ') })), cls: 'shop', cancel: -1 }); if (k < 0) return;
       d.hab = (d.hab || 0) + 1; trav.k = d.hab; trav.sprite = HABITANTS[k];
     }
     for (const [k, v] of Object.entries(art.cout || {})) d.mat[k] -= v;

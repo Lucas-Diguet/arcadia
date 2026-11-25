@@ -29,13 +29,13 @@ const VITRINE = [7, 3], KHAMSIN = [7, 4];
 // les statues de Pokémon fossiles, sur leur socle contre le mur du fond de la galerie
 const FOSSILES = [[142, 4], [141, 8], [139, 12], [409, 16], [567, 20], [565, 24], [697, 28], [699, 31]];
 
-/** un rectangle de sable libre dans la ville, au plus près de l'arène */
+/** un rectangle libre (sable ou chemin) dans la ville, au plus près de l'arène */
 function place(M, Z, gym, w, h) {
   const pris = new Set([...M.deco.map((d) => d.x + ',' + d.y), ...M.npcs.map((n) => n.x + ',' + n.y)]);
   let mieux = null;
   for (let y = Z.y0 + 2; y + h < Z.y1 - 2; y++) for (let x = Z.x0 + 2; x + w < Z.x1 - 2; x++) {
     let ok = true;
-    for (let j = -1; j <= h && ok; j++) for (let i = -1; i <= w && ok; i++) { const t = M.get(x + i, y + j); if (t !== T.SAND || pris.has((x + i) + ',' + (y + j)) || M.warpAt(x + i, y + j)) ok = false; }
+    for (let j = -1; j <= h && ok; j++) for (let i = -1; i <= w && ok; i++) { const t = M.get(x + i, y + j); if ((t !== T.SAND && t !== T.PATH) || pris.has((x + i) + ',' + (y + j)) || M.warpAt(x + i, y + j)) ok = false; }
     if (!ok) continue;
     const dist = Math.abs(x + w / 2 - gym.x) + Math.abs(y + h / 2 - gym.y);
     if (!mieux || dist < mieux.dist) mieux = { x, y, dist };

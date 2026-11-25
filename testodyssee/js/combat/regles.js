@@ -4,6 +4,7 @@
 // Bouclier Royal…), talents (Peau Féérique, Protéen, Déclic Tactique, Délestage, Griffe Dure, Corps Maudit, Infiltration,
 // Cœur Noble, Miroir Magik), objets (Veste de Combat, Bouton Fuite, Vulné-Assurance, Lumargile, Orbe Toxique, Roche
 // Humide, Ceinture Pro, verrou des objets Choix), et Puissance Cachée fixée (m.pc = { t, p }, sans tenir compte des IV).
+import { parCamp } from './camps.js';
 import { Battle, typeEff } from '../../../odyssee/js/core/battle.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { SPECIES } from '../../../odyssee/js/data/species.js';
@@ -129,7 +130,7 @@ export function installerRegles() {
   const simple = (b) => Object.getPrototypeOf(b) === B;
   const banc = (b, i) => b.sides[i].party.findIndex((m, k) => k !== b.sides[i].active && m.hp > 0);
 
-  Object.assign(B, {
+  const R = {
     start() { for (const s of this.sides) for (const m of s.party) m._obj0 = m.item || null; this.sides.forEach((s, i) => poserIllusion(this, i, s.active)); return orig.start.call(this); },
     /** le nom affiché : celui de l'illusion, jusqu'à ce qu'elle se dissipe */
     nm(i) {
@@ -358,6 +359,7 @@ export function installerRegles() {
     },
 
     special(i, d, mv) {
+      d = 1 - i;   // combat simple : la cible est toujours l'autre camp (le moteur passe le lanceur pour les attaques de terrain)
       const u = uDe(mv), m = this.act(i), v = this.sides[i].v, T = this.act(d), tv = this.sides[d].v, scr0 = this.sides[i].screens;
       const echec = () => { this.say('Mais cela échoue !'); return true; };
       const renvoi = () => { if (this.ab(d) !== 'magic-bounce') return false; this.say(`Miroir Magik de ${this.nm(d)} renvoie ${mv.n} !`); return true; };
@@ -466,6 +468,7 @@ export function installerRegles() {
       return r;
     },
     statusMove(i, d, mv) {
+      d = 1 - i;   // combat simple : la cible est toujours l'autre camp (le moteur passe le lanceur pour les attaques de terrain)
       const self = [7, 4, 13, 5, 12, 6].includes(mv.tg);
       if (!self && this._cible?.actif && (mv.m?.ail || mv.m?.st)) { this.say('Mais cela échoue !'); return; }
       if (!self && this.ab(d) === 'magic-bounce' && (mv.m?.ail || mv.m?.st?.some(([, c]) => c < 0))) { this.say(`Miroir Magik de ${this.nm(d)} renvoie ${mv.n} !`); return orig.statusMove.call(this, d, i, mv); }
@@ -656,7 +659,19 @@ export function installerRegles() {
       for (const [m, it] of this._perdus || []) if (!m.item) m.item = it;
       this._perdus = null;
     },
-  });
+  };
+  parCamp(B, R, orig);
+  // combat simple : le tour se joue par le resolve du labo (Distorsion, Poursuite, Demi-Tour…), et ses attaques par son
+  // useMove ; le moteur, lui, passe par resolveAll et useMoveRef, faits pour les combats en double
+  const origResolveAll = B.resolveAll, origUseMoveRef = B.useMoveRef;
+  orig.useMove = function (i, a, first) { return origUseMoveRef.call(this, { side: i, slot: 0 }, a, first ? null : new Set([`${1 - i}:0`])); };
+  B.resolveAll = function (acts) {
+    if (this.slots === 1 && acts.length === 2) {
+      const a0 = acts.find((x) => (x.side ?? x.i) === 0)?.a, a1 = acts.find((x) => (x.side ?? x.i) === 1)?.a;
+      if (a0 && a1) return this.resolve(a0, a1);
+    }
+    return origResolveAll.call(this, acts);
+  };
 }
 
 const NOMS_TYPES = { normal: 'Normal', fire: 'Feu', water: 'Eau', grass: 'Plante', electric: 'Électrik', ice: 'Glace', fighting: 'Combat', poison: 'Poison', ground: 'Sol', flying: 'Vol', psychic: 'Psy', bug: 'Insecte', rock: 'Roche', ghost: 'Spectre', dragon: 'Dragon', dark: 'Ténèbres', steel: 'Acier', fairy: 'Fée' };

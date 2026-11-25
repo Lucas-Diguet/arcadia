@@ -73,31 +73,75 @@ const REGLES = {
   },
 };
 
+// les teintes des dresseurs de Noir & Blanc (trchar000 / trchar001) quand le pack Noir & Blanc est actif
+const REGLES_NB = {
+  // garçon (Noir & Blanc 2) : visière rouge-orangé, veste bleue, pantalon/short bleu sombre, baskets rouges, sacoche brune
+  m: {
+    zone(h, s, v, y, L) {
+      const m = L.top + (L.bot - L.top) * 0.48;
+      if (y < m) return (h < 0.075 || h > 0.96) && s >= 0.6 && v >= 0.55 ? CHAP : 0;
+      if (y >= L.pied && (h < 0.055 || h > 0.96) && s >= 0.6 && v >= 0.45) return PIED;
+      if (y >= L.bot - 11 && y < L.bot - 3 && entre(h, 0.58, 0.76) && s >= 0.35 && v <= 0.88) return BAS;
+      if (y < L.bot - 11 && entre(h, 0.58, 0.66) && s >= 0.45 && v >= 0.3) return HAUT;
+      if (y >= m && y < L.bot - 6 && s <= 0.22 && v >= 0.72) return SAC;
+      return 0;
+    },
+  },
+  // fille (Noir & Blanc 2) : visière rose (sans toucher aux macarons bruns), haut rose, jupe jaune / short prune, sac rose, bottines roses
+  f: {
+    zone(h, s, v, y, L) {
+      const m = L.top + (L.bot - L.top) * 0.44;
+      if (y < m) return h >= 0.93 && s >= 0.25 && v >= 0.42 ? CHAP : 0;
+      if (y >= L.bot - 8 && h >= 0.88 && s >= 0.32 && v >= 0.24) return PIED;
+      if (y >= L.bot - 14 && y < L.bot - 5) {
+        if (entre(h, 0.10, 0.16) && s >= 0.4 && v >= 0.65) return BAS;
+        if (entre(h, 0.85, 0.94) && s >= 0.35 && v >= 0.22 && v <= 0.55) return BAS;
+      }
+      if (y >= L.bot - 15 && y < L.bot - 8 && h >= 0.94 && s >= 0.48 && v >= 0.6) return SAC;
+      if (y >= m && y < L.bot - 15 && h >= 0.93 && s >= 0.35 && v >= 0.35) return HAUT;
+      return 0;
+    },
+  },
+};
+
 /** zones d'une image W × W du dresseur par défaut (px : RGBA) → tableau d'indices dans ZONES (0 : rien à changer) */
 export function zonesTenue(px, W, genre) {
   const R = REGLES[genre] || REGLES.m, at = (x, y) => (y * W + x) * 4, hsv = new Array(W * W);
-  let top = W, bot = -1;
+  let top = W, bot = -1, totB = 0, totT = 0;
   const nb = new Array(W).fill(0), nt = new Array(W).fill(0);
   for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
     const o = at(x, y); if (px[o + 3] < 128) continue;
     const c = hsv[y * W + x] = rgbHsv(px[o], px[o + 1], px[o + 2]);
     top = Math.min(top, y); bot = Math.max(bot, y);
-    if (R.buste(...c)) nb[y]++;
-    if (R.tete?.(...c)) nt[y]++;
+    if (R.buste(...c)) { nb[y]++; totB++; }
+    if (R.tete?.(...c)) { nt[y]++; totT++; }
   }
   const out = new Uint8Array(W * W); if (bot < 0) return out;
+  // pack Noir & Blanc : le dresseur n'a ni la casquette turquoise ni le sweat violet du dresseur de base
+  const regle = (genre === 'f' ? totB < 12 : totT < 12) ? (REGLES_NB[genre] || REGLES_NB.m) : R;
   // le cou : première rangée sous la coiffure où le haut fait au moins trois pixels ; la taille : la dernière
   let tete = -1; for (let y = top; y <= top + (bot - top) * 0.55; y++) if (nt[y] >= 3) tete = y;
   let cou = -1, taille = -1; for (let y = tete + 1; y <= bot; y++) if (nb[y] >= 3) { if (cou < 0) cou = y; taille = y; }
   if (cou < 0) cou = top + Math.round((bot - top) * 0.45), taille = top + Math.round((bot - top) * 0.75);
   const L = { top, bot, cou, taille, pied: bot - (genre === 'f' ? 7 : 6) };
-  for (let y = top; y <= bot; y++) for (let x = 0; x < W; x++) { const c = hsv[y * W + x]; if (c) out[y * W + x] = R.zone(c[0], c[1], c[2], y, L); }
+  for (let y = top; y <= bot; y++) for (let x = 0; x < W; x++) { const c = hsv[y * W + x]; if (c) out[y * W + x] = regle.zone(c[0], c[1], c[2], y, L); }
   return out;
 }
 
-/** recolore une image (px : RGBA, W × W) selon la tenue ; renvoie le nombre de pixels changés */
-export function recolorer(px, W, genre, T) {
-  const Z = zonesTenue(px, W, genre); let n = 0;
+/** zones dessinées à la main par un pack de graphismes (Noir & Blanc) : { m, f } → Uint8Array de 768 × 64 (une valeur de
+ *  ZONES par pixel, les 12 poses côte à côte) ; elles remplacent la détection automatique faite pour le dresseur de base */
+let MASQUES = null;
+export function setMasques(M) { MASQUES = M; }
+/** les zones de la pose i (W × W), tirées des masques du pack, ou null */
+function zonesPack(genre, i, W) {
+  const M = MASQUES?.[genre]; if (!M || W !== 64) return null;
+  const Z = new Uint8Array(W * W); for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) Z[y * W + x] = M[y * 768 + i * W + x];
+  return Z;
+}
+
+/** recolore une image (px : RGBA, W × W) selon la tenue ; renvoie le nombre de pixels changés (Z : zones déjà connues) */
+export function recolorer(px, W, genre, T, Zp = null) {
+  const Z = Zp || zonesTenue(px, W, genre); let n = 0;
   for (let z = 1; z < ZONES.length; z++) {
     const hex = T[ZONES[z]]; if (!hex) continue;
     // valeur moyenne de la zone : chaque pixel garde son ombre relative autour de la teinte voulue
@@ -127,7 +171,8 @@ export function composer(src, sx, sy, T, doc = typeof document !== 'undefined' ?
   for (let i = 0; i < 12; i++) {
     x.clearRect(0, 0, W, W); x.drawImage(src, sx + i * W, sy, W, W, 0, 0, W, W);
     const im = x.getImageData(0, 0, W, W);
-    recolorer(im.data, W, T.genre === 'f' ? 'f' : 'm', T);
+    const g = T.genre === 'f' ? 'f' : 'm';
+    recolorer(im.data, W, g, T, zonesPack(g, i, W));
     x.putImageData(im, 0, 0);
     ctx.drawImage(c, i * W, 0);
   }

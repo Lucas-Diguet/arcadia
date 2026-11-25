@@ -6,6 +6,7 @@
 // météo, crans de stats, immunités), et décide : achever, se protéger ou changer quand elle va tomber, poser un piège,
 // un statut ou un boost seulement quand elle ne risque rien, garder en vie son poseur de météo et le renvoyer quand la
 // météo s'arrête. Elle ne prédit pas les changements du joueur. Après un K.O., elle envoie le meilleur Pokémon.
+import { parCamp } from './camps.js';
 import { Battle } from '../../../odyssee/js/core/battle.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { SPECIES } from '../../../odyssee/js/data/species.js';
@@ -32,7 +33,7 @@ export function installerIA() {
   const simple = (b) => Object.getPrototypeOf(b) === B;
   const serieuse = (b) => simple(b) && !b.wild && b.sides[1].trainer?.ai === 'smart';
 
-  Object.assign(B, {
+  const R = {
     /* ---------------- ce que l'IA a vu ---------------- */
     vu(m) { const V = (this._vu ||= new Map()); if (!V.has(m.uid)) V.set(m.uid, { moves: new Set(), ab: null }); return V.get(m.uid); },
     /** talent que l'IA prête à ce Pokémon du joueur : montré en combat, ou le seul possible pour son espèce */
@@ -274,5 +275,6 @@ export function installerIA() {
       }
       return orig.doSwitch.call(this, i, idx, afterFaint, trigger);
     },
-  });
+  };
+  parCamp(B, R, orig);
 }

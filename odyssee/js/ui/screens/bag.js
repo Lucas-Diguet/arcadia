@@ -1,6 +1,6 @@
 // odyssee/js/ui/screens/bag.js — sac
 import { esc } from '../ui.js';
-import { ITEMS, itemName, giveHeldItem } from '../../core/items.js';
+import { ITEMS, itemName, giveHeldItem, estSoin } from '../../core/items.js';
 import { monName } from '../../core/mon.js';
 import { ASSETS } from '../../assets.js';
 import { screen, closer } from './common.js';
@@ -18,7 +18,7 @@ export function bagScreen(game, o = {}) {
     const POCKET_CFG = [
       { id: 'objets', label: 'Objets', sub: 'Pierres, Bonbons et Objets tenus', color: '#00e0ff', glow: 'rgba(0, 224, 255, 0.45)', bg: 'img/bag/backpack_objets.jpg', icon: 'img/bag/icon_objets.png', arcX: 40.2, arcY: 11.6 },
       { id: 'soin', label: 'Soins', sub: 'Médicaments, Potions et Guérisons', color: '#34d870', glow: 'rgba(52, 216, 112, 0.45)', bg: 'img/bag/backpack_soin.jpg', icon: 'img/bag/icon_soin.png', arcX: 62.1, arcY: 25.2 },
-      { id: 'balls', label: 'Poké Balls', sub: 'Capsules de capture de créatures', color: '#ff4c4c', glow: 'rgba(255, 76, 76, 0.45)', bg: 'img/bag/backpack_balls.jpg', icon: 'img/bag/icon_balls.png', arcX: 70.9, arcY: 40.1 },
+      { id: 'balls', label: 'Poké Balls', sub: 'Poké Balls de capture', color: '#ff4c4c', glow: 'rgba(255, 76, 76, 0.45)', bg: 'img/bag/backpack_balls.jpg', icon: 'img/bag/icon_balls.png', arcX: 70.9, arcY: 40.1 },
       { id: 'ct', label: 'CT & CS', sub: 'Capsules Techniques et Secrètes', color: '#b966ff', glow: 'rgba(185, 102, 255, 0.45)', bg: 'img/bag/backpack_ct.jpg', icon: 'img/bag/icon_ct.png', arcX: 70.5, arcY: 54.8 },
       { id: 'baies', label: 'Baies', sub: 'Baies naturelles et remèdes doux', color: '#ff77a8', glow: 'rgba(255, 119, 168, 0.45)', bg: 'img/bag/backpack_baies.jpg', icon: 'img/bag/icon_baies.png', arcX: 59.1, arcY: 74.4 },
       { id: 'cles', label: 'Objets Rares', sub: 'Objets précieux, Carte et Bicyclette', color: '#ffe058', glow: 'rgba(255, 224, 88, 0.45)', bg: 'img/bag/backpack_cles.jpg', icon: 'img/bag/icon_cles.png', arcX: 34.2, arcY: 87.8 },
@@ -127,7 +127,7 @@ export function bagScreen(game, o = {}) {
       <div class="b2w2-bag-inspector">
         <div class="b2w2-insp-left">
           <div class="b2w2-insp-frame">
-            <img class="b2w2-insp-img" src="img/items/potion.png" alt="">
+            <img class="b2w2-insp-img" src="img/items/potion.png" alt="" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='img/items/gift.png'}">
           </div>
         </div>
         <div class="b2w2-insp-mid">
@@ -223,6 +223,7 @@ export function bagScreen(game, o = {}) {
       const sel = es[i];
       if (sel) {
         const it = ITEMS[sel];
+        delete inspSpriteEl.dataset.fb;
         inspSpriteEl.src = ASSETS.item(sel);
         inspSpriteEl.style.display = '';
         inspNameEl.textContent = itemName(sel);
@@ -231,9 +232,11 @@ export function bagScreen(game, o = {}) {
         inspQtyEl.textContent = it.key ? 'Objet Unique Rare' : `Quantité : × ${bag[sel]}`;
         inspDescEl.textContent = it.desc || '';
 
-        const canUse = o.battle
+        const interdit = o.sansSoins && estSoin(sel);
+        if (interdit) inspDescEl.textContent = 'Sans effet dans une faille.';
+        const canUse = interdit ? false : o.battle
           ? (it.heal || it.cure || it.revive || it.ball || it.pp || it.ppAll)
-          : (!it.key || it.field || it.ct || sel === 'town-map' || sel === 'velo');
+          : (!it.key || it.field || it.ct || sel === 'town-map' || sel === 'velo' || sel === 'canne');
         useBtn.disabled = !canUse;
         useBtn.classList.toggle('disabled', !canUse);
 
@@ -290,7 +293,7 @@ export function bagScreen(game, o = {}) {
           return `<div class="list-row b2w2-item-row ${n === i ? 'on' : ''}" data-row="${n}">
             <span class="cur">${n === i ? '▶' : ''}</span>
             <div class="b2w2-item-ico-wrap">
-              <img class="b2w2-item-ico" src="${ASSETS.item(k)}" alt="">
+              <img class="b2w2-item-ico" src="${ASSETS.item(k)}" alt="" onerror="this.onerror=null;this.src='img/items/gift.png'">
             </div>
             <span class="b2w2-item-name">${esc(itemName(k))}</span>
             ${regTag}${heldTag}
@@ -364,9 +367,9 @@ export function bagScreen(game, o = {}) {
       updateInspector();
 
       const item = es[i], it = ITEMS[item];
-      const canUse = o.battle
+      const canUse = o.sansSoins && estSoin(item) ? false : o.battle
         ? (it.heal || it.cure || it.revive || it.ball || it.pp || it.ppAll)
-        : (!it.key || it.field || it.ct || item === 'town-map' || item === 'velo');
+        : (!it.key || it.field || it.ct || item === 'town-map' || item === 'velo' || item === 'canne');
 
       if (!canUse) {
         ui.sound.sfx('bump');
@@ -391,7 +394,7 @@ export function bagScreen(game, o = {}) {
       }
       if (!st.party || !st.party.length) {
         ui.sound.sfx('bump');
-        await ui.say("Tu n'as aucune créature dans ton équipe !");
+        await ui.say("Tu n'as aucun Pokémon dans ton équipe !");
         return;
       }
       busy = true;
@@ -455,17 +458,19 @@ export function bagScreen(game, o = {}) {
     }, { passive: false });
 
     // Clics sur les 4 boutons tactiles DS
-    useBtn?.addEventListener('click', () => {
+    const activateSelected = async () => {
+      if (busy) return;
       const es = entries();
       if (i >= es.length) { ui.sound.sfx('cancel'); close(null); return; }
       const item = es[i], it = ITEMS[item];
-      // Si c'est un objet purement tenu (ex: baies de tenue, restes, orbe vie), rediriger naturellement vers Donner
-      if (it && it.hold && !it.heal && !it.candy && !it.stone && !it.field) {
-        handleGive();
+      // Si c'est un objet purement tenu (ex: baies de tenue, restes, orbe vie), rediriger naturellement vers Donner hors combat
+      if (!o.battle && it && it.hold && !it.heal && !it.candy && !it.stone && !it.field) {
+        await handleGive();
       } else {
-        triggerRow(i);
+        await triggerRow(i);
       }
-    });
+    };
+    useBtn?.addEventListener('click', activateSelected);
     giveBtn?.addEventListener('click', handleGive);
     tossBtn?.addEventListener('click', handleToss);
     backBtn?.addEventListener('click', () => { ui.sound.sfx('cancel'); close(null); });
@@ -490,21 +495,18 @@ export function bagScreen(game, o = {}) {
       renderList();
     };
     regBtn?.addEventListener('click', toggleRegister);
-    const pop = ui.input.push(async (k) => {
+    const pop = ui.input.push(async (k, repeat) => {
       if (busy) return;
+      if (repeat && !['up', 'down', 'left', 'right'].includes(k)) return;
       if (k === 'left') { changePocket(pocket - 1); return; }
       if (k === 'right') { changePocket(pocket + 1); return; }
       if (k === 'up') { changeItem(i - 1); return; }
       if (k === 'down') { changeItem(i + 1); return; }
       if (k === 'b') { ui.sound.sfx('cancel'); close(null); return; }
-      if (k === 'd' || k === 'g') { await handleGive(); return; }
-      if (k === 'j' || k === 'x') { await handleToss(); return; }
-      if (k === 'ball' || k === 'autorun' || k === 'y' || k === 'r') { toggleRegister(); return; }
-      if (k === 'a') {
-        const es = entries();
-        if (i === es.length) { ui.sound.sfx('cancel'); close(null); return; }
-        await triggerRow(i);
-      }
+      if (k === 'friends') { await handleGive(); return; }
+      if (k === 'quests') { await handleToss(); return; }
+      if (k === 'ball' || k === 'autorun') { toggleRegister(); return; }
+      if (k === 'a') await activateSelected();
     });
   });
 }

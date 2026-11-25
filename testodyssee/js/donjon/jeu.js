@@ -298,6 +298,8 @@ export class Donjons {
     }
     return false;
   }
+  /** reprise d'une partie sauvegardée (Odyssée) : le labo ne sauvegarde rien */
+  reprise() {}
   dansUnDonjon() { return [...this.defs.values()].some((q) => this.estDans(q)); }
   /** on quitte un donjon (autre lieu, changement de lieu) : les objets de quête disparaissent */
   sortir(d) {

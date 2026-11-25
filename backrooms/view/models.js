@@ -39,8 +39,11 @@ const FOLDER = {
   vintage_pocket_watch: 'mall', vintage_stapler: 'mall', vintage_telephone_wall_clock: 'mall',
   vintage_video_camera: 'mall', wheelchair_01: 'mall', wooden_bookshelf_worn: 'mall', wooden_broom: 'mall',
   wooden_cutting_board: 'mall', wooden_display_shelves_01: 'mall', WoodenTable_01: 'mall',
+  // ocean (Level 7)
+  coast_rocks_01: 'ocean', coast_rocks_03: 'ocean', coastal_cliff_01: 'ocean', lateral_sea_marker: 'ocean', modular_wooden_pier: 'ocean',
+  ocean_buoy: 'ocean', ship_pinnace: 'ocean', wooden_lantern_01: 'ocean',
   // poolrooms
-  lifebuoy: 'poolrooms', rubber_duck_toy: 'poolrooms',
+  fish: 'poolrooms', lifebuoy: 'poolrooms', rubber_duck_toy: 'poolrooms',
   // tuyauteries
   can_rusted: 'tuyauteries', chevre: 'tuyauteries', industrial_wall_lamp: 'tuyauteries', metal_trash_can: 'tuyauteries',
   modular_industrial_pipes_01: 'tuyauteries', mounted_fluorescent_lights: 'tuyauteries', multi_cleaner_5_litre: 'tuyauteries',

@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.59 — 25 novembre 2026
+- **TestOdyssée** — Le labo reprend toutes les nouveautés d'Arcadia jusqu'à la 5.163 (Odyssée 3.4) : failles en expéditions sur des îles flottantes, donjons à plusieurs et boss de raid dans Odyssée, combats en double, musiques des légendaires, et le reste du journal ci-dessous.
+
 ## 6.58 — 25 novembre 2026
 - **TestOdyssée** — Place des Champions : le Camérupt de l'arène Feu attaque désormais en spécial (Telluriforce, Rayon Gemme).
 
@@ -18,6 +21,27 @@
 ## 6.54 — 25 novembre 2026
 - **TestOdyssée** — Nouveau donjon : le Barrage de Roche-Haute (seul, fin de jeu).
 
+## 5.163 — 25 novembre 2026
+- **Odyssée** — Les failles deviennent de vraies expéditions (Odyssée 3.4) :
+  - L'Astrolabe disparaît : failles, aurores et pluies d'étoiles arrivent au hasard (le ciel, la nuit). Une annonce te dit où chercher ; un fragment déjà dépensé pour une faille est rendu.
+  - Derrière une faille, trois îles flottantes où l'on se déplace, au-dessus du tunnel qui défile.
+  - Faille Inversée : des ponts de lumière s'échangent quand on marche sur un cristal. Faille Chaotique : des courants t'emportent d'une île à l'autre. Faille Alpha : le colosse te prend en chasse.
+  - Bats le Pokémon de l'île pour ouvrir deux portails : chacun annonce sa règle et sa récompense. Tu peux aussi rentrer avec ton butin par le passage du sud.
+  - Des éclats à ramasser, et un gardien Alpha à l'aura dorée sur la dernière île.
+  - Le butin n'est remis qu'à la sortie : une défaite après la première île, et il reste dans la faille.
+  - Dans une faille, ni fuite ni objets de soin : seules tes Balls sortent du Sac pendant les combats.
+  - Portails redessinés : une déchirure ouverte sur le tunnel, arête crépitante, éclats en orbite et runes au sol.
+  - Les combats se jouent dans la faille, sur des îlots de roche. À la sortie, la faille implose et te recrache sur la route.
+  - Cinq musiques nouvelles : les îles du Reflet, des Quatre Vents et du Colosse, le trône, et le combat du gardien.
+  - Nouvelle médaille : Au Bout de la Faille. Le Rappel Max retrouve son icône.
+
+## 5.162 — 25 novembre 2026
+- **The Backrooms** — Un nouveau niveau : le Level 7, Thalassophobia, au bout du toboggan bleu des Poolrooms.
+  - Une mer sans fin dans la brume du soir, avec sa houle, ses reflets, l'éclat du jour qui baisse et un peu d'écume sur les crêtes. Des maisons à moitié englouties en sortent : le rez-de-chaussée sous l'eau, l'étage et le toit au-dessus. Aucune ne se ressemble : grises, bleues, rouges, vertes ou blanches, un toit à deux pentes ou à un seul pan, une cheminée, des volets qui pendent, une rambarde ; deux ou trois pièces. D'autres sombrent de travers, et l'épave d'un grand voilier s'est échouée sur un rocher.
+  - Une barque en bois à moteur attend au ponton. Monte dedans avec F : le premier tient la barre (Z / S pour le moteur, Q / D pour tourner). Pour descendre, il faut accoster un îlot.
+  - Trois bidons d'essence sont cachés au fond de trois de ces maisons : accoste à leur ponton, entre, fouille les pièces. Le moteur en boit, et sans eux on n'ira pas loin. Tout au bout, sur un dernier îlot, une trappe de bunker ouverte sous un gyrophare : la sortie, par une échelle qui descend dans le noir.
+  - Quelque chose d'immense vit sous la surface et entend le moteur. Le sonar dit quand ça approche : coupe le moteur et laisse-le passer. S'il atteint la barque en marche, il emporte quelqu'un. Et ne traîne pas au bord de l'eau.
+
 ## 6.53 — 24 novembre 2026
 - **TestOdyssée** — Combat : un Pokémon qui méga-évolue prend le talent de sa forme Méga, même dans les équipes des champions. Le Méga-Dracaufeu Y de l'équipe Soleil amène bien le soleil, et Lance-Soleil part sans se charger.
 
@@ -29,10 +53,119 @@
   - Avec un objet Choix (Bandeau, Lunettes, Mouchoir), un piège, une Provoc ou une attaque sans PP, le message s'affiche et on choisit autre chose ; rien n'est envoyé à l'adversaire tant que le choix n'est pas valable.
   - Si un choix interdit arrive quand même, les deux écrans jouent l'attaque bloquée par l'objet Choix, de la même façon.
 
+## 5.161 — 24 novembre 2026
+- **Odyssée** — Entrer dans une faille se vit maintenant en grand (Odyssée 3.3) :
+  - L'écran se brise, le monde est aspiré et tu traverses un tunnel propre à la faille : losanges qui s'échangent, quatre climats et leurs éclairs, ou brasier d'un Alpha.
+  - Une silhouette approche au bout du tunnel, puis se révèle avant le combat.
+  - Une touche suffit pour passer l'animation.
+
+## 5.160 — 24 novembre 2026
+- **Odyssée** — Ouvrir une faille avec l'Astrolabe demande un Fragment Météorique, sans attente (Odyssée 3.2) :
+  - Le fragment n'est utilisé qu'après confirmation. Si tu quittes le jeu avant d'entrer, ta faille se rouvre ; si tu la dissipes, le fragment t'est rendu.
+  - Une faille ouverte ainsi donne 2 Hyper Balls (un Super Bonbon pour une Faille Alpha) ; les failles des routes donnent toujours un fragment.
+  - L'aurore et la pluie d'étoiles gardent leur recharge de 15 minutes.
+
+## 5.159 — 24 novembre 2026
+- **Odyssée** — Grand contrôle des nouveautés célestes, des failles et des souvenirs (Odyssée 3.1) :
+  - L'Astrolabe se recharge après usage : 15 minutes pour le ciel, 8 minutes pour les failles.
+  - Failles et météorites apparaissent toujours à un endroit où l'on peut aller à pied ; une faille refermée à l'Astrolabe reste fermée.
+  - Une faille annonce le niveau de ce qui t'attend ; trop tôt dans l'aventure, le Pokémon n'a pas encore sa forme évoluée.
+  - Un Pokémon Alpha choisit mieux ses attaques, et sa tête ne sort plus de l'écran.
+  - Appuyer plusieurs fois sur Entrée devant une faille n'ouvre plus deux conversations à la fois.
+  - Jirachi, mis K.O. ou en fuite, peut revenir avec une autre météorite.
+  - Portails et météorites redessinés ; ils brillent la nuit. Une faille ou une aurore qui commence s'annonce à l'écran.
+  - Onglet Souvenirs : les dix souvenirs tiennent à l'écran et l'aura d'entrée se choisit au clavier (Entrée). Un souvenir gagné en combat ou en marchant s'annonce.
+  - La bulle de ton compagnon suit ses pas et ne cache plus ton dresseur.
+  - Combat : le lancer rapide de Poké Ball ne cache plus les PV. En faille inversée, Cage-Éclair touche le type Sol.
+  - Le thème des failles ne grésille plus ; changer le volume ne réactive plus un son coupé.
+  - Médailles : la seule Master Ball reste celle des 50 victoires entre joueurs ; Conquérant de la Tour donne 10 Super Bonbons, Panthéon Vivant 5 Guérisons.
+
+## 5.158 — 24 novembre 2026
+- **Odyssée** — Le ciel et l'espace s'animent :
+  - Aurores boréales et pluies d'étoiles filantes la nuit, météorites à ramasser et visiteurs venus des étoiles.
+  - L'Astrolabe, remis avec le Pokédex, observe le ciel et ouvre des failles.
+  - Failles sur les routes : types inversés, météo chaotique ou Pokémon Alpha géant.
+  - Ton compagnon réagit à ce qui l'entoure et garde des Souvenirs, qui débloquent des auras d'entrée en combat.
+  - Quatre quêtes : Les Larmes d'Aurore, Les Cicatrices de l'Espace, La Légende des Colosses Alpha, Les Échos du Compagnon.
+  - 12 nouvelles médailles, quatre musiques et des ambiances sonores.
+
+## 5.157 — 24 novembre 2026
+- **Odyssée** — Finitions et passage en **Odyssée 3.0** :
+  - Prénoms des 206 dresseurs procéduraux des routes et lieux accordés au genre de leur classe, sans collision avec les dresseurs fixes ni les Champions.
+  - Déblocage audio WebAudio fiabilisé sur Safari/iOS (`keydown`, `pointerdown`, `touchend`, `click` et `resume().catch()`).
+  - Cache navigateur rafraîchi sur l'ensemble des 182 modules (`Odyssée 3.0`).
+
+## 5.156 — 24 novembre 2026
+- Correction : lot 1 — urgences lotcheck (crashs, softlocks, combat, économie) (Amiel)
+- Correction : lot 2 — combat, talents, méga-évolutions et descriptions (Amiel)
+- Correction : lot 3 — progression 15 badges, économie, parc des légendes et finitions (Amiel)
+- Correction : lot 4 — finition ux/ui, azerty, tactile, hud, audio et boot (Amiel)
+- Correction : lot 5 — ton nintendo, localisation fr, coherence narrative et pnj (Amiel)
+
+## 5.155 — 22 novembre 2026
+- **Odyssée** — 18 nouvelles médailles, avec leurs récompenses, et cinq nouveaux onglets dans les Trophées (Odyssée 2.9) :
+  - Boss : vaincre un premier boss, les admins et le chef de l'Éclipse, ceux de la Brume, le dernier boss de la Tour de combat.
+  - Raids : gagner un raid, en gagner 10, vaincre un boss à l'aura dorée, capturer un boss de raid.
+  - Légendaires : en capturer 1, 5 puis 10 différents.
+  - Dojo de Mamadou : 1 puis 10 victoires, une série de 5 en Duo ou en Trio.
+  - Donjons : la Crypte des Murmures, le Donjon des Miroirs, le Sanctuaire des Trois Voies, puis les trois.
+  - Ce que ta partie a déjà accompli compte : légendaires capturés, donjons finis, Dojo, Brume et Éclipse vaincues.
+  - Correction : capturer un boss de raid du Dojo n'interrompt plus la fin du combat.
+
+## 5.154 — 22 novembre 2026
+- **Odyssée** — Petites corrections (Odyssée 2.7) :
+  - À la pêche, un bip et la bulle « ! » quand ça mord (c'était muet).
+  - La Carte de Dresseur compte les médailles sur 36, comme l'écran des trophées (elle affichait 32).
+  - Une médaille débloquée pendant un combat ou une évolution s'affiche après la scène, plus au milieu.
+  - L'aide des touches explique que la sauvegarde est automatique (elle parlait d'un bouton Sauver qui n'existe pas).
+
+## 5.153 — 22 novembre 2026
+- **Odyssée** — En combat, le Pokémon adverse a les pattes posées sur son socle au lieu de flotter au-dessus ; ceux qui lévitent (Fantominus, Smogo…) restent en l'air (Odyssée 2.6).
+
+## 5.152 — 22 novembre 2026
+- **Odyssée** — L'écran de combat est plus net : tous ses pixels ont la même taille, quelle que soit la taille de la fenêtre (Odyssée 2.5).
+
+## 5.151 — 22 novembre 2026
+- **Odyssée** — Écran titre plus sobre : « Appuie sur Entrée », la version en petit dans un coin (Odyssée 2.4).
+  - Dans la cinématique d'ouverture, le bouton « Passer » est en haut à droite et ne cache plus les sous-titres.
+
+## 5.150 — 22 novembre 2026
+- **Odyssée** — En combat, les Pokémon respirent sans se déformer : ils montent et descendent d'un bloc, leurs pixels ne tremblent plus (Odyssée 2.3).
+  - La barre des touches ne passe plus devant la boîte de texte quand un message s'ouvre.
+
+## 5.149 — 22 novembre 2026
+- **Odyssée** — Une présentation plus proche d'un vrai jeu Pokémon (Odyssée 2.2) :
+  - Plus rien par-dessus la carte au premier lancement : le HUD et la barre des touches se montrent avec U, ou dans Options → HUD (masqué, petit, moyen ou grand).
+  - Les pièces qui tiennent à l'écran (maisons, Centre Pokémon, boutiques) s'affichent en entier dès qu'on entre, au lieu de couper le comptoir en haut.
+  - Le prénom se choisit sur un clavier en grille façon DS (majuscules, minuscules, accents), aux flèches ou en tapant directement.
+  - Le choix des graphismes prend le style des menus du jeu, et le texte du professeur n'est plus décalé dans sa boîte.
+
+## 5.148 — 22 novembre 2026
+- **Odyssée** — L'image reste nette quelle que soit la largeur de la fenêtre : une colonne de pixels ne tressaute plus quand le décor défile (Odyssée 2.1).
+
+## 5.147 — 22 novembre 2026
+- **Odyssée** — le jeu démarre encore plus vite : une partie de la carte est préparée d'avance, l'écran de chargement dure environ 7 secondes de moins (Odyssée 2.0).
+
+## 5.146 — 22 novembre 2026
+- **Odyssée** — le jeu démarre presque deux fois plus vite : l'écran de chargement dure une quinzaine de secondes de moins (Odyssée 1.9).
+
 ## 6.50 — 21 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge, étage 1 : un tourniquet ne se bloque plus sans raison. S'il refuse de tourner, c'est qu'un de ses bras bute contre quelque chose qu'on voit : une cloison, un mur de pierre, un pilier, un autre tourniquet ou un joueur.
   - Des piliers de pierre dans les coins de certains tourniquets les empêchent de tourner d'un côté, comme à Cimetronelle.
   - Les murs entre les salles sont maintenant de vrais murs de pierre, et les parcours des trois salles ont été refaits.
+
+## 5.145 — 21 novembre 2026
+- **Odyssée** — Avec les graphismes Noir & Blanc, les donjons (Crypte des Murmures, Donjon des Miroirs, Sanctuaire des Trois Voies) retrouvent leur roche d'origine (Odyssée 1.8).
+
+## 5.144 — 21 novembre 2026
+- **Odyssée** — Grottes plus lisibles (Odyssée 1.7).
+  - Dans les grottes sombres, le halo de lumière autour du joueur est bien plus grand, avec ou sans Flash.
+  - Avec les graphismes Noir & Blanc, la roche des grottes a son propre dessin, teinté selon la grotte (mine, grotte marine, magma, glace).
+
+## 5.143 — 21 novembre 2026
+- **Odyssée** — Avec les graphismes Noir & Blanc, les montagnes reprennent le dessin d'Odyssée (Odyssée 1.6).
+  - Gradins, falaises et sommets enneigés sont les mêmes qu'avec les graphismes de base, leurs roches passées en brun clair comme le reste du relief Noir & Blanc.
+  - Les mines et les zones de roche brune aussi.
 
 ## 6.49 — 20 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge, l'étage 2, à trois : la clé trouvée au -1 ouvre la grande porte en haut de l'escalier.
@@ -65,6 +198,114 @@
   - Deux îlots plus près du centre, à 3 h et 9 h, ne sont atteints que par la petite aiguille, et ils arrêtent les grandes. Quatre plateformes contre le mur sont trop loin pour elle. De nouveaux leviers verts font tourner la petite aiguille, et l'on passe d'une grande aiguille à la petite quand elles sont à la même heure.
   - Les salles du mur relient deux plateformes et sont remplies de tourniquets, comme l'arène de Cimetronelle : on pousse un bras par le côté pour le faire tourner d'un quart de tour, s'il a la place. Une grille coupe les salles est et ouest en deux : elle se lève avec un levier, sur l'îlot qui est devant.
   - Au nord, un immense escalier de pierre fait tout le tour de la tour, au-dessus des autres salles, qu'on voit en dessous. Tout en haut, une grande porte en bois mène à l'étage 2. Elle est fermée pour l'instant.
+
+## 5.142 — 20 novembre 2026
+- **Odyssée** — Récap à la fin de chaque raid (Odyssée 1.5).
+  - Classement de l'escouade par dégâts infligés au boss, avec la part de chacun, les dégâts encaissés, les soins et les K.O.
+  - Des titres pour le combat : plus gros frappeur, coup le plus fort, mur de l'escouade, soigneur, toujours debout.
+  - Le même récap s'affiche chez tous les joueurs, en cas de victoire comme de défaite.
+
+## 5.141 — 20 novembre 2026
+- **Odyssée** — Boss de raid : l'escouade apparaît dans sa tenue, et les Pokémon sont bien posés (Odyssée 1.4).
+  - Dans la présentation avant le combat, chaque joueur apparaît avec les couleurs de sa tenue, et avec les graphismes choisis (Odyssée ou Noir & Blanc).
+  - En combat, les Pokémon de l'escouade sont de nouveau sur leurs socles, et le bas de leur sprite passe sous la boîte de texte comme dans les jeux DS, au lieu d'apparaître coupé.
+
+## 5.140 — 20 novembre 2026
+- **Odyssée** — Une vraie entrée en scène pour les boss de raid (Odyssée 1.3).
+  - Avant le combat, l'escouade se présente : le portrait et le nom de chaque joueur, chacun avec sa couleur, face au boss dans son aura.
+  - Plus de dresseur en face : le boss sort de l'ombre en rugissant, puis chaque joueur envoie son Pokémon à son tour (« J1 envoie Dracaufeu ! »).
+  - Écran de combat plus propre : les Pokémon de l'escouade restent dans le cadre, les fiches des joueurs sont regroupées à droite et ne cachent plus le boss.
+  - Le bandeau d'annonce disparaît quand le raid commence.
+  - Correction : après une cinématique de boss (champion, légendaire, raid), l'écran ne reste plus noir pendant le combat.
+
+## 5.139 — 20 novembre 2026
+- **Odyssée** — Les boss de raid se jouent vraiment en coop, et les légendaires sont nouveaux (Odyssée 1.2).
+  - Combat double, triple ou quadruple : de 2 à 4 joueurs contre le boss, tous les joueurs connectés devant être là. Face à quatre joueurs, il frappe trois fois par tour.
+  - Chaque boss a une aura : bleue pour un Pokémon moyen, rouge pour un Pokémon puissant, dorée pour un légendaire. On la voit sur la route et en combat.
+  - Les légendaires de raid viennent d'ailleurs : Tokorico, Tokopisco, Solgaleo, Lunala, Necrozma, Zacian, Zamazenta et Regidrago. On ne les croise nulle part ailleurs, et ils sont plus rares que les autres boss.
+  - Après une victoire, chacun a un seul lancer de Hyper Ball, avec peu de chances : 30 % (aura bleue), 18 % (rouge), 10 % (or). Le Pokémon capturé arrive à ton niveau max.
+  - Un légendaire capturé perd une bonne part de sa puissance : ses stats ressemblent à celles d'un bon Pokémon classique, à peine plus fort.
+  - Récompenses selon l'aura : 6, 9 ou 14 Points du Dojo et 2, 3 ou 4 Super Bonbons. Plus d'Hyper Balls ni de Master Ball offertes.
+
+## 5.138 — 20 novembre 2026
+- **Odyssée** — Les boss de raid surgissent dans la région (Odyssée 1.1).
+  - Toutes les heures et demie environ, quand d'autres joueurs sont connectés, un gros boum retentit et un bandeau annonce le boss et sa route. Il reste 15 minutes, puis repart.
+  - Pour le lancer, allez-y ensemble et parlez-lui : tous les joueurs connectés doivent être à côté (deux ou trois au combat).
+  - Son niveau, c'est la moyenne des niveaux max des participants plus 10 (plus 6 pour un légendaire), avec des PV doublés ou plus. Il est vraiment dur : chacun a 5 essais par apparition.
+  - Victoire : Points du Dojo, 3 Super Bonbons, des Hyper Balls ou une Master Ball face à un légendaire, et la capture des boss qui ne sont pas légendaires.
+  - Les raids ne se lancent plus depuis le Dojo de Mamadou, le menu d'un joueur ou l'écran Amis : ce dernier dit où est le boss, ou quand vient le prochain.
+
+## 5.137 — 20 novembre 2026
+- **Tête de Calcul** — Nouveau : The Candidate — 31 questions de l'émission tournée en amphi (version 5.123) (Nicolas Muratore)
+
+## 5.136 — 20 novembre 2026
+- **Odyssée** — Le jeu a maintenant son propre numéro de version (Odyssée 1.0, affiché en bas de l'écran titre). À chaque mise à jour, le navigateur charge directement la nouvelle version : plus besoin de vider le cache pour voir les nouvelles villes ou les nouveaux graphismes.
+
+## 5.135 — 20 novembre 2026
+- **Odyssée** — Graphismes Noir & Blanc : la personnalisation de la tenue marche enfin sur les dresseurs de Noir 2 & Blanc 2. La visière, le haut, le bas, les chaussures et le sac prennent les couleurs choisies, de face, de profil et de dos, pour le garçon comme pour la fille, et les autres joueurs te voient avec ta tenue.
+
+## 5.134 — 20 novembre 2026
+- **Odyssée** — Trois donjons à faire entre amis, posés sur la nouvelle carte : la Crypte des Murmures, le Donjon des Miroirs et le Sanctuaire des Trois Voies.
+  - En battant Hector, on reçoit la Clé de la Crypte. Elle ouvre la crypte du Cimetière des Murmures, au bout d'un sentier de la Route 2.
+  - Le fossoyeur ouvre la crypte quand le groupe est prêt. Dans les deux premières salles, chaque esprit se combat par un seul joueur à la fois. Dans la Salle des Dalles, tout le groupe doit tenir les dalles en même temps.
+  - Au fond, Ossarion a des PV partagés : chaque combat lui retire ce qu'on lui a infligé, et le groupe en vient à bout ensemble.
+  - Sur la Route 3, deux clairières cachent les deux autres. Au Parvis des Miroirs, un temple de glace : des miroirs qui parlent, des énigmes, une galerie de glace où l'on glisse, des faisceaux de lumière à renvoyer et un reflet qui marche à l'envers.
+  - Dans la Clairière des Trois Voies, un sanctuaire à faire à trois : chacun prend son chemin, il faut s'échanger des codes pour avancer, et les salles sombres ne s'éclairent qu'autour de soi.
+  - Nouveaux combats à plusieurs : un boss dont la barre de vie est coupée en boucliers, et des combats de groupe où chacun choisit le Pokémon adverse qu'il vise.
+  - Un encadré suit l'avancée salle par salle (touche N pour le cacher) ; on peut quitter un donjon à tout moment et le refaire autant qu'on veut, sa récompense n'est donnée qu'une fois.
+- **Odyssée** — Graphismes Noir & Blanc :
+  - dans les montagnes, les sentiers sont en terre claire et vont jusqu'au pied de la roche, sans liseré d'herbe : on voit bien où l'on marche et où commence le rocher ;
+  - chaque gradin d'une montagne est un peu plus clair que celui du dessous, pour lire les marches de la roche.
+
+## 5.133 — 20 novembre 2026
+- **Odyssée** — Graphismes Noir & Blanc :
+  - les pentes de montagne en escalier n'ont plus de traits gris en biais sur leurs bords ;
+  - dans les grottes de terre (Route Victoire, Mesas, Crêtes, Sables…), les parois prennent la roche brune du jeu, sans pièces dépareillées ; les grottes marines, de magma et de glace gardent leur roche à elles.
+- **Odyssée** — Port-Orage et Givrebourg s'habillent : caisses et tonneaux près du ponton, bouée, bancs, lanternes dans la neige, jardinets et clôtures.
+
+## 5.132 — 20 novembre 2026
+- **Odyssée** — Graphismes Noir & Blanc : les reliefs prennent enfin les vraies pièces de Noir 2 & Blanc 2.
+  - Les buttes d'herbe ont leur bord d'herbe, leurs flancs de roche et leur paroi brune, comme dans le jeu.
+  - Les falaises des routes, des canyons et de Pierrefort deviennent de la roche brune du jeu au lieu des palissades sombres.
+  - Les montagnes passent en plateaux de roche à bords nets, avec leur paroi au sud.
+- **Odyssée** — Le Plateau Céleste est plus ramassé et plus beau : quatre jardins autour de la grande allée, avec cerisiers, statues, fontaines et lanternes.
+
+## 5.131 — 20 novembre 2026
+- **Odyssée** — Les routes gagnent en détails, sans rien perdre de leur longueur :
+  - des recoins cachés au bout d'une trouée dans les arbres, avec un objet au fond ; certains sont fermés par un arbuste à couper ;
+  - des buttes où l'on monte par un petit escalier, avec un banc ou un objet là-haut ;
+  - sur chaque route, un rocher qui cache quelque chose : approche-toi de celui qui brille ;
+  - de nouveaux rebords à sauter, et des panneaux de conseils du dresseur au bord du chemin.
+
+## 5.130 — 20 novembre 2026
+- **Odyssée** — Toutes les autres villes passent à l'échelle de Noir 2 & Blanc 2, de Port-Azur à Port-Ombre : des villes serrées autour de leur Centre, de leur Boutique et de leur Arène, qu'on traverse en quelques pas.
+  - Métropole reste un cran au-dessus, comme une grande ville du jeu.
+  - Les routes, les forêts, les lacs et les grottes ne changent pas : les portes des villes sont toujours au même endroit, et une allée à travers les bois y mène.
+
+## 5.129 — 20 novembre 2026
+- **Odyssée** — Pierrefort se resserre à la taille d'une ville de Noir 2 & Blanc 2 : le Centre, la Boutique, la Maison des Mineurs et l'usine Poké Ball sont à quelques pas les uns des autres, avec une couronne de maisons, l'auberge et le puits autour.
+  - Le Bois Murmure, la Route 3 et le chemin de la mine arrivent toujours aux mêmes portes.
+
+## 5.128 — 20 novembre 2026
+- **Odyssée** — Bourg-Aube redessiné à l'échelle de Noir 2 & Blanc 2 : un petit bourg où tout est à portée de main.
+  - Ta maison et celle de Théo au nord, le laboratoire du Professeur Saule à deux pas, un étang avec ses bancs.
+  - Au sud, une boulangerie, deux maisons habitées et des potagers fleuris.
+  - Le bourg est vérifié avec les deux graphismes, Odyssée et Noir & Blanc.
+
+## 5.127 — 20 novembre 2026
+- **Odyssée** — Sylvebourg redessinée sur le modèle des villes de Noir 2 & Blanc 2 : un village serré où chaque coin a quelque chose.
+  - La grand-rue relie les deux portes ; au nord le Centre et la Boutique avec leurs massifs de fleurs, au milieu les maisons à jardinets, l'Arène et un parc autour d'un étang.
+  - Au sud, l'auberge du Chêne, la cabane du chasseur et un verger ; de nouveaux habitants ont des choses à raconter.
+  - Le rendu a été vérifié avec les deux graphismes, Odyssée et Noir & Blanc.
+
+## 5.126 — 20 novembre 2026
+- **Odyssée** — Sylvebourg prend un peu d'ampleur : toujours un village façon Noir 2 & Blanc 2, mais avec une couronne de chalets, une auberge, un verger, un parc et la cabane du chasseur autour du centre.
+
+## 5.125 — 20 novembre 2026
+- **Odyssée** — Sylvebourg passe à la taille d'une ville de Noir 2 & Blanc 2 : un village compact où l'on trouve tout en quelques pas.
+  - Centre, Boutique et Arène se voient d'un coup d'œil, les deux maisons et leurs habitants sont toujours là, comme le garde du nord.
+  - Les Routes 1 et 2 s'allongent un peu pour rejoindre les nouvelles portes de la ville.
+  - L'autel du Bois Murmure est désormais relié au sentier par une petite allée.
 
 ## 6.43 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : plus de texte qui s'ouvre tout seul en entrant dans la salle des aiguilles. La caméra ne recule plus à l'arrivée devant la tour, mais quand on passe sa porte : on voit toute la tour, puis on entre.
@@ -109,6 +350,22 @@
 
 ## 6.33 — 19 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : vue du dehors, la tour est maintenant immense, à la mesure de son horloge, et sa grande porte est au niveau du sol.
+
+## 5.124 — 19 novembre 2026
+- **Odyssée** — Graphismes Noir & Blanc :
+  - la Boutique passe aussi en vrai style Noir 2 & Blanc 2 : carrelage gris à losanges, comptoir bleu à façade argentée avec sa caisse enregistreuse, présentoirs blancs garnis ;
+  - au Dojo de Mamadou, on ne peut plus marcher à travers l'appareil de soin ;
+  - le sol du coin salon des Centres Pokémon ne risque plus de scintiller contre l'ombre des murs ;
+  - crédits complétés (planches d'UltimoSpriter et de ditto209).
+
+## 5.123 — 19 novembre 2026
+- Correction : restauration sprites authentiques Gen 5 + interieur Centre Pokemon 5G (Amiel)
+
+## 5.122 — 19 novembre 2026
+- Correction : corrections d'audit (icones objets/HUD, audio/cinematiques, sauvegardes, habitants, tests) (Amiel)
+- Correction : corrections critiques (PNJ nb_sportif/nb_linebacker, batiments troues/coupes, decors healer/vase/caisses/squelette) (Amiel)
+- Correction : corrections haute priorite (desert, monuments 2x2, lumieres nocturnes, emprises/tours, tenue sac, persos) (Amiel)
+- Nouveau : interieurs, comptoirs, mobilier Gen 5 et neige boutiques (#10-#11) (Amiel)
 
 ## 6.32 — 18 novembre 2026
 - **TestOdyssée** — Tour de l'Horloge : les trois salles du mur sont devenues des labyrinthes de passerelles, comme dans une tour ancienne. Certaines rambardes ne se sautent que dans un sens : un mauvais saut ramène en arrière. Un objet attend au fond de chaque salle.
@@ -166,6 +423,96 @@
 - **TestOdyssée** — Donjon des Miroirs : un nouveau palais de marbre blanc sur le Parvis enneigé, avec ses colonnes de cristal, ses hauts miroirs et ses obélisques de glace.
   - Copycat a enfin son vrai visage : un mime au masque blanc et au béret, en combinaison de losanges miroir, qui marche quand il te suit en reflet.
 
+## 5.121 — 18 novembre 2026
+- Nouveau : sprite sur mesure de Maitre Mamadou et mascotte bouc noir en veste en cuir du Dojo (Amiel)
+
+## 5.120 — 18 novembre 2026
+- **Odyssée** — L'éveil de Lugia Obscur devient une vraie cinématique de jeu, en sept plans et format cinéma (on peut toujours la passer) :
+  - la mer déchaînée sous l'éclipse, la pluie, la foudre, le Sanctuaire des Marées sur son rocher ;
+  - le Prisme Noir qui se fissure au rythme d'un cœur qui s'emballe, puis vole en éclats au ralenti, et l'onde de choc qui court sur la mer ;
+  - la mer qui tourbillonne, une colonne d'eau noire qui jaillit, une silhouette qui s'y élève… et un œil rouge qui s'allume ;
+  - la colonne qui éclate, Lugia Obscur qui se révèle et pousse son cri sous une tornade d'ombre ;
+  - l'Aéroblast chargé face à toi et tiré droit sur l'écran, puis Lugia devant l'éclipse avec son titre ;
+  - une bande-son écrite pour la scène : orage, tonnerre à chaque éclair, battements de cœur, verre brisé, chœur, tambours, cuivres et grand accord final.
+
+## 5.119 — 18 novembre 2026
+- **Odyssée** — Cinématiques des légendaires et des boss retravaillées :
+  - le légendaire s'élève d'abord en silhouette noire, puis se révèle en couleur dans un éclair blanc ;
+  - les auras, les éclairs, les rubans d'énergie et le sceau rayonnent d'une vraie lueur, qui s'emballe au bris du sceau et à l'apogée ;
+  - la caméra glisse sans à-coup d'un plan à l'autre et se resserre sur l'adversaire juste avant le combat ;
+  - chaque éclair illumine toute la scène, et le Pokémon ou le dresseur reste net au milieu de son aura.
+- **Odyssée** — Poker multijoueur : la table ne se fige plus quand l'hôte la ferme ou qu'un joueur n'a plus de jetons. Sans jetons, on reste à table pour regarder la main et on peut partir à la fin de chaque main.
+- **Odyssée** — Graphismes Noir & Blanc : un personnage qui se tient juste à côté d'un bâtiment n'est plus à moitié caché par le bord du toit.
+
+## 5.118 — 18 novembre 2026
+- **Odyssée** — Combats Duo (2v2) et Trio (3v3) plus solides :
+  - un combat ne s'interrompt plus (« Le combat a été interrompu ») quand un Pokémon est mis K.O. alors que son dresseur n'a plus de remplaçant ;
+  - Vampigraine ne fait plus planter le combat quand celui qui l'a lancée a quitté le terrain ;
+  - les combats en double contre des Pokémon sauvages tournent sans erreur ;
+  - au Club Tactique, le dresseur adverse apparaît bien en début de combat.
+- **Odyssée** — Graphismes Noir & Blanc : derrière l'Arène des Dunes d'Ocre et celle de Cendrelune, le sol redevient du sable et de la cendre (au lieu d'un carré d'herbe verte).
+- **Poké Duel** — **Lutte** fait son apparition : un Pokémon qui n'a plus aucun PP (ou bloqué par un objet Choix sur une attaque vide) lutte (50 de puissance, sans type, contrecoup d'un quart de ses PV). Un bouton « Lutte » s'affiche quand plus rien d'autre n'est possible, et les combats en double ne peuvent plus tourner sans fin.
+
+## 5.117 — 18 novembre 2026
+- **Odyssée** — Graphismes Noir & Blanc revus de fond en comble : 20 nouveaux bâtiments dans le style Noir 2 & Blanc 2 (toutes les villes sont maintenant en 2D), pavés sous les gratte-ciel de Métropole et Voltacité, rochers du désert ensablés, sapins enneigés sur la côte de Givrebourg, arbres posés proprement sur l'herbe, hautes herbes givrées, tenues du garçon et de la fille corrigées.
+
+## 5.116 — 18 novembre 2026
+- **Odyssée** — Déploiement général des **cinématiques d’introduction en 3D temps réel** et des **musiques épiques dédiées** pour chaque Pokémon légendaire et boss majeur du jeu :
+  - **Cinématiques 3D thématiques** : chaque légendaire (Groudon, Kyogre, Rayquaza, Arceus, Ho-Oh, Odyssor, les Oiseaux et Bêtes légendaires, le trio des Lacs, Dialga, Palkia, Giratina, Darkrai, les Régis et les gardiens d’après-Ligue) ainsi que chaque grand adversaire (les 15 Champions d’Arène, le Conseil 4, Maître Célestine, les chefs et admins des Teams Éclipse et Brume, les combats décisifs face aux Rivaux, les boss des Raids Co-op, la Finale du Dojo de Mamadou et le sommet de la Tour de Combat) disposent désormais d’un sanctuaire, d’un sceau fracturable et d’effets élémentaires 3D propres à leur thème (volcan, glace, foudre, cosmos, abysse, forêt, torii dojo, faille de raid, Ligue Céleste).
+  - **Bandes-son sur mesure pendant l’animation et le combat** : musiques synthétisées dynamiques synchronisées à chaque cinématique, suivies de six nouveaux thèmes de combat exclusifs (Conseil 4, Légendaires cosmiques, Légendaires élémentaires, Abysses et Odyssor, Raids Co-op et Finale du Dojo de Mamadou) et de la correction du thème musical de la Team Éclipse et de son chef Nocturne en combat.
+
+## 5.115 — 18 novembre 2026
+- **Odyssée** — Cadrage affiné de la cinématique 3D de **Lugia Obscur** : la caméra reste à l’intérieur du cercle des piliers du Sanctuaire dès les premières images et le bouton Passer reste dégagé du sous-titre sur les écrans compacts.
+
+## 5.114 — 18 novembre 2026
+- **Odyssée** — Cinématique d’éveil de **Lugia Obscur** entièrement recréée en **3D temps réel** :
+  - Scène 3D interactive du Sanctuaire des Marées (océan agité animé par vagues sous l’éclipse, autel octogonal et huit piliers runiques illuminés, éclairs et nuées de particules tourbillonnantes).
+  - Animation du **Prisme Noir** qui se fissure puis explose en éclats cristallins, suivie de l’envol et du plongeon de Lugia Obscur entouré d’ailes et de rubans d’énergie obscure en 3D, sans chargement vidéo externe.
+
+## 5.113 — 18 novembre 2026
+- **Odyssée & Hub** — Correctifs multijoueur, HUD et cinématiques suite à un audit complet :
+  - **Multijoueur & Amis** : rejoindre le salon d'un ami depuis le jeu ramène désormais directement dans son salon Arcadia sans perdre l'identité de compte ami ; la navigation au clavier (`↑` / `↓` puis `Entrée` / `Espace`) fonctionne sur toutes les actions du menu Amis, les statuts de duel et de tenue s'actualisent sans délai, et quitter ou interrompre un combat en mode Spectateur rend toujours les commandes normalement.
+  - **HUD** : mise à jour immédiate de l'objet rapide `[Y]` (avec prise en charge directe du Vélo par défaut et disparition dès épuisement), du niveau maximal affiché et des objectifs de quêtes suivies ; masquage propre des étiquettes des joueurs pendant les transitions d'écran.
+  - **Cinématiques & dialogues** : les cinématiques respectent le mode muet et le volume choisi ; si une vidéo est bloquée ou indisponible, la scène d'éveil animée de Lugia Obscur continue sans se couper prématurément et ne bloque plus l'état du jeu ni aucun effet visuel après avoir été passée ; sur mobile, les boutons tactiles ne recouvrent plus la cinématique d'ouverture.
+
+## 5.112 — 18 novembre 2026
+- **Odyssée** — Correctifs de fiabilité multijoueur suite à audit :
+  - Correction du rôle d'hôte en **Tournoi en direct** lorsque l'organisateur joue côté droit d'un duel contre un autre joueur humain, et ouverture instantanée du **Mode Spectateur** même si la demande arrive pendant l'introduction du combat.
+  - Gestion propre des départs en **Poker Texas Hold'em multijoueur** (sortie immédiate d'un joueur qui abandonne et mise à jour de la table pour les mains suivantes).
+  - Contrôle de propriété du remplaçant adverse en **Multi 2v2 à 4 joueurs** et messages d'abandon adaptés à chaque mode.
+
+## 5.111 — 18 novembre 2026
+- **Odyssée** — Finition et présentation enrichie du multijoueur :
+  - **Nouvel onglet Salon Multi** dans l'écran Amis & Connexion (accolé aux actions directes **Combat**, **Raid Co-op**, **Échange**, **Domaine** et **Observer** sur chaque dresseur en ligne) pour lancer en un clic Raids Co-op, Multi 2v2 à 4 joueurs, Tournoi, Dojo de Mamadou, Poker Multijoueur ou visite de Domaine.
+  - **Menus unifiés et lisibles** auprès des joueurs sur la carte, de Maître Mamadou et du Club Tactique, avec indication du type et du statut Pokédex des Boss de Raid.
+  - **Visuels enrichis en combat et en tournoi** : aura et segments visuels pour le Bouclier Mystique des Boss de Raid, bannières de format dédiées, arbre de tournoi éliminatoire en deux colonnes avec portraits des participants, distinction humain/IA au Poker Hold'em et présence des Pokémon résidents avec sortie rapide chez le Gardien du Domaine.
+
+## 5.110 — 18 novembre 2026
+- **Odyssée** — Cinq nouvelles activités multijoueurs dans la région et au Dojo :
+  - **Raids de Boss Co-op** (exclusivement à 2 ou 3 joueurs) face à un Boss géant doté d'un Bouclier Mystique et de 2 actions par tour, avec Points du Dojo, Super Bonbons et possibilité de capturer le Boss après la victoire.
+  - **Combat Multi 2v2 à 4 joueurs** : deux équipes de deux dresseurs humains s'affrontent en direct (1 Pokémon actif et 1 remplaçant chacun).
+  - **Tournoi en direct à 4 places** au Dojo et au Club Tactique : tableau éliminatoire complété au besoin par les Champions de la région, suivi des matchs en cours en mode Spectateur et récompenses pour le vainqueur et le finaliste.
+  - **Tables de Poker Texas Hold'em multijoueurs** au Casino de Métropole (2 à 4 joueurs humains autour du tapis, avec place tournante et jetons de courtoisie).
+  - **Visite du Domaine des amis & Dresseur Gardien** : visite le Domaine bâti d'un ami connecté, récupère son panier d'accueil (Baies Sitrus et matériaux) et défie son équipe Gardienne en Duel ou en Duo.
+
+## 5.109 — 18 novembre 2026
+- **Odyssée & Poké Duel** — Intelligence artificielle de combat nettement renforcée en Solo (1v1), Duo (2v2) et Trio (3v3) : les dresseurs et bots envoient désormais le meilleur remplaçant disponible après un K.O. (selon les résistances de types, talents et contre-attaques), savent rappeler un Pokémon bloqué sur une immunité ou totalement contré, réagissent aux menaces de K.O. rapide avec leurs attaques prioritaires ou `Abri`, exploitent les capacités multi-coups et à dégâts fixes avec précision, évitent les altérations d'état et baisses de stats inutiles face aux talents ou écrans protecteurs, et coordonnent leurs cibles ainsi que leur contrôle de vitesse en combats à plusieurs.
+
+## 5.108 — 18 novembre 2026
+- **Odyssée** — Nouveau donjon multijoueur : le **Dojo de Mamadou** ouvre ses portes à Port-Granit (accessible dès le 6e Badge), avec un bâtiment inédit dessiné dans les deux styles graphiques (**Odyssée** en 3D et **Noir & Blanc**), un repère sur la boussole locale et son grand hall intérieur complet. Les défis se disputent **exclusivement en coopération multijoueur** : **Duo Co-op (2v2)** à 2 joueurs humains contre 2 stratèges, ou **Trio Co-op (3v3)** à 3 joueurs humains contre 3 stratèges (1 Pokémon actif sur le terrain par joueur + 1 remplaçant). Séries de 5 paliers contre des équipes coordonnées et tactiques (jusqu'au combat final contre Maître Mamadou), avec gain de Points du Dojo (PDj) et une boutique dédiée proposant objets compétitifs tenus, Méga-Gemmes et Master Ball.
+
+## 5.107 — 18 novembre 2026
+- **Odyssée** — Combats Duo (2v2) et Trio (3v3) complets (stratégies d'équipe, capacités de zone, portée des attaques en Trio, sélection de cible avec efficacité affichée et bouton Retour pour corriger son choix), jouables dès les Centres Pokémon auprès du Coach Tactique, dans les arènes et la Route Victoire, à la Tour de Combat et en PvP entre joueurs. Animations de combat enrichies sur tous les formats (animations d'attente, charges avec images rémanentes, effets spéciaux sur-mesure pour les attaques signatures et les 18 types, et particules météo).
+
+## 5.106 — 18 novembre 2026
+- **Odyssée** — Choix du style de graphismes dès le lancement d'une nouvelle aventure (Odyssée d'origine ou Noir & Blanc, ainsi que les sprites Pokémon), modifiable plus tard à tout moment dans les Options avec application immédiate en jeu, et un clin d'œil dans l'introduction du Professeur Saule.
+
+## 5.105 — 18 novembre 2026
+- Odyssée : finition chef-d'oeuvre Noir & Blanc (biomes, rivages, mobilier, monuments Gen 5) (Amiel)
+
+## 5.104 — 18 novembre 2026
+- Odyssée : finition Noir & Blanc fin de jeu (asphalte BW2, décors désert/sanctuaires/mines, correctifs sable/lave/socles d'arbres) (Amiel)
+
 ## 6.18 — 17 novembre 2026
 - **TestOdyssée** — Nouveau donjon en construction : le Château de Noirval, seul ou en groupe.
   - Devant le pont-levis, une mère dont la fille a été enlevée par le seigneur du château.
@@ -182,6 +529,32 @@
 
 ## 6.15 — 17 novembre 2026
 - **TestOdyssée** — Tombeau du Roi Sans Nom : la grande porte du tombeau est bien fermée, battants de bronze et barre en travers. Un gardien de plus se tient juste devant.
+
+## 5.103 — 17 novembre 2026
+- Odyssée : boussole/repères sur toute la carte et correctifs Noir & Blanc multi-biomes (Amiel)
+
+## 5.102 — 17 novembre 2026
+- Nouveau : boussole de ville et plan local cliquable pour trouver arènes et lieux clés (Amiel)
+
+## 5.101 — 17 novembre 2026
+- Nouveau : variété maisons et PNJ Noir & Blanc + derniers correctifs d'ancrage (Amiel)
+
+## 5.100 — 17 novembre 2026
+- Correction : ancrage au sol des personnages, objets et batiments Noir & Blanc (Amiel)
+
+## 5.99 — 17 novembre 2026
+- Correction : crash chunks Noir & Blanc, projection orthographique et fondu tramé des bâtiments (Amiel)
+
+## 5.98 — 17 novembre 2026
+- Correction : graphismes Noir & Blanc 2 complets et urbanisme des villes corrigé (Amiel)
+
+## 5.97 — 17 novembre 2026
+- **The Backrooms** — Des poissons dans les bassins des Poolrooms.
+  - Ils sautent hors de l'eau de temps en temps : on les voit, on les entend retomber.
+  - Trop de bruit au bord d'un bassin (courir, retomber d'un saut, siffler, parler fort), et l'un d'eux peut te sauter dessus.
+  - Pour t'en défaire, tape les quatre flèches affichées, dans l'ordre. Une erreur, et tout est à refaire. Au doigt : touche les flèches.
+  - Tant qu'il s'accroche, tu ne bouges plus, il te mord (tu perds de l'eau) et il se débat à grand bruit : l'entité l'entend.
+  - En mode VIP, les poissons ont un visage que vous reconnaîtrez peut-être.
 
 ## 6.14 — 16 novembre 2026
 - **TestOdyssée** — Bois des Contes : le manoir en pain d'épice retrouve une taille plus raisonnable, trois maisons de large. La clairière se resserre autour de lui.
@@ -1205,47 +1578,6 @@
 ## 4.94 — 9 novembre 2026
 - **Hub** — Nouveau : trailer officiel de 30 secondes pour The Backrooms avec bouton de lecture sur la carte du Hub (Amiel)
 
-## 4.93 — 6 novembre 2026
-- **The Backrooms** — au Terror Hotel (Level 5) :
-  - Caché sous un lit ou dans une armoire, une fois que l'entité a perdu ta trace, elle quitte la chambre et reprend sa ronde au loin, au lieu de fouiller autour de toi.
-  - Elle entend les pas de tous les joueurs : si un autre court ou marche près d'elle, elle part voir.
-  - L'hôtel est nettement plus éclairé : toutes les chambres ont leur plafonnier allumé, et presque toutes les appliques marchent.
-
-## 4.92 — 6 novembre 2026
-- **The Backrooms** — le hall du Terror Hotel (Level 5), où l'on arrive, est un vrai hall d'hôtel des années 1930, plus petit et meublé de partout.
-  - Une réception au comptoir de marbre et de bois mouluré, avec sa caisse enregistreuse, sa pendule, sa lampe à pétrole, sa sonnette et son registre ouvert ; derrière, la vitrine et les tableaux à clés.
-  - Un salon : canapé capitonné, deux fauteuils, table basse, pouf et tapis vert bordé d'or, sous un tableau.
-  - Au milieu, une banquette ronde de velours vert surmontée d'une plante ; deux colonnes de marbre encadrent l'entrée.
-  - Un chariot à bagages en laiton chargé de vieilles valises, une horloge comtoise, une commode et son miroir, un buste de marbre, des plantes et cinq lustres.
-
-## 4.91 — 6 novembre 2026
-- **The Backrooms** — aux Poolrooms (Level 37), l'entité ne se cache plus derrière les cloisons pour t'observer : elle rôde et te traque à découvert, tu la vois venir.
-  - Derrière une cloison, son bourdonnement est étouffé : on ne croit plus l'entendre à travers les murs.
-
-## 4.90 — 6 novembre 2026
-- **The Backrooms** — l'entité du Level 1 te suit aux Poolrooms (Level 37) : même apparence, mêmes sons, même screamer.
-  - Elle passe d'une salle à l'autre par les portes, jamais à travers les cloisons, et les cloisons te cachent d'elle.
-  - Elle marche au fond des bassins ; l'eau la freine, un peu moins que toi.
-
-## 4.89 — 6 novembre 2026
-- **The Backrooms** — au Terror Hotel (Level 5), se faire attraper donne un vrai screamer : l'entité de l'hôtel se jette sur toi en un quart de seconde, bras tendus vers ton visage, la tête qui tremble, l'image qui saute et se déchire, un éclair rouge et un hurlement déchiré, puis le noir.
-
-## 4.88 — 6 novembre 2026
-- **The Backrooms** — le Terror Hotel (Level 5) a sa propre entité : un homme en chemise sombre et jean, plus grand que toi, qui marche raide dans les couloirs, se penche en avant pour courir quand il te traque, et dont la tête penchée tressaute sans arrêt.
-
-## 4.87 — 6 novembre 2026
-- **The Backrooms** — le Terror Hotel (Level 5) est moins sombre : les appliques du couloir éclairent plus, presque toutes marchent, et chaque chambre a un plafonnier en plus de sa lampe de chevet.
-
-## 4.86 — 6 novembre 2026
-- **The Backrooms** — nouveau niveau : le Level 5, le Terror Hotel. On y arrive en prenant le toboggan rouge des Poolrooms.
-  - Un hôtel des années 1930 : papier peint damassé, lambris sombres, moquette rouge, appliques Art déco qui grésillent, et un couloir qui fait le tour sans fin de 21 chambres numérotées, de 201 à 221.
-  - Six lettres sur papier sont cachées dans les chambres, sur un lit, sur un bureau ou par terre. Chacune se poste dans la boîte aux lettres de sa chambre, dans le hall. Ensemble, elles forment un mot.
-  - Les six lettres postées, un code à quatre chiffres s'allume au plafond du hall. On le tape sur le clavier de la porte de l'escalier de secours, qui s'ouvre : c'est la sortie.
-  - On ne se bat pas : on court, on s'accroupit (C) et on se cache sous un lit ou dans une armoire (E).
-  - L'entité rôde dans le couloir et entre parfois dans les chambres. Elle entend la course de loin et la marche de près ; accroupi, on passe en silence. Un œil se remplit quand elle te voit : plein, elle te traque. Si tu te caches loin d'elle, elle perd ta trace ; si elle t'a vu te glisser dans ta cachette, elle t'en sort.
-  - Un joueur attrapé avec des lettres en poche : elles retournent là où il les avait trouvées.
-  - Parquet qui craque et boîte à musique désaccordée au loin.
-- **The Backrooms** — les toboggans jaune et bleu des Poolrooms mènent toujours à l'écran de fin, en attendant leurs niveaux.
 ## 4.85 — 9 novembre 2026
 - **The Backrooms** — Un vrai inventaire : quatre cases d'objets à côté de la lampe, à choisir avec les touches 2 à 5 ou la molette.
   - G pose l'objet choisi par terre, juste devant soi : une eau d'amande ou des piles à laisser à un coéquipier, l'échelle à garder pour plus tard. On l'entend tomber.
@@ -1631,6 +1963,48 @@
   - Les zones éclairées sont un peu moins éblouissantes (environ 10 % de lumière en moins).
   - Ne la fixe pas : si tu la regardes plus d'une seconde à moins de quinze mètres, lampe allumée ou non, elle hurle et fonce sur toi. Et si tu t'approches à moins de six mètres, aussi.
   - La lampe ne la fait plus fuir : tout au plus sursaute-t-elle une fois, de très loin, au début. Seule la première rencontre se termine par une disparition.
+
+## 4.93 — 6 novembre 2026
+- **The Backrooms** — au Terror Hotel (Level 5) :
+  - Caché sous un lit ou dans une armoire, une fois que l'entité a perdu ta trace, elle quitte la chambre et reprend sa ronde au loin, au lieu de fouiller autour de toi.
+  - Elle entend les pas de tous les joueurs : si un autre court ou marche près d'elle, elle part voir.
+  - L'hôtel est nettement plus éclairé : toutes les chambres ont leur plafonnier allumé, et presque toutes les appliques marchent.
+
+## 4.92 — 6 novembre 2026
+- **The Backrooms** — le hall du Terror Hotel (Level 5), où l'on arrive, est un vrai hall d'hôtel des années 1930, plus petit et meublé de partout.
+  - Une réception au comptoir de marbre et de bois mouluré, avec sa caisse enregistreuse, sa pendule, sa lampe à pétrole, sa sonnette et son registre ouvert ; derrière, la vitrine et les tableaux à clés.
+  - Un salon : canapé capitonné, deux fauteuils, table basse, pouf et tapis vert bordé d'or, sous un tableau.
+  - Au milieu, une banquette ronde de velours vert surmontée d'une plante ; deux colonnes de marbre encadrent l'entrée.
+  - Un chariot à bagages en laiton chargé de vieilles valises, une horloge comtoise, une commode et son miroir, un buste de marbre, des plantes et cinq lustres.
+
+## 4.91 — 6 novembre 2026
+- **The Backrooms** — aux Poolrooms (Level 37), l'entité ne se cache plus derrière les cloisons pour t'observer : elle rôde et te traque à découvert, tu la vois venir.
+  - Derrière une cloison, son bourdonnement est étouffé : on ne croit plus l'entendre à travers les murs.
+
+## 4.90 — 6 novembre 2026
+- **The Backrooms** — l'entité du Level 1 te suit aux Poolrooms (Level 37) : même apparence, mêmes sons, même screamer.
+  - Elle passe d'une salle à l'autre par les portes, jamais à travers les cloisons, et les cloisons te cachent d'elle.
+  - Elle marche au fond des bassins ; l'eau la freine, un peu moins que toi.
+
+## 4.89 — 6 novembre 2026
+- **The Backrooms** — au Terror Hotel (Level 5), se faire attraper donne un vrai screamer : l'entité de l'hôtel se jette sur toi en un quart de seconde, bras tendus vers ton visage, la tête qui tremble, l'image qui saute et se déchire, un éclair rouge et un hurlement déchiré, puis le noir.
+
+## 4.88 — 6 novembre 2026
+- **The Backrooms** — le Terror Hotel (Level 5) a sa propre entité : un homme en chemise sombre et jean, plus grand que toi, qui marche raide dans les couloirs, se penche en avant pour courir quand il te traque, et dont la tête penchée tressaute sans arrêt.
+
+## 4.87 — 6 novembre 2026
+- **The Backrooms** — le Terror Hotel (Level 5) est moins sombre : les appliques du couloir éclairent plus, presque toutes marchent, et chaque chambre a un plafonnier en plus de sa lampe de chevet.
+
+## 4.86 — 6 novembre 2026
+- **The Backrooms** — nouveau niveau : le Level 5, le Terror Hotel. On y arrive en prenant le toboggan rouge des Poolrooms.
+  - Un hôtel des années 1930 : papier peint damassé, lambris sombres, moquette rouge, appliques Art déco qui grésillent, et un couloir qui fait le tour sans fin de 21 chambres numérotées, de 201 à 221.
+  - Six lettres sur papier sont cachées dans les chambres, sur un lit, sur un bureau ou par terre. Chacune se poste dans la boîte aux lettres de sa chambre, dans le hall. Ensemble, elles forment un mot.
+  - Les six lettres postées, un code à quatre chiffres s'allume au plafond du hall. On le tape sur le clavier de la porte de l'escalier de secours, qui s'ouvre : c'est la sortie.
+  - On ne se bat pas : on court, on s'accroupit (C) et on se cache sous un lit ou dans une armoire (E).
+  - L'entité rôde dans le couloir et entre parfois dans les chambres. Elle entend la course de loin et la marche de près ; accroupi, on passe en silence. Un œil se remplit quand elle te voit : plein, elle te traque. Si tu te caches loin d'elle, elle perd ta trace ; si elle t'a vu te glisser dans ta cachette, elle t'en sort.
+  - Un joueur attrapé avec des lettres en poche : elles retournent là où il les avait trouvées.
+  - Parquet qui craque et boîte à musique désaccordée au loin.
+- **The Backrooms** — les toboggans jaune et bleu des Poolrooms mènent toujours à l'écran de fin, en attendant leurs niveaux.
 
 ## 4.56 — 6 novembre 2026
 - **Fief Maudit** — La crypte et le Roi-Squelette : l'expédition a enfin une fin.
@@ -2372,8 +2746,6 @@
 
     - Harmonisation complète de la syntaxe officielle Pokémon Noir 2 / Blanc 2 pour tous les dons d'objets scénarisés.
 
-
-
 ## 3.91 — 3 novembre 2026
 
 - **Odyssée** — Objets d'exploration et capacités de terrain :
@@ -2397,8 +2769,6 @@
     - **Vol** : mélodie céleste cristalline au sifflet, spirale de notes de musique dorées et étincelles éoliennes autour du joueur, envolée verticale dans les nuages avec fermeture en iris, puis descente depuis le ciel avec nuage de poussière et atterrissage en douceur devant le Centre Pokémon.
 
   - Descriptions d'objets et boîtes de dialogue immersives dans l'esprit de Pokémon Version Noire 2 et Blanche 2.
-
-
 
 ## 3.90 — 3 novembre 2026
 
@@ -2580,8 +2950,6 @@
 
   - Lampe torche (F), course avec gestion de l'endurance (Shift), et filtre vidéo VHS d'époque avec glitchs de proximité.
 
-
-
 ## 3.89 — 3 novembre 2026
 
 - **Odyssée** — Nouveaux décors, dessinés au pixel près :
@@ -2608,8 +2976,6 @@
 
   - Au bord des grottes, on ne voit plus un grand aplat noir.
 
-
-
 ## 3.89 — 3 novembre 2026
 
 - **Odyssée** — Combats :
@@ -2617,8 +2983,6 @@
   - Les changements de stats s'affichent à côté des jauges : « Atq +2 » en vert quand une stat monte, « Vit −1 » en rouge quand elle baisse.
 
   - Ils disparaissent quand le Pokémon est rappelé ou quand Buée Noire les annule.
-
-
 
 ## 3.88 — 3 novembre 2026
 
@@ -2630,8 +2994,6 @@
 
   - Le guide donne maintenant un conseil pour toutes les arènes, y compris celles des Terres du Sud.
 
-
-
 ## 3.87 — 3 novembre 2026
 
 - **Odyssée** — Grottes :
@@ -2641,8 +3003,6 @@
   - Les falaises et les bords de roche alternent plusieurs dessins pour ne plus se répéter.
 
   - Dans les coins rentrants, le dessus de la roche ne dépasse plus de la falaise.
-
-
 
 ## 3.86 — 3 novembre 2026
 
@@ -2658,8 +3018,6 @@
 
   - Les parois des grottes reprennent le style des jeux DS : plateaux de roche aux coins arrondis, bords en pente et petite falaise au pied.
 
-
-
 ## 3.85 — 3 novembre 2026
 
 - **Odyssée** — Des grottes en vraie roche :
@@ -2669,8 +3027,6 @@
   - Les montagnes autour des entrées de grottes ont des flancs inclinés et une vraie bouche en arche.
 
   - Les rochers pointus se dressent sur le haut des parois, un peu moins nombreux.
-
-
 
 ## 3.84 — 3 novembre 2026
 
@@ -2740,8 +3096,6 @@
 
 - **Dogfight 3D** — De vrais sons : réacteur et postcombustion enregistrés, canon, départ de missile, explosions, leurres, et le transport qu'on entend venir de loin.
 
-
-
 ## 3.83 — 3 novembre 2026
 
 - **Odyssée** — Corrections :
@@ -2749,8 +3103,6 @@
   - En entrant dans un bâtiment, l'écran ne reste plus noir : le cercle se referme puis se rouvre proprement, comme sur DS.
 
   - Une Super Ball ou une Hyper Ball garde son dessin quand elle se secoue pendant la capture (elle ne redevient plus une Poké Ball).
-
-
 
 ## 3.82 — 3 novembre 2026
 
@@ -2767,8 +3119,6 @@
   - Parle à tes Pokémon : ils te soufflent ce que le prochain habitant aimerait trouver. L'architecte tient le carnet des habitats.
 
   - De terre desséchée à grande ville : ton domaine grandit avec ses habitants.
-
-
 
 ## 3.81 — 3 novembre 2026
 
@@ -2810,8 +3160,6 @@
 
   - En pleine partie, la manette reste au jeu : les menus ne réagissent que quand ils sont affichés.
 
-
-
 ## 3.79 — 3 novembre 2026
 
 - **Arcadia** — À plusieurs, le bouton « C'est parti ! » de l'écran de chargement attend que tous les joueurs du salon aient fini de charger le jeu : plus de départ en décalé.
@@ -2819,8 +3167,6 @@
   - En attendant, l'écran montre combien de joueurs sont prêts (« En attente… 2/4 ») et chez qui ça charge encore.
 
   - Au bout d'une minute, on peut partir quand même, pour ne pas rester bloqué par un joueur dont le jeu ne charge pas.
-
-
 
 ## 3.78 — 3 novembre 2026
 
@@ -2844,21 +3190,15 @@
 
   - En qualité Auto, après une partie bien fluide, le jeu essaie les nuages volumétriques au décollage suivant, et revient en arrière si l'image rame.
 
-
-
 ## 3.77 — 3 novembre 2026
 
 - **Odyssée** — En combat, les attaques n'affichent plus les dégâts prévus en % : à toi de juger, comme dans les jeux.
 
 - **Odyssée** — Le journal des nouveautés ne dévoile plus l'histoire : les noms, les rebondissements et les lieux secrets restent à découvrir en jouant.
 
-
-
 ## 3.76 — 3 novembre 2026
 
 - **Odyssée** — Tous les personnages de l'aventure ont maintenant leur nouveau dessin.
-
-
 
 ## 3.75 — 3 novembre 2026
 
@@ -2866,33 +3206,23 @@
 
 - **Odyssée** — Nouveaux dessins pour le capitaine, le facteur, la vieille dame, le voleur et d'autres personnages de l'aventure.
 
-
-
 ## 3.74 — 3 novembre 2026
 
 - **Odyssée** — Sur certains téléphones, les personnages restent nets (ils pouvaient s'afficher flous).
-
-
 
 ## 3.73 — 3 novembre 2026
 
 - **Odyssée** — À plusieurs, les autres joueurs apparaissent avec la tenue qu'ils se sont choisie.
 
-
-
 ## 3.72 — 3 novembre 2026
 
 - **Odyssée** — Portraits de combat pour Morgane, Gaspard, Ferdinand, Lilas et Corbin, et un nouveau portrait de Théo qui lui ressemble enfin (cheveux bleus et écharpe rouge).
-
-
 
 ## 3.71 — 3 novembre 2026
 
 - **Odyssée** — Les sept Champions des Terres du Sud ont leur propre dessin : Margot, Aurèle, Morgane, Gaspard, Ferdinand, Lilas et Corbin, ainsi que le croupier du Casino.
 
 - **Odyssée** — Margot et Aurèle ont leur portrait de combat ; les autres Champions du Sud ne s'affichent plus en image cassée pendant le combat.
-
-
 
 ## 3.70 — 3 novembre 2026
 
@@ -2902,23 +3232,17 @@
 
 - **Odyssée** — Nouveaux dessins pour Pierre, Margot, Aurèle, le vieux jardinier, Lucie et d'autres personnages de l'aventure.
 
-
-
 ## 3.69 — 3 novembre 2026
 
 - **Odyssée** — Cinq nouveaux dresseurs sur les routes du nord (Route 1, Route 3, Route 7 et Route 10).
 
 - **Odyssée** — La carte de la région montre le Pont de l'Austral qui relie Bourg-Aube aux Terres du Sud.
 
-
-
 ## 3.68 — 3 novembre 2026
 
 - **Odyssée** — Un vélo ! À Voltacité, Lucien t'en assemble un si tu lui rapportes deux pièces. Touche V pour monter dessus ou en descendre (dehors), on roule deux fois plus vite qu'en courant.
 
 - **Odyssée** — Le permis bateau : le capitaine de l'Embarcadère de l'Aube ne fait plus embarquer sans lui. Examen à la Capitainerie de Port-Azur (quatre questions puis une épreuve pratique), dès deux badges.
-
-
 
 ## 3.67 — 3 novembre 2026
 
@@ -2941,8 +3265,6 @@
   - Un pricer donne le prix des produits dérivés de chaque titre : forwards et futures, change à terme et swaps, CDS, options européennes, américaines et asiatiques.
 
   - Pierre, l'analyste en costume, fait passer un entretien de huit questions : réussis-le pour ouvrir un compte et investir tes Pokédollars.
-
-
 
 ## 3.66 — 2 novembre 2026
 
@@ -2973,8 +3295,6 @@
 - **Arcadia** — Le menu Arcadia revient dans tous les jeux, maintenant sur le bord droit de l'écran : commandes, son, plein écran et retour au salon.
 
 - **Arcadia** — Les boutons « Jouer avec mes potes » et « Jouer seul » de l'accueil lancent de nouveau le jeu.
-
-
 
 ## 3.64 — 2 novembre 2026
 
@@ -3024,8 +3344,6 @@
 
   - Les manches s'enchaînent et les points s'additionnent d'une manche à l'autre.
 
-
-
 ## 3.63 — 2 novembre 2026
 
 - **Dogfight 3D** — Refonte complète : le combat se déroule au-dessus de la vraie île d'Island Rush.
@@ -3068,8 +3386,6 @@
 
   - **Design 100% Rétro Pixel-Art Nintendo DS (5G Noir 2 / Blanc 2)** : onglets de filtrage crantés (`EN COURS`, `TERMINÉES`, `TOUTES`), étiquettes de catégorie stylisées (`PRINCIPALE`, `AVENTURE`, `HABITANT`), liste à défilement avec curseur `▶`, coches de progression d'étapes (`☑` terminée, `▶` en cours, `◻` à venir), boîte de récompense et bandeau d'aide rétro.
 
-
-
 ## 3.62 — 2 novembre 2026
 
 - **Odyssée** — Remplacement et correction intégrale des sprites de Poké Balls :
@@ -3079,8 +3395,6 @@
   - **Écran d'Équipe et Sockets** : toutes les alvéoles de l'équipe affichent désormais les vraies Poké Balls rétro 5G éclatantes sans confusion possible avec les Hyper Balls ou Super Balls.
 
   - **Sprites de terrain et combat** : restauration du sprite de Poké Ball de terrain `itemball.png` en vraie résolution 15x15, sprites de combat 32x32 et 48x48 pixel-art pour l'intro du Professeur Saule, frames d'ouverture et d'inclinaison de secousse nettes au pixel près, et ajout de la Master Ball officielle (`master-ball.png` et `master_ball_32.png`).
-
-
 
 ## 3.61 — 2 novembre 2026
 
@@ -3104,8 +3418,6 @@
 
   - **Écran de Résumé et Pokédex Pixel-Art** : onglets façon cartouches DS avec biseaux à 45°, cartouches de capacités rectangulaires avec liseré de type solide et compteurs de PP rétro, alcôve de présentation avec socle isométrique et écran Pokédex aux diodes franches.
 
-
-
 ## 3.60 — 2 novembre 2026
 
 - **The Candidate** — 141 nouvelles questions d'entretien en finance de marché, avec leur explication.
@@ -3128,8 +3440,6 @@
 
   - **Boîtes de dialogue 5G (*Noir 2 / Blanc 2*)** : adieu au cadre papier blanc générique. Les dialogues adoptent désormais un boîtier obsidienne sombre biseauté aux 4 coins avec micro-scanlines horizontales, double liseré métallique cyan et or, cartouche de nom de l'interlocuteur façon plaque métallique en relief avec filet cyan électrique supérieur, texte immaculé `#f6faff` parfaitement lisible, curseur chevron rougeoyant `▼` animé d'un battement vertical, et cadre technologique intégré pour le portrait du personnage.
 
-
-
 ## 3.59 — 2 novembre 2026
 
 - **Odyssée** — interfaces 5G (*Noir 2 / Blanc 2*) pour l'Équipe, le Sac et la Carte, limite de niveau d'Arène et restrictions d'échanges :
@@ -3145,8 +3455,6 @@
   - **Écran Sac 5G** : 4 poches illustrées avec compteurs d'objets (Soins, Balls, Objets, Objets rares), aperçu graphique grand format, descriptifs complets et sélection fluide au clic ou au clavier.
 
   - **Écran Carte de la région 5G** : atlas Pokégear façon C-Gear avec balises de villes cliquables, suivi de l'avancée des Arènes / Badges et rappel de la limite de niveau active.
-
-
 
 ## 3.58 — 2 novembre 2026
 
@@ -3166,8 +3474,6 @@
 
 - **Odyssée** — retrait du bouton SAUVER sur le HUD en jeu : la partie est désormais sauvegardée automatiquement après chaque combat, discussion, soin ou changement de lieu (ainsi qu'à la fermeture de l'onglet), laissant 4 boutons d'action rapides (COURSE, ÉQUIPE, SAC, CARTE) sur le Pokégear.
 
-
-
 ## 3.57 — 2 novembre 2026
 
 - **Odyssée** — cinématique d'ouverture, nouvelle scène d'introduction du Professeur Saule, course continue et refonte rétro 5G des combats :
@@ -3181,8 +3487,6 @@
   - **Décors de combat & HUD rétro 5G (*Noir 2 / Blanc 2*)** : 11 nouveaux fonds de combat en pixel-art 16-bit (prairie, mer, arène, Ligue, grotte, neige, volcan, de jour comme de nuit), socles assortis, boîtes de statut 5G biseautées avec Poké Balls d'équipe, badges de types, barres PV / EXP segmentées, boutons d'action illustrés et cartes de capacités détaillées (catégorie, type, puissance et PP).
 
   - **Police d'écriture (Chakra Petch)** : chiffres nets et alignés dans tous les menus et compteurs de PV.
-
-
 
 ## 3.56 — 2 novembre 2026
 
@@ -3226,8 +3530,6 @@
 
   - Appuie sur `U` (ou sur le bouton `▴`) pour replier ou réafficher le HUD quand tu veux admirer la carte.
 
-
-
 ## 3.54 — 2 novembre 2026
 
 - **Odyssée** — le jeu à plusieurs ne plante plus dès qu'un autre joueur arrive sur la même carte : on se voit marcher, avec son nom au-dessus de la tête.
@@ -3235,8 +3537,6 @@
   - En parlant à un autre joueur : échanger, combattre, ou voir sa fiche (badges, Pokédex, temps de jeu et équipe).
 
   - Ta propre carte dresseur montre aussi ton équipe.
-
-
 
 ## 3.53 — 2 novembre 2026
 
@@ -3250,8 +3550,6 @@
 
   - De nouveaux personnages à rencontrer en chemin.
 
-
-
 ## 3.52 — 2 novembre 2026
 
 - **Odyssée** — on peut jouer à plusieurs dans la nouvelle version : voir les autres joueurs se promener, échanger un Pokémon et se défier en combat.
@@ -3259,8 +3557,6 @@
   - Code de sauvegarde (menu → CODE) pour reprendre sa partie sur un autre appareil, et sauvegarde en ligne sur son compte Arcadia.
 
 - **Arcadia** — tous les jeux du salon à jour : Mollo !, Poké Duel en double, Mini-Golf et le nouvel accueil.
-
-
 
 ## 3.51 — 2 novembre 2026
 
@@ -3277,92 +3573,6 @@
   - Écran titre : Odyssor surgit de l'océan, comme sur SoulSilver.
 
   - Nouvelles icônes pour les objets du sac.
-
-
-
-## 3.50 — 31 octobre 2026
-
-- **Odyssée** — la carte de la région est redessinée comme le Pokégear de HeartGold / SoulSilver : mer en dégradé de bleus, côtes en falaises, montagnes en paliers, forêts, grottes, routes blanches et villes en pastilles rouges.
-
-  - Les flèches passent d'une ville visitée à l'autre et affichent son nom.
-
-  - Les lieux à part (lac, jardin, forêt des torii) sont marqués en vert.
-
-
-
-## 3.49 — 31 octobre 2026
-
-- **Odyssée** — une histoire secondaire complète en parallèle de l'aventure : une mystérieuse organisation rôde dans la région. Huit quêtes, à suivre dans le nouveau menu « Quêtes ».
-
-  - Le Ponyta de Lucie, à Sylvebourg, après le premier badge.
-
-  - Les eaux troubles du Lac Miroir : un nouveau lac au nord de la route 3 et son hameau de Rive-Claire.
-
-  - Les nuits blanches de Floralia : des enfants qui ne dorment plus, et un jardin qui ne s'ouvre que la nuit.
-
-  - Les talismans du Temple Kagura : la Forêt des Torii au bout de la route 7, ses lanternes et sa cloche.
-
-  - Le cœur du volcan : une aventure qui attend après la Ligue.
-
-  - Et aussi : le courrier perdu du facteur de Port-Azur, le dragon de pierre du Musée des Dragons et le vœu de la fontaine.
-
-- **Odyssée** — nouveaux décors : fontaine, torii, lanternes, cloche, squelette de dragon, trône… et de nouveaux habitants dessinés comme dans HeartGold / SoulSilver.
-
-
-
-## 3.48 — 31 octobre 2026
-
-- **Odyssée** — l'eau et les fleurs viennent maintenant de HeartGold / SoulSilver : la mer ondule comme sur DS, les rivages ont leur sable et leur écume qui monte et redescend.
-
-  - Les parterres fleuris sont faits de fleurs rouges, jaunes, bleues et violettes qui se balancent au vent.
-
-
-
-## 3.47 — 31 octobre 2026
-
-- **Odyssée** — le décor passe au nouveau tileset dessiné : herbe, chemins, sable, pavés, neige, sol des bois, grottes, eau et lave animées, ponts, rebords et escaliers.
-
-  - Les hautes herbes forment de vraies nappes aux bords et aux coins arrondis, dans la prairie, les bois et la neige.
-
-  - Les intérieurs ont leurs sols : parquet des maisons, damier rose du Centre, damier bleu de la Boutique, tapis rouge de la Ligue, sols des Arènes.
-
-- **Odyssée** — nouvelles façades : Centre, Boutique, Arène, Labo, Ligue, chalets enneigés à Givrebourg, maisons de pêcheurs et capitainerie dans les ports, Musée des Dragons, Caserne d'Écaille, Tour Mirage, phare et Tour de la Grue.
-
-
-
-## 3.46 — 31 octobre 2026
-
-- **Odyssée** — en attendant les dessins définitifs, les personnages sont ceux de HeartGold / SoulSilver : Ethan, Lyra, Silver, les Champions, les montagnards, les marins… sur la carte comme en combat. Les portraits à côté des dialogues restent.
-
-- **Odyssée** — les créatures originales sont mises de côté pour l'instant : chacune est remplacée par un Pokémon proche (Germignon, Héricendre et Kaiminus au labo, Kyogre au Cap des Étoiles…).
-
-- **Odyssée** — tous les Pokémon jusqu'à X / Y (721), avec le type Fée, et quatre nouvelles pierres d'évolution en boutique (Nuit, Aube, Éclat, Glace).
-
-- **Odyssée** — l'écran d'accueil ne montre plus que la mer et le ciel étoilé.
-
-
-
-## 3.45 — 31 octobre 2026
-
-- Add files via upload (Gabe)
-
-
-
-## 3.44 — 31 octobre 2026
-
-- **Odyssée** — les hautes herbes sont redessinées comme dans HeartGold / SoulSilver : un tapis de touffes bien net, sans carrés ni trous (prairie, bois, neige).
-
-  - Quand on se tient dans l'herbe, elle cache les jambes du personnage, et elle s'agite quand on y entre.
-
-
-
-## 3.43 — 31 octobre 2026
-
-- **Odyssée** — nouvelles hautes herbes en touffes, comme sur DS : quatre variantes mélangées au hasard (prairie, bois, neige), fini les carrés d'herbe.
-
-  - Sous l'herbe des bois, le sol est celui du sous-bois.
-
-
 
 ## 3.43 — 2 novembre 2026
 
@@ -3382,8 +3592,6 @@
 
   - Les mains et les pieds ne traversent plus le décor, et le boulet repousse les corps au lieu de passer à travers.
 
-
-
 ## 3.42 — 2 novembre 2026
 
 - **Poké Duel** — Nouveau format « 2 joueurs contre 2 », à choisir dans les réglages du salon (ligne Format).
@@ -3395,8 +3603,6 @@
   - Le match se joue en 2 manches gagnantes. Ton Pokémon est encadré en jaune, avec le nom de chaque dresseur au-dessus du sien.
 
 - **Poké Duel** — Combat en double : un tour ne peut plus se jouer deux fois de suite quand un joueur renvoie son choix.
-
-
 
 ## 3.41 — 2 novembre 2026
 
@@ -3414,8 +3620,6 @@
 
   - Jusqu'à 6 joueurs et 8 pantins avec les bots, sur ordinateur, téléphone ou manette.
 
-
-
 ## 3.40 — 2 novembre 2026
 
 - **Poké Duel** — Nouveau format VGC, en 2 contre 2 : à choisir dans les réglages du salon (« Format »).
@@ -3432,8 +3636,6 @@
 
   - Les bots savent jouer en double : ils visent la bonne cible, utilisent les attaques de zone sans trop blesser leur allié, et sortent Abri au bon moment.
 
-
-
 ## 3.39 — 2 novembre 2026
 
 - **Poké Duel** — Au draft, 12 Pokémon sont proposés au lieu de 6, et une équipe ne peut avoir qu'un seul légendaire (marqué LÉGENDAIRE sur sa carte).
@@ -3442,13 +3644,9 @@
 
 - **Poké Duel** — Quand l'adversaire choisit son remplaçant, tes attaques ne s'affichent plus : un écran d'attente les remplace jusqu'à son arrivée.
 
-
-
 ## 3.38 — 2 novembre 2026
 
 - **Poké Duel** — L'effet de la météo s'affiche : « Le soleil renforce l'attaque ! » ou « La pluie affaiblit l'attaque... » apparaît quand une attaque Feu ou Eau est boostée (×1,5) ou affaiblie (×0,5).
-
-
 
 ## 3.37 — 2 novembre 2026
 
@@ -3466,8 +3664,6 @@
 
 - **Poké Duel** — Les coups critiques sont plus rares : 1 chance sur 24 au lieu de 1 sur 16, comme dans les jeux récents.
 
-
-
 ## 3.36 — 2 novembre 2026
 
 - **Poké Duel** — Toutes les attaques ont maintenant leur vrai effet :
@@ -3481,8 +3677,6 @@
   - Fatal-Foudre et Vent Violent touchent à coup sûr sous la pluie ; Vent Violent (30 %) et Vibraqua (20 %) peuvent rendre confus.
 
   - Éco-Sphère, Telluriforce, Bourdon, Luminocanon et Exploforce peuvent baisser la Défense Spéciale ; Pouvoir Lunaire l'Attaque Spéciale ; Câlinerie l'Attaque ; Poing Météore peut monter l'Attaque du lanceur.
-
-
 
 ## 3.35 — 2 novembre 2026
 
@@ -3500,15 +3694,79 @@
 
 - **Poké Duel** — Méga-Évolution : la nouvelle Vitesse compte bien dès le tour de l'évolution (vérifié par un test).
 
+## 3.50 — 31 octobre 2026
 
+- **Odyssée** — la carte de la région est redessinée comme le Pokégear de HeartGold / SoulSilver : mer en dégradé de bleus, côtes en falaises, montagnes en paliers, forêts, grottes, routes blanches et villes en pastilles rouges.
+
+  - Les flèches passent d'une ville visitée à l'autre et affichent son nom.
+
+  - Les lieux à part (lac, jardin, forêt des torii) sont marqués en vert.
+
+## 3.49 — 31 octobre 2026
+
+- **Odyssée** — une histoire secondaire complète en parallèle de l'aventure : une mystérieuse organisation rôde dans la région. Huit quêtes, à suivre dans le nouveau menu « Quêtes ».
+
+  - Le Ponyta de Lucie, à Sylvebourg, après le premier badge.
+
+  - Les eaux troubles du Lac Miroir : un nouveau lac au nord de la route 3 et son hameau de Rive-Claire.
+
+  - Les nuits blanches de Floralia : des enfants qui ne dorment plus, et un jardin qui ne s'ouvre que la nuit.
+
+  - Les talismans du Temple Kagura : la Forêt des Torii au bout de la route 7, ses lanternes et sa cloche.
+
+  - Le cœur du volcan : une aventure qui attend après la Ligue.
+
+  - Et aussi : le courrier perdu du facteur de Port-Azur, le dragon de pierre du Musée des Dragons et le vœu de la fontaine.
+
+- **Odyssée** — nouveaux décors : fontaine, torii, lanternes, cloche, squelette de dragon, trône… et de nouveaux habitants dessinés comme dans HeartGold / SoulSilver.
+
+## 3.48 — 31 octobre 2026
+
+- **Odyssée** — l'eau et les fleurs viennent maintenant de HeartGold / SoulSilver : la mer ondule comme sur DS, les rivages ont leur sable et leur écume qui monte et redescend.
+
+  - Les parterres fleuris sont faits de fleurs rouges, jaunes, bleues et violettes qui se balancent au vent.
+
+## 3.47 — 31 octobre 2026
+
+- **Odyssée** — le décor passe au nouveau tileset dessiné : herbe, chemins, sable, pavés, neige, sol des bois, grottes, eau et lave animées, ponts, rebords et escaliers.
+
+  - Les hautes herbes forment de vraies nappes aux bords et aux coins arrondis, dans la prairie, les bois et la neige.
+
+  - Les intérieurs ont leurs sols : parquet des maisons, damier rose du Centre, damier bleu de la Boutique, tapis rouge de la Ligue, sols des Arènes.
+
+- **Odyssée** — nouvelles façades : Centre, Boutique, Arène, Labo, Ligue, chalets enneigés à Givrebourg, maisons de pêcheurs et capitainerie dans les ports, Musée des Dragons, Caserne d'Écaille, Tour Mirage, phare et Tour de la Grue.
+
+## 3.46 — 31 octobre 2026
+
+- **Odyssée** — en attendant les dessins définitifs, les personnages sont ceux de HeartGold / SoulSilver : Ethan, Lyra, Silver, les Champions, les montagnards, les marins… sur la carte comme en combat. Les portraits à côté des dialogues restent.
+
+- **Odyssée** — les créatures originales sont mises de côté pour l'instant : chacune est remplacée par un Pokémon proche (Germignon, Héricendre et Kaiminus au labo, Kyogre au Cap des Étoiles…).
+
+- **Odyssée** — tous les Pokémon jusqu'à X / Y (721), avec le type Fée, et quatre nouvelles pierres d'évolution en boutique (Nuit, Aube, Éclat, Glace).
+
+- **Odyssée** — l'écran d'accueil ne montre plus que la mer et le ciel étoilé.
+
+## 3.45 — 31 octobre 2026
+
+- Add files via upload (Gabe)
+
+## 3.44 — 31 octobre 2026
+
+- **Odyssée** — les hautes herbes sont redessinées comme dans HeartGold / SoulSilver : un tapis de touffes bien net, sans carrés ni trous (prairie, bois, neige).
+
+  - Quand on se tient dans l'herbe, elle cache les jambes du personnage, et elle s'agite quand on y entre.
+
+## 3.43 — 31 octobre 2026
+
+- **Odyssée** — nouvelles hautes herbes en touffes, comme sur DS : quatre variantes mélangées au hasard (prairie, bois, neige), fini les carrés d'herbe.
+
+  - Sous l'herbe des bois, le sol est celui du sous-bois.
 
 ## 3.34 — 31 octobre 2026
 
 - **Poké Duel** — Le bouton Méga-Évolution ne décale plus les attaques dans la colonne de droite : il se place au-dessus d'elles.
 
 - **Poké Duel** — Sandstorm se relance bien en combat, même si l'ancienne version du morceau était restée en mémoire, et la musique repart au premier clic ou à la première touche si le navigateur l'avait bloquée.
-
-
 
 ## 3.33 — 31 octobre 2026
 
@@ -3521,8 +3779,6 @@
   - Au draft, le talent et son effet sont écrits sur chaque carte. En combat, il s'affiche sous le nom du Pokémon et un bandeau à son nom glisse quand il s'active, comme dans les jeux.
 
   - Les bots en tiennent compte (ils n'attaquent plus en Sol un Pokémon qui lévite).
-
-
 
 ## 3.32 — 31 octobre 2026
 
@@ -3537,8 +3793,6 @@
 - **Poké Duel** — La musique des combats démarre à nouveau (elle se relançait sans arrêt pendant son chargement et ne jouait jamais).
 
 - **Poké Duel** — Après un K.O. ou un changement de Pokémon, le menu revient sur les attaques au lieu de rester sur la liste des Pokémon.
-
-
 
 ## 3.31 — 31 octobre 2026
 
@@ -3556,8 +3810,6 @@
 
 - **Poké Duel** — Le mode Aventure Kalos-Sud est retiré : Poké Duel devient le tournoi 3v3 (l'aventure Pokémon, c'est Odyssée). Le jeu se charge aussi plus vite.
 
-
-
 ## 3.30 — 31 octobre 2026
 
 - **Tous les jeux** — L'hôte peut changer d'onglet ou de fenêtre sans figer la partie : elle continue pour tout le salon (avant, tout s'arrêtait jusqu'à son retour).
@@ -3570,19 +3822,13 @@
 
 - **Odyssée** — Ses plantages sont bien rangés sous son nom dans la page des journaux.
 
-
-
 ## 3.29 — 31 octobre 2026
 
 - **Arcadia** — Vitrine de l'accueil : le fond flou sous l'affiche est complètement supprimé.
 
-
-
 ## 3.28 — 31 octobre 2026
 
 - **Arcadia** — Chaque mise à jour du site s'affiche tout de suite, sans garder l'ancienne version en mémoire (c'est ce qui faisait encore voir le flou sous la vitrine).
-
-
 
 ## 3.27 — 31 octobre 2026
 
@@ -3590,19 +3836,13 @@
 
   - Elle s'ajuste à toutes les tailles d'écran, sans vide ni texte coupé.
 
-
-
 ## 3.26 — 31 octobre 2026
 
 - **Arcadia** — Vitrine de l'accueil : plus de bloc noir sous l'affiche, elle se prolonge en flou jusqu'aux boutons.
 
-
-
 ## 3.25 — 31 octobre 2026
 
 - **Arcadia** — Plus de grand vide sous la vitrine de l'accueil : elle descend jusqu'en bas de la colonne de ton compte et de tes amis, avec l'affiche entière en haut.
-
-
 
 ## 3.24 — 31 octobre 2026
 
@@ -3611,8 +3851,6 @@
 - **Arcadia** — Tes amis sont maintenant en haut de l'accueil, juste sous ton compte.
 
 - **Arcadia** — L'accueil et le salon s'adaptent à toutes les tailles d'écran d'ordinateur, du petit portable au grand écran : plus de cartes par ligne sur grand écran, affiches jamais coupées dans la vitrine.
-
-
 
 ## 3.23 — 31 octobre 2026
 
@@ -3635,8 +3873,6 @@
 - **Arcadia** — L'accueil s'adapte aux téléphones et aux tablettes.
 
 - **Mini-Golf Party** — De vrais bruitages : la frappe, la balle qui tombe dans le trou, les rebonds, le plouf, le public, et un fond sonore (oiseaux, vagues) sur certains parcours.
-
-
 
 ## 3.22 — 31 octobre 2026
 
@@ -3664,87 +3900,15 @@
 
 - **Bastion Clash** — Les unités se déplacent sans tressauter, surtout chez les invités.
 
-
-
-## 3.21 — 30 octobre 2026
-
-- **Mini-Golf Party** — Fini le « Connexion perdue · reconnexion… » en boucle en multijoueur. À chaque coup joué sur l'ordinateur de l'hôte (le sien ou celui d'un bot), le jeu renvoyait à l'infini l'écho de sa propre balle : des dizaines de milliers de messages en quelques secondes, et le serveur coupait l'hôte pour inondation. Les autres joueurs voyaient « Coupure chez l'hôte », puis le salon changeait d'hôte. L'hôte ignore maintenant ses propres messages.
-
-
-
-## 3.20 — 29 octobre 2026
-
-- **Odyssée** — Graphismes retravaillés partout :
-
-  - l'herbe a du relief et des couleurs qui varient, avec trèfles, pâquerettes, cailloux, petites touffes et buissons fleuris ; à la lisière des bois, fougères, champignons et feuilles mortes ; les arbres et les bâtiments projettent une ombre douce ;
-
-  - les hautes herbes sont plus épaisses, et les forêts mélangent cinq sortes d'arbres de tailles et de teintes différentes, plus sombres au cœur des bois ;
-
-  - l'eau devient plus foncée au large, et les rivages ont un bord de sable ondulé, de l'écume et des coins arrondis ;
-
-  - toits en tuiles avec faîtage, façades avec volets, jardinières fleuries, soubassement en pierre et portes avec auvent ;
-
-  - grottes en roche taillée avec des parois plus hautes, et des cristaux qui luisent dans la Grotte Lunaire ;
-
-  - les lieux importants de l'aventure ont chacun leur décor ;
-
-  - la nuit est plus sombre, et les lampadaires éclairent le sol autour d'eux ;
-
-  - les chemins de l'île de Cendrelune sont bordés de cendre au lieu d'herbe.
-
-- **Odyssée** — Combats : nouveaux décors (prairie avec collines et forêt, grotte avec stalactites et cristaux, plage, volcan, arènes au dallage en perspective) et socles avec ombre et reflet. Ton Pokémon est placé un peu plus haut, moins caché par la boîte de texte.
-
-
-
-## 3.19 — 29 octobre 2026
-
-- **Odyssée** — Une vraie histoire : une menace plane sur la région, à toi de la découvrir au fil des routes et des villes.
-
-  - Certains lieux restent fermés tant que l'histoire n'a pas avancé.
-
-- **Odyssée** — À la Ligue, des dresseurs d'élite t'attendent avant le dernier combat.
-
-- **Odyssée** — Les CS : Coupe (petits arbres), Flash (la Grotte Lunaire est maintenant plongée dans le noir), Surf (nager et pêcher des Pokémon sur l'eau) et Force (pousser les gros rochers).
-
-  - Place-toi devant l'obstacle et appuie sur Espace. Une dizaine de recoins cachés le long des routes, et un îlot dans le port, cachent des objets rares.
-
-- **Odyssée** — Quêtes annexes : un médaillon perdu, un échange de Pokémon, un Évoli et un Minidraco à adopter, des Pokémon à montrer et un chercheur qui récompense ton Pokédex (jusqu'à une Master Ball).
-
-- **Odyssée** — Sauvegarde en ligne : ta partie suit ton compte du Hub. Elle part sur le serveur à chaque sauvegarde, et tu la retrouves sur un autre appareil après y avoir importé ton compte (code de transfert du Hub), sans rien recopier. Écran titre → « Sauvegarde en ligne » pour voir où elle en est.
-
-- **Odyssée** — Les gardes bloquent maintenant tout le passage : on ne peut plus se faufiler à côté d'eux.
-
-
-
-## 3.18 — 29 octobre 2026
-
-- **Odyssée** — On joue ensemble : chacun garde son aventure, mais tous les joueurs du salon se croisent dans la région.
-
-  - Les autres dresseurs marchent sur la même carte que toi, avec leur nom au-dessus de la tête (« occupé » quand ils sont en combat ou dans un menu).
-
-  - Parle à un joueur (Espace en face de lui) pour lui proposer un échange ou un combat ; il accepte ou refuse, et tu peux annuler en attendant (Échap).
-
-- **Odyssée** — Échanges de Pokémon : chacun choisit le Pokémon qu'il propose, voit celui de l'autre, et l'échange n'a lieu que si les deux acceptent.
-
-  - Kadabra, Machopeur, Gravalanch et Spectrum évoluent en arrivant, comme dans les vrais jeux.
-
-- **Odyssée** — Combats entre joueurs : combat amical avec toute ton équipe, soignée pour l'occasion, sans perte d'argent ni expérience, et sans objets.
-
-  - Après un K.O., chacun choisit son remplaçant ; « Abandon » remplace la fuite, et un joueur qui quitte ou ne répond plus perd par forfait.
-
-- **Odyssée** — Code de sauvegarde, pour reprendre sa partie sur un autre appareil : menu (Échap) → CODE, copie le code, puis sur l'autre appareil « Charger un code » sur l'écran titre. Un code incomplet ou mal recopié est refusé.
-
-- **Odyssée** — Le jeu n'est plus présenté comme un prototype : les Pokémon sont là pour de bon.
-
-
-
 ## 3.42 — 31 octobre 2026
 
 - **Odyssée** — les maisons ont de nouvelles façades à colombages redessinées : fenêtres, porte avec son auvent, applique dorée, toit de tuiles.
 
   - Le rez-de-chaussée garde son socle de pierre, les étages n'en ont plus.
 
+## 3.21 — 30 octobre 2026
 
+- **Mini-Golf Party** — Fini le « Connexion perdue · reconnexion… » en boucle en multijoueur. À chaque coup joué sur l'ordinateur de l'hôte (le sien ou celui d'un bot), le jeu renvoyait à l'infini l'écho de sa propre balle : des dizaines de milliers de messages en quelques secondes, et le serveur coupait l'hôte pour inondation. Les autres joueurs voyaient « Coupure chez l'hôte », puis le salon changeait d'hôte. L'hôte ignore maintenant ses propres messages.
 
 ## 3.41 — 30 octobre 2026
 
@@ -3760,8 +3924,6 @@
 
 - **Odyssée** — chez Maman, la plante ne chevauche plus l'évier ; les meubles d'une case (bibliothèque, PC) sont posés sur leur case.
 
-
-
 ## 3.40 — 30 octobre 2026
 
 - **Odyssée** — un second rival entre en scène au milieu de l'aventure, et son équipe dépend de ton starter.
@@ -3776,21 +3938,15 @@
 
 - **Odyssée** — nouvelles herbes hautes, fleurs, barrière et statues redessinées : les herbes forment un vrai tapis, sans quadrillage.
 
-
-
 ## 3.37 — 30 octobre 2026
 
 - **Odyssée** — le mobilier des maisons, du Centre, du labo et des arènes est redessiné en pixel art, affiché pixel pour pixel.
 
 - **Odyssée** — deux arbres côte à côte ne se « hachurent » plus : celui de gauche passe proprement devant celui de droite.
 
-
-
 ## 3.34 — 30 octobre 2026
 
 - **Odyssée** — le joueur, la joueuse, Théo, les herbes, les fleurs et les arbres utilisent les dessins retouchés à la main : chaque pixel est affiché tel quel, sans ombre violette ni contour de fond.
-
-
 
 ## 3.30 — 30 octobre 2026
 
@@ -3803,8 +3959,6 @@
   - Tous les autres personnages regardent enfin dans la bonne direction quand ils marchent sur le côté, et le mobilier est plus net.
 
 - **Odyssée** — nouvelle musique d'écran titre : elle commence tout doucement, puis un riff rapide monte en puissance jusqu'à l'entrée de la batterie.
-
-
 
 ## 3.25 — 30 octobre 2026
 
@@ -3822,8 +3976,6 @@
 
   - Les légendaires ne sont plus à l'envers sur la carte.
 
-
-
 ## 3.24 — 30 octobre 2026
 
 - **Odyssée** — les arbres, les personnages et les maisons ne sont plus écrasés en bas de l'écran : tout garde la même hauteur partout, comme sur DS.
@@ -3835,8 +3987,6 @@
   - Pas d'arène sur ces îles, mais des dresseurs plus forts que l'arène précédente.
 
 - **Odyssée** — des légendaires à capturer, chacun au bout d'une quête : écoute bien les habitants des villes et des îles.
-
-
 
 ## 3.23 — 30 octobre 2026
 
@@ -3868,31 +4018,81 @@
 
   - Le Pokédex commence par les créatures d'Odyssée ; les personnages ont leur portrait à côté des dialogues.
 
-
-
 ## 3.22 — 30 octobre 2026
 
 - Add files via upload (Gabe)
-
-
 
 ## 3.21 — 30 octobre 2026
 
 - Add files via upload (Gabe)
 
-
-
 ## 3.20 — 30 octobre 2026
 
 - Add files via upload (Gabe)
-
-
 
 ## 3.19 — 30 octobre 2026
 
 - Add files via upload (Gabe)
 
+## 3.20 — 29 octobre 2026
 
+- **Odyssée** — Graphismes retravaillés partout :
+
+  - l'herbe a du relief et des couleurs qui varient, avec trèfles, pâquerettes, cailloux, petites touffes et buissons fleuris ; à la lisière des bois, fougères, champignons et feuilles mortes ; les arbres et les bâtiments projettent une ombre douce ;
+
+  - les hautes herbes sont plus épaisses, et les forêts mélangent cinq sortes d'arbres de tailles et de teintes différentes, plus sombres au cœur des bois ;
+
+  - l'eau devient plus foncée au large, et les rivages ont un bord de sable ondulé, de l'écume et des coins arrondis ;
+
+  - toits en tuiles avec faîtage, façades avec volets, jardinières fleuries, soubassement en pierre et portes avec auvent ;
+
+  - grottes en roche taillée avec des parois plus hautes, et des cristaux qui luisent dans la Grotte Lunaire ;
+
+  - les lieux importants de l'aventure ont chacun leur décor ;
+
+  - la nuit est plus sombre, et les lampadaires éclairent le sol autour d'eux ;
+
+  - les chemins de l'île de Cendrelune sont bordés de cendre au lieu d'herbe.
+
+- **Odyssée** — Combats : nouveaux décors (prairie avec collines et forêt, grotte avec stalactites et cristaux, plage, volcan, arènes au dallage en perspective) et socles avec ombre et reflet. Ton Pokémon est placé un peu plus haut, moins caché par la boîte de texte.
+
+## 3.19 — 29 octobre 2026
+
+- **Odyssée** — Une vraie histoire : une menace plane sur la région, à toi de la découvrir au fil des routes et des villes.
+
+  - Certains lieux restent fermés tant que l'histoire n'a pas avancé.
+
+- **Odyssée** — À la Ligue, des dresseurs d'élite t'attendent avant le dernier combat.
+
+- **Odyssée** — Les CS : Coupe (petits arbres), Flash (la Grotte Lunaire est maintenant plongée dans le noir), Surf (nager et pêcher des Pokémon sur l'eau) et Force (pousser les gros rochers).
+
+  - Place-toi devant l'obstacle et appuie sur Espace. Une dizaine de recoins cachés le long des routes, et un îlot dans le port, cachent des objets rares.
+
+- **Odyssée** — Quêtes annexes : un médaillon perdu, un échange de Pokémon, un Évoli et un Minidraco à adopter, des Pokémon à montrer et un chercheur qui récompense ton Pokédex (jusqu'à une Master Ball).
+
+- **Odyssée** — Sauvegarde en ligne : ta partie suit ton compte du Hub. Elle part sur le serveur à chaque sauvegarde, et tu la retrouves sur un autre appareil après y avoir importé ton compte (code de transfert du Hub), sans rien recopier. Écran titre → « Sauvegarde en ligne » pour voir où elle en est.
+
+- **Odyssée** — Les gardes bloquent maintenant tout le passage : on ne peut plus se faufiler à côté d'eux.
+
+## 3.18 — 29 octobre 2026
+
+- **Odyssée** — On joue ensemble : chacun garde son aventure, mais tous les joueurs du salon se croisent dans la région.
+
+  - Les autres dresseurs marchent sur la même carte que toi, avec leur nom au-dessus de la tête (« occupé » quand ils sont en combat ou dans un menu).
+
+  - Parle à un joueur (Espace en face de lui) pour lui proposer un échange ou un combat ; il accepte ou refuse, et tu peux annuler en attendant (Échap).
+
+- **Odyssée** — Échanges de Pokémon : chacun choisit le Pokémon qu'il propose, voit celui de l'autre, et l'échange n'a lieu que si les deux acceptent.
+
+  - Kadabra, Machopeur, Gravalanch et Spectrum évoluent en arrivant, comme dans les vrais jeux.
+
+- **Odyssée** — Combats entre joueurs : combat amical avec toute ton équipe, soignée pour l'occasion, sans perte d'argent ni expérience, et sans objets.
+
+  - Après un K.O., chacun choisit son remplaçant ; « Abandon » remplace la fuite, et un joueur qui quitte ou ne répond plus perd par forfait.
+
+- **Odyssée** — Code de sauvegarde, pour reprendre sa partie sur un autre appareil : menu (Échap) → CODE, copie le code, puis sur l'autre appareil « Charger un code » sur l'écran titre. Un code incomplet ou mal recopié est refusé.
+
+- **Odyssée** — Le jeu n'est plus présenté comme un prototype : les Pokémon sont là pour de bon.
 
 ## 3.18 — 29 octobre 2026
 
@@ -3911,8 +4111,6 @@
   - Un joueur parti ne fait plus attendre les autres à chaque trou, et ne marque plus 0 sur les trous qu'il n'a pas joués. S'il revient (l'ancien hôte compris), il reprend le trou en cours.
 
   - Le tour d'un joueur en coupure passe au bout de 12 secondes, même en temps libre.
-
-
 
 ## 3.17 — 28 octobre 2026
 
@@ -3946,8 +4144,6 @@
 
   - Au clavier : flèches ou ZQSD pour marcher, Maj pour courir, Espace pour parler, Échap pour le menu.
 
-
-
 ## 3.16 — 28 octobre 2026
 
 - **Island Rush** — Une vraie explosion : une boule de feu qui gonfle et bouillonne, passe du blanc à l'orange puis au rouge, se change en fumée noire qui monte, avec des flammes et des braises qui jaillissent autour.
@@ -3955,8 +4151,6 @@
 - **Island Rush** — Glissade : en sprintant, s'accroupir te fait glisser sur quelques mètres, plus vite qu'en courant, et plus loin en descente. On peut sauter en pleine glissade.
 
 - **Island Rush** — La fumée et les flammes ne prennent plus la teinte violette du mur de la tempête quand il est derrière elles.
-
-
 
 ## 3.15 — 28 octobre 2026
 
@@ -3980,15 +4174,11 @@
 
 - **Island Rush** — La montgolfière ne fait plus d'ombre : vue d'en haut, une demi-lune sombre mordait les plages au bord de l'eau.
 
-
-
 ## 3.14 — 28 octobre 2026
 
 - **Poké Duel** — Cadres de PV refaits pour se lire d'un coup d'œil : le nom et le niveau, puis « PV » et la jauge, puis les PV restants sur les PV max (« 85 / 180 ») en gros chiffres. Les bandes blanches qui ressemblaient à une jauge pleine ont disparu.
 
 - **Poké Duel** — Nouvelle police pixel, Jersey 15, bien plus lisible : on ne confond plus 5 et S, 0 et O, ni C et O (« N.50 » se lisait « N.SO »).
-
-
 
 ## 3.13 — 28 octobre 2026
 
@@ -4011,8 +4201,6 @@
 - **Poké Duel** — La barre de PV est remise exactement dans sa case (elle était décalée).
 
 - **Poké Duel** — L'arène s'adapte à la fenêtre : elle grandit sur un grand écran, se réduit sur un petit, et passe en format plus haut sur téléphone ; les menus du tournoi suivent aussi la taille de l'écran.
-
-
 
 ## 3.12 — 28 octobre 2026
 
@@ -4042,8 +4230,6 @@
 
 - **Poké Duel** — On ne peut plus cliquer une attaque pendant l'écran « VS » : les choix s'ouvrent quand le chrono du tour démarre (le clic se perdait).
 
-
-
 ## 3.11 — 28 octobre 2026
 
 - **Poké Duel** — Le tournoi, repris de fond en comble :
@@ -4072,8 +4258,6 @@
 
 - **Poké Duel** — Le tournoi change d'allure : salle de tournoi éclairée par des projecteurs en fond, écran « VS » des deux dresseurs avant chaque manche, combats dans le stade sur des socles lumineux (dorés en finale), portraits des dresseurs, trophée et confettis au podium.
 
-
-
 ## 3.10 — 28 octobre 2026
 
 - **Island Rush** — Le lance-roquettes, repris de zéro :
@@ -4085,8 +4269,6 @@
   - la roquette sort du tube : ogive rouge, ailettes, flamme derrière elle et longue traînée de fumée continue (avant, un simple bâton vert suivi de quelques bouffées) ;
 
   - au rechargement, le tube se redresse devant lui et la main gauche y pousse la roquette suivante.
-
-
 
 ## 3.9 — 28 octobre 2026
 
@@ -4120,8 +4302,6 @@
 
 - **Island Rush** — Sur une machine qui peine, ces effets s'allègent d'eux-mêmes.
 
-
-
 ## 3.8 — 28 octobre 2026
 
 - **Island Rush** — Un tir, c'est une détonation : le fusil d'assaut et le pistolet-mitrailleur jouaient une petite rafale à chaque balle (de près comme de loin). Chaque tir garde maintenant sa vraie queue, avec son écho.
@@ -4152,8 +4332,6 @@
 
 - **Island Rush** — Armes : le fusil de précision a 3 balles par chargeur (1 avant), et toutes les armes rechargent 10 % plus vite.
 
-
-
 ## 3.7 — 28 octobre 2026
 
 - **Island Rush** — Les personnages réagissent : un sursaut quand une balle les touche (le buste part en arrière, la tête suit), et ils plient les genoux en retombant d'un saut ou du deltaplane.
@@ -4178,8 +4356,6 @@
 
   - Le lien est sur l'écran de fin de partie, et le journal s'exporte pour le réunir avec celui des amis.
 
-
-
 ## 3.6 — 28 octobre 2026
 
 - **Island Rush** — Une boussole en haut de l'écran : les points cardinaux défilent avec ton regard, et chaque coup de feu entendu y laisse une marque à sa direction pendant quelques secondes.
@@ -4203,8 +4379,6 @@
 - **Island Rush** — Les cases d'objets en bas de l'écran affichent tes touches (et plus toujours X, 1, 2, 3, 4, 5), mises à jour dès que tu les changes dans les Réglages.
 
 - **Island Rush** — Deux bots sans arme ne se battent plus à la pioche pendant des minutes.
-
-
 
 ## 3.5 — 28 octobre 2026
 
@@ -4248,8 +4422,6 @@
 
 - **Island Rush, Birdie Party, Convoy Storm** — Plus de carrés noirs à l'écran : sur certaines cartes graphiques, des taches noires apparaissaient par endroits (ombres au pied des objets, halo des lumières, eau du golf). Ces points sont maintenant corrigés au lieu de noircir l'image.
 
-
-
 ## 3.3 — 27 octobre 2026
 
 - **Island Rush** — L'île ne se vide plus en deux minutes : les bots se battent de plus en plus au fil des cercles de la tempête, et la partie dure jusqu'au dernier cercle (une dizaine de minutes).
@@ -4290,8 +4462,6 @@
 
 - **Hub** — Le bouton « 📋 Logs & Crashs » quitte l'accueil et le salon : c'était un outil de développement.
 
-
-
 ## 3.1 — 27 octobre 2026
 
 - **Island Rush** — Les bots t'attaquent enfin : celui qui crée la partie dans le Hub leur était invisible comme cible. Ils te traitent maintenant comme n'importe quel autre joueur.
@@ -4311,8 +4481,6 @@
 - **Island Rush** — La caméra ne traverse plus les murs, les portes ni les plafonds : elle se rapproche quand un obstacle passe derrière toi, puis recule doucement ; collée à un mur, elle se recentre sur ta tête.
 
 - **Island Rush** — Moins de ralentissements, surtout à 60 joueurs : image calculée à une définition raisonnable, ombres et personnages hors champ allégés, bots qui cherchent leur chemin bien plus vite.
-
-
 
 ## 3.0 — 27 octobre 2026
 
@@ -4368,8 +4536,6 @@
 
 - **Island Rush** — Bots plus offensifs : ils entendent les coups de feu de plus loin et viennent voir, se battent davantage entre eux et fuient moins vite. Plus d'armes au sol : on se bat plus tôt.
 
-
-
 ## 2.97 — 27 octobre 2026
 
 - **Tous les jeux** — Un seul bouton ⚙️ Réglages, le même dans chaque jeu, qui ouvre le même panneau.
@@ -4388,13 +4554,9 @@
 
 - **Cyber Kart GP** — « 🎵 Musique » et « 🎚️ Volume » ne font plus qu'un bouton, « ⚙️ Réglages ». Quand la musique ne joue pas (chargement, son à débloquer), il se borde d'orange et le panneau dit pourquoi.
 
-
-
 ## 2.96 — 27 octobre 2026
 
 - **Mini-Golf Party** — Correction : la caméra tourne sans limite à la souris (Claude)
-
-
 
 ## 2.95 — 27 octobre 2026
 
@@ -4405,8 +4567,6 @@
   - Les éclairs des explosions sont devenus des halos de lumière au sol, aussi visibles qu'avant.
 
 - **Bastion Clash** — Le bruit des VCS qui récoltent est beaucoup plus discret : un petit tintement doux toutes les une à deux secondes au lieu d'un crépitement aigu en continu.
-
-
 
 ## 2.94 — 27 octobre 2026
 
@@ -4419,8 +4579,6 @@
 - **Island Rush** — Bots plus vigilants : ils entendent quelqu'un courir tout près d'eux et, sans arme, attaquent à la pelle un joueur qui s'approche.
 
 - **Birdie Party** — Le parcours, les équipes, les bots, le vent et le moment se choisissent sur l'écran d'accueil du jeu, et non plus dans le salon du Hub.
-
-
 
 ## 2.93 — 27 octobre 2026
 
@@ -4486,8 +4644,6 @@
 
   - Duo Drift, Bastion Clash, Birdie Party et Island Rush avaient déjà leur réglage.
 
-
-
 ## 2.91 — 27 octobre 2026
 
 - **Birdie Party** — Le menu du jeu s'affiche aussi quand on lance la partie depuis le Hub, à plusieurs comme seul.
@@ -4503,8 +4659,6 @@
 - **Birdie Party** — La balle glisse moins sur le green : une approche s'arrête à quelques mètres au lieu de filer au loin, et un putt dans une pente s'emballe beaucoup moins.
 
 - **Birdie Party** — Correction : la partie ne reste plus figée quand l'écran du jeu a été masqué un instant (le tour suivant ne s'affichait plus), et un coup dont l'animation n'en finit pas se termine tout seul.
-
-
 
 ## 2.90 — 27 octobre 2026
 
@@ -4536,27 +4690,19 @@
 
   - Les trous se chargent beaucoup plus vite, et la balle roule en accéléré une fois au sol.
 
-
-
 ## 2.88 — 26 octobre 2026
 
 - Correction : fiabilisation multijoueur, tolérance au chargement 3D et maintien du rôle d'hôte (Amiel)
 
-
-
 ## 2.87 — 26 octobre 2026
 
 - **Birdie Party** — Correction : résolution du crash Birdie Party, repli WebGL et fiabilisation des logs (Amiel)
-
-
 
 ## 2.86 — 26 octobre 2026
 
 - **Mini-Golf Party** — À plusieurs, la balle des autres avance de façon fluide : elle ne saute plus en arrière et ne revient plus à sa position de départ en s'arrêtant.
 
 - **Mini-Golf Party** — Fini le vacarme contre les murets : un frottement ne fait plus de bruit, et un vrai choc ne donne qu'un son et quelques étincelles, sans secouer la caméra à chaque rebond.
-
-
 
 ## 2.85 — 26 octobre 2026
 
@@ -4565,8 +4711,6 @@
   - Passer du virage serré au virage large (ou l'inverse) se fait en souplesse : le kart ne part plus brusquement sur le côté.
 
   - Le kart glisse moins vers l'extérieur et suit mieux sa trajectoire ; le virage le plus serré est un peu moins violent, le plus large un peu moins mou.
-
-
 
 ## 2.84 — 26 octobre 2026
 
@@ -4580,19 +4724,13 @@
 
   - Chaque circuit ne charge que ses textures ; en attendant, les anciennes s'affichent, la course n'attend pas.
 
-
-
 ## 2.83 — 26 octobre 2026
 
 - Correction : chargement synchrone de logger.js dans tous les jeux et envoi direct à /api/log (Amiel)
 
-
-
 ## 2.82 — 26 octobre 2026
 
 - Nouveau : ajout du dossier logs/crash et du système de diagnostic de crashs et d'expulsions pour tous les jeux (Amiel)
-
-
 
 ## 2.81 — 26 octobre 2026
 
@@ -4604,8 +4742,6 @@
 
   - Col des Glaces : un ciel gris-bleu de montagne, une neige plus sombre et des éboulis le long de la voie.
 
-
-
 ## 2.80 — 26 octobre 2026
 
 - **Tous les jeux** — Quand l'hôte change d'onglet ou réduit sa fenêtre, la partie continue pour tout le monde.
@@ -4615,8 +4751,6 @@
   - Les commandes des invités arrivent sans attendre au jeu de l'hôte, même quand son onglet est caché.
 
 - **Tête de Calcul** — Market making : après ta troisième cotation, le dernier dé, la somme et ton P&L s'affichent tout de suite, avec « on attend les autres ». Les bots cotent aussi plus vite : on n'attend plus la fin du chrono.
-
-
 
 ## 2.79 — 26 octobre 2026
 
@@ -4634,13 +4768,9 @@
 
   - Écrans de départ, de pause et de fin redessinés, avec le classement complet des joueurs.
 
-
-
 ## 2.78 — 26 octobre 2026
 
 - **Hub** — Plus de fausse « Connexion perdue » au lancement d'une partie : quand l'ordinateur rame quelques secondes (un jeu qui prépare son décor, une machine plus lente), ce n'est plus pris pour une coupure du réseau.
-
-
 
 ## 2.77 — 26 octobre 2026
 
@@ -4661,8 +4791,6 @@
   - Ces épreuves sortent plus souvent pour le poste Quant (et les statistiques pour Risques).
 
 - **Tête de Calcul** — The Candidate : le face-à-face final devient un sprint de calcul. 60 secondes, un calcul après l'autre, juste ou faux s'affiche tout de suite ; le plus de calculs justes gagne, chaque erreur retire un point. En cas d'égalité parfaite, on relance un sprint.
-
-
 
 ## 2.76 — 26 octobre 2026
 
@@ -4691,8 +4819,6 @@
 - **Tête de Calcul** — Figures à compter : des tailles plus variées, et trois nouvelles questions (carrés d'une taille donnée, triangles entre des points, cubes cachés d'un pavé).
 
 - **Tête de Calcul** — Les nombres négatifs s'affichent avec un vrai signe moins.
-
-
 
 ## 2.75 — 26 octobre 2026
 
@@ -4736,8 +4862,6 @@
 
   - Sensibilité de la souris et volume réglables à l'écran de départ et en pause.
 
-
-
 ## 2.74 — 26 octobre 2026
 
 - **Mini-Golf Party** — 30 nouveaux trous, plus longs et plus fous, dans 5 nouveaux parcours (54 trous en tout).
@@ -4762,8 +4886,6 @@
 
   - La caméra tourne à 360° sans limite : un clic verrouille la souris, sinon il suffit de pousser le curseur contre le bord de l'écran ou de maintenir A / D (ou Q / D, ou les flèches). On peut donc tirer dans n'importe quelle direction.
 
-
-
 ## 2.73 — 26 octobre 2026
 
 - **Mini-Golf Party** — Jouable sur téléphone et tablette, à l'écran tactile.
@@ -4775,8 +4897,6 @@
   - Un bouton affiche la vue d'ensemble du trou, et toucher la carte de score l'agrandit.
 
   - L'écran se réorganise en portrait comme en paysage pour que la carte de score, le minuteur et les boutons ne se chevauchent pas.
-
-
 
 ## 2.72 — 26 octobre 2026
 
@@ -4793,8 +4913,6 @@
   - Trou 9 (Les Îles) : le départ est sur une pointe de la rive, et non plus sur un chemin au milieu de l'eau.
 
   - Le son est actif dès l'ouverture du jeu (au premier clic si le navigateur l'exige).
-
-
 
 ## 2.71 — 26 octobre 2026
 
@@ -4838,8 +4956,6 @@
 
   - Même si le serveur redémarre, tout le monde se retrouve dans le même salon, avec le même code.
 
-
-
 ## 2.70 — 26 octobre 2026
 
 - **Birdie Party** — 30 trous au lieu de 18, un quatrième décor, les parties en équipes et un vrai écran d'accueil.
@@ -4862,19 +4978,13 @@
 
   - Les bots évitent mieux l'eau et la forêt et dosent mieux leurs approches.
 
-
-
 ## 2.69 — 26 octobre 2026
 
 - Nouveau : integrate real Tiled Kanto open-world maps (Bourg-Palette, Route 1, Jadielle), 4 interiors & 4-dir walking spritesheets in PhaserJS (Amiel)
 
-
-
 ## 2.68 — 26 octobre 2026
 
 - Correction : resolve AdventureRenderer state mapping & trainer asset paths in Phaser 5G map (Amiel)
-
-
 
 ## 2.67 — 26 octobre 2026
 
@@ -4892,8 +5002,6 @@
 
   - Options de l'hôte : nombre de trous, bots, balles qui se touchent ou non, temps par coup.
 
-
-
 ## 2.66 — 26 octobre 2026
 
 - **Cyber Kart GP** — La musique a son propre réglage : elle ne se coupe plus quand on a éteint la musique d'ambiance du Hub.
@@ -4904,19 +5012,13 @@
 
   - La touche M coupe et remet en même temps la musique et les bruitages.
 
-
-
 ## 2.65 — 26 octobre 2026
 
 - Implement PhaserJS 3 64x64 Gen 5 Unys overworld with 3 official tileset packs, Arcade Physics, and battle HUD/trainer fixes (Amiel)
 
-
-
 ## 2.64 — 26 octobre 2026
 
 - Fix trainer intro sequence before Pokemon send-out, responsive battle HUD, and add Gen 5 Unova tilesets (Amiel)
-
-
 
 ## 2.63 — 26 octobre 2026
 
@@ -4940,25 +5042,17 @@
 
   - Bots en trois niveaux : facile, moyen et difficile.
 
-
-
 ## 2.62 — 26 octobre 2026
 
 - Fix 3v3 battle platform alignment, sequential turn narration, and MMO pixel-art tileset + enterable buildings (Amiel)
-
-
 
 ## 2.61 — 26 octobre 2026
 
 - Correction : export TYPE_FR and TYPE_COLORS in types.js and add HubBridge init handshake fallback (Amiel)
 
-
-
 ## 2.60 — 26 octobre 2026
 
 - Nouveau : master edition upgrade with GBA FireRed sprites, follower pokemon, evolutions, Menton gym & mart, Showdown portraits and competitive battle mechanics (Amiel)
-
-
 
 ## 2.59 — 26 octobre 2026
 
@@ -5002,31 +5096,21 @@
 
   - Un peu plus de caisses le long des rails, et un sac de charbon sur chaque quai.
 
-
-
 ## 2.58 — 26 octobre 2026
 
 - **Hub** — Nouveau : ajouter le mode aventure MMO multijoueur a Menton (Kalos-Sud) (Amiel)
-
-
 
 ## 2.57 — 25 octobre 2026
 
 - Améliorations techniques sous le capot (1 modification).
 
-
-
 ## 2.56 — 25 octobre 2026
 
 - Nouveau : sequential turn-by-turn combat cinematic with authentic move dialogues, damage drain and animations (Amiel)
 
-
-
 ## 2.55 — 25 octobre 2026
 
 - Correction : fix multiplayer room player detection, eliminate unwanted bots for 2+ human players, add dynamic roster updates (Amiel)
-
-
 
 ## 2.54 — 25 octobre 2026
 
@@ -5047,8 +5131,6 @@
   - **Un moment fort par tronçon** : le Brise-Glace (un camion blindé de pillards qui harponne le convoi : coupez les grappins et lancez-lui des caisses), le Pont de la Gorge (passez-le en Éco, et que personne ne descende), un Convoi abandonné plein de caisses (mais le Front ne s'arrête pas), ou le Front qui rugit pendant 40 secondes.
 
   - **Des rôles** à choisir avant le départ : Mécano (répare et coupe les grappins deux fois plus vite), Éclaireur (plus rapide dans la neige, fouille deux fois plus vite), Chauffeur (+6 % par caisse jetée au feu, craint moins le froid), Vigie (deux fusées de plus, lance plus loin, frappe fort le Brise-Glace). Sans choix, on prend le rôle qui manque à l'équipage.
-
-
 
 ## 2.53 — 25 octobre 2026
 
@@ -5076,33 +5158,23 @@
 
   - Sortie de piste : un drone vient rechercher le kart et le repose avec de l'élan, en à peine plus d'une seconde.
 
-
-
 ## 2.48 — 25 octobre 2026
 
 - Améliorations techniques sous le capot (1 modification).
-
-
 
 ## 2.47 — 25 octobre 2026
 
 - Nouveau : refonte visuelle de l'arene, agrandissement des sprites sans coupure, badges officiels Gen 8 et boutons d'attaque tactiles (Amiel)
 
-
-
 ## 2.46 — 25 octobre 2026
 
 - **Hub** — Nouveau : ajouter Poké Duel (batailles 3v3 en tournoi, sprites Showdown, cris et tableau des types) (Amiel)
-
-
 
 ## 2.45 — 25 octobre 2026
 
 - **Hub** — Nouvelles affiches pour tous les jeux, dans le style de celle de Cyber Kart GP : une vraie image du jeu, un grand titre en deux couleurs et un bandeau. Duo Drift dans le canyon, le plateau 3D de DavidSimulator couvert de maisons, une bataille de Bastion Clash, une horde d'Outbreak sur la Prom', la bombe de Fil Rouge, l'équipage de Convoy Storm face aux pillards… et Pierre Chartier en personne sur l'affiche de Tête de Calcul.
 
 - **Convoy Storm** — Le mur du Front de tempête couvre maintenant tout l'horizon.
-
-
 
 ## 2.44 — 25 octobre 2026
 
@@ -5117,8 +5189,6 @@
   - Pincer le pavé tactile ou faire Ctrl + molette zoome le plateau, et plus toute la page dans Chrome.
 
 - **DavidSimulator** — Les échanges des autres joueurs en direct : chaque proposition entre deux autres joueurs apparaît en haut à droite (qui propose quoi à qui, compte à rebours), puis son résultat (accepté, refusé, expiré). Un clic l'ouvre en lecture seule, avec les terrains concernés signalés sur le plateau. Les propositions et les refus apparaissent aussi dans le journal.
-
-
 
 ## 2.43 — 25 octobre 2026
 
@@ -5140,8 +5210,6 @@
 
   - Partie plus serrée : moins de fioul dans les ruines en Normale et en Blizzard. À plusieurs, il y a plus de travail à bord ; seul, la chaudière est un peu plus clémente.
 
-
-
 ## 2.42 — 24 octobre 2026
 
 - **Tous les jeux** — Fini les joueurs coincés à 1 500 ms de ping avec une bonne connexion :
@@ -5154,8 +5222,6 @@
 
   - Dans le salon, un gros ping indique sa cause au survol : « PC saturé » (l'ordinateur n'arrive pas à suivre), « onglet caché » (le jeu n'est pas au premier plan) ou « réseau ».
 
-
-
 ## 2.41 — 24 octobre 2026
 
 - **Outbreak** — Mode Défense rééquilibré : les tourelles ne font plus tout le travail.
@@ -5165,8 +5231,6 @@
   - La tourelle de l'Ingénieur est aussi moins puissante (dans tous les modes).
 
   - Beaucoup moins d'objets lâchés par les zombies en Défense (munitions, soins, ferraille, armes), et ceux qui traînent disparaissent plus vite.
-
-
 
 ## 2.40 — 24 octobre 2026
 
@@ -5212,8 +5276,6 @@
 
   - Trois manches de calcul mental rapide : tables, pourcentages, points de base, enchaînements de variations.
 
-
-
 ## 2.39 — 24 octobre 2026
 
 - **Convoy Storm** — Grosse mise à jour : le blizzard devient une vraie expédition.
@@ -5236,8 +5298,6 @@
 
 - **Hub** — L'accueil crédite maintenant Amiel, Nicolas, Gabriel et Claude.
 
-
-
 ## 2.38 — 24 octobre 2026
 
 - **Convoy Storm** — Nouveau jeu en coopération, seul ou jusqu'à 6 : un convoi blindé traverse une plaine gelée sans fin, en pleine tempête de neige, en 3D.
@@ -5256,13 +5316,9 @@
 
   - Si l'hôte part en pleine route, un autre joueur reprend le convoi là où il en était.
 
-
-
 ## 2.37 — 23 octobre 2026
 
 - **DavidSimulator** — Nouvelle carte Chance : apparition de Sylvain Durif ! Elle rapporte 100 €, et son buste en 3D se dresse au milieu du plateau, avec un halo doré, pendant 3 tours de table complets. Il se tourne vers la caméra quand on fait pivoter la vue, et s'efface tout seul ensuite. Visible aussi sur le plateau classique.
-
-
 
 ## 2.36 — 23 octobre 2026
 
@@ -5296,8 +5352,6 @@
 
 - **Tête de Calcul** — Pièges plus fins : 1 vie au premier tour, 2 au desk, 2 et des points au comité. Une estimation presque juste ne coûte pas de vie.
 
-
-
 ## 2.35 — 23 octobre 2026
 
 - **Tête de Calcul** — The Candidate : trois bonnes réponses d'affilée rendent une vie, sans dépasser le nombre de départ.
@@ -5318,13 +5372,9 @@
 
 - **Tête de Calcul** — Jusqu'à 6 bots par partie, et 8 joueurs autour de la table ; la liste des joueurs se resserre pour que tout le monde tienne.
 
-
-
 ## 2.34 — 23 octobre 2026
 
 - **Cyber Kart GP** — Correction : la musique marche sur iPad, iPhone et Brave (Claude)
-
-
 
 ## 2.33 — 23 octobre 2026
 
@@ -5337,8 +5387,6 @@
 - **Outbreak** — Les émojis sont remplacés par de vraies icônes dessinées, dans le menu comme en jeu.
 
 - **Outbreak** — La ferraille lâchée par les zombies est maintenant un écrou qui tourne, pour qu'on comprenne tout de suite ce que c'est.
-
-
 
 ## 2.32 — 23 octobre 2026
 
@@ -5372,8 +5420,6 @@
 
 - **Tête de Calcul** — Nouvelles suites logiques : cubes, suites croisées, « ×2 + 2 », factorielles, et d'autres. Visuels et suites arrivent aussi dans les thèmes Logique et Mélangé.
 
-
-
 ## 2.31 — 23 octobre 2026
 
 - **Outbreak** — Nouveau mode **Défense** : tenez le fort Delta pendant 15 vagues.
@@ -5388,8 +5434,6 @@
 
 - **Outbreak** — La radio s'affiche en haut de l'écran pour ne plus cacher l'action.
 
-
-
 ## 2.30 — 23 octobre 2026
 
 - **Outbreak** — Une histoire : la souche VIREO s'est échappée du Laboratoire Alpha et l'Escouade Delta doit remonter jusqu'à la source pour que le Dr Lenoir fabrique l'antidote.
@@ -5401,8 +5445,6 @@
   - Messages radio du Commandant Moreau, du Dr Lenoir, du pilote et de Dédé, différents selon le secteur, la salle, le boss et les évènements.
 
   - 20 dossiers à trouver dans les salles de la campagne (4 par secteur) pour comprendre ce qui s'est passé ; le compteur est sur l'écran de briefing.
-
-
 
 ## 2.29 — 23 octobre 2026
 
@@ -5419,8 +5461,6 @@
   - Rues de Nice : voitures, palmiers, terrasses et kiosque à socca. Une balle dans une voiture déclenche son alarme… et attire une horde.
 
 - **Outbreak** — Les salles de départ et du boss prennent un nom propre au secteur (Place Masséna, Bloc opératoire, Terminus…) et les zombies s'habillent selon l'endroit.
-
-
 
 ## 2.28 — 23 octobre 2026
 
@@ -5448,8 +5488,6 @@
 
 - **Outbreak** — Plaqué au sol par un traqueur, on peut maintenant se débattre en martelant la roulade.
 
-
-
 ## 2.27 — 23 octobre 2026
 
 - **Outbreak** — Cinq classes de survivants, chacune avec sa capacité (touche A, ou Q en QWERTY ; Y à la manette) :
@@ -5470,8 +5508,6 @@
 
 - **Outbreak** — Trois nouveaux zombies : le Blindé (bouclier devant, à prendre de côté ou de dos), le Traqueur (presque invisible, il bondit et plaque un survivant au sol jusqu'à ce que ses alliés le libèrent) et les Larves (en nuée).
 
-
-
 ## 2.26 — 23 octobre 2026
 
 - **DavidSimulator** — Dés plus lisibles : en 3D, les dés se posent de trois quarts pour que la face du dessus (celle qui compte) se lise d'un coup d'œil ; sur le plateau classique, ils se voient de face. Dans les deux cas, une pastille au-dessus de chaque dé rappelle sa valeur, la même que celle affichée en bas.
@@ -5485,8 +5521,6 @@
   - Chat privé d'équipe : bouton « 💬 Équipe » (ou touche T), messages rapides, et les messages n'arrivent qu'au coéquipier. Un message reçu s'affiche en bulle à côté de sa carte.
 
   - Les deux coéquipiers ont la couleur de leur équipe en deux nuances : bleu foncé et bleu clair pour l'équipe A, rouge foncé et rouge clair pour l'équipe B.
-
-
 
 ## 2.25 — 22 octobre 2026
 
@@ -5510,8 +5544,6 @@
 
   - Écran des résultats façon Mario Kart : le classement de la course se met à jour en direct pendant que les autres finissent, puis 5 secondes après l'arrivée du dernier, les points s'ajoutent de bas en haut et le classement général du Grand Prix s'affiche.
 
-
-
 ## 2.22 — 22 octobre 2026
 
 - **Tête de Calcul** — Tout tient à l'écran, sans faire défiler :
@@ -5523,8 +5555,6 @@
   - Le bandeau de cotations remonte dans la barre du haut pour laisser plus de place.
 
   - Avant la partie, la carte d'accueil est bien centrée.
-
-
 
 ## 2.21 — 22 octobre 2026
 
@@ -5548,8 +5578,6 @@
 
   - Mise en page corrigée : textes lisibles partout sur le fond sombre, carte de question qui ne glisse plus sur le côté, affichage propre sur téléphone.
 
-
-
 ## 2.20 — 22 octobre 2026
 
 - **DavidSimulator** — Échanges :
@@ -5563,8 +5591,6 @@
 - **DavidSimulator** — 2 contre 2 : une couleur détenue à deux par les coéquipiers suffit pour construire. Chacun bâtit sur ses propres terrains, toujours de façon égale sur tout le groupe, et le loyer des terrains nus est doublé. Si un coéquipier fait faillite et que la couleur n'est plus complète, les bâtiments du groupe sont revendus à moitié prix.
 
 - **DavidSimulator** — Dés : chaque lancer reçoit un aléa neuf tiré par le générateur cryptographique du navigateur de l'hôte, et un nouvel onglet « Dés » dans les statistiques compare les lancers de la partie aux probabilités d'une vraie paire de dés. Il explique aussi pourquoi la prison et quelques cases reviennent plus souvent, même avec des dés parfaits.
-
-
 
 ## 2.19 — 22 octobre 2026
 
@@ -5584,8 +5610,6 @@
 
   - Pilotes : Jordan retrouve le robot de course en tôle (Marine en version bleue), Cybertype a des yeux néon violets ; les karts ne sont plus rognés dans le menu.
 
-
-
 ## 2.18 — 22 octobre 2026
 
 - **Kart Rush GP** — Nouveau jeu : course de karts en 3D, seul ou jusqu'à 6 joueurs, avec des IA pour compléter la grille (8 pilotes en piste).
@@ -5599,8 +5623,6 @@
   - 16 objets dans les cubes irisés : champignons, bananes, carapaces verte, rouge et bleue, étoile, fleur de feu (rare), éclair, poulpe, fusée…
 
   - Une musique par circuit, qui accélère un peu à chaque tour.
-
-
 
 ## 2.17 — 22 octobre 2026
 
@@ -5626,8 +5648,6 @@
 
   - Manette et écran tactile pris en charge ; difficulté Arcade, Normale ou Cauchemar ; le score de chacun entre au classement entre potes.
 
-
-
 ## 2.16 — 22 octobre 2026
 
 - **Fil Rouge** — Nouveau jeu : désamorçage à deux voix, de 2 à 6 joueurs. Le démineur voit la bombe en 3D mais n'a pas le manuel ; l'expert a le manuel posé sur sa table mais ne voit pas la bombe. Il faut se parler !
@@ -5645,8 +5665,6 @@
   - En duel : chat réservé à l'équipe, progression adverse en direct, et chaque module désamorcé envoie un sabotage à l'autre équipe (coupure de courant, fumigène, secousse, encre renversée).
 
   - Fil Rouge a sa colonne dans le classement entre potes.
-
-
 
 ## 2.15 — 22 octobre 2026
 
@@ -5678,8 +5696,6 @@
 
 - **Hub** — Le journal des nouveautés se tient à jour tout seul : si quelqu'un (ou une IA) pousse une modification sans la noter, une entrée est rédigée à partir de ses messages de commit.
 
-
-
 ## 2.14 — 21 octobre 2026
 
 - Le journal des nouveautés est maintenant dans le Hub : bouton « ✨ Nouveautés » sur l'accueil (ou clic sur le numéro
@@ -5693,8 +5709,6 @@
 - Duo Drift se lance de nouveau : l'adresse du serveur relais était déclarée deux fois, ce qui bloquait tout le jeu.
 
 - Plateau 3D de DavidSimulator moins surexposé : éclairage réglé par mesure, les couleurs du plateau gardent leur saturation.
-
-
 
 ## 2.13 — 21 octobre 2026
 
@@ -5748,8 +5762,6 @@
 
 - Fin de partie : **récapitulatif des erreurs** (ta réponse, la bonne, et l'astuce), et colonne des sabotages envoyés et reçus.
 
-
-
 ## 2.12 — 19 octobre 2026
 
 - DavidSimulator en vraie 3D (WebGL) : plateau en relief posé sur une table en bois, ombres, pions en métal modélisés
@@ -5765,8 +5777,6 @@
 - Le plateau classique reste disponible (bouton 🧊) et sert de secours si WebGL manque ; il est utilisé par défaut
 
   sur les écrans tactiles, plus légers.
-
-
 
 ## 2.11 — 19 octobre 2026
 
@@ -5784,8 +5794,6 @@
 
   les historiques sont fusionnés quand on se retrouve dans un salon, pour que tout le monde voie le même classement.
 
-
-
 ## 2.10 — 19 octobre 2026
 
 - Multijoueur sur les wifi publics (université, hôtel, gare) : quand la connexion directe est bloquée,
@@ -5799,8 +5807,6 @@
   (mise en relation, connexion directe, relais 3478, 80, 443, TLS) et fait un essai réel par le relais.
 
 - Duo Drift joué seul (hors Hub) profite des mêmes relais.
-
-
 
 ## 2.9 — 19 octobre 2026
 
@@ -5824,8 +5830,6 @@
 
 - Correctif : une proposition d'échange reçue ne se referme plus toute seule à l'action suivante.
 
-
-
 ## 2.8 — 19 octobre 2026
 
 - Si l'hôte quitte ou perd la connexion, le salon continue : le joueur suivant devient hôte en une seconde environ,
@@ -5838,8 +5842,6 @@
 
 - Duo Drift : une course ne peut pas changer d'hôte, tout le monde revient proprement au salon pour relancer.
 
-
-
 ## 2.7 — 19 octobre 2026
 
 - Sauvegarde automatique des parties de DavidSimulator chez l'hôte, après chaque action (6 parties gardées).
@@ -5849,8 +5851,6 @@
   et ses propriétés. Les places sont attribuées par nom ; un joueur absent est joué par un bot.
 
 - Le chrono Express repart là où il s'était arrêté.
-
-
 
 ## 2.6 — 18 octobre 2026
 
@@ -5862,8 +5862,6 @@
 
 - Les règles choisies s'affichent avant la partie ; la cagnotte est visible sur la case Parc gratuit.
 
-
-
 ## 2.5 — 18 octobre 2026
 
 - Trois ambiances musicales qui s'enchaînent selon la partie : calme ; tendue (dette, joueur presque à sec,
@@ -5871,8 +5869,6 @@
   dernières 5 minutes en Express) ; enchères, façon jeu télévisé. Les changements se font en fin de mesure.
 
 - Petite fanfare de victoire en fin de partie.
-
-
 
 ## 2.4 — 18 octobre 2026
 
@@ -5883,8 +5879,6 @@
 - Bouton 🎵 pour la couper, curseur de volume au survol, réglages mémorisés.
 
 - La musique s'efface pendant les enchères et en fin de partie.
-
-
 
 ## 2.3 — 18 octobre 2026
 
@@ -5908,8 +5902,6 @@
 
 - Clic sur les cases fiable en vue 3D : la case visée est calculée à partir de la projection du plateau.
 
-
-
 ## 2.2 — 18 octobre 2026
 
 - Tableau de bord en direct : rang, liquide, valeur immobilière, monopoles, patrimoine net et mini-courbe pour chaque joueur.
@@ -5928,8 +5920,6 @@
 
 - L'historique de partie reste léger même dans les très longues parties.
 
-
-
 ## 2.1 — 18 octobre 2026
 
 - DavidSimulator a son vrai plateau : vue 3D inclinée (ou vue de dessus), coins illustrés, centre aux couleurs de Nice.
@@ -5945,8 +5935,6 @@
 - Sons synthétisés (coupables), raccourci Espace pour lancer les dés ou finir son tour, affichage adapté au téléphone.
 
 - Les bots attendent la fin des animations avant de jouer.
-
-
 
 ## 2.0 — 18 octobre 2026
 
@@ -5966,8 +5954,6 @@
 
 - Interface provisoire jouable ; le plateau animé arrive à l'étape suivante.
 
-
-
 ## 1.1 — 18 octobre 2026
 
 - Nouveau salon en 3 étapes : Mode, Circuit, Réglages. Les options rares sont rangées dans « Plus d'options ».
@@ -5979,8 +5965,6 @@
 - Grand Prix : le podium n'arrive qu'à la fin de la dernière manche.
 
 - Numéro de version et journal des nouveautés dans le jeu.
-
-
 
 ## 1.0 — 18 octobre 2026
 

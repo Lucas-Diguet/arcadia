@@ -47,11 +47,47 @@ for (let k = 0; k < 600; k++) {
 }
 console.log('fins de combat', ends, 'tours moyens', (turns / 600).toFixed(1));
 
+// combats Duo (2v2) et Trio (3v3) : objets Choix, emplacements qui se vident, sauvages et dresseurs ; jamais d'exception, toujours une fin
+for (let k = 0; k < 400; k++) {
+  const R = rng(k * 7 + 3), slots = 2 + (k % 2), wild = k % 5 === 0;
+  const ids = Object.keys(SPECIES).map(Number), pick = () => ids[Math.floor(R() * ids.length)];
+  const mk = (n) => Array.from({ length: n }, () => { const m = createMon(pick(), 20 + Math.floor(R() * 50), { rng: R }); m.item = ['choice-band', 'choice-scarf', 'leftovers', 'life-orb', null][Math.floor(R() * 5)]; return m; });
+  const party = mk(slots + Math.floor(R() * 3)), foeParty = mk(slots + Math.floor(R() * 3));
+  const b = new Battle({ rng: R, slots, player: { name: 'Test', party, bag: { potion: 3, 'poke-ball': 3 }, mega: true }, foe: { name: 'X', party: foeParty, trainer: wild ? null : { cls: 'Champion', name: 'Léo', prize: 16, leader: 1, ai: ['smart', 'normal', 'strat'][k % 3], items: { potion: 1 } } } });
+  b.start();
+  let n = 0;
+  try {
+    while (b.state !== 'over' && n++ < 500) {
+      if (b.state === 'switch') {
+        const used = new Set(b.sides[0].activeSlots);
+        b.playerSwitch(b.needPlayerSlots.map((sl) => { const i = party.findIndex((m, j) => m.hp > 0 && !used.has(j)); used.add(i); return { slot: sl, idx: i }; }));
+        continue;
+      }
+      const acts = b.aliveSlots(0).map((sl) => {
+        const r = R(), ref = { side: 0, slot: sl };
+        if (r < 0.06) { const j = party.findIndex((m, jj) => m.hp > 0 && !b.sides[0].activeSlots.includes(jj)); if (j >= 0) return { slot: sl, type: 'switch', idx: j }; }
+        if (wild && r < 0.1) return { slot: sl, type: 'item', item: 'poke-ball' };
+        const u = b.usableMoves(ref), lock = b.choiceLock(ref);
+        const idx = lock != null ? b.act(ref).moves.findIndex((q) => q.id === lock) : u.length ? u[Math.floor(R() * u.length)] : 0;
+        const foes = b.aliveSlots(1);
+        return { slot: sl, type: 'move', idx, targetSide: 1, targetSlot: foes[Math.floor(R() * foes.length)], mega: R() < 0.2 };
+      });
+      for (const e of b.playerAction(acts)) if (e.t === 'msg') ok(!/undefined|NaN/.test(e.text), 'texte : ' + e.text);
+    }
+  } catch (e) { fails++; console.log('EXCEPTION combat', slots + 'v' + slots, k, e.stack); }
+  ok(b.state === 'over', `combat ${slots}v${slots} ${k} terminé`);
+  for (const m of party.concat(foeParty)) ok(m.hp >= 0 && m.hp <= m.stats[0] && Number.isFinite(m.hp), 'PV valides');
+}
+console.log('400 combats Duo / Trio : OK');
+
 // ---------------- la région : tout est atteignable depuis Bourg-Aube ----------------
 const { buildWorld } = await import('../odyssee/js/world/region.js');
 const { T, walkable } = await import('../odyssee/js/world/tiles.js');
 const { maps, towns, legends, docks } = buildWorld();
 const W = maps.monde;
+// le cache des étapes lentes (world/cache-monde.js) doit correspondre à la carte : sinon le jeu démarre plus lentement
+{ const { MANQUES } = await import('../odyssee/js/world/cache-monde.js');
+  if (MANQUES.length) { console.log(`✗ cache du monde périmé (${MANQUES.join(', ')}) : node tools/odyssee-cache-monde.mjs`); fails++; } }
 // exploration à travers les grottes : chaque sortie de grotte relance l'exploration du monde ; le bateau (permis bateau
 // dès 2 badges) relie entre eux les quais atteints, selon les badges que demande chaque quai
 // gates : true ou nombre de badges ; abil : true (Coupe, Surf, Éclate-Roc) ou Set des cases franchissables
@@ -165,6 +201,7 @@ for (const it of W.items) ok(reachable(W, seenW, it.x, it.y), `objet ${it.item} 
 // intérieurs : chaque tapis ramène dehors, chaque PNJ est atteignable depuis l'entrée
 for (const [id, m] of Object.entries(maps)) {
   if (id === 'monde') continue;
+  if (m.donjon && !m.warps.size) continue;   // salles de donjon reliées par leurs mécanismes : tools/test-odyssee-donjons.mjs
   const entries = [...m.warps.keys()].map((k) => k.split(',').map(Number));
   ok(entries.length > 0, `${id} a une sortie`);
   const [ex, ey] = entries[0];
@@ -191,9 +228,9 @@ for (let k = 0; k <= NB; k++) {
   ok(doorOpen(seen, leagueDoor) === (k === NB), `Ligue ${k === NB ? 'ouverte' : 'fermée'} avec ${k} badge(s)`);
   { const [cx, cy] = W.capEtoiles || [212, 202]; ok(!!seen[at(W, cx, cy)] === (k >= 8), `Cap des Étoiles ${k >= 8 ? 'ouvert' : 'fermé'} avec ${k} badge(s)`); }
 }
-// l'usine Poké Ball de Pierrefort reste fermée (portail gardé), même avec tous les badges et toutes les capacités
+// l'usine Poké Ball de Pierrefort s'ouvre à partir de 5 badges (fermée à 4, ouverte à 5)
 { const u = [...W.warps].find(([, w]) => w.map === 'pierre:usine'); ok(!!u, 'usine Poké Ball posée à Pierrefort');
-  if (u) { const [x, y] = u[0].split(',').map(Number), s15 = explore(NB, true); ok(!s15[at(W, x, y + 1)], 'l\'usine Poké Ball reste fermée'); } }
+  if (u) { const [x, y] = u[0].split(',').map(Number), s4 = explore(4, true), s5 = explore(5, true); ok(!s4[at(W, x, y + 1)], 'l\'usine Poké Ball est fermée à 4 badges'); ok(!!s5[at(W, x, y + 1)], 'l\'usine Poké Ball s\'ouvre à 5 badges'); } }
 // îles du bateau : depuis chaque quai, sans Surf, avec les badges qui ouvrent la traversée
 const near = (seen, m, x, y) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => m.in(x + dx, y + dy) && seen[(y + dy) * m.w + x + dx]);
 for (const [k, d] of Object.entries(docks)) ok(d.map !== 'monde' ? walkable(maps[d.map].get(d.x, d.y)) : walkable(W.get(d.x, d.y)) && seenW[at(W, d.x, d.y)], `quai ${k} praticable et atteignable`);

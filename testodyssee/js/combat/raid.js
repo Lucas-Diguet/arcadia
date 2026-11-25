@@ -10,6 +10,7 @@
 // o.effets : ce qui arrive quand un bloc se brise ({ [blocs restants]: ['boostTout', 'piegeRoc', 'baisseAttaques', 'ko'] }),
 // une seule fois par combat même si le boss se soigne ; 'ko' met K.O. le Pokémon d'un joueur pas encore visé.
 // o.soin : ce que rend une attaque de soin du boss, en blocs.
+import { classeParCamp, attaqueSeulement } from './camps.js';
 import { Battle, typeEff } from '../../../odyssee/js/core/battle.js';
 import { SPECIES } from '../../../odyssee/js/data/species.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
@@ -25,6 +26,7 @@ class Manche extends Battle {
   }
   nm(i) { const m = this.act(i); return i === 1 ? monName(m) : `${monName(m)} ${deNom(this.joueur.nom)}`; }
   tie() { return this.rng() < 0.5 ? -1 : 1; }
+  foeChoose() { return attaqueSeulement(this, super.foeChoose()); }
   awardExp() {}
   /** premier bloc intact : les attaques de la catégorie immunisée ne passent pas */
   useMove(i, a, first) {
@@ -78,6 +80,7 @@ class Manche extends Battle {
     for (const k of Object.keys(s.screens)) { s.screens[k]--; if (s.screens[k] <= 0) delete s.screens[k]; }
   }
 }
+classeParCamp(Manche);
 
 export class Raid {
   /**

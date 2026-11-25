@@ -10,8 +10,9 @@ const NATURE = ['tree', 'tree2', 'pine', 'snowpine', 'deadtree', 'palm', 'bush',
 const MOBILIER_PLUS = ['machine_sous', 'borne_tetris', 'borne_invaders', 'borne_briques', 'borne_serpent'];
 const SOLS = ['tall0', 'tall1', 'darktall0', 'darktall1', 'snowtall0', 'snowtall1', 'floor_wood', 'floor_center', 'floor_mart', 'floor_lab', 'floor_league', 'floor_gymBug', 'floor_gymRock', 'floor_gymWater', 'floor_gymElec', 'floor_gymGrass', 'floor_gymPsy', 'floor_gymFire', 'floor_gymDragon', 'wall_center', 'wall_mart', 'wall_gym', 'wall_league'];
 
-/** les images du décor ; prechauffe : seulement lancer leur téléchargement (rendu tout de suite, sans attendre) */
-export async function loadArt(prechauffe = false) {
+/** les images du décor ; prechauffe : seulement lancer leur téléchargement (rendu tout de suite, sans attendre) ;
+ *  extra.decor / extra.densite2 : décor ajouté par le jeu (les donjons d'Odyssée), dessiné à 16 px par case sauf densite2 */
+export async function loadArt(prechauffe = false, extra = {}) {
   const sprites = {};
   // décor version 2 (vue de 3/4, bible) : tout ce que la planche fournit ; sinon la sélection de la première planche
   for (const k of SPRITES.natureV2 ? Object.keys(SPRITES.nature) : NATURE) sprites[k] = ASSETS.nature(k);
@@ -49,16 +50,21 @@ export async function loadArt(prechauffe = false) {
   if (pack?.decor) for (const k of pack.decor) { sprites[k] = ASSETS.gfx(pack.dossier, 'd_' + k); dens[k] = 2; }   // le pack a le dernier mot
   // animations de terrain de HeartGold / SoulSilver (mer, rivages, fleurs)
   const hg = {}; for (const k of Object.keys(SPRITES.hgss || {})) hg[k] = ASSETS.hgss(k);
+  // décor ajouté (donjons) + masque de tenue du pack actif, préchargés en parallèle avec le reste
+  const donjons = Object.fromEntries(extra.decor || []);
+  for (const [k] of extra.decor || []) dens[k] = (extra.densite2 || []).includes(k) ? 2 : 1;
+  const tenueSrc = pack?.tenue ? ASSETS.gfx(pack.dossier, pack.tenue) : null;
   if (prechauffe) {
     // même requête que loadImg (crossOrigin), pour que le cache des images du navigateur la resserve telle quelle
-    const L = [sprites, kits, sols, sol32, hg, tuilesPack, batsPack].flatMap(Object.values).concat([ASSETS.chars, ASSETS.title, SPRITES.suiveurs && ASSETS.suiveurs, ASSETS.relief]);
+    const L = [sprites, kits, sols, sol32, hg, tuilesPack, batsPack, donjons].flatMap(Object.values).concat([pack?.chars ? ASSETS.gfx(pack.dossier, pack.chars) : ASSETS.chars, ASSETS.title, SPRITES.suiveurs && ASSETS.suiveurs, ASSETS.relief, tenueSrc]);
     return L.filter(Boolean).map((src) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.src = src; return im; });
   }
-  const [S, K, L, L32, HGI, chars, title, suiveurs, relief, PK, PB] = await Promise.all([loadAll(sprites), loadAll(kits), loadAll(sols), loadAll(sol32), loadAll(hg), loadImg(pack?.chars ? ASSETS.gfx(pack.dossier, pack.chars) : ASSETS.chars), loadImg(ASSETS.title), SPRITES.suiveurs ? loadImg(ASSETS.suiveurs) : null, loadImg(ASSETS.relief).catch(() => null), loadAll(tuilesPack), loadAll(batsPack)]);
+  const [S, K, L, L32, HGI, chars, title, suiveurs, relief, PK, PB, SD, tenueImg] = await Promise.all([loadAll(sprites), loadAll(kits), loadAll(sols), loadAll(sol32), loadAll(hg), loadImg(pack?.chars ? ASSETS.gfx(pack.dossier, pack.chars) : ASSETS.chars), loadImg(ASSETS.title), SPRITES.suiveurs ? loadImg(ASSETS.suiveurs) : null, loadImg(ASSETS.relief).catch(() => null), loadAll(tuilesPack), loadAll(batsPack), loadAll(donjons), tenueSrc ? loadImg(tenueSrc).catch(() => null) : null]);
+  Object.assign(S, SD);
   // pack sur une seule planche : chaque tuile de 16 px découpée dans son petit canevas
   if (pack?.planche && PK.__planche) {
     const im = PK.__planche; delete PK.__planche;
     pack.planche.tuiles.forEach((k, i) => { const c = document.createElement('canvas'); c.width = c.height = 16; c.getContext('2d').drawImage(im, (i % pack.planche.cols) * 16, Math.floor(i / pack.planche.cols) * 16, 16, 16, 0, 0, 16, 16); PK[k] = c; });
   }
-  return { sprites: S, dens, kits: K, sols: L, sol32: L32, hgss: HGI, chars, title, suiveurs, relief, pack: pack ? PK : null, batiments: pack?.batiments ? { images: PB, styles: pack.batiments } : null };
+  return { sprites: S, dens, kits: K, sols: L, sol32: L32, hgss: HGI, chars, title, suiveurs, relief, tenueImg, pack: pack ? PK : null, batiments: pack?.batiments ? { images: PB, styles: pack.batiments } : null };
 }

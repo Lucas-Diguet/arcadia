@@ -1,10 +1,12 @@
 // odyssee/js/ui/screens/friends.js — amis et joueurs connectés
 import { esc } from '../ui.js';
+import { warnDev } from '../../core/safe.js';
 import { BADGES } from '../../world/region.js';
 import { ASSETS } from '../../assets.js';
 import { getFriendsManager, formatFid } from '../../net/friends.js';
 import { screen, closer } from './common.js';
 import { cardScreen } from './card.js';
+import { creneau, RAID_PERIODE } from '../../raid-monde.js';
 
 /* ================= REGISTRE AMI & CONNEXIONS C-GEAR 5G ================= */
 export function friendsScreen(game) {
@@ -15,7 +17,7 @@ export function friendsScreen(game) {
     const s = screen(ui, 'friends-scr');
     s.classList.add('b2w2-screen');
 
-    let tab = 'online'; // 'online' | 'friends' | 'add'
+    let tab = 'online'; // 'online' | 'hub' | 'friends' | 'add'
     let notice = { text: '', type: 'info', ts: 0 };
     let addCodeInput = '';
 
@@ -25,7 +27,7 @@ export function friendsScreen(game) {
         if (type === 'ok') ui.sound?.sfx('select');
         else if (type === 'err') ui.sound?.sfx('bump');
         else ui.sound?.sfx('blip');
-      } catch (e) {}
+      } catch (e) { warnDev('friends', e); }
       render();
     };
 
@@ -101,6 +103,9 @@ export function friendsScreen(game) {
           <button type="button" class="fr-tab${tab === 'online' ? ' active' : ''}" data-act="tab-online">
             🌐 DRESSEURS EN DIRECT (${autresVus})
           </button>
+          <button type="button" class="fr-tab${tab === 'hub' ? ' active' : ''}" data-act="tab-hub">
+            🎮 SALON MULTI
+          </button>
           <button type="button" class="fr-tab${tab === 'friends' ? ' active' : ''}" data-act="tab-friends">
             👥 MES AMIS (${friendsList.length})
           </button>
@@ -149,10 +154,14 @@ export function friendsScreen(game) {
               <div class="fr-card-actions">
                 ${isSelf ? `
                   <button type="button" class="fr-act-btn" data-act="my-card" title="Voir ma Carte de Dresseur">👁 MA FICHE</button>
+                ` : p.pvp ? `
+                  <button type="button" class="fr-act-btn fr-btn-observer" data-act="peer-spectate" data-peerid="${p.id}" title="Observer le combat en direct de ${esc(p.name)}">👁 OBSERVER</button>
+                  <button type="button" class="fr-act-btn fr-btn-card" data-act="peer-card" data-peerid="${p.id}" title="Consulter la Carte de Dresseur de ${esc(p.name)}">👁 CARTE</button>
                 ` : `
                   <button type="button" class="fr-act-btn fr-btn-card" data-act="peer-card" data-peerid="${p.id}" title="Consulter la Carte de Dresseur de ${esc(p.name)}">👁 CARTE</button>
-                  <button type="button" class="fr-act-btn fr-btn-battle" data-act="peer-battle" data-peerid="${p.id}" title="Défier ${esc(p.name)} en duel 1v1">⚔️ COMBAT</button>
+                  <button type="button" class="fr-act-btn fr-btn-battle" data-act="peer-battle" data-peerid="${p.id}" title="Défier ${esc(p.name)} (1v1, 2v2, 3v3 ou 4J)">⚔️ COMBAT</button>
                   <button type="button" class="fr-act-btn fr-btn-trade" data-act="peer-trade" data-peerid="${p.id}" title="Proposer un échange Pokémon à ${esc(p.name)}">🔄 ÉCHANGE</button>
+                  <button type="button" class="fr-act-btn fr-btn-domaine" data-act="peer-domaine" data-peerid="${p.id}" title="Visiter le Domaine de ${esc(p.name)}">🏡 DOMAINE</button>
                   ${p.isFriend ? '' : `
                     <button type="button" class="fr-act-btn fr-btn-add" data-act="peer-quick-add" data-peerid="${p.id}" title="Ajouter ${esc(p.name)} en ami">+ AMI</button>
                   `}
@@ -180,6 +189,111 @@ export function friendsScreen(game) {
                 </div>
               </div>
             ` : ''}
+          </div>
+        `;
+      } else if (tab === 'hub') {
+        const freePeers = onlinePeers.filter((p) => !p.isSelf && !p.busy && !p.pvp).length;
+        const allOthers = onlinePeers.filter((p) => !p.isSelf).length;
+        const cards = [
+          (() => {
+            // le boss de raid de la région : rien à lancer d'ici, on va le trouver sur sa route
+            const R = game.raidMonde?.courant;
+            const c = creneau(), prochain = c.actif || Date.now() > c.fin ? creneau(c.k * RAID_PERIODE + RAID_PERIODE) : c;
+            const h = new Date(prochain.debut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            return {
+              id: 'raid',
+              icon: '💥',
+              title: 'Boss de raid',
+              req: 1,
+              avail: R ? 1 : 0,
+              badge: R ? `Là ! ${Math.max(1, Math.round((R.fin - Date.now()) / 60e3))} min` : `Prochain vers ${h}`,
+              desc: R
+                ? `${R.boss.title} est sur ${R.nom} ! Allez-y tous ensemble (de 2 à 4 joueurs) et parlez-lui pour lancer le raid en coop (5 essais).`
+                : 'Un boss très fort, à l\'aura bleue, rouge ou dorée, surgit sur une route toutes les heures et demie quand des joueurs sont connectés, et repart au bout de 15 minutes. Il se bat en coop, de 2 à 4 joueurs.',
+              reward: 'PDj · Super Bonbons · capture',
+              btn: R ? 'Où est-il ?' : 'En attente',
+            };
+          })(),
+          {
+            id: 'multi4p',
+            icon: '⚔️',
+            title: 'Multi 2v2 (4 Joueurs)',
+            req: 3,
+            avail: freePeers,
+            badge: freePeers >= 3 ? '✓ 4J prêts' : `${freePeers}/3 dispo`,
+            desc: 'Vrai 2v2 à 4 humains connectés : 2 équipes de 2 dresseurs (1 actif + 1 réserve chacun).',
+            reward: 'Match d\'équipe 2v2',
+            btn: 'Créer le 2v2 (4J)',
+          },
+          {
+            id: 'tournoi',
+            icon: '🏆',
+            title: 'Tournoi du Colisée',
+            req: 0,
+            avail: freePeers,
+            badge: allOthers > 0 ? `✓ ${allOthers + 1}J + Champions` : '✓ Solo + Champions',
+            desc: 'Arbre à 4 places (1v1 ou 2v2) complété par les Champions avec suivi en Mode Spectateur.',
+            reward: 'Jusqu\'à 10 PDj · 15 000 ₽',
+            btn: 'Ouvrir un Tournoi',
+          },
+          {
+            id: 'dojo',
+            icon: '🥋',
+            title: 'Dojo de Mamadou Co-op',
+            req: 1,
+            avail: freePeers,
+            badge: freePeers >= 1 ? `✓ ${freePeers} dispo` : '1-2 alliés requis',
+            desc: 'Série tactique de 5 paliers en Duo ou Trio jusqu\'à Maître Mamadou (5e Badge requis).',
+            reward: 'Points PDj · Boutique Dojo',
+            btn: 'Lancer le Dojo',
+          },
+          {
+            id: 'poker',
+            icon: '🃏',
+            title: 'Poker Hold\'em Multi',
+            req: 1,
+            avail: freePeers,
+            badge: freePeers >= 1 ? `✓ ${freePeers} dispo` : '1-3 joueurs requis',
+            desc: 'Table de Hold\'em de Métropole autour du tapis avec sièges rotatifs, IA en renfort et jetons de courtoisie.',
+            reward: 'Jetons du Casino',
+            btn: 'Ouvrir la Table',
+          },
+          {
+            id: 'domaine',
+            icon: '🏡',
+            title: 'Visiter un Domaine Ami',
+            req: 1,
+            avail: allOthers,
+            badge: allOthers >= 1 ? `✓ ${allOthers} connecté${allOthers > 1 ? 's' : ''}` : '1 ami requis',
+            desc: 'Explore le Domaine bâti d\'un ami, récupère le Panier d\'accueil et défie son Gardien.',
+            reward: 'Baies Sitrus · Bois & Pierre',
+            btn: 'Visiter un Domaine',
+          },
+        ];
+        bodyHtml = `
+          <div class="fr-tab-pane fr-pane-hub">
+            <div class="fr-pane-hdr">
+              <span class="fr-pane-title">SALON DES ACTIVITÉS MULTIJOUEURS (${freePeers} DRESSEUR${freePeers > 1 ? 'S' : ''} LIBRE${freePeers > 1 ? 'S' : ''})</span>
+              <span class="fr-pane-sub">Lancez directement un 2v2 à 4 joueurs, un Tournoi, une partie de Poker ou une visite de Domaine.</span>
+            </div>
+            <div class="fr-hub-grid">
+              ${cards.map((c) => {
+                const ready = c.avail >= c.req;
+                return `
+                  <div class="fr-hub-card${ready ? ' is-ready' : ''}">
+                    <div class="fr-hub-head">
+                      <span class="fr-hub-title"><span>${c.icon}</span> ${esc(c.title)}</span>
+                      <span class="fr-hub-badge ${ready ? 'ok' : 'wait'}">${esc(c.badge)}</span>
+                    </div>
+                    <p class="fr-hub-desc">${esc(c.desc)}</p>
+                    <div class="fr-hub-foot">
+                      <span class="fr-hub-reward">${esc(c.reward)}</span>
+                      <button type="button" class="fr-hub-btn" data-act="hub-${c.id}">${esc(c.btn)}</button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
           </div>
         `;
       } else if (tab === 'friends') {
@@ -316,16 +430,25 @@ export function friendsScreen(game) {
 
       s.querySelector('[data-act="tab-online"]')?.addEventListener('click', () => {
         tab = 'online';
+        focusIdx = -1;
+        ui.sound?.sfx('select');
+        render();
+      });
+      s.querySelector('[data-act="tab-hub"]')?.addEventListener('click', () => {
+        tab = 'hub';
+        focusIdx = -1;
         ui.sound?.sfx('select');
         render();
       });
       s.querySelector('[data-act="tab-friends"]')?.addEventListener('click', () => {
         tab = 'friends';
+        focusIdx = -1;
         ui.sound?.sfx('select');
         render();
       });
       s.querySelector('[data-act="tab-add"]')?.addEventListener('click', () => {
         tab = 'add';
+        focusIdx = -1;
         ui.sound?.sfx('select');
         render();
       });
@@ -335,7 +458,7 @@ export function friendsScreen(game) {
         b.onclick = async () => {
           try {
             await cardScreen(game, BADGES);
-          } catch (e) {}
+          } catch (e) { warnDev('friends', e); }
         };
       });
 
@@ -356,22 +479,54 @@ export function friendsScreen(game) {
         };
       });
 
-      s.querySelectorAll('[data-act="peer-battle"], [data-act="peer-trade"]').forEach((b) => {
+      const launchDirect = async (fn) => {
+        close();
+        try { await fn(); } catch (e) { console.error(e); }
+      };
+
+      s.querySelectorAll('[data-act="peer-spectate"]').forEach((b) => {
         b.onclick = async () => {
           const pid = b.dataset.peerid;
+          const peer = onlinePeers.find((q) => String(q.id) === String(pid));
+          if (!peer?.pvp) return setNotice('Combat introuvable ou terminé.', 'err');
+          await launchDirect(async () => {
+            const { spectateSession } = await import('../../net/social.js');
+            await spectateSession(game, peer.pvp.hostId || peer.id, peer.pvp.rid, peer.name, peer.pvp.foeName || 'Adversaire');
+          });
+        };
+      });
+
+      s.querySelectorAll('[data-act="peer-battle"], [data-act="peer-trade"], [data-act="peer-domaine"]').forEach((b) => {
+        b.onclick = async () => {
+          const pid = b.dataset.peerid;
+          const act = b.dataset.act;
           const peer = onlinePeers.find((q) => String(q.id) === String(pid));
           if (!peer || !peer.peerObj) {
             setNotice('Dresseur introuvable ou déconnecté.', 'err');
             return;
           }
-          if (game.talkToPeer) {
-            close();
-            await game.talkToPeer(peer.peerObj);
+          if (act === 'peer-domaine') {
+            await launchDirect(async () => (await import('../domaine.js')).visiterDomaineAmi(game, peer.peerObj));
+          } else if (game.talkToPeer) {
+            await launchDirect(async () => game.talkToPeer(peer.peerObj, act === 'peer-trade' ? 'trade' : 'battle'));
           } else {
             setNotice('Fonctionnalité réseau inactive dans ce mode.', 'err');
           }
         };
       });
+
+      const hubActions = {
+        'hub-raid': async () => { const R = game.raidMonde?.courant; if (R) await game.ui.say(`${R.boss.title} attend sur ${R.nom}. Il faut que tous les joueurs connectés le rejoignent pour lancer le raid !`); },
+        'hub-multi4p': async () => (await import('../../multi-events.js')).lancerMulti4p(game),
+        'hub-tournoi': async () => (await import('../../multi-events.js')).lancerTournoiSalon(game),
+        'hub-dojo': async () => (await import('../../dojo-mamadou.js')).lancerDefiDojoCoop(game),
+        'hub-poker': async () => (await import('../casino/poker.js')).pokerTableMulti(game),
+        'hub-domaine': async () => (await import('../domaine.js')).visiterDomaineAmi(game),
+      };
+      for (const [act, handler] of Object.entries(hubActions)) {
+        const btn = s.querySelector(`[data-act="${act}"]`);
+        if (btn) btn.onclick = () => launchDirect(handler);
+      }
 
       s.querySelectorAll('[data-act="peer-quick-add"]').forEach((b) => {
         b.onclick = async () => {
@@ -394,7 +549,7 @@ export function friendsScreen(game) {
         inputEl.oninput = (e) => {
           addCodeInput = e.target.value.toUpperCase();
         };
-        if (hadFocus) { inputEl.focus(); try { inputEl.setSelectionRange(caret, caret); } catch (e) {} }
+        if (hadFocus) { inputEl.focus(); try { inputEl.setSelectionRange(caret, caret); } catch (e) { warnDev('friends', e); } }
         inputEl.onkeydown = (e) => {
           e.stopPropagation();
           if (e.key === 'Enter') {
@@ -476,24 +631,53 @@ export function friendsScreen(game) {
       render();
     }, 3000);
 
+    let focusIdx = -1;
+    const focusables = () => [...s.querySelectorAll('.fr-hub-btn, .fr-act-btn, .fr-submit-btn, .fr-copy-btn')].filter((b) => !b.disabled);
+    const syncFocus = () => {
+      const items = focusables();
+      items.forEach((b) => b.classList?.remove('fr-kb-focus'));
+      if (!items.length) { focusIdx = -1; return null; }
+      if (focusIdx >= items.length) focusIdx = items.length - 1;
+      if (focusIdx < 0) return null;
+      const cur = items[focusIdx];
+      cur.classList?.add('fr-kb-focus');
+      cur.scrollIntoView?.({ block: 'nearest' });
+      return cur;
+    };
+
+    const tabsOrder = ['online', 'hub', 'friends', 'add'];
+    const switchTab = (nextTab) => {
+      tab = nextTab;
+      focusIdx = -1;
+      ui.sound?.sfx('select');
+      render();
+    };
     const pop = ui.input.push((k) => {
       if (k === 'b') {
         close();
       } else if (k === 'left') {
-        if (tab === 'add') tab = 'friends';
-        else if (tab === 'friends') tab = 'online';
-        ui.sound?.sfx('select');
-        render();
+        const i = tabsOrder.indexOf(tab);
+        if (i > 0) switchTab(tabsOrder[i - 1]);
       } else if (k === 'right') {
-        if (tab === 'online') tab = 'friends';
-        else if (tab === 'friends') tab = 'add';
-        ui.sound?.sfx('select');
-        render();
+        const i = tabsOrder.indexOf(tab);
+        if (i < tabsOrder.length - 1) switchTab(tabsOrder[i + 1]);
+      } else if (k === 'up' || k === 'down') {
+        const items = focusables();
+        if (!items.length) return;
+        focusIdx = focusIdx < 0
+          ? (k === 'down' ? 0 : items.length - 1)
+          : (focusIdx + (k === 'down' ? 1 : -1) + items.length) % items.length;
+        ui.sound?.sfx('blip');
+        syncFocus();
       } else if (k === 'a') {
-        // NON-DESTRUCTIF : Espace / Entrée ne ferme pas l'écran
-        const activeBtn = s.querySelector('.fr-tab.active') || s.querySelector('.fr-act-btn');
-        if (activeBtn) {
+        // NON-DESTRUCTIF : Espace / Entrée active l'élément ciblé sans fermer l'écran
+        const items = focusables();
+        const target = (focusIdx >= 0 && items[focusIdx]) || items[0] || s.querySelector('.fr-tab.active');
+        if (target && target.dataset?.act !== 'close') {
           ui.sound?.sfx('select');
+          if (items.length && (focusIdx >= 0 || target.dataset?.act !== 'copy-code')) {
+            target.click?.();
+          }
         }
       }
     });

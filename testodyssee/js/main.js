@@ -83,7 +83,7 @@ async function boot() {
   const loop = (now) => {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (mode === 'game') game.tick(dt);
-    donjons.tick(dt);
+    if (mode !== 'game') donjons.tick(dt);   // en jeu, game.tick s'en charge
     if (mode === 'game') game.ile.tick(dt);
     if (mode === 'game') game.musee.tick();
     if (mode === 'game') game.horloge.tick(dt);

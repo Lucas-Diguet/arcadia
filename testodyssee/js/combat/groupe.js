@@ -6,6 +6,7 @@
 // joueur est l'emplacement qu'il vise, qu'on branche juste avant d'agir ; chaque emplacement adverse vise un
 // joueur tiré au sort. Quand un Pokémon adverse est K.O., le suivant de la réserve prend sa place (un Pokémon marqué
 // `attend` n'entre que quand tous les autres sont K.O. ; `blocs` : barre de vie à blocs, combat/regles.js).
+import { classeParCamp, attaqueSeulement } from './camps.js';
 import { Battle } from '../../../odyssee/js/core/battle.js';
 import { MOVES } from '../../../odyssee/js/data/moves.js';
 import { monName, isFainted } from '../../../odyssee/js/core/mon.js';
@@ -20,6 +21,9 @@ class Manche extends Battle {
   /** un joueur qui tient plusieurs places : on ne rappelle pas un Pokémon déjà en jeu à une autre place */
   canSwitchTo(idx) { return super.canSwitchTo(idx) && !this.g.enJeuAilleurs(this.joueur, idx); }
   tie() { return this.rng() < 0.5 ? -1 : 1; }
+  foeChoose() { return attaqueSeulement(this, super.foeChoose()); }
+  /** Hurlement, Cyclone : les Pokémon adverses sont partagés entre les places, on ne les chasse pas */
+  special(i, d, mv) { const u = mv?.m?.u; if (u === 'roar' || u === 'whirlwind') { this.say('Mais cela échoue !'); return true; } return super.special(i, d, mv); }
   awardExp() {}
   checkFaints() {
     let ko = false;
@@ -41,6 +45,7 @@ class Manche extends Battle {
     for (const k of Object.keys(s.screens)) { s.screens[k]--; if (s.screens[k] <= 0) delete s.screens[k]; }
   }
 }
+classeParCamp(Manche);
 
 export class Groupe {
   /**
