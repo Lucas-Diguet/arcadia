@@ -19,6 +19,7 @@ import { brancherRendu } from './donjons/rendu.js';
 import { decodeSave, saveSummary } from './core/savecode.js';
 import { Cloud } from './net/cloud.js';
 import { Game } from './game.js';
+import { warnDev, storeSet, sessSet, sessPop } from './core/safe.js';
 import { setMasques } from './render/tenue.js';
 import { VERSION_ODYSSEE } from './version.js';
 import { apparenceScreen } from './ui/apparence.js';
@@ -98,18 +99,23 @@ async function loadArt(prechauffe = false) {
   if (pack?.decor) for (const k of pack.decor) { sprites[k] = ASSETS.gfx(pack.dossier, 'd_' + k); dens[k] = 2; }   // le pack a le dernier mot
   // animations de terrain de HeartGold / SoulSilver (mer, rivages, fleurs)
   const hg = {}; for (const k of Object.keys(SPRITES.hgss || {})) hg[k] = ASSETS.hgss(k);
+  // décor des donjons + masque de tenue du pack actif, préchargés en parallèle avec le reste
+  const donjons = Object.fromEntries(DECOR_DONJONS);
+  for (const [k] of DECOR_DONJONS) dens[k] = DENSITE_DONJONS.includes(k) ? 2 : 1;
+  const tenueSrc = pack?.tenue ? ASSETS.gfx(pack.dossier, pack.tenue) : null;
   if (prechauffe) {
     // même requête que loadImg (crossOrigin), pour que le cache des images du navigateur la resserve telle quelle
-    const L = [sprites, kits, sols, sol32, hg, tuilesPack, batsPack].flatMap(Object.values).concat([pack?.chars ? ASSETS.gfx(pack.dossier, pack.chars) : ASSETS.chars, ASSETS.title, SPRITES.suiveurs && ASSETS.suiveurs, ASSETS.relief]);
+    const L = [sprites, kits, sols, sol32, hg, tuilesPack, batsPack, donjons].flatMap(Object.values).concat([pack?.chars ? ASSETS.gfx(pack.dossier, pack.chars) : ASSETS.chars, ASSETS.title, SPRITES.suiveurs && ASSETS.suiveurs, ASSETS.relief, tenueSrc]);
     return L.filter(Boolean).map((src) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.src = src; return im; });
   }
-  const [S, K, L, L32, HGI, chars, title, suiveurs, relief, PK, PB] = await Promise.all([loadAll(sprites), loadAll(kits), loadAll(sols), loadAll(sol32), loadAll(hg), loadImg(pack?.chars ? ASSETS.gfx(pack.dossier, pack.chars) : ASSETS.chars), loadImg(ASSETS.title), SPRITES.suiveurs ? loadImg(ASSETS.suiveurs) : null, loadImg(ASSETS.relief).catch(() => null), loadAll(tuilesPack), loadAll(batsPack)]);
+  const [S, K, L, L32, HGI, chars, title, suiveurs, relief, PK, PB, SD, tenueImg] = await Promise.all([loadAll(sprites), loadAll(kits), loadAll(sols), loadAll(sol32), loadAll(hg), loadImg(pack?.chars ? ASSETS.gfx(pack.dossier, pack.chars) : ASSETS.chars), loadImg(ASSETS.title), SPRITES.suiveurs ? loadImg(ASSETS.suiveurs) : null, loadImg(ASSETS.relief).catch(() => null), loadAll(tuilesPack), loadAll(batsPack), loadAll(donjons), tenueSrc ? loadImg(tenueSrc).catch(() => null) : null]);
+  Object.assign(S, SD);
   // pack sur une seule planche : chaque tuile de 16 px découpée dans son petit canevas
   if (pack?.planche && PK.__planche) {
     const im = PK.__planche; delete PK.__planche;
     pack.planche.tuiles.forEach((k, i) => { const c = document.createElement('canvas'); c.width = c.height = 16; c.getContext('2d').drawImage(im, (i % pack.planche.cols) * 16, Math.floor(i / pack.planche.cols) * 16, 16, 16, 0, 0, 16, 16); PK[k] = c; });
   }
-  return { sprites: S, dens, kits: K, sols: L, sol32: L32, hgss: HGI, chars, title, suiveurs, relief, pack: pack ? PK : null, batiments: pack?.batiments ? { images: PB, styles: pack.batiments } : null };
+  return { sprites: S, dens, kits: K, sols: L, sol32: L32, hgss: HGI, chars, title, suiveurs, relief, tenueImg, pack: pack ? PK : null, batiments: pack?.batiments ? { images: PB, styles: pack.batiments } : null };
 }
 
 /** rendu natif : ?natif=1 / ?natif=0 dans l'adresse, sinon le choix gardé dans le navigateur (« odyssee-natif ») */
@@ -124,25 +130,20 @@ async function boot() {
   renderer.setPixelRatio(1); renderer.outputColorSpace = THREE.SRGBColorSpace;
   const input = new Input(), sound = new Sound(), ui = new UI(uiRoot, input, sound);
   brancherManette(input); brancherTactile(input);   // manette et commandes tactiles : les mêmes touches que le clavier
-  // la construction de la carte occupe le processeur plusieurs secondes d'un seul tenant : les images se téléchargent
-  // pendant ce temps (loadArt les retrouve ensuite dans le cache du navigateur), et l'écran de chargement est affiché avant
-  const prechauffe = await loadArt(true);
+  // téléchargement des images en parallèle pendant la construction de la carte (l'écran de chargement s'affiche d'abord)
+  const artPromise = loadArt();
   await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
   etape('ecran');
   const world = buildWorld();
   etape('carte');
-  const art = await loadArt();
-  // les donjons à plusieurs : leur décor, leurs objets, leurs salles claires (donjons/)
-  Object.assign(art.sprites, await loadAll(Object.fromEntries(DECOR_DONJONS)));
-  for (const [k] of DECOR_DONJONS) art.dens[k] = DENSITE_DONJONS.includes(k) ? 2 : 1;
+  const art = await artPromise;
   installerDonjons(ASSETS, { partyScreen });
   brancherRendu();
-  prechauffe.length = 0;
   etape('images');
   for (const [nom, pal] of Object.entries(packActif()?.murs || {})) paletteMurs(nom, pal);
   // pack de graphismes : les zones de la tenue (visière, haut, bas…) dessinées pour ses deux dresseurs (render/tenue.js)
-  if (packActif()?.tenue) try {
-    const im = await loadImg(ASSETS.gfx(packActif().dossier, packActif().tenue)), c = document.createElement('canvas');
+  if (art.tenueImg) try {
+    const im = art.tenueImg, c = document.createElement('canvas');
     c.width = im.width; c.height = im.height; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0);
     const d = x.getImageData(0, 0, im.width, im.height).data, rang = (r) => { const z = new Uint8Array(768 * 64); for (let y = 0; y < 64; y++) for (let k = 0; k < 768; k++) z[y * 768 + k] = d[((r * 64 + y) * im.width + k) * 4]; return z; };
     setMasques({ m: rang(0), f: rang(1) });
@@ -182,9 +183,19 @@ async function boot() {
   };
   addEventListener('resize', resize); resize();
   game.onVue = (k) => { vue = k; resize(); };
-  // le premier appui débloque le son
-  const unlock = () => sound.init();
-  addEventListener('keydown', unlock); addEventListener('pointerdown', unlock);
+  // le premier geste débloque le son (y compris sur Safari/iOS où pointerdown seul ne suffit pas toujours)
+  const UNLOCK_EVS = ['keydown', 'pointerdown', 'touchend', 'click'];
+  const detachUnlock = () => UNLOCK_EVS.forEach((ev) => removeEventListener(ev, unlock));
+  const unlock = () => {
+    sound.init();
+    const ctx = sound.ctx;
+    if (!ctx) return;
+    if (ctx.state === 'running') { detachUnlock(); return; }
+    if (typeof ctx.resume === 'function') {
+      ctx.resume().then(() => { if (sound.ctx?.state === 'running') detachUnlock(); }).catch((e) => warnDev('audio-unlock', e));
+    }
+  };
+  UNLOCK_EVS.forEach((ev) => addEventListener(ev, unlock, { passive: true }));
   ui.helpButton();
 
   let mode = 'title', last = performance.now(), enPanne = 0;
@@ -204,8 +215,7 @@ async function boot() {
   window.__ody.play = async (state) => { document.querySelector('.title-scr')?.remove(); input.handlers.length = 0; ui.closeDialog(); mode = 'game'; await game.start(state); };
 
   // reprise automatique juste après un rechargement déclenché par le choix des graphismes
-  let autoAction = null;
-  try { autoAction = sessionStorage.getItem('odyssee-auto-action'); sessionStorage.removeItem('odyssee-auto-action'); } catch (e) {}
+  const autoAction = sessPop('odyssee-auto-action');
   if (autoAction === 'newgame') {
     await playIntroVideo(ui, input, sound);
     const state = await intro(game, ui, sound);
@@ -271,7 +281,7 @@ async function boot() {
       if (!picked) return 'cancel';
       choisirSol(picked.sol); choisirSprites(picked.sprites); marquerGfxChoisi();
       if (picked.sol !== bootSol) {
-        try { sessionStorage.setItem('odyssee-auto-action', autoAct); } catch (e) {}
+        sessSet('odyssee-auto-action', autoAct);
         await ui.fade(true, 250);
         location.reload();
         return 'reloading';
@@ -283,7 +293,7 @@ async function boot() {
       // la partie la plus avancée l'emporte : celle de cet appareil, ou celle du compte en ligne
       let useRemote = newer && !info;
       if (newer && info) useRemote = await ui.yesNo(`Ta partie en ligne est plus récente (${saveSummary(remote)}). La reprendre ?`);
-      if (useRemote) { try { localStorage.setItem(Game.SAVE_KEY, JSON.stringify(remote)); } catch (e) {} }
+      if (useRemote) storeSet(Game.SAVE_KEY, JSON.stringify(remote));
       if (!aChoisiGfx()) {
         const g = await pickGfx('continue');
         if (g === 'reloading') return;
@@ -375,7 +385,7 @@ async function onlineScreen(ui, cloud, info) {
   const r = cloud.remote.state;
   await ui.say(`${id}Partie en ligne : ${saveSummary(r)}.`, { keep: true });
   if (!(await ui.yesNo(info ? 'La charger sur cet appareil (elle remplace celle d\'ici) ?' : 'La charger sur cet appareil ?'))) return;
-  try { localStorage.setItem('odyssee-save-v1', JSON.stringify(r)); } catch (e) { await ui.say('Impossible d\'enregistrer la partie sur cet appareil.'); return; }
+  try { localStorage.setItem(Game.SAVE_KEY, JSON.stringify(r)); } catch (e) { await ui.say('Impossible d\'enregistrer la partie sur cet appareil.'); return; }
   await ui.say(`Partie de ${r.name} chargée ! Choisis « Continuer » pour la reprendre.`);
 }
 
@@ -395,7 +405,7 @@ async function playIntroVideo(ui, input, sound) {
       done = true;
       clearTimeout(loadTimer);
       pop();
-      try { vid.pause(); } catch (e) {}
+      try { vid.pause(); } catch (e) { warnDev('video', e); }
       res();
     };
     const pop = input.push((k) => {
@@ -515,11 +525,11 @@ async function intro(game, ui, sound) {
   prof.classList.add('in');
   await ui.say([
     'Bonjour ! Bienvenue dans la région d\'Odyssée !',
-    'Je m\'appelle Saule. Depuis mon laboratoire de Bourg-Aube, j\'étudie les liens qui unissent les humains et les créatures de cet archipel.',
-    'Au fait, information officielle inscrite dans les archives du laboratoire : Gabriel est gay !'
+    'Je m\'appelle Saule. Depuis mon laboratoire de Bourg-Aube, j\'étudie les liens qui unissent les humains et les Pokémon de cet archipel.',
+    'Chaque jour, de jeunes dresseurs partent explorer ses routes, ses îles et ses mystères à la rencontre de nouveaux compagnons.'
   ], { speaker: 'Prof. Saule' });
 
-  chap.textContent = 'LES CRÉATURES D\'ODYSSÉE';
+  chap.textContent = 'LES POKÉMON D\'ODYSSÉE';
   prof.classList.add('side');
   ped.classList.add('side');
   subped.classList.add('in');
@@ -533,7 +543,7 @@ async function intro(game, ui, sound) {
   starter.classList.add('in');
   sound.cry(ASSETS.cry(starterSp));
   await ui.say([
-    'Ce monde est peuplé de créatures étonnantes !',
+    'Ce monde est peuplé de créatures appelées Pokémon !',
     'Certains les adoptent comme fidèles compagnons de route, d\'autres les entraînent pour disputer des combats passionnants à travers les quinze Arènes de l\'archipel.'
   ], { speaker: 'Prof. Saule' });
 
@@ -606,7 +616,7 @@ async function _legacyIntro(game, ui, sound) {
   await wait(400); prof.classList.add('in');
   await ui.say(['Bonjour ! Bienvenue dans la région d\'Odyssée !', 'Je m\'appelle Saule. Les gens d\'ici m\'appellent le Professeur.'], { speaker: 'Prof. Saule' });
   mon.src = ASSETS.front(R(1001)); mon.classList.add('in'); sound.cry(ASSETS.cry(R(1001)));
-  await ui.say(['Ce monde est peuplé de créatures étonnantes.', 'Certains les adoptent comme compagnons, d\'autres les entraînent pour le combat.', 'Et les marins racontent qu\'un géant des océans, Odyssor, guide ceux qui partent à l\'aventure...'], { speaker: 'Prof. Saule' });
+  await ui.say(['Ce monde est peuplé de créatures appelées Pokémon.', 'Certains les adoptent comme compagnons, d\'autres les entraînent pour le combat.', 'Et les marins racontent qu\'un géant des océans, Odyssor, guide ceux qui partent à l\'aventure...'], { speaker: 'Prof. Saule' });
   mon.classList.remove('in'); prof.classList.remove('in');
   await wait(300);
   const g = await ui.ask('Mais parle-moi un peu de toi. Es-tu un garçon ou une fille ?', ['Garçon', 'Fille'], { cancel: null, speaker: 'Prof. Saule' });

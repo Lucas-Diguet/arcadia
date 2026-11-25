@@ -10,6 +10,7 @@ import { isGrassEnc } from '../world/tiles.js';
 import { partyScreen, cardScreen, trainerCard, TYPE_FR } from '../ui/screens.js';
 import { BADGES } from '../world/region.js';
 import { el, esc, wait } from '../ui/ui.js';
+import { warnDev } from '../core/safe.js';
 import { tenueCode, tenueDecode, tenueValide, tenueOrigine, composer } from '../render/tenue.js';
 import { onDojoInvite } from '../dojo-mamadou.js';
 import { onRaidInvite, lancerMulti4p, onMulti4pInvite, lancerTournoiSalon, onTournoiInvite } from '../multi-events.js';
@@ -47,7 +48,7 @@ export function installSocial(game) {
     b.el.classList.remove('fade');
     b.el.style.display = '';
     b.until = performance.now() + 4500;
-    try { (game.sound || game.ui?.sound)?.sfx?.('blip'); } catch (e) {}
+    try { (game.sound || game.ui?.sound)?.sfx?.('blip'); } catch (e) { warnDev('audio', e); }
   };
 
   link.me = () => {
@@ -226,7 +227,7 @@ export async function talkToPeer(game, peer, directAction = null) {
     });
     if (pick === 0) action = 'battle';
     else if (pick === 1) {
-      const s = await ui.ask('Quel événement lancer dans le salon ?', ['🏆 Tournoi en direct (4 places)', '🃏 Poker Texas Hold\'em Multi', 'Annuler'], { speaker: peer.name });
+      const s = await ui.ask('Quel événement lancer dans le salon ?', ['🏆 Tournoi en direct (4 places)', '🃏 Poker Hold\'em Multi', 'Annuler'], { speaker: peer.name });
       if (s === 0) return lancerTournoiSalon(game);
       if (s === 1) return pokerTableMulti(game);
       return;

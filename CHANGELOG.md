@@ -1,11 +1,59 @@
 # Journal des versions — Arcadia
 
-## 5.156 — 24 novembre 2026
-- **Odyssée** — Donjons (Odyssée 3.0) :
+## 5.162 — 25 novembre 2026
+- **Odyssée** — Donjons (Odyssée 3.4) :
   - Le Sanctuaire des Trois Voies a enfin sa musique.
   - Donjon des Miroirs : l'horloge de l'énigme de la deuxième salle s'affiche.
   - Donjon des Miroirs : les Funécire et les Sorbébé de la Salle du Brasier sont au niveau 15 (ils étaient au-dessus du niveau 30).
-- **Odyssée** — Combat : un Pokémon qui méga-évolue prend toujours le talent de sa forme Méga, même quand son talent de base a été choisi (Méga-Dracaufeu Y amène bien le soleil).
+
+## 5.161 — 24 novembre 2026
+- **Odyssée** — Entrer dans une faille se vit maintenant en grand (Odyssée 3.3) :
+  - L'écran se brise, le monde est aspiré et tu traverses un tunnel propre à la faille : losanges qui s'échangent, quatre climats et leurs éclairs, ou brasier d'un Alpha.
+  - Une silhouette approche au bout du tunnel, puis se révèle avant le combat.
+  - Une touche suffit pour passer l'animation.
+
+## 5.160 — 24 novembre 2026
+- **Odyssée** — Ouvrir une faille avec l'Astrolabe demande un Fragment Météorique, sans attente (Odyssée 3.2) :
+  - Le fragment n'est utilisé qu'après confirmation. Si tu quittes le jeu avant d'entrer, ta faille se rouvre ; si tu la dissipes, le fragment t'est rendu.
+  - Une faille ouverte ainsi donne 2 Hyper Balls (un Super Bonbon pour une Faille Alpha) ; les failles des routes donnent toujours un fragment.
+  - L'aurore et la pluie d'étoiles gardent leur recharge de 15 minutes.
+
+## 5.159 — 24 novembre 2026
+- **Odyssée** — Grand contrôle des nouveautés célestes, des failles et des souvenirs (Odyssée 3.1) :
+  - L'Astrolabe se recharge après usage : 15 minutes pour le ciel, 8 minutes pour les failles.
+  - Failles et météorites apparaissent toujours à un endroit où l'on peut aller à pied ; une faille refermée à l'Astrolabe reste fermée.
+  - Une faille annonce le niveau de ce qui t'attend ; trop tôt dans l'aventure, le Pokémon n'a pas encore sa forme évoluée.
+  - Un Pokémon Alpha choisit mieux ses attaques, et sa tête ne sort plus de l'écran.
+  - Appuyer plusieurs fois sur Entrée devant une faille n'ouvre plus deux conversations à la fois.
+  - Jirachi, mis K.O. ou en fuite, peut revenir avec une autre météorite.
+  - Portails et météorites redessinés ; ils brillent la nuit. Une faille ou une aurore qui commence s'annonce à l'écran.
+  - Onglet Souvenirs : les dix souvenirs tiennent à l'écran et l'aura d'entrée se choisit au clavier (Entrée). Un souvenir gagné en combat ou en marchant s'annonce.
+  - La bulle de ton compagnon suit ses pas et ne cache plus ton dresseur.
+  - Combat : le lancer rapide de Poké Ball ne cache plus les PV. En faille inversée, Cage-Éclair touche le type Sol.
+  - Le thème des failles ne grésille plus ; changer le volume ne réactive plus un son coupé.
+  - Médailles : la seule Master Ball reste celle des 50 victoires entre joueurs ; Conquérant de la Tour donne 10 Super Bonbons, Panthéon Vivant 5 Guérisons.
+
+## 5.158 — 24 novembre 2026
+- **Odyssée** — Le ciel et l'espace s'animent :
+  - Aurores boréales et pluies d'étoiles filantes la nuit, météorites à ramasser et visiteurs venus des étoiles.
+  - L'Astrolabe, remis avec le Pokédex, observe le ciel et ouvre des failles.
+  - Failles sur les routes : types inversés, météo chaotique ou Pokémon Alpha géant.
+  - Ton compagnon réagit à ce qui l'entoure et garde des Souvenirs, qui débloquent des auras d'entrée en combat.
+  - Quatre quêtes : Les Larmes d'Aurore, Les Cicatrices de l'Espace, La Légende des Colosses Alpha, Les Échos du Compagnon.
+  - 12 nouvelles médailles, quatre musiques et des ambiances sonores.
+
+## 5.157 — 24 novembre 2026
+- **Odyssée** — Finitions et passage en **Odyssée 3.0** :
+  - Prénoms des 206 dresseurs procéduraux des routes et lieux accordés au genre de leur classe, sans collision avec les dresseurs fixes ni les Champions.
+  - Déblocage audio WebAudio fiabilisé sur Safari/iOS (`keydown`, `pointerdown`, `touchend`, `click` et `resume().catch()`).
+  - Cache navigateur rafraîchi sur l'ensemble des 182 modules (`Odyssée 3.0`).
+
+## 5.156 — 24 novembre 2026
+- Correction : lot 1 — urgences lotcheck (crashs, softlocks, combat, économie) (Amiel)
+- Correction : lot 2 — combat, talents, méga-évolutions et descriptions (Amiel)
+- Correction : lot 3 — progression 15 badges, économie, parc des légendes et finitions (Amiel)
+- Correction : lot 4 — finition ux/ui, azerty, tactile, hud, audio et boot (Amiel)
+- Correction : lot 5 — ton nintendo, localisation fr, coherence narrative et pnj (Amiel)
 
 ## 5.155 — 22 novembre 2026
 - **Odyssée** — 18 nouvelles médailles, avec leurs récompenses, et cinq nouveaux onglets dans les Trophées (Odyssée 2.9) :

@@ -11,6 +11,8 @@ import { moveDesc } from '../data/moveDescriptions.js';
 import { playMoveVfx, TYPE_FX } from './battleVfx.js';
 import { auraFrames, AURA_PAD } from '../render/aura.js';
 import { TALENTS_ESPECES } from '../data/talents.js';
+import { warnDev } from '../core/safe.js';
+import { auraBurstSpec } from '../game/follower-life.js';
 
 /** vide transparent sous les pattes d'un sprite (en pixels de l'image), mesuré une fois par image */
 const PIEDS = new Map();
@@ -26,6 +28,16 @@ function videSous(img) {
     if (v >= c.height) v = 0;
   } catch (e) { v = 0; }
   PIEDS.set(k, v); return v;
+}
+/** rangées vides au-dessus du dessin */
+function videSur(img) {
+  try {
+    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+    const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height).data;
+    for (let y = 0; y < c.height; y++) for (let i = 0; i < c.width; i++) if (d[(y * c.width + i) * 4 + 3] > 32) return y;
+  } catch (e) { warnDev('sprite', e); }
+  return 0;
 }
 /** les Pokémon qui lévitent (Fantominus, Smogo…) gardent la hauteur de leur sprite : ils flottent au-dessus du socle */
 const levite = (sp) => (TALENTS_ESPECES[sp] || TALENTS_ESPECES[SPECIES[sp]?.base] || []).includes('levitate');
@@ -140,6 +152,7 @@ export class BattleView {
       return { x: Math.round(W * fx), y };
     }
     // boss de raid : plus bas qu'un adversaire ordinaire, pour que sa tête (et son aura) restent dans le cadre
+    if (this.battle?.alpha && sl === 1 && side === 1) return { x: Math.round(W * 0.7), y: 89 };
     if (this.battle?.isRaid && side === 1 && slot === 0) return { x: Math.round(W * (this.battle.monde ? 0.6 : 0.68)), y: 92 };
     if (sl === 1) return side === 1 ? { x: Math.round(W * 0.71), y: 86 } : { x: Math.round(W * 0.26), y: 140 };
     if (sl === 2) {
@@ -155,12 +168,19 @@ export class BattleView {
   }
   scaleFor(side, slot = 0) {
     const sl = this.slots || 1;
-    if (this.battle?.isRaid && side === 0 && sl >= 2) return { 2: [0.74, 0.72], 3: [0.66, 0.65, 0.64], 4: [0.6, 0.59, 0.58, 0.57] }[Math.min(4, sl)][slot] ?? 0.6;
-    if (this.battle?.isRaid && side === 1 && slot === 0) return 1.0;
-    if (sl === 1) return 1;
-    if (sl === 2) return side === 1 ? (slot === 0 ? 0.80 : 0.86) : (slot === 0 ? 0.86 : 0.80);
-    if (sl === 4) return side === 1 ? 0.7 : [0.74, 0.7, 0.66, 0.62][slot];
-    return side === 1 ? [0.68, 0.73, 0.78][slot] : [0.78, 0.73, 0.68][slot];
+    let base = 1;
+    if (this.battle?.isRaid && side === 0 && sl >= 2) base = { 2: [0.74, 0.72], 3: [0.66, 0.65, 0.64], 4: [0.6, 0.59, 0.58, 0.57] }[Math.min(4, sl)][slot] ?? 0.6;
+    else if (this.battle?.isRaid && side === 1 && slot === 0) base = 1.0;
+    else if (sl === 2) base = side === 1 ? (slot === 0 ? 0.80 : 0.86) : (slot === 0 ? 0.86 : 0.80);
+    else if (sl === 4) base = side === 1 ? 0.7 : [0.74, 0.7, 0.66, 0.62][slot];
+    else if (sl > 1) base = side === 1 ? [0.68, 0.73, 0.78][slot] : [0.78, 0.73, 0.68][slot];
+    const isAlpha = (this.battle?.alpha && side === 1 && slot === 0) || !!this.battle?.act(side, slot)?.alpha;
+    if (!isAlpha) return base;
+    // un Alpha est plus grand que les autres, mais sa tête (et son aura) restent dans le cadre
+    let grand = sl > 1 ? 1.15 : 1.25;
+    const o = side === 1 ? this.spriteObj(side, slot) : null;
+    if (o?.hautVu) grand = Math.max(1, Math.min(grand, (this.posFor(side, slot).y - 10) / (o.hautVu * base)));
+    return base * grand;
   }
   ePos(slot = 0) { return this.posFor(1, slot); }
   pPos(slot = 0) { return this.posFor(0, slot); }
@@ -220,7 +240,7 @@ export class BattleView {
     for (const a of s.afterimages) {
       x.save();
       x.globalAlpha = Math.max(0, (a.life / a.max) * a.alpha);
-      const im = a.tint ? tinted(a.img, a.tint) : a.img;
+      const im = a.tint ? (a._tinted || (a._tinted = tinted(a.img, a.tint))) : a.img;
       x.drawImage(im, Math.round(a.cx - a.w / 2), Math.round(a.cy - a.h), Math.round(a.w), Math.round(a.h));
       x.restore();
     }
@@ -344,22 +364,25 @@ export class BattleView {
     if (s.screenFlash > 0) { x.fillStyle = `rgba(255,255,255,${s.screenFlash})`; x.fillRect(0, 0, W, BH); }
     if (s.wipe > 0) { x.fillStyle = '#000'; const h = BH / 2 * s.wipe; x.fillRect(0, 0, W, h); x.fillRect(0, BH - h, W, h); }
 
-    const dt = 1 / 60;
+    const dt = this._lastFrameT ? Math.min(0.05, Math.max(0.001, (now - this._lastFrameT) / 1000)) : 1 / 60;
+    this._lastFrameT = now;
+    if (s.screenFlash > 0) s.screenFlash = Math.max(0, s.screenFlash - dt * 2.8);
     for (const a of s.afterimages) a.life -= dt;
     s.afterimages = s.afterimages.filter((a) => a.life > 0);
+    const f = dt * 60;
     for (const p of s.parts) {
       if (p.spiral) {
-        p.spiralAngle = (p.spiralAngle || 0) + (p.spiralSpd || 0.2);
-        p.spiralR = (p.spiralR || 0) + (p.spiralRGrow || 0);
+        p.spiralAngle = (p.spiralAngle || 0) + (p.spiralSpd || 0.2) * f;
+        p.spiralR = (p.spiralR || 0) + (p.spiralRGrow || 0) * f;
         p.x = p.cx + Math.cos(p.spiralAngle) * p.spiralR;
       } else {
-        p.x += p.vx * dt * 60;
+        p.x += p.vx * f;
       }
-      p.y += p.vy * dt * 60;
-      p.vy += (p.g || 0);
+      p.y += p.vy * f;
+      p.vy += (p.g || 0) * f;
       p.life -= dt;
-      if (p.grow) p.r += p.grow;
-      if (p.a != null) p.a += (p.va != null ? p.va : 0.2);
+      if (p.grow) p.r += p.grow * f;
+      if (p.a != null) p.a += (p.va != null ? p.va : 0.2) * f;
     }
     s.parts = s.parts.filter((p) => p.life > 0);
     requestAnimationFrame(this.frame);
@@ -473,7 +496,7 @@ export class BattleView {
             <div class="bh-boosts"></div>
           </div>`;
       const fmtCls = this.battle?.isRaid ? ' raid' : this.battle?.is4p ? ' multi4p' : '';
-      const fmtTxt = this.battle?.isRaid ? (this.battle.monde ? `💥 BOSS DE RAID · ${sl} JOUEURS` : '🐉 RAID CO-OP · BOSS') : this.battle?.is4p ? '⚔️ MULTI 2V2 · 4 JOUEURS' : sl === 3 ? 'TRIO · 3V3' : 'DUO · 2V2';
+      const fmtTxt = this.battle?.isRaid ? (this.battle.monde ? `💥 RAID LÉGENDAIRE · ${sl} DRESSEURS` : '🐉 RAID CO-OP') : this.battle?.is4p ? '⚔️ MULTI DUO · 4 DRESSEURS' : sl === 3 ? 'COMBAT TRIO' : 'COMBAT DUO';
       r.insertAdjacentHTML('beforeend', `
         <div class="battle-format-badge${fmtCls}">${fmtTxt}</div>
         <div class="bhud-stack foe">
@@ -491,13 +514,33 @@ export class BattleView {
     }
     r.insertAdjacentHTML('beforeend', `
       <div class="battle-weather-badge" style="display:none"></div>
+      <div class="battle-anomaly-badge" style="display:none"></div>
       <div class="dlg box btext"><div class="dlg-name" style="display:none"></div><div class="dlg-txt"></div><div class="dlg-arrow">▼</div></div>
       <div class="bcmd"></div>`);
     this.game.ui.root.appendChild(r);
     this.textBox = r.querySelector('.btext'); this.cmd = r.querySelector('.bcmd');
     this.weatherBadge = r.querySelector('.battle-weather-badge');
+    this.anomalyBadge = r.querySelector('.battle-anomaly-badge');
   }
   hudFor(side, slot = 0) { return (side === 1 ? this.hud?.foe : this.hud?.me)?.[slot] || null; }
+
+  updateAnomaly() {
+    if (!this.anomalyBadge) this.anomalyBadge = this.root?.querySelector('.battle-anomaly-badge');
+    if (!this.anomalyBadge) return;
+    const b = this.battle;
+    const info = b?.inverse ? { cls: 'inverse', icon: '⚡', label: 'Types Inversés' }
+      : b?.chaosWeather ? { cls: 'chaos', icon: '🌀', label: 'Météo Chaotique' }
+        : b?.alpha ? { cls: 'alpha', icon: '🔥', label: 'Alpha Géant' }
+          : null;
+    if (!info) {
+      this.anomalyBadge.style.display = 'none';
+      this.anomalyBadge.className = 'battle-anomaly-badge';
+      return;
+    }
+    this.anomalyBadge.innerHTML = `<span class="bab-icon">${info.icon}</span><span class="bab-label">${info.label}</span>`;
+    this.anomalyBadge.className = `battle-anomaly-badge ${info.cls}`;
+    this.anomalyBadge.style.display = 'flex';
+  }
 
   updateWeather(w) {
     if (!this.weatherBadge) this.weatherBadge = this.root?.querySelector('.battle-weather-badge');
@@ -548,7 +591,8 @@ export class BattleView {
       : coopOwner
         ? `<span class="bh-trainer-tag">${esc(coopOwner)} ·</span> `
         : '';
-    h.querySelector('.bh-name').innerHTML = trainerTag + esc(monName(m)) + g;
+    const alphaTag = m.alpha ? '<span class="bh-alpha-tag">ALPHA</span>' : '';
+    h.querySelector('.bh-name').innerHTML = trainerTag + alphaTag + esc(monName(m)) + g;
     h.querySelector('.bh-lv').textContent = 'N.' + m.lvl;
     const typesEl = h.querySelector('.bh-types');
     if (typesEl) {
@@ -578,6 +622,7 @@ export class BattleView {
   async msg(text, o = {}) { await this.ui.typePage(this.textBox, text, { auto: o.wait ? 0 : 750 }); }
 
   initState() {
+    this._lastFrameT = 0;
     const mk = () => Array.from({ length: this.slots }, freshSpr);
     this.st = {
       shakeX: 0, shakeY: 0, eSlide: -this.W, pSlide: this.W, screenFlash: 0, wipe: 0, parts: [], balls: [], afterimages: [],
@@ -600,6 +645,7 @@ export class BattleView {
     this.buildDom();
     this.root.style.setProperty('--bp', (innerHeight / BH) + 'px');
     this.updateWeather(battle.weather);
+    this.updateAnomaly();
     for (let sl = 0; sl < this.slots; sl++) { this.setHud(1, null, 0, sl); this.setHud(0, null, 0, sl); }
     const jobs = [this.loadBattleDecor(this.kind, o.night)];
     for (let sl = 0; sl < this.slots; sl++) { jobs.push(this.loadSide(1, sl), this.loadSide(0, sl)); }
@@ -657,7 +703,7 @@ export class BattleView {
     this.buildDom();
     this.root.style.setProperty('--bp', (innerHeight / BH) + 'px');
     this.updateWeather(b.weather);
-    this.game.sound.playMusic('trainer', 0.25);
+    this.game.sound.play('trainer');
     const jobs = [this.loadBattleDecor(this.kind, o.night ?? specSession.night)];
     for (let k = 0; k < sl; k++) jobs.push(this.loadSide(1, k), this.loadSide(0, k));
     await Promise.all(jobs);
@@ -715,6 +761,7 @@ export class BattleView {
     this.buildDom();
     this.root.style.setProperty('--bp', (innerHeight / BH) + 'px');
     this.updateWeather(battle.weather);
+    this.updateAnomaly();
     for (let sl = 0; sl < this.slots; sl++) { this.setHud(1, null, 0, sl); this.setHud(0, null, 0, sl); }
     const jobs = [this.loadBattleDecor(this.kind, o.night)];
     for (let sl = 0; sl < this.slots; sl++) jobs.push(this.loadSide(1, sl), this.loadSide(0, sl));
@@ -728,7 +775,7 @@ export class BattleView {
     duel.broadcastEvents?.(startEvs);
     const waiting = () => this.ui.typePage(this.textBox, `En attente de ${duel.foeName}…`, { last: true });
     const lost = async (r) => {
-      if (r.mine) { const stopEvs = battle.stop('lose', 'Vous abandonnez le combat...'); await this.play(stopEvs); duel.broadcastEvents?.(stopEvs, true, duel.foeName); return; }
+      if (r.mine) { const stopEvs = battle.stop('lose', 'Tu abandonnes le combat...'); await this.play(stopEvs); duel.broadcastEvents?.(stopEvs, true, duel.foeName); return; }
       const why = r.quit ? `${duel.foeName} abandonne le combat !` : r.left ? `${duel.foeName} a quitté la partie.` : r.desync ? 'La connexion a mélangé le combat : il s\'arrête ici, sans vainqueur.' : `${duel.foeName} ne répond plus.`;
       const stopEvs = battle.stop(r.desync ? 'draw' : 'win', why);
       await this.play(stopEvs); duel.broadcastEvents?.(stopEvs, true, r.quit ? battle.sides[0].name : duel.foeName);
@@ -750,7 +797,7 @@ export class BattleView {
       const action = await this.chooseAction();
       if (!action) continue;
       if (action.type === 'forfeit' || (Array.isArray(action) && action.some((a) => a.type === 'forfeit'))) {
-        duel.sendQuit(); const stopEvs = battle.stop('lose', 'Vous abandonnez le combat...');
+        duel.sendQuit(); const stopEvs = battle.stop('lose', 'Tu abandonnes le combat...');
         await this.play(stopEvs); duel.broadcastEvents?.(stopEvs, true, duel.foeName); break;
       }
       const n = battle.turn + 1, sum = battle.checksum();
@@ -869,6 +916,7 @@ export class BattleView {
     this.buildDom();
     this.root.style.setProperty('--bp', (innerHeight / BH) + 'px');
     this.updateWeather(battle.weather);
+    this.updateAnomaly();
     for (let sl = 0; sl < this.slots; sl++) { this.setHud(1, null, 0, sl); this.setHud(0, null, 0, sl); }
     const jobs = [this.loadBattleDecor(this.kind, o.night)];
     for (let sl = 0; sl < this.slots; sl++) jobs.push(this.loadSide(1, sl), this.loadSide(0, sl));
@@ -894,7 +942,7 @@ export class BattleView {
 
     const mySlot = battle.mySlot ?? 0;
     const waiting = () => (coopNet.waitUiHint ? coopNet.waitUiHint(this.textBox) : this.ui.typePage(this.textBox, 'En attente de ton escouade…', { last: true }));
-    const quitMsg = battle.isRaid ? 'Vous abandonnez le Raid Co-op…' : battle.is4p ? 'Vous déclarez forfait…' : 'Vous abandonnez le défi du Dojo…';
+    const quitMsg = battle.isRaid ? 'Tu abandonnes le Raid Co-op…' : battle.is4p ? 'Tu déclares forfait…' : 'Tu abandonnes le défi du Dojo…';
     const aborted = async (r) => {
       if (r.mine) { coopNet.sendQuit?.(); await this.play(battle.stop('lose', quitMsg)); return; }
       const who = r.who || 'Un participant';
@@ -954,8 +1002,10 @@ export class BattleView {
     o.whiteImg = null; o.darkImg = null;
     // l'adversaire pose ses pattes sur le socle (le sprite a un vide transparent dessous, différent pour chaque espèce)
     o.pied = side === 1 && o.img && !levite(m.sp) ? videSous(o.img) : null;
-    // boss de raid : son aura (bleue, rouge ou or) ondule derrière lui
-    o.aura = side === 1 && this.battle.aura && o.img ? auraFrames(o.img, this.battle.aura).frames : null;
+    o.hautVu = side === 1 && m.alpha && o.img ? o.img.height - videSur(o.img) - (o.pied || 0) : 0;   // du sommet du crâne aux pattes
+    // boss de raid / Pokémon Alpha : son aura (bleue, rouge ou or) ondule derrière lui
+    const auraKind = (side === 1 && this.battle.aura) ? this.battle.aura : (m.alpha ? 'rouge' : null);
+    o.aura = auraKind && o.img ? auraFrames(o.img, auraKind).frames : null;
     if (!o.img) { const c = document.createElement('canvas'); c.width = c.height = 80; const x = c.getContext('2d'); x.fillStyle = TYPE_COL[SPECIES[m.sp].t[0]]; x.beginPath(); x.arc(40, 50, 24, 0, 7); x.fill(); x.fillStyle = '#fff'; x.font = '20px sans-serif'; x.fillText('?', 34, 58); o.img = c; }
   }
   /** boss de raid : l'escouade se présente (portrait et nom de chaque joueur) face au boss, puis s'efface */
@@ -1039,7 +1089,7 @@ export class BattleView {
           if (this.game.state.party.length >= 6 && this.game.state.box.length >= 300) { await this.msg('Plus de place dans le PC !', { wait: true }); continue; }
           return { slot: sl, type: 'item', item: r.item };
         }
-        const target = await partyScreen(this.game, { mode: 'pick', prompt: `Utiliser ${itemName(r.item)} sur quelle créature ?`, filter: (m) => (canUseOn(r.item, m, cap) ? null : it.candy && m.lvl >= cap && m.lvl < 100 ? `Niv. max (${cap})` : 'Pas d\'effet') });
+        const target = await partyScreen(this.game, { mode: 'pick', prompt: `Utiliser ${itemName(r.item)} sur quel Pokémon ?`, filter: (m) => (canUseOn(r.item, m, cap) ? null : it.candy && m.lvl >= cap && m.lvl < 100 ? `Niv. max (${cap})` : 'Pas d\'effet') });
         if (target < 0) continue;
         let moveIdx = -1;
         if (it.pp) { const m = this.game.state.party[target]; moveIdx = await this.ui.list({ title: 'Quelle attaque ?', items: m.moves.map((x) => ({ label: MOVES[x.id].n, right: `${x.pp}/${MOVES[x.id].pp}` })), cls: 'psub', cancel: -1 }); if (moveIdx < 0) continue; }
@@ -1047,7 +1097,7 @@ export class BattleView {
       }
       if (c === 2) {
         const k = await partyScreen(this.game, {
-          mode: 'battle', prompt: 'Choisis une créature.',
+          mode: 'battle', prompt: 'Choisis un Pokémon.',
           filter: (m, i) => (m.hp <= 0 ? `${monName(m)} n'a plus la force de se battre !` : b.sides[0].activeSlots.includes(i) ? `${monName(m)} est déjà au combat !` : reservedSwitches.has(i) ? 'Déjà appelé ce tour' : null),
         });
         if (k < 0) continue;
@@ -1139,9 +1189,10 @@ export class BattleView {
       const m = this.battle.act(0, slot);
       const foeSlots = this.battle.aliveSlots(1);
       const foeMon = foeSlots.length === 1 ? this.battle.monAt(1, foeSlots[0]) : this.battle.monAt(1, 0);
+      const foeRef = foeSlots.length === 1 ? { side: 1, slot: foeSlots[0] } : { side: 1, slot: 0 };
+      const attRef = { side: 0, slot };
       const foeKnown = foeMon ? this.game.isSpeciesKnown(foeMon.sp) : false;
-      const foeTypes = (foeMon && foeKnown) ? (SPECIES[foeMon.sp]?.t || ['normal']) : null;
-      const canMegaHere = !megaAlreadyArmed && this.battle.canMega?.({ side: 0, slot });
+      const canMegaHere = !megaAlreadyArmed && this.battle.canMega?.(attRef);
       this.cmd.innerHTML = `
         <div class="mv-desc-banner">
           <div class="mv-desc-head"><span class="mv-desc-name"></span><span class="mv-desc-type"></span><span class="mv-desc-cat"></span><span class="mv-desc-pow"></span><span class="mv-desc-acc"></span><span class="mv-desc-pp"></span></div>
@@ -1151,22 +1202,22 @@ export class BattleView {
           <div class="mv-grid">${[0, 1, 2, 3].map((k) => {
             const x = m.moves[k];
             if (!x) return '<div class="mbtn empty"><span class="mn">—</span></div>';
-            const M = MOVES[x.id], catIcon = `img/battle/cat_${M.c || 'physical'}.png`, pwTxt = M.p ? `Puis. ${M.p}` : 'Statut';
+            const M = MOVES[x.id], mType = this.battle.moveType ? this.battle.moveType(attRef, M) : M.t, catIcon = `img/battle/cat_${M.c || 'physical'}.png`, pwTxt = M.p ? `Puis. ${M.p}` : 'Statut';
             let effBadge = '';
             if (this.slots > 1 && (M.tg === 9 || M.tg === 11)) {
               effBadge = `<span class="bm-eff" style="background:#324a78;color:#dcecff;border-color:#080a10">ZONE</span>`;
             } else if (foeMon && (M.p || M.c !== 'status') && (this.slots === 1 || foeSlots.length === 1)) {
-              if (foeKnown && foeTypes) {
-                const eff = typeEff(M.t, foeTypes);
+              if (foeKnown) {
+                const eff = this.battle.effOn ? this.battle.effOn(attRef, foeRef, mType) : typeEff(mType, SPECIES[foeMon.sp]?.t || ['normal']);
                 if (eff === 0) effBadge = '<span class="bm-eff eff-nul">SANS EFFET</span>';
                 else if (eff >= 2) effBadge = `<span class="bm-eff eff-super">SUPER EFF.${eff > 2 ? ' ×4' : ''}</span>`;
                 else if (eff < 1) effBadge = `<span class="bm-eff eff-weak">PEU EFF.${eff < 0.5 ? ' ×¼' : ''}</span>`;
               } else { effBadge = `<span class="bm-eff eff-unk">???</span>`; }
             }
-            return `<div class="mbtn" data-i="${k}" style="--tc:${TYPE_COL[M.t]}"><div class="mbtn-top"><span class="mn">${esc(M.n)}</span><div class="mbtn-top-right">${effBadge}<img class="mcat" src="${catIcon}" alt="${M.c}"></div></div><div class="mbtn-bot"><div class="mbtn-bot-left"><span class="mt">${TYPE_FR[M.t]}</span><span class="mpw">${pwTxt}</span></div><span class="mpp${x.pp === 0 ? ' zero' : ''}">PP ${x.pp}/${M.pp}</span></div></div>`;
+            return `<div class="mbtn" data-i="${k}" style="--tc:${TYPE_COL[mType]}"><div class="mbtn-top"><span class="mn">${esc(M.n)}</span><div class="mbtn-top-right">${effBadge}<img class="mcat" src="${catIcon}" alt="${M.c}"></div></div><div class="mbtn-bot"><div class="mbtn-bot-left"><span class="mt">${TYPE_FR[mType]}</span><span class="mpw">${pwTxt}</span></div><span class="mpp${x.pp === 0 ? ' zero' : ''}">PP ${x.pp}/${M.pp}</span></div></div>`;
           }).join('')}</div>
           ${canMegaHere ? `<button type="button" class="mv-mega-btn" title="Méga-Évolution (touche M ou Tab)"><img src="${ASSETS.item('mega-ring')}" alt=""><span>MÉGA</span></button>` : ''}
-          <button type="button" class="mv-back-btn" title="Retour (Échap / B)"><span class="mv-back-ico">✕</span><span class="mv-back-lbl">RETOUR</span></button>
+          <button type="button" class="mv-back-btn" title="Retour (Échap)"><span class="mv-back-ico">✕</span><span class="mv-back-lbl">RETOUR</span></button>
         </div>`;
       this.cmd.classList.add('on', 'moves'); this.root.classList.add('cmdon', 'moves-open');
       let i = this.lastMoveMon === m ? this.lastMove || 0 : 0; if (!m.moves[i]) i = 0;
@@ -1242,7 +1293,8 @@ export class BattleView {
         let effTag = isAlly ? '<span class="bm-eff" style="background:#2d7a4c;color:#fff;border-color:#080a10">ALLIÉ</span>' : '';
         if (!isAlly && (M.p || M.c !== 'status')) {
           if (this.game.isSpeciesKnown(tm.sp)) {
-            const eff = typeEff(M.t, SPECIES[tm.sp]?.t || ['normal']);
+            const mType = this.battle.moveType ? this.battle.moveType(attRef, M) : M.t;
+            const eff = this.battle.effOn ? this.battle.effOn(attRef, c, mType) : typeEff(mType, SPECIES[tm.sp]?.t || ['normal']);
             if (eff === 0) effTag = '<span class="bm-eff eff-nul">SANS EFFET</span>';
             else if (eff >= 2) effTag = `<span class="bm-eff eff-super">SUPER EFF.${eff > 2 ? ' ×4' : ''}</span>`;
             else if (eff < 1) effTag = `<span class="bm-eff eff-weak">PEU EFF.</span>`;
@@ -1297,8 +1349,8 @@ export class BattleView {
     for (let s = 0; s < neededSlots.length; s++) {
       const k = await partyScreen(this.game, {
         mode: 'pick', pickLabel: 'Envoyer',
-        prompt: neededSlots.length > 1 ? `Remplaçant ${s + 1}/${neededSlots.length} : quelle créature ?` : 'Envoyer quelle créature ?',
-        filter: (m, i) => (m.hp <= 0 ? 'K.O.' : b.sides[0].activeSlots.includes(i) ? 'Au combat' : picks.includes(i) ? 'Déjà choisie' : null),
+        prompt: neededSlots.length > 1 ? `Remplaçant ${s + 1}/${neededSlots.length} : quel Pokémon ?` : 'Envoyer quel Pokémon ?',
+        filter: (m, i) => (m.hp <= 0 ? 'K.O.' : b.sides[0].activeSlots.includes(i) ? 'Au combat' : picks.includes(i) ? 'Déjà choisi' : null),
       });
       const fallback = b.sides[0].party.findIndex((m, j) => m && m.hp > 0 && !b.sides[0].activeSlots.includes(j) && !picks.includes(j));
       picks.push(k >= 0 ? k : fallback);
@@ -1308,7 +1360,7 @@ export class BattleView {
   async forcedSwitch() {
     const b = this.battle;
     if (this.slots === 1) {
-      const k = await partyScreen(this.game, { mode: 'pick', pickLabel: 'Envoyer', prompt: 'Envoyer quelle créature ?', filter: (m, i) => (m.hp <= 0 ? 'K.O.' : i === b.sides[0].active ? 'Au combat' : null) });
+      const k = await partyScreen(this.game, { mode: 'pick', pickLabel: 'Envoyer', prompt: 'Envoyer quel Pokémon ?', filter: (m, i) => (m.hp <= 0 ? 'K.O.' : i === b.sides[0].active ? 'Au combat' : null) });
       if (k < 0) return;
       await this.play(b.playerSwitch(k));
       return;
@@ -1323,7 +1375,7 @@ export class BattleView {
     for (const e of evs) {
       const sl = e.slot ?? 0;
       switch (e.t) {
-        case 'msg': await this.msg(e.text, { wait: this.battle.state === 'over' && /remportez|battu|K\.O\.|perdez|attrapé|panique/.test(e.text) }); break;
+        case 'msg': await this.msg(e.text, { wait: this.battle.state === 'over' && /remportez|remportes|battu|K\.O\.|perdez|perds|attrapé|panique|en forme/.test(e.text) }); break;
         case 'send':
           if (this.boostSlots?.[e.side]) this.boostSlots[e.side][sl] = [0, 0, 0, 0, 0, 0, 0, 0];
           if (this.boosts && sl === 0) this.boosts[e.side] = [0, 0, 0, 0, 0, 0, 0, 0];
@@ -1404,6 +1456,15 @@ export class BattleView {
     if (m) this.sound.cry(ASSETS.cry(m.sp));
     await this.tween(200, (u) => { o.white = 1 - u; });
     o.white = 0;
+    const auraSpec = auraBurstSpec(m);
+    if (auraSpec && (side === 0 || m?.alpha)) {
+      this.burst(tx, ty - 6, auraSpec.colors, auraSpec.count, { speed: auraSpec.speed });
+      this.burst(tx, ty - 14, auraSpec.colors, Math.round(auraSpec.count * 0.6), { speed: auraSpec.speed * 1.35 });
+      const auraSfx = auraSpec.id === 'crimson' ? 'aura_crimson'
+        : auraSpec.id === 'sparks' ? 'aura_sparks'
+          : auraSpec.id === 'petals' ? 'aura_petals' : 'aura_stars';
+      this.sound.sfx(auraSfx);
+    }
   }
   async animMega(side, slot = 0) {
     const m = this.battle.act(side, slot), o = this.spriteObj(side, slot), c = this.sprCenter(side, slot);
@@ -1482,7 +1543,21 @@ export class BattleView {
     this.root.appendChild(box);
     await this.msg(`${monName(this.game.state.party[e.idx])} monte au niveau ${e.lvl} !`, { wait: true });
     box.innerHTML = names.map((n, k) => `<div><span>${n}</span><b>${e.after[k]}</b></div>`).join('');
-    await new Promise((res) => { const pop = this.ui.input.push((k) => { if (k === 'a' || k === 'b') { pop(); res(); } }); });
+    await new Promise((res) => {
+      let done = false;
+      const fin = () => {
+        if (done) return;
+        done = true;
+        pop();
+        box.removeEventListener('click', onClick);
+        this.root.removeEventListener('click', onClick);
+        res();
+      };
+      const onClick = (ev) => { ev.stopPropagation(); fin(); };
+      const pop = this.ui.input.push((k) => { if (k === 'a' || k === 'b') fin(); });
+      box.addEventListener('click', onClick);
+      this.root.addEventListener('click', onClick);
+    });
     box.remove();
   }
   async animBall(e) {

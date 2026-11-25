@@ -1,5 +1,6 @@
 // odyssee/js/ui/trophiesView.js — Écran Journal des Trophées & Boîte à Médailles (Style 5G B2W2)
 import { el, esc } from './ui.js';
+import { warnDev } from '../core/safe.js';
 import {
   TROPHIES_CATALOG,
   STREAK_RANKS,
@@ -76,7 +77,7 @@ function afficher(game, trophy) {
     </div>
   `;
   game.ui.root.appendChild(t);
-  try { game.sound?.sfx('badge'); } catch (e) {}
+  try { game.sound?.sfx('badge'); } catch (e) { warnDev('trophies', e); }
 
   setTimeout(() => {
     t.classList.add('trophy-toast-leave');
@@ -85,10 +86,10 @@ function afficher(game, trophy) {
 }
 
 const CAT_INFOS = {
-  combat: { label: 'Duel PvP', icon: '⚔️', cls: 'cat-pvp' },
-  reseau: { label: 'Réseau PvP', icon: '🌐', cls: 'cat-pvp' },
-  rival: { label: 'Rival PvP', icon: '🔥', cls: 'cat-pvp' },
-  streak: { label: 'Série PvP', icon: '👑', cls: 'cat-pvp' },
+  combat: { label: 'Duel en ligne', icon: '⚔️', cls: 'cat-pvp' },
+  reseau: { label: 'Réseau', icon: '🌐', cls: 'cat-pvp' },
+  rival: { label: 'Rivalités', icon: '🔥', cls: 'cat-pvp' },
+  streak: { label: 'Séries', icon: '👑', cls: 'cat-pvp' },
   aventure: { label: 'Aventure', icon: '🗺️', cls: 'cat-aventure' },
   pokedex: { label: 'Pokédex', icon: '📖', cls: 'cat-pokedex' },
   entrainement: { label: 'Entraînement', icon: '⚡', cls: 'cat-entrainement' },
@@ -203,7 +204,7 @@ export function trophiesScreen(game) {
           e.stopPropagation();
           tab = b.dataset.tab;
           selIdx = 0;
-          try { ui.sound?.sfx('blip'); } catch (err) {}
+          try { ui.sound?.sfx('blip'); } catch (err) { warnDev('trophies', err); }
           render();
         });
       });
@@ -214,7 +215,7 @@ export function trophiesScreen(game) {
           e.stopPropagation();
           catFilter = b.dataset.cat;
           selIdx = 0;
-          try { ui.sound?.sfx('blip'); } catch (err) {}
+          try { ui.sound?.sfx('blip'); } catch (err) { warnDev('trophies', err); }
           render();
         });
       });
@@ -225,7 +226,7 @@ export function trophiesScreen(game) {
           e.stopPropagation();
           medalFilter = b.dataset.filter;
           selIdx = 0;
-          try { ui.sound?.sfx('blip'); } catch (err) {}
+          try { ui.sound?.sfx('blip'); } catch (err) { warnDev('trophies', err); }
           render();
         });
       });
@@ -269,7 +270,7 @@ export function trophiesScreen(game) {
     const handleClaim = (trophyId) => {
       const res = claimTrophyReward(st, trophyId);
       if (res.ok) {
-        try { game.sound?.sfx('item'); } catch (e) {}
+        try { game.sound?.sfx('item'); } catch (e) { warnDev('trophies', e); }
         game.save(true);
         ui.toast(`Récompense obtenue : ${res.label} ajoutée au Sac !`, 2000);
         game.hud?.update(true);
@@ -282,7 +283,7 @@ export function trophiesScreen(game) {
     const close = () => {
       pop();
       s.remove();
-      try { ui.sound?.sfx('cancel'); } catch (e) {}
+      try { ui.sound?.sfx('cancel'); } catch (e) { warnDev('trophies', e); }
       resolve();
     };
 
@@ -356,7 +357,7 @@ function renderMedalsTab(filteredTrophies, allTrophies, summary, medalFilter, ca
         <!-- Ligne 1 : Catégories thématiques B2W2 -->
         <div class="tfilter-row tfilter-cat-row">
           <button type="button" class="tfilter-cat-btn${catFilter === 'all' ? ' on' : ''}" data-cat="all">Toutes (${countCat('all')})</button>
-          <button type="button" class="tfilter-cat-btn${catFilter === 'pvp' ? ' on' : ''}" data-cat="pvp">⚔️ PvP (${countCat('pvp')})</button>
+          <button type="button" class="tfilter-cat-btn${catFilter === 'pvp' ? ' on' : ''}" data-cat="pvp">⚔️ Duels (${countCat('pvp')})</button>
           <button type="button" class="tfilter-cat-btn${catFilter === 'aventure' ? ' on' : ''}" data-cat="aventure">🗺️ Aventure (${countCat('aventure')})</button>
           <button type="button" class="tfilter-cat-btn${catFilter === 'pokedex' ? ' on' : ''}" data-cat="pokedex">📖 Pokédex (${countCat('pokedex')})</button>
           <button type="button" class="tfilter-cat-btn${catFilter === 'entrainement' ? ' on' : ''}" data-cat="entrainement">⚡ Entraînement (${countCat('entrainement')})</button>
@@ -523,8 +524,8 @@ function renderHistoryTab(summary, game) {
         }).join('') : `
           <div class="tempty-msg box">
             <div class="tempty-ico">⚔️</div>
-            <div class="tempty-title">Aucun match PvP enregistré</div>
-            <div class="tempty-sub">Défiez un autre dresseur dans le mode multijoueur pour enregistrer vos statistiques, vos bilans face-à-face et débloquer des trophées !</div>
+            <div class="tempty-title">Aucun duel en ligne enregistré</div>
+            <div class="tempty-sub">Défie un autre dresseur en ligne pour enregistrer tes statistiques, tes bilans face-à-face et débloquer des trophées !</div>
           </div>
         `}
       </div>

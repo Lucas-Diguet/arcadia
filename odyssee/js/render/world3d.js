@@ -613,7 +613,7 @@ export class WorldView {
     this.geoHalo = new THREE.PlaneGeometry(1.6, 1.6);   // halo d'un lampadaire (une géométrie pour tous)
     this.lum = new Lumieres();                           // flaques de lumière de nuit (lumieres.js)
     this.ambiance = new Ambiance(this, SPRITE_UNIFORMS); // fumées, papillons, lucioles, feuilles qui tombent (ambiance.js)
-    this.tint = new THREE.Color(1, 1, 1); this.night = 0;
+    this.tint = new THREE.Color(1, 1, 1); this.night = 0; this.celestial = 'none'; this._lastHour = 12;
     // ombre des sous-bois (zones avec `ombre`, comme le Bois Murmure) : 1 en plein jour, plus bas sous les frondaisons
     this.ombre = 1; this.ombreCible = 1; this.tintBase = [1, 1, 1];
     this.animFrame = 0; this.animT = 0;
@@ -2164,13 +2164,14 @@ export class WorldView {
     return true;
   }
   /** grande créature posée sur la carte (légendaire) : son image de face, debout sur la case */
-  imageActor(id, img, scale = 1) {
+  /** lumineux : l'image garde ses couleurs la nuit et sous la pluie (faille, météorite, émotion) */
+  imageActor(id, img, scale = 1, { lumineux = false } = {}) {
     let a = this.actors.get(id); if (a) return a;
     const t = tex(img); t.flipY = true; t.needsUpdate = true;   // image chargée telle quelle : le haut en haut
     const W = Math.round(img.width * scale) * WPX, H = Math.round(img.height * scale) * HPX;
     const geo = new THREE.PlaneGeometry(W, H); geo.translate(0, H / 2 - 3 * HPX * scale, 0);
     geo.setAttribute('anchor', new THREE.Float32BufferAttribute(new Array(12).fill(0), 3));
-    const mat = screenSprite(new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.5, side: THREE.DoubleSide }), AVANCE_PERSO); this.tinted.push(mat); mat.color.copy(this.tint);
+    const mat = screenSprite(new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.5, side: THREE.DoubleSide }), AVANCE_PERSO); if (!lumineux) { this.tinted.push(mat); mat.color.copy(this.tint); }
     const mesh = new THREE.Mesh(geo, mat);
     const S = this.ombres.uv(1.6 * TILE_PX, 0.7 * TILE_PX), sg = new THREE.PlaneGeometry(1.6, 0.7); sg.rotateX(-Math.PI / 2);
     const uv = sg.attributes.uv; for (let i = 0; i < 4; i++) uv.setXY(i, i % 2 ? S[2] : S[0], i < 2 ? S[1] : S[3]);
@@ -2256,6 +2257,7 @@ export class WorldView {
   /* ---------------- heure du jour ---------------- */
   setTimeOfDay(h) {
     // aube rosée, matin doré, journée neutre, soir orangé, nuit bleue (lumieres.js : teintes vues à l'écran)
+    this._lastHour = h;
     const c = teinteHeure(h);
     this.night = nuitHeure(h);
     this.tintBase = c;
@@ -2270,6 +2272,8 @@ export class WorldView {
     // ciel couvert : la pluie et la grêle assombrissent et bleuissent, le sable jaunit, la cendre grise (lumière linéaire)
     const ciel = indoorOrCave ? null : METEO_TEINTE[this.weather?.current];
     if (ciel) k = k.map((v, i) => v * ciel[i]);
+    if (!indoorOrCave && this.celestial === 'aurora') k = [Math.min(1.2, k[0] * 0.78), Math.min(1.2, k[1] * 1.12), Math.min(1.2, k[2] * 1.06)];
+    else if (!indoorOrCave && this.celestial === 'meteor') k = [Math.min(1.2, k[0] * 0.94), Math.min(1.2, k[1] * 0.9), Math.min(1.2, k[2] * 1.14)];
     this.tint.setRGB(k[0], k[1], k[2]);
     for (const m of this.tinted) { const base = m.userData.base; if (m.userData.vitre && !indoorOrCave && this.night > 0.5) m.color.setRGB(...VITRE_NUIT); else if (base) m.color.copy(base).multiply(this.tint); else m.color.copy(this.tint); }
     if (this.nightGroup) this.nightGroup.visible = !indoorOrCave && this.night > 0.5;
@@ -2373,5 +2377,15 @@ export class WorldView {
     this.ambiance.maj(dt, px, py);
   }
   setWeather(w) { const a = this.weather?.current; this.weather?.setWeather(w); if (this.weather && this.weather.current !== a && this.tintBase) this.applyTint(this.tintBase); }
+  setCelestial(kind) {
+    const next = kind === 'aurora' || kind === 'meteor' ? kind : 'none';
+    const prev = this.celestial || 'none';
+    this.celestial = next;
+    this.weather?.setCelestial?.(next);
+    if (prev !== next) {
+      if (this.tintBase) this.applyTint(this.tintBase);
+      else this.setTimeOfDay(this._lastHour ?? 12);
+    }
+  }
   render() { this.renderer.render(this.scene, this.camera); }
 }

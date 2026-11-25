@@ -1,5 +1,6 @@
 // odyssee/js/ui/screens/friends.js — amis et joueurs connectés
 import { esc } from '../ui.js';
+import { warnDev } from '../../core/safe.js';
 import { BADGES } from '../../world/region.js';
 import { ASSETS } from '../../assets.js';
 import { getFriendsManager, formatFid } from '../../net/friends.js';
@@ -26,7 +27,7 @@ export function friendsScreen(game) {
         if (type === 'ok') ui.sound?.sfx('select');
         else if (type === 'err') ui.sound?.sfx('bump');
         else ui.sound?.sfx('blip');
-      } catch (e) {}
+      } catch (e) { warnDev('friends', e); }
       render();
     };
 
@@ -242,7 +243,7 @@ export function friendsScreen(game) {
             req: 1,
             avail: freePeers,
             badge: freePeers >= 1 ? `✓ ${freePeers} dispo` : '1-2 alliés requis',
-            desc: 'Série tactique de 5 paliers en Duo (2v2) ou Trio (3v3) jusqu\'à Maître Mamadou (6e Badge requis).',
+            desc: 'Série tactique de 5 paliers en Duo ou Trio jusqu\'à Maître Mamadou (5e Badge requis).',
             reward: 'Points PDj · Boutique Dojo',
             btn: 'Lancer le Dojo',
           },
@@ -253,7 +254,7 @@ export function friendsScreen(game) {
             req: 1,
             avail: freePeers,
             badge: freePeers >= 1 ? `✓ ${freePeers} dispo` : '1-3 joueurs requis',
-            desc: 'Table de Texas Hold\'em autour du tapis avec sièges rotatifs, IA en renfort et jetons de courtoisie.',
+            desc: 'Table de Hold\'em de Métropole autour du tapis avec sièges rotatifs, IA en renfort et jetons de courtoisie.',
             reward: 'Jetons du Casino',
             btn: 'Ouvrir la Table',
           },
@@ -264,7 +265,7 @@ export function friendsScreen(game) {
             req: 1,
             avail: allOthers,
             badge: allOthers >= 1 ? `✓ ${allOthers} connecté${allOthers > 1 ? 's' : ''}` : '1 ami requis',
-            desc: 'Explorez le Domaine bâti d\'un ami, récupérez le Panier d\'accueil et défiez son Gardien.',
+            desc: 'Explore le Domaine bâti d\'un ami, récupère le Panier d\'accueil et défie son Gardien.',
             reward: 'Baies Sitrus · Bois & Pierre',
             btn: 'Visiter un Domaine',
           },
@@ -457,7 +458,7 @@ export function friendsScreen(game) {
         b.onclick = async () => {
           try {
             await cardScreen(game, BADGES);
-          } catch (e) {}
+          } catch (e) { warnDev('friends', e); }
         };
       });
 
@@ -548,7 +549,7 @@ export function friendsScreen(game) {
         inputEl.oninput = (e) => {
           addCodeInput = e.target.value.toUpperCase();
         };
-        if (hadFocus) { inputEl.focus(); try { inputEl.setSelectionRange(caret, caret); } catch (e) {} }
+        if (hadFocus) { inputEl.focus(); try { inputEl.setSelectionRange(caret, caret); } catch (e) { warnDev('friends', e); } }
         inputEl.onkeydown = (e) => {
           e.stopPropagation();
           if (e.key === 'Enter') {
