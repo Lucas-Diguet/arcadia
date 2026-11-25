@@ -14,7 +14,7 @@ const FILLE = { sol: ['sol_chambre'], mur: ['mur_fille', 'wall_in'], haut: ['hau
 const GARCON = { sol: ['sol_chambre'], mur: ['mur_garcon', 'wall_in'], haut: ['haut_manoir', 'cavetop'], fond: '#0a0608' };
 const STYLES = { carillon: { sol: ['sol_carillon'], mur: ['mur_manoir', 'wall_in'], haut: ['haut_manoir', 'cavetop'], fond: '#0a0608' }, chateau: CHATEAU, manoir: MANOIR, fille: FILLE, garcon: GARCON, insecte: { sol: ['floor_gymBug', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymGrass', 'cavetop'], fond: '#0c1408' },
   poison: { sol: ['floor_gymPsy', 'floor_gymGrass'], mur: ['wall_gym', 'wall_in'], haut: ['floor_gymPsy', 'cavetop'], fond: '#120a16' },
-  clair: CLAIR, egypte: EGYPTE, bois: { sol: ['floor_wood'], mur: ['wall_in', 'wall_center'], haut: ['roof_flat', 'floor_wood'], fond: '#0c0a14' }, sable: { sol: ['floor_sand', 'gl_sable', 'floor_gymRock'], mur: ['wall_gym'], haut: ['floor_gymRock', 'cavetop'], fond: '#1a1008', relief: true } };
+  clair: CLAIR, egypte: EGYPTE, barrage: { sol: ['barrage_sol'], mur: ['barrage_mur', 'wall_in'], haut: ['barrage_haut', 'cavetop'], fond: '#0e1012' }, bois: { sol: ['floor_wood'], mur: ['wall_in', 'wall_center'], haut: ['roof_flat', 'floor_wood'], fond: '#0c0a14' }, sable: { sol: ['floor_sand', 'gl_sable', 'floor_gymRock'], mur: ['wall_gym'], haut: ['floor_gymRock', 'cavetop'], fond: '#1a1008', relief: true } };
 const cellule = (A, k) => (Array.isArray(k) ? k.map((q) => A[q]).find(Boolean) : A[k]);
 const SOLS = new Set([T.CAVE, T.BLOCK, T.CAVEWALL, T.CAVEDOOR, T.FLOOR]);
 const REVELE = 'floor_gymWater';
@@ -25,6 +25,21 @@ function hasard(g) { let s = g >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0
 const IMG_HORLOGE = new URL('../img/horloge/', import.meta.url).href;
 const TQ = ['tq_h', 'tq_v', 'tq_h_e', 'tq_h_o', 'tq_v_n', 'tq_v_s', ...['h', 'h_e', 'h_o', 'h_x', 'v', 'v_n', 'v_s', 'v_x'].map((k) => 'cl_' + k), 'pilier', ...[...Array(16).keys()].map((m) => 'bloc_' + m), ...[...Array(16).keys()].map((m) => 'tq_pivot_' + [...'NESO'].map((c, i) => (m >> (3 - i)) & 1 ? c : '-').join(''))];
 const IMAGES_TUILES = {};
+/** Barrage de Roche-Haute : béton coulé (dalles, joints, taches d'humidité) ; les pièces du tuyautage (testodyssee/img/barrage/, PixelForge) */
+const IMG_BARRAGE = new URL('../img/barrage/', import.meta.url).href;
+const TUYAUX_SOL = ['d0', 'd1', 'c0', 'c1', 'c2', 'c3', 't0', 't1', 't2', 't3', 'x0'].flatMap((k) => ['tuyau_' + k, 'tuyau_' + k + '_eau']);
+function betonSol(x, r) {
+  x.fillStyle = '#8c8a84'; x.fillRect(0, 0, 32, 32);
+  for (let k = 0; k < 70; k++) { x.fillStyle = r() < 0.5 ? '#84827c' : '#96948e'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 1 + (r() * 2 | 0), 1); }
+  x.fillStyle = '#6e6c66'; x.fillRect(0, 31, 32, 1); x.fillRect(31, 0, 1, 32);
+  x.fillStyle = '#a4a29a'; x.fillRect(0, 0, 31, 1); x.fillRect(0, 0, 1, 31);
+  if (r() < 0.35) { x.fillStyle = 'rgba(40,50,60,0.18)'; const cx = r() * 24 | 0, cy = r() * 24 | 0; x.fillRect(cx, cy, 8, 5); x.fillRect(cx + 2, cy - 1, 4, 7); }
+}
+function imageSurBeton(k) {
+  const f = (x, r) => { betonSol(x, r); const im = IMAGES_TUILES[k]; if (im?.complete && im.naturalWidth) x.drawImage(im, 0, 0); };
+  f.image = () => { if (typeof Image === 'undefined') return null; if (!IMAGES_TUILES[k]) { IMAGES_TUILES[k] = new Image(); IMAGES_TUILES[k].src = IMG_BARRAGE + k + '.png'; } return IMAGES_TUILES[k]; };
+  return f;
+}
 function imageSurPlancher(k) {
   const f = (x, r) => { planchesCarillon(x, r); const im = IMAGES_TUILES[k]; if (im?.complete && im.naturalWidth) x.drawImage(im, 0, 0); };
   f.image = () => { if (typeof Image === 'undefined') return null; if (!IMAGES_TUILES[k]) { IMAGES_TUILES[k] = new Image(); IMAGES_TUILES[k].src = IMG_HORLOGE + k + '.png'; } return IMAGES_TUILES[k]; };
@@ -133,6 +148,61 @@ const TUILES = {
   // étage 1 : les tourniquets (barrières de bois peint et poteau coiffé de laiton, façon Cimetronelle, dessinés par
   // tools/pixelforge/tourniquets.py) et la grille de fer des salles
   ...Object.fromEntries(TQ.map((k) => [k, imageSurPlancher(k)])),
+  barrage_sol(x, r) { betonSol(x, r); },
+  barrage_mur(x, r) {
+    // un mur de béton banché : lignes de coffrage, trous de banche, coulures d'humidité
+    x.fillStyle = '#7a7872'; x.fillRect(0, 0, 32, 32);
+    for (let k = 0; k < 60; k++) { x.fillStyle = r() < 0.5 ? '#726f6a' : '#84827a'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 1); }
+    x.fillStyle = '#5e5c56'; x.fillRect(0, 10, 32, 1); x.fillRect(0, 21, 32, 1);
+    x.fillStyle = '#4a4844'; for (const [a, b] of [[7, 5], [23, 5], [15, 16], [7, 27], [23, 27]]) x.fillRect(a, b, 2, 2);
+    x.fillStyle = 'rgba(30,40,46,0.25)'; for (let k = 0; k < 3; k++) { const cx = r() * 30 | 0; x.fillRect(cx, 0, 2, 8 + (r() * 20 | 0)); }
+    x.fillStyle = '#3e3c38'; x.fillRect(0, 31, 32, 1);
+  },
+  barrage_haut(x, r) {
+    x.fillStyle = '#4a4946'; x.fillRect(0, 0, 32, 32);
+    for (let k = 0; k < 40; k++) { x.fillStyle = r() < 0.5 ? '#42413e' : '#52514d'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 1); }
+  },
+  barrage_vase(x, r) {
+    // le fond du réservoir vidé : de la vase grise, des flaques, des cailloux
+    x.fillStyle = '#5a564a'; x.fillRect(0, 0, 32, 32);
+    for (let k = 0; k < 80; k++) { x.fillStyle = r() < 0.5 ? '#524e42' : '#666152'; x.fillRect(r() * 32 | 0, r() * 32 | 0, 2, 1); }
+    if (r() < 0.5) { x.fillStyle = '#3c4a54'; const cx = 4 + (r() * 18 | 0), cy = 4 + (r() * 18 | 0); x.fillRect(cx, cy, 9, 4); x.fillRect(cx + 2, cy - 1, 5, 6); x.fillStyle = '#6a8090'; x.fillRect(cx + 2, cy, 3, 1); }
+    x.fillStyle = '#7a7466'; for (let k = 0; k < 3; k++) x.fillRect(r() * 30 | 0, r() * 30 | 0, 2, 2);
+  },
+  barrage_vase2(x, r) { TUILES.barrage_vase(x, r); x.fillStyle = '#4a463c'; for (let k = 0; k < 4; k++) x.fillRect(r() * 28 | 0, r() * 28 | 0, 4, 2); },
+  barrage_vase3(x, r) { TUILES.barrage_vase(x, r); x.fillStyle = 'rgba(200,200,180,0.25)'; x.fillRect(6 + (r() * 14 | 0), 6 + (r() * 14 | 0), 3, 2); x.fillStyle = '#3c4a54'; x.fillRect(r() * 24 | 0, r() * 24 | 0, 6, 3); },
+  barrage_bord(x, r) {
+    // le bord d'un quai : du béton, et une bande de peinture jaune et noire, écaillée
+    betonSol(x, r);
+    for (let i = 0; i < 32; i += 8) { x.fillStyle = '#e0b030'; x.fillRect(i, 0, 4, 32); x.fillStyle = '#2a2826'; x.fillRect(i + 4, 0, 4, 32); }
+    x.fillStyle = 'rgba(140,138,132,0.55)'; x.fillRect(0, 6, 32, 20);
+    for (let k = 0; k < 10; k++) { x.fillStyle = '#8c8a84'; x.fillRect(r() * 30 | 0, r() * 30 | 0, 3, 2); }
+  },
+  barrage_flaque(x, r) {
+    betonSol(x, r);
+    x.fillStyle = '#4a5a66'; x.fillRect(7, 11, 16, 9); x.fillRect(10, 9, 10, 13);
+    x.fillStyle = '#6a8090'; x.fillRect(10, 12, 6, 2); x.fillStyle = '#90a8b8'; x.fillRect(11, 12, 2, 1);
+  },
+  barrage_conduite(x, r) {
+    // une conduite à sec : un caniveau de béton sombre, des traînées de rouille
+    x.fillStyle = '#4c4a46'; x.fillRect(0, 0, 32, 32);
+    x.fillStyle = '#3a3936'; x.fillRect(4, 0, 24, 32);
+    for (let k = 0; k < 50; k++) { x.fillStyle = r() < 0.5 ? '#34332f' : '#44423d'; x.fillRect(4 + (r() * 24 | 0), r() * 32 | 0, 2, 1); }
+    x.fillStyle = 'rgba(120,60,20,0.35)'; x.fillRect(8 + (r() * 14 | 0), 0, 2, 32);
+    x.fillStyle = '#5c5a55'; x.fillRect(3, 0, 1, 32); x.fillRect(28, 0, 1, 32);
+  },
+  barrage_rampe(x, r) {
+    // une rampe de béton strié qui descend au fond du bassin
+    x.fillStyle = '#7e7c76'; x.fillRect(0, 0, 32, 32);
+    for (let y = 2; y < 32; y += 5) { x.fillStyle = '#5e5c56'; x.fillRect(0, y, 32, 1); x.fillStyle = '#9a9890'; x.fillRect(0, y + 1, 32, 1); }
+    x.fillStyle = '#c8a030'; x.fillRect(0, 0, 3, 32); x.fillRect(29, 0, 3, 32);
+  },
+  barrage_marque(x, r) {
+    // la croix peinte au fond du canal
+    TUILES.barrage_conduite(x, r);
+    x.fillStyle = '#f0c840'; for (let i = 6; i < 26; i++) { x.fillRect(i, i, 3, 2); x.fillRect(31 - i - 2, i, 3, 2); }
+  },
+  ...Object.fromEntries(TUYAUX_SOL.map((k) => ['barrage_' + k, imageSurBeton(k)])),
   // étage -1 : dalles du sous-sol, fosses et contrepoids, chaînes, rails et balanciers
   sol_sous(x, r) { dallesSous(x, r); },
   fosse(x, r) { x.fillStyle = '#0a0806'; x.fillRect(0, 0, 32, 32); x.fillStyle = '#1a1410'; x.fillRect(0, 0, 32, 5); x.fillStyle = 'rgba(255,255,255,0.05)'; for (let k = 0; k < 6; k++) x.fillRect(r() * 30 | 0, 8 + (r() * 22 | 0), 2, 1); },

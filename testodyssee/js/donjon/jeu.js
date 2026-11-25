@@ -28,6 +28,7 @@ import { Fonderie } from './fonderie.js';
 import { Cristal } from './cristal.js';
 import { Arenes } from './arenes.js';
 import { Course } from './course.js';
+import { Barrage } from './barrage.js';
 import { validParty } from '../../../odyssee/js/core/pvp.js';
 import { T } from '../../../odyssee/js/world/tiles.js';
 
@@ -50,7 +51,7 @@ export class Donjons {
       for (const c of cartes) game.world.maps[c.id] = c;
       const dehors = relierExterieur(d, m);
       if (dehors) game.world.maps[dehors.id] = dehors;
-      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); this.poserObjetsContes(d, c); this.poserObjetsChateau(d, c); this.poserClassements(d, c); this.poserObjetsFonderie(d, c); this.poserObjetsCristal(d, c); this.poserObjetsArenes(d, c); this.poserObjetsCourse(d, c); }
+      for (const c of cartes) { this.poserPnj(d, c); this.poserObjets(d, c); this.poserObjetsMiroirs(d, c); this.poserObjetsVoies(d, c); this.poserObjetsPyramide(d, c); this.poserObjetsMine(d, c); this.poserObjetsTrain(d, c); this.poserObjetsTemple(d, c); this.poserObjetsTombeau(d, c); this.poserObjetsContes(d, c); this.poserObjetsChateau(d, c); this.poserClassements(d, c); this.poserObjetsFonderie(d, c); this.poserObjetsCristal(d, c); this.poserObjetsArenes(d, c); this.poserObjetsCourse(d, c); this.poserObjetsBarrage(d, c); }
       this.etats[d.id] = nouvelEtat(d);
       this.vus[d.id] = { run: 0, faites: new Set(), fini: false };
     }
@@ -92,12 +93,12 @@ export class Donjons {
         id: `${d.id}:${p.id}`, x, y, dir: p.dir || 'down', sprite: p.sprite, move: 'static',
         when: () => {
           const e = this.etats[d.id], sr = p.raid && d.salles.find((s) => s.type === 'raid' && s.pnj?.includes(k));
-          if (p.gardien || p.quiz || p.toujours || p.reste) return true;
+          if (p.gardien || p.quiz || p.toujours || p.reste || p.resteApres) return true;
           if (!this.presentPyr(d, p)) return false;
           if (sr) return !e.salles[sr.id].faite;
           return p.boss || p.raid ? !e.fini : !battu(e, d, k);
         },
-        talk: async () => (p.reste && this.vaincu(d, k) ? this.resteGardien(d, k) : p.talisman ? this.talismanTemple(d) : p.moine ? this.moineTemple(d) : p.champion ? this.champion(d, k) : p.organisatrice ? this.organisatrice(d) : p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.arbitre ? this.arbitre(d, k) : p.duo ? this.duo(d, k) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid || p.groupe ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
+        talk: async () => (p.barrage ? this.pnjBarrage(d, k) : p.resteApres && battu(this.etats[d.id], d, k) ? this.game.ui.say(p.resteApres, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.reste && this.vaincu(d, k) ? this.resteGardien(d, k) : p.talisman ? this.talismanTemple(d) : p.moine ? this.moineTemple(d) : p.champion ? this.champion(d, k) : p.organisatrice ? this.organisatrice(d) : p.dit ? this.game.ui.say(p.dit, { speaker: `${p.cls} ${p.nom}`.trim() }) : p.arbitre ? this.arbitre(d, k) : p.duo ? this.duo(d, k) : p.gardien ? this.gardien(d) : p.quiz ? this.questionneur(d, k) : p.raid || p.groupe ? this.bossRaid(d, k) : p.boss ? this.boss(d, k) : this.adversaire(d, k)),
       });
     }
   }
@@ -372,7 +373,7 @@ export class Donjons {
       if (s.pourVoies && voie && !s.pourVoies.includes(voie)) continue;
       if (!this.salleVisibleTemple(d, s)) continue;
       // le tombeau a dix salles : seulement celle où l'on est
-      if ((d.tombeau || d.contes || d.liens) && s.carte !== g.mapObj?.id) continue;
+      if ((d.tombeau || d.contes || d.liens || d.barrage) && s.carte !== g.mapObj?.id) continue;
       const S = e.salles[s.id];
       let txt = '';
       if (s.type === 'accueil') txt = S.faite ? 'ouverte' : 'parle au gardien';
@@ -399,6 +400,7 @@ export class Donjons {
       if (this.texteFonderie(d, s)) txt = this.texteFonderie(d, s);
       if (this.texteCristal(d, s)) txt = this.texteCristal(d, s);
       if (this.texteCourse(d, s)) txt = this.texteCourse(d, s);
+      if (this.texteBarrage(d, s)) txt = this.texteBarrage(d, s);
       if (s.type === 'voies' && !voie) { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       if (s.type === 'libre') { lignes.push(`<div class="dj-l"><span>${esc(s.nom)}</span><b>${esc(txt)}</b></div>`); continue; }
       lignes.push(`<div class="dj-l${S.faite ? ' ok' : ''}"><span>${esc(s.nom)}</span><b>${S.faite ? '✔' : esc(txt)}</b></div>`);
@@ -446,7 +448,7 @@ export class Donjons {
     const idm = (q) => (typeof q === 'string' ? Object.values(MOVES).find((x) => x.key === q)?.id : q);
     const party = p.equipe.map(([sp, lvl, item, moves, ability, extra]) => Object.assign(createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false, item: item || null, moves: moves?.map(idm), ability }), extra || {}));
     const res = await this.combat(p, party);
-    if (res === 'win') await this.demande(d.id, { a: 'gagne', pnj: k });
+    if (res === 'win') { await this.demande(d.id, { a: 'gagne', pnj: k }); await this.butinBarrage?.(d, k); }
     else { await this.demande(d.id, { a: 'lacher', pnj: k }); await this.defaite(d); }
   }
 
@@ -490,4 +492,4 @@ export class Donjons {
   }
 }
 
-Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau, Contes, Chateau, Classement, Fonderie, Cristal, Arenes, Course);
+Object.assign(Donjons.prototype, Mecaniques, Miroirs, Voies, Pyramide, Mine, Train, Temple, Tombeau, Contes, Chateau, Classement, Fonderie, Cristal, Arenes, Course, Barrage);

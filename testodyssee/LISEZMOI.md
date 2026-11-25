@@ -983,6 +983,26 @@ d'Odyssée posé sur sa marque, dont la porte mène à la salle `vers`.
   Fil-de-Fer), la cabine de Geppetto (le bûcher, l'éternuement, retour sur la plage).
 - Boucle d'or (`bo0`) : la maison des trois ours, fermée pour l'instant.
 
+### Le Barrage de Roche-Haute
+
+**L'auteur découvre ce donjon en jouant : ne pas lui en décrire le contenu (voir le cahier des charges des donjons).**
+
+Solo, équipe « Fin de jeu », niveaux 55 à 64. Huit salles séparées (`js/donjons/barrage.js`, mécaniques
+`js/donjon/barrage.js`), dessinées et vérifiées par `python3 tools/barrage.py` dans `js/donjons/barrage-salles.js`
+(ne pas le modifier à la main ; `python3 tools/barrage.py voir [salles]` les montre en texte). L'outil rejoue tout le
+donjon (niveau de l'eau, leviers, clé, courant, rocher, vannes) : on finit, on ne reste jamais coincé, chaque obstacle
+demande sa solution, chaque objet est atteignable. Dessins : `python3 tools/pixelforge/barrage.py` (`img/barrage/`),
+sols de béton, de vase et de tuyaux dans `rendu.js` (style `barrage`).
+
+- Niveau du réservoir (`niveau` : haut ou bas, aux pupitres) : chaque case `~ r e` et chaque conduite suit
+  (`appliquerBarrage`) ; un objet au fond d'un bassin n'existe qu'à sec. Courants : `apresPasBarrage` ; plaqué contre
+  un rocher sans eau calme à côté, on est ramené au quai d'entrée de la salle.
+- État du donjon dans la salle `hall` (`eb`, `majB`) : leviers, clé du local, courant, rotations des tuyaux
+  (`fluxTuyaux`), vannes de crue (`ORDRE_VANNES`), trappe, porte de contrôle, objets pris.
+- Dresseurs : `DRESSEURS_BARRAGE` (places dans le plan), restent après leur défaite (`resteApres`) et donnent un objet
+  (`BUTIN_BARRAGE`). Le rocher du canal reprend sa place en revenant dans la salle (`remiseBarrage`).
+- `tools/test-testodyssee.mjs` vérifie les étapes, les passages, les tuyaux et l'ordre des vannes.
+
 ### Le Mont Givrécime
 
 Une montagne enneigée pour l'aventure solo, pas un donjon : ni groupe, ni boss, ni état partagé. Dix grandes salles

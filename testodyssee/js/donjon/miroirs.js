@@ -546,7 +546,7 @@ export const Miroirs = {
   },
   apresDepart(dir, depart) { this.apresDepartArene?.(dir, depart); const d = this.miroirsIci(); if (d && this.salleDe(d, 'reflet')) this.refleterPas(d, dir); },
   occupe(x, y) { return this.occupeReflet(x, y) || !!this.occupeArene?.(x, y); },
-  async interagir() { if (await this.interagirArene?.()) return true; const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.parlerReflet(d); },
+  async interagir() { if (await this.interagirArene?.()) return true; if (await this.interagirBarrage?.()) return true; const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.parlerReflet(d); },
   /** dans la salle du reflet : on peut revenir à l'entrée de la salle depuis le menu */
   dansLeReflet() { const d = this.miroirsIci(); return !!d && !!this.salleDe(d, 'reflet') && this.refletActif(d); },
   async recommencerSalle() { const d = this.miroirsIci(); if (d) await this.recommencerReflet(d); },

@@ -29,6 +29,9 @@ import { walkable, T } from '../odyssee/js/world/tiles.js';
 import { ronde, vueGarde, sansEtreVu } from '../testodyssee/js/donjons/tombeau-gardes.js';
 import { lirePlaques, grillesOuvertes, traversable } from '../testodyssee/js/donjon/plaques.js';
 import { preparerDefense, nouvelleDefense, demarrerDefense, pasDefense, issueDefense } from '../testodyssee/js/donjon/defense.js';
+import { SALLES_BARRAGE, TUYAUX, ORDRE_VANNES, ETAPES_BARRAGE } from '../testodyssee/js/donjons/barrage-salles.js';
+import { fluxTuyaux } from '../testodyssee/js/donjon/barrage.js';
+import { DRESSEURS_BARRAGE } from '../testodyssee/js/donjons/barrage.js';
 import { cle, explorerGlace, faisceau, resoudreReflet, cheminGlace, reponseJuste } from '../testodyssee/js/donjon/casse-tetes.js';
 
 installerContenu();
@@ -2015,6 +2018,40 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
     ok(divergent === 0, `duel du labo, objets Choix : ${divergent} combats qui ne concordent plus`);
   }
   { const a = mk(392, ['flamethrower']), d = mk(681, ['splash'], { item: 'weakness-policy' }); const b = combat([a], [d]); b.playerAction({ type: 'move', idx: 0 }); ok(isFainted(d) || b.sides[1].v.st[1] === 2, 'combat du labo : Vulné-Assurance monte l\'Attaque'); }
+}
+
+// ---------------- Barrage de Roche-Haute (plans et vérification complète : tools/barrage.py) ----------------
+{
+  const d = DONJONS.find((q) => q.id === 'barrage');
+  ok(d && d.salles.length === 8 && d.salles.every((s) => SALLES_BARRAGE[s.id]), 'barrage : huit salles, toutes dessinées');
+  // l'outil a rejoué le donjon : les étapes s'enchaînent jusqu'au bout
+  const etapes = ETAPES_BARRAGE.flat();
+  ok(['levier:ouest', 'levier:conduites', 'cle-local', 'porte-local', 'courant', 'vannes', 'trappe', 'fin'].every((k) => etapes.includes(k)), 'barrage : le donjon se finit (étapes de tools/barrage.py)');
+  ok(ETAPES_BARRAGE.length >= 6, 'barrage : il faut au moins six étapes pour le finir');
+  // chaque passage mène à une arrivée qui existe, et chaque salle a ses passages dans les deux sens
+  let bons = true;
+  for (const [id, S] of Object.entries(SALLES_BARRAGE)) for (const [, , vers, arr] of S.passages) if (!SALLES_BARRAGE[vers]?.arrivees[arr]) bons = false;
+  ok(bons, 'barrage : les passages mènent à des arrivées qui existent');
+  // grandes salles : au moins 50 × 35 cases
+  ok(['vannes', 'turbines', 'conduites', 'decantation'].every((id) => SALLES_BARRAGE[id].plan.length >= 35 && SALLES_BARRAGE[id].plan[0].length >= 50), 'barrage : les quatre grandes salles font au moins 50 × 35 cases');
+  // objets et carnets connus du Sac ; dresseurs : 24, avec des Pokémon qui existent
+  ok(Object.values(SALLES_BARRAGE).every((S) => S.objets.filter((o) => o.t === 'objet').every((o) => ITEMS[o.objet] || OBJETS[o.objet])), 'barrage : chaque objet à ramasser existe');
+  ok(DRESSEURS_BARRAGE.length === 25 && DRESSEURS_BARRAGE.every((q) => q.equipe.every(([sp]) => SPECIES[sp])), 'barrage : 25 dresseurs, leurs Pokémon existent');
+  ok(Object.values(SALLES_BARRAGE).reduce((n, S) => n + S.dresseurs.length, 0) === DRESSEURS_BARRAGE.length, 'barrage : chaque dresseur a sa place');
+  // le tuyautage : pas résolu au départ, une seule façon de relier l'arrivée à la turbine (le long du chemin)
+  ok(!fluxTuyaux(TUYAUX.rotations).ok, 'barrage : le tuyautage n\'est pas résolu au départ');
+  const OUV = { d: [[1, 0, 1, 0], [0, 1, 0, 1]], c: [[1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1], [1, 0, 0, 1]] }, VEC = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  const rot = { ...TUYAUX.rotations };
+  TUYAUX.chemin.forEach(([x, y], k, ch) => {
+    const a = k ? ch[k - 1] : [x - 1, y], b = k < ch.length - 1 ? ch[k + 1] : [x + 1, y];
+    const da = VEC.findIndex((v) => v[0] === a[0] - x && v[1] === a[1] - y), db = VEC.findIndex((v) => v[0] === b[0] - x && v[1] === b[1] - y);
+    rot[x + ',' + y] = OUV[TUYAUX.pieces[x + ',' + y]].findIndex((o) => o[da] && o[db]);
+  });
+  ok(fluxTuyaux(rot).ok && TUYAUX.chemin.length >= 13, 'barrage : le tuyautage se résout, sur un chemin de 13 pièces au moins');
+  // les vannes de crue : les carnets 3 et 4 ne laissent qu'un ordre (la rouge en dernier, la jaune avant la bleue)
+  const ordres = [['rouge', 'jaune', 'bleue'], ['rouge', 'bleue', 'jaune'], ['jaune', 'rouge', 'bleue'], ['jaune', 'bleue', 'rouge'], ['bleue', 'rouge', 'jaune'], ['bleue', 'jaune', 'rouge']];
+  const possibles = ordres.filter((o) => o[2] === 'rouge' && o.indexOf('jaune') < o.indexOf('bleue'));
+  ok(possibles.length === 1 && possibles[0].join() === ORDRE_VANNES.join(), 'barrage : les carnets donnent un seul ordre de vannes, le bon');
 }
 
 console.log(fails ? `${fails} échec(s) sur ${checks} vérifications` : `TestOdyssée : ${checks} vérifications, tout est bon.`);

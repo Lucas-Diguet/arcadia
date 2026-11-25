@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.54 — 25 novembre 2026
+- **TestOdyssée** — Nouveau donjon : le Barrage de Roche-Haute (seul, fin de jeu).
+
 ## 6.53 — 24 novembre 2026
 - **TestOdyssée** — Combat : un Pokémon qui méga-évolue prend le talent de sa forme Méga, même dans les équipes des champions. Le Méga-Dracaufeu Y de l'équipe Soleil amène bien le soleil, et Lance-Soleil part sans se charger.
 

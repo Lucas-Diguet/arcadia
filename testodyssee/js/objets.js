@@ -10,7 +10,7 @@ const idAttaque = (key) => Object.values(MOVES).find((m) => m.key === key).id;
 export function brancherObjets() {
   for (const [k, o] of Object.entries(OBJETS)) {
     const it = ITEMS[k];
-    if (o.lire) it.use = async (g) => { await g.ui.say(['Tu déroules le parchemin...', ...o.lire]); return false; };
+    if (o.lire) it.use = async (g) => { await g.ui.say([...(o.lireIntro === undefined ? ['Tu déroules le parchemin...'] : o.lireIntro ? [o.lireIntro] : []), ...o.lire]); return false; };
     if (o.ct) it.use = async (g, item) => {
       const id = idAttaque(o.ct), mv = MOVES[id];
       const i = await partyScreen(g, { mode: 'pick', prompt: `Apprendre ${mv.n} à quel Pokémon ?`, filter: (m) => refusCt(k, m.sp) || (m.moves.some((x) => x.id === id) ? 'Déjà appris' : null) });

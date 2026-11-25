@@ -111,7 +111,7 @@ export class TestGame extends Game {
     // Musée des Dunes : la vitrine pleine ou vide, la police à la sortie de l'arène
     this.musee?.avantWarp(to);
     const de = this.mapObj?.id;
-    this.donjons?.remiseTemple?.(to); this.donjons?.remiseContes?.(to);
+    this.donjons?.remiseTemple?.(to); this.donjons?.remiseContes?.(to); this.donjons?.remiseBarrage?.(to);
     const r = await super.warp(to, sfx);
     await this.musee?.apresWarp(de, to);
     return r;
@@ -125,7 +125,7 @@ export class TestGame extends Game {
   canField(k) { if (k !== 'vol' && ['coupe', 'force', 'eclate', 'surf'].includes(k) && this.state?.bag?.['talisman-elements']) return true; return this.donjons?.dansUnDonjon?.() && k !== 'vol' ? this.hasField(k) : super.canField(k); }
   occupied(x, y, except) { return super.occupied(x, y, except) || !!this.donjons?.occupe(x, y); }
   async interact() { if (this.donjons && !this.busy && await this.donjons.interagir()) return; return super.interact(); }
-  async onStep(mv) { await super.onStep(mv); if (!this.busy && this.mapObj) await this.musee?.apresPas(); this.farwest?.apresPas(); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); await this.donjons?.apresPas?.(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.donjons?.apresPasTemple(); if (!this.busy) await this.donjons?.apresPasTombeau?.(); if (!this.busy) await this.donjons?.apresPasContes?.(); if (!this.busy) await this.donjons?.apresPasChateau?.(); if (!this.busy) await this.donjons?.apresPasCourse?.(); if (!this.busy) await this.ile?.apresPas(); } }
+  async onStep(mv) { await super.onStep(mv); if (!this.busy && this.mapObj) await this.musee?.apresPas(); this.farwest?.apresPas(); if (!this.busy && this.mapObj) { this.donjons?.apresPasVoies(); if (!this.busy) await this.donjons?.apresPasBarrage?.(); await this.donjons?.apresPas?.(mv); if (!this.busy) await this.donjons?.apresPasMine(); if (!this.busy) await this.donjons?.apresPasPyramide(); if (!this.busy) await this.donjons?.regards(); if (!this.busy) await this.donjons?.apresPasTemple(); if (!this.busy) await this.donjons?.apresPasTombeau?.(); if (!this.busy) await this.donjons?.apresPasContes?.(); if (!this.busy) await this.donjons?.apresPasChateau?.(); if (!this.busy) await this.donjons?.apresPasCourse?.(); if (!this.busy) await this.ile?.apresPas(); } }
   load() { return null; }
 
   async startMenu() {

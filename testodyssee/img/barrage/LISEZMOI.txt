@@ -1,0 +1,5 @@
+Barrage de Roche-Haute (TestOdyssée) : pupitres, leviers, grilles, vannes, tuyaux, turbines, monte-charge, échelle,
+trappe, portes, maquette, plaque, Poké Ball au sol, icônes du Sac (carnet, clé).
+
+Dessinés pour le labo par tools/pixelforge/barrage.py (PixelForge, à la manière de Pokémon Émeraude), 16 pixels par
+case agrandis ×2. Aucune image reprise d'un autre jeu. Relancer le script réécrit le dossier.

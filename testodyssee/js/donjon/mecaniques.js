@@ -151,7 +151,7 @@ export const Mecaniques = {
       const r = await this.demande(d.id, { a: 'prendre', pnj: k }); if (!r.ok) return;
       const party = def.equipe.map(([sp, lvl]) => createMon(sp, lvl, { iv: Array(6).fill(Math.min(31, 10 + lvl / 2 | 0)), shiny: false }));
       const res = await this.combat(def, party);
-      if (res === 'win') await this.demande(d.id, { a: 'gagne', pnj: k });
+      if (res === 'win') { await this.demande(d.id, { a: 'gagne', pnj: k }); await this.butinBarrage?.(d, k); }
       else { await this.demande(d.id, { a: 'lacher', pnj: k }); await this.defaite(d); }
     } finally { g.busy = false; }
   },
