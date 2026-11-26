@@ -1,5 +1,8 @@
 # Journal des versions — Arcadia
 
+## 6.61 — 26 novembre 2026
+- **TestOdyssée** — On peut fuir n'importe quel combat de dresseur : le combat s'arrête et compte comme gagné, en mode test ou non.
+
 ## 6.60 — 26 novembre 2026
 - **TestOdyssée** — Le labo reprend la mise à jour 5.164 d'Arcadia (Odyssée 3.5) : chaque route d'Odyssée a son biome, son tracé et ses habitants.
 

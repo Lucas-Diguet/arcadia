@@ -1909,6 +1909,10 @@ for (const E of EQUIPES) for (const k of Object.keys(E.sac)) ok(ITEMS[k], `équi
   { const a = mk(143, ['splash']), d = mk(416, ['heal-order']); const b = combat([a], [d], { tr: { ai: 'normal' } }); d.hp = 10;
     b.foeChoose = () => ({ type: 'move', id: id('heal-order'), slot: 0 }); b.playerAction({ type: 'move', idx: 0 }); delete b.foeChoose;
     ok(d.hp === 10 + Math.floor(d.stats[0] / 2), 'combat du labo : Appel Soins rend la moitié des PV'); }
+  // labo : fuir un combat de dresseur le gagne ; un Pokémon sauvage se fuit comme avant
+  { const a = mk(143, ['splash']), d = mk(24, ['tackle']); const b = combat([a], [d], { tr: { ai: 'normal' } });
+    const ev = b.playerAction({ type: 'run' });
+    ok(b.state === 'over' && b.result === 'win' && ev.some((e) => e.t === 'end' && e.result === 'win'), 'labo : fuir un combat de dresseur le compte comme gagné'); }
   // Bluff : seulement au premier tour
   { const a = mk(143, ['splash']), d = mk(678, ['fake-out']); const b = combat([a], [d], { tr: { ai: 'normal' } }); b.foeChoose = () => ({ type: 'move', id: id('fake-out'), slot: 0 });
     b.playerAction({ type: 'move', idx: 0 }); const hp = a.hp; b.playerAction({ type: 'move', idx: 0 }); ok(a.hp === hp, 'combat du labo : Bluff échoue après le premier tour'); }

@@ -160,6 +160,15 @@ export function installerRegles() {
     },
 
     playerAction(action) {
+      // labo : fuir un combat de dresseur le termine, compté comme gagné (avec ou sans mode test)
+      const acts = Array.isArray(action) ? action : [action];
+      if (this.fuiteGagne && !this.wild && !this.pvp && !this.coop && this.state === 'choose' && acts.some((a) => a?.type === 'run')) {
+        this.ev = [];
+        this.ev.push({ t: 'sfx', k: 'run' });
+        this.say('Tu quittes le combat : il compte comme gagné.');
+        this.end('win');
+        return this.ev;
+      }
       // en duel, le refus se fait avant l'envoi (refus) : ici, l'action reçue est jouée, l'attaque bloquée remise par resolve
       if (!this.pvp && this.state === 'choose' && action?.type === 'move' && action.idx != null && !this.forcedAction(0)) {
         const mv = this.me.moves[action.idx], why = mv && mv.pp > 0 && this.interdit(0, mv.id);
@@ -661,6 +670,7 @@ export function installerRegles() {
     },
   };
   parCamp(B, R, orig);
+  B.fuiteGagne = true;   // lu par l'écran de combat : le bouton Fuite marche aussi contre un dresseur
   // combat simple : le tour se joue par le resolve du labo (Distorsion, Poursuite, Demi-Tour…), et ses attaques par son
   // useMove ; le moteur, lui, passe par resolveAll et useMoveRef, faits pour les combats en double
   const origResolveAll = B.resolveAll, origUseMoveRef = B.useMoveRef;

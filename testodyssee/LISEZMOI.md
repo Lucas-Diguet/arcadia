@@ -636,6 +636,8 @@ enveloppe ses méthodes (seule la page du labo charge ce fichier). Ce qui s'ajou
 Le moteur d'Odyssée désigne un Pokémon en jeu par une place `{ side, slot }` (combats en double) : `js/combat/camps.js`
 ramène ces places au numéro du camp pour les règles du labo (`parCamp`, `classeParCamp` pour les combats à plusieurs), et en
 combat simple le tour passe par le `resolve` et le `useMove` du labo (`resolveAll` redirigé dans `regles.js`).
+Fuite : dans le labo, le bouton Fuite marche aussi contre un dresseur ; le combat s'arrête et compte comme gagné (`fuiteGagne`,
+`playerAction` de `regles.js`), avec ou sans mode test. Les duels entre joueurs gardent leur abandon.
 
 - attaques : Piège de Roc, Provoc, Sabotage (fait tomber l'objet, rendu après le combat), Demi-Tour (et Change Éclair :
   le joueur choisit qui entre, puis le tour continue ; l'adversaire change tout seul), Cradovague, Clonage, Tacle Lourd,

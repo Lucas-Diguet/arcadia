@@ -1130,7 +1130,7 @@ export class BattleView {
         return { slot: sl, type: 'switch', idx: k };
       }
       if (c === 3) {
-        if (!b.wild || b.sansFuite) { this.sound.sfx('bump'); await this.msg(b.wild ? 'La faille s\'est refermée : impossible de fuir !' : 'Impossible de fuir un combat de Dresseur !', { wait: true }); continue; }
+        if ((!b.wild && !b.fuiteGagne) || b.sansFuite) { this.sound.sfx('bump'); await this.msg(b.wild ? 'La faille s\'est refermée : impossible de fuir !' : 'Impossible de fuir un combat de Dresseur !', { wait: true }); continue; }
         return { slot: sl, type: 'run' };
       }
     }
