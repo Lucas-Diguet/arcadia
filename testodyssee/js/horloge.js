@@ -136,7 +136,8 @@ export const obstacles = (n = 0) => new Set(NIVEAUX[n].leviers.map((L) => cle(..
 /** pose les cases praticables d'une carte de la salle des aiguilles selon l'état (le vide est infranchissable) ; les portes
  *  de l'étage 1 sont gardées sur sa carte (horloge-n1.js) */
 export function appliquer(m, E) {
-  const n = m.horlogeNiv || 0, obs = obstacles(n);
+  const n = m.horlogeNiv || 0, obs = obstacles(n), ex = NIVEAUX[n].obstaclesE?.(E);
+  if (ex) for (const k of ex) obs.add(k);   // étage -1 : les totems
   const portes = m.portesHorloge || new Set([...SALLES_PF().map((s) => cle(...placePorte(s))), cle(...placeSortie())]);
   for (let y = 2; y < H; y++) for (let x = 1; x < W - 1; x++) m.set(x, y, portes.has(cle(x, y)) || (caseHorloge(E, x, y, n) && !obs.has(cle(x, y))) ? T.FLOOR : T.BLOCK);
 }

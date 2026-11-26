@@ -297,13 +297,17 @@ dessinés par `python3 tools/pixelforge/horloge.py` (`img/horloge/`).
 `js/horloge-m1.js` (`labo:horloge:-1`). Le mécanisme y descend depuis l'étage 0 ; pour monter à l'étage 1, il lui faut la
 pièce trouvée ici (`piece`). Les aiguilles sont posées sur un sol de pierre (`rSol`) : on marche sur leur dessus, mais on
 ne passe de l'une au sol (ou l'inverse) que par son échelle, accrochée du côté où elle tourne (`echelle`, `pasM1`) ; on ne
-se sert du mécanisme que debout sur une aiguille. La grande (1 h à 5 h) et la fine (7 h à 11 h) coupent la salle en deux
-secteurs (`bornes`) ; en arrivant (grande à 3 h, fine à 9 h), elles barrent les portes des deux salles du mur. Dans chaque
-secteur, le levier de l'aiguille qui borde l'autre (`LEVIERS_M1`) : il faut être deux. Trois dresseurs sur le sol.
+se sert du mécanisme que debout sur une aiguille. Plus de levier : la grande reste à 1 h et la fine à 7 h (`arrivee`,
+`bornes`), elles coupent la salle en deux secteurs, celui de la grande mène à la porte des contrepoids, celui de la fine à
+celle des balanciers. Les deux portes sont fermées à clé. Vingt totems de pierre de deux cases sur deux (`TOTEMS`, état
+`totems`, dessinés par `totem` de `js/horloge-vue.js`) se poussent avec Force (`pousserTotem`, action `totem`, l'hôte
+décide ; jamais sur une aiguille, ni contre le pivot, ni au pied d'une échelle ou devant une porte : `interditTotems`).
+Sous deux d'entre eux, une clé (`CLES_M1`, une par secteur, poussable dès l'arrivée) : déplacer le totem la montre et
+ouvre la porte de son secteur (`clesTrouvees`). Pas de dresseur à cet étage.
 Salle des contrepoids (porte à 3 h, la pièce au bout) : trois fosses en travers, quatre chaînes qui échangent deux poids
 (`CHAINES`, état `poids`, au moins trois chaînes à tirer, jamais coincé : `resoudreContrepoids`). Salle des balanciers
 (porte à 9 h, la clé de la grande porte `cle2` au bout) : des murs percés d'une ouverture que balaie un balancier, au même
-rythme chez tous (l'heure de l'ordinateur, `balancier`) ; touché, on revient au début. Un dresseur dans chacune.
+rythme chez tous (l'heure de l'ordinateur, `balancier`) ; touché, on revient au début.
 
 ### La Tour de l'Horloge, étage 2 (à trois)
 

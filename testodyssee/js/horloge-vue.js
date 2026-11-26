@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { C, R_PIVOT, R_MUR, R_MUR2, PLATEFORMES, SALLES_PF, BLOCS, R_BLOC, NIVEAUX, casesPlateforme, placeLevier, placePorte, placeSortie, sens } from './horloge.js';
 import { sallesEtage1, portePf } from './horloge-n1.js';
 import { creerAiguille } from './horloge-aiguilles.js';
-import { R_SOL, BAS_SOL, SALLES_M1, porteM1, echelle } from './horloge-m1.js';
+import { R_SOL, BAS_SOL, SALLES_M1, porteM1, echelle, TOTEMS } from './horloge-m1.js';
 
 /** profondeur du cadran */
 export const FOND = -7;
@@ -91,6 +91,7 @@ export function creerHorloge(n = 0) {
   // les portes des salles, dans la face intérieure du mur : encadrement de laiton, battant de bois sombre
   const portes = n === 0 ? SALLES_PF().map(placePorte) : n === -1 ? SALLES_M1.map(porteM1) : sallesEtage1().flatMap(({ s }) => [portePf(s.pfDe, 1), portePf(s.pfA, -1)]);
   for (const [x, z] of portes) decor.add(porteMur(Math.atan2(x + 0.5 - CX, -(z + 0.5 - CZ)), n === -1 ? R_SOL + 0.25 : undefined, n === -1 ? -BAS_SOL : 0));
+  const totems = n === -1 ? TOTEMS.map((t, i) => { const T = totem(i); decor.add(T); return T; }) : [];
   if (n === -1) etageMoinsUn(decor, aig);
   // les plateformes : une dalle de pierre par case ; les îlots de l'étage 1 sur un pilier qui monte du fond
   for (const P of N0.plateformes) {
@@ -117,7 +118,33 @@ export function creerHorloge(n = 0) {
     for (let i = 0; i < 10; i++) { const e = new THREE.Mesh(new THREE.DodecahedronGeometry(0.35 + (i % 3) * 0.12, 0), mat(i % 2 ? '#8a8276' : '#6a6458')); e.visible = false; e.userData.v = [Math.cos(i * 2.4) * 3, 4 + (i % 4), Math.sin(i * 2.4) * 3]; B.add(e); eclats.push(e); }
     decor.add(B); return { B, entier, eclats };
   });
-  return { G, decor, aig, blocs, n };
+  return { G, decor, aig, blocs, totems, n };
+}
+
+/** les couleurs des totems : pierre, peinture des visages */
+const PIERRES = [['#8a7a62', '#5e5242'], ['#7a7468', '#524e46'], ['#8e7258', '#604c3a'], ['#6e7a6c', '#4a5248']];
+const PEINTURES = ['#b8402e', '#2e6ab0', '#d8a030', '#3a8a4a', '#e8e0c8'];
+/** un totem de pierre sur deux cases sur deux (son coin en 0, 0) : socle, trois têtes sculptées empilées, ailes au sommet */
+function totem(i) {
+  const T = new THREE.Group(), [clair, sombre] = PIERRES[i % PIERRES.length], y0 = -BAS_SOL;
+  const p1 = PEINTURES[i % PEINTURES.length], p2 = PEINTURES[(i + 2) % PEINTURES.length];
+  T.add(pave(0.08, 1.92, y0, y0 + 0.3, 0.08, 1.92, clair, sombre));
+  const etages = [[0.3, 1.25, 0.2], [1.25, 2.2, 0.28], [2.2, 3.1, 0.36]];
+  etages.forEach(([b, h, m], k) => {
+    T.add(pave(m, 2 - m, y0 + b, y0 + h - 0.06, m, 2 - m, clair, sombre));
+    T.add(pave(m - 0.05, 2 - m + 0.05, y0 + h - 0.08, y0 + h, m - 0.05, 2 - m + 0.05, k % 2 ? p1 : p2, sombre));
+    // le visage, tourné vers le bas de l'écran : deux yeux peints, un nez, une bouche
+    const z = 2 - m + 0.01, ym = y0 + (b + h) / 2, c = k % 2 ? p2 : p1;
+    for (const x of [0.62, 1.38]) {
+      T.add(pave(x - 0.2, x + 0.2, ym + 0.08, ym + 0.3, z - 0.02, z + 0.05, '#f0e8d0', '#e8e0c8'));
+      T.add(pave(x - 0.08, x + 0.08, ym + 0.12, ym + 0.26, z + 0.04, z + 0.08, '#1a1410', '#1a1410'));
+    }
+    T.add(pave(0.9, 1.1, ym - 0.15, ym + 0.12, z - 0.02, z + 0.14, clair, sombre));
+    T.add(pave(0.55, 1.45, ym - 0.36, ym - 0.22, z - 0.02, z + 0.06, c, c));
+  });
+  for (const s of [-1, 1]) T.add(pave(s < 0 ? -0.35 : 1.6, s < 0 ? 0.4 : 2.35, y0 + 2.55, y0 + 2.85, 0.75, 1.25, p1, sombre));
+  T.add(pave(0.7, 1.3, y0 + 3.1, y0 + 3.45, 0.7, 1.3, p2, sombre));
+  return T;
 }
 
 /** étage -1 : un sol de dalles sous les aiguilles, le pied du mur (plus épais) tout autour, et une échelle accrochée à
@@ -157,6 +184,12 @@ export function poserHorloge(H, D) {
   // les aiguilles ne sont qu'à l'étage où est l'horloge (pendant qu'elle monte ou descend, à celui qu'elle quitte)
   for (const q of ['grande', 'fine', 'petite']) { H.aig[q].rotation.y = -(D[q] * Math.PI) / 6; H.aig[q].visible = (D.vueNiv ?? D.niv ?? 0) === H.n; }
   H.decor.position.y = D.envY || 0;
+  // les totems glissent jusqu'à leur case
+  (H.totems || []).forEach((T, i) => {
+    const t = (D.totems || TOTEMS)[i]; if (!t) return;
+    if (!T.userData.pose) { T.position.set(t[0], 0, t[1]); T.userData.pose = true; return; }
+    T.position.x += (t[0] - T.position.x) * 0.2; T.position.z += (t[1] - T.position.z) * 0.2;
+  });
   const c = D.casse || 0;
   for (const { B, entier, eclats } of H.blocs) {
     B.visible = !!D.blocs;

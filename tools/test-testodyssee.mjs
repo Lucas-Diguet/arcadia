@@ -1310,24 +1310,34 @@ for (const l of Object.values(lieux).flat()) {
   {
     const M1 = await import('../testodyssee/js/horloge-m1.js');
     const E = { ...Hm.depart(), niv: -1, blocs: false, cle: true, ...Hm.NIVEAUX[-1].arrivee };
-    const pied = (q, e) => M1.echelle(q, e[q]).pied, lev = (q) => Hm.placeLevier(M1.LEVIERS_M1.find((L) => L.quoi === q));
+    const pied = (q, e) => M1.echelle(q, e[q]).pied;
     const porte = (S, s) => S.has(M1.devantPorteM1(s).join(',')), [CP, BAL] = M1.SALLES_M1;
-    const sec = (e) => [M1.secteur(e, ...pied('grande', e)), M1.secteur(e, ...pied('fine', e))];
-    const [G0, F0] = sec(E);
-    ok(!G0.has(pied('fine', E).join(',')) && !porte(G0, CP) && !porte(F0, CP) && !porte(G0, BAL) && !porte(F0, BAL)
-      && M1.atteint(G0, lev('fine')) && !M1.atteint(G0, lev('grande')) && M1.atteint(F0, lev('grande')) && !M1.atteint(F0, lev('fine')),
-      'horloge, étage -1 : la grande et la fine coupent la salle en deux ; elles barrent les deux portes ; chaque secteur a le levier de l\'aiguille de l\'autre');
-    const apres = (q, h) => sec({ ...E, [q]: h });
-    ok(porte(apres('fine', 10)[0], BAL) && porte(apres('fine', 8)[1], BAL) && porte(apres('grande', 2)[0], CP) && porte(apres('grande', 4)[1], CP),
-      'horloge, étage -1 : tourner une aiguille ouvre la porte qu\'elle barrait, d\'un côté ou de l\'autre');
-    // seul, depuis l'échelle de la grande, on n'atteint jamais le levier de la grande ni l'autre secteur, où que soit la fine
-    ok([7, 8, 9, 10, 11].every((f) => { const e = { ...E, fine: f }, S = M1.secteur(e, ...pied('grande', e)); return !M1.atteint(S, lev('grande')) && !S.has(pied('fine', e).join(',')); }),
-      'horloge, étage -1 : seul, on ne fait pas tourner l\'aiguille qui borde son propre secteur (il faut être deux)');
-    ok(Hm.tourner(E, 'grande', 3) === null && Hm.tourner({ ...E, grande: 5 }, 'grande', 1) === null && Hm.tourner({ ...E, fine: 7 }, 'fine', -1) === null && !!Hm.tourner(E, 'grande', 1),
-      'horloge, étage -1 : la grande va de 1 h à 5 h, la fine de 7 h à 11 h');
-    ok(M1.pasM1(E, ...M1.echelle('grande', 3).main, ...pied('grande', E)) && !M1.pasM1(E, ...Hm.caseSurAiguille('grande', 3, 10, 0), ...Hm.caseSurAiguille('grande', 3, 10, 0).map((v, i) => v + (i ? 3 : 0)))
-      && !M1.pasM1(E, ...M1.devantPorteM1(BAL), ...M1.porteM1(BAL)),
-      'horloge, étage -1 : on ne descend d\'une aiguille que par son échelle, et une aiguille ne mène pas dans une porte');
+    const [G0, F0] = [M1.secteur(E, ...pied('grande', E)), M1.secteur(E, ...pied('fine', E))];
+    ok(M1.LEVIERS_M1.length === 0 && Hm.tourner(E, 'grande', 1) === null && Hm.tourner(E, 'fine', -1) === null && !G0.has(pied('fine', E).join(','))
+      && porte(G0, CP) && !porte(F0, CP) && porte(F0, BAL) && !porte(G0, BAL),
+      'horloge, étage -1 : plus de levier, les aiguilles ne bougent pas ; la grande mène à la porte des contrepoids, la fine à celle des balanciers');
+    const T0 = M1.TOTEMS, occ = M1.casesTotems(T0);
+    ok(T0.length >= 18 && occ.size === 4 * T0.length && M1.CLES_M1.length === 2 && new Set(M1.CLES_M1.map((c) => c.salle)).size === 2
+      && M1.clesTrouvees(T0).length === 0,
+      `horloge, étage -1 : ${T0.length} totems de deux cases sur deux, sans se chevaucher ; deux clés dessous, une par porte, cachées au départ`);
+    // chaque clé : depuis le pied de l'échelle de son secteur, on atteint le totem et on le pousse ; la porte s'ouvre et on y entre
+    const cleOk = M1.CLES_M1.every((c) => {
+      const A = M1.aPied(E, T0, ...pied(c.secteur, E)), t = T0[c.totem];
+      return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => M1.casesTotem(t).some(([x, y]) => {
+        const p = [x - dx, y - dy]; if (!A.has(p.join(','))) return false;
+        const T2 = M1.pousserTotem(T0, c.totem, [dx, dy], p);
+        return T2 && M1.clesTrouvees(T2).includes(c.salle) && M1.aPied(E, T2, ...pied(c.secteur, E)).has(M1.devantPorteM1(M1.SALLES_M1.find((s) => s.id === c.salle)).join(','));
+      }));
+    });
+    ok(cleOk, 'horloge, étage -1 : chaque clé se trouve en poussant son totem depuis l\'échelle de son secteur, et la porte reste accessible');
+    ok(!M1.pousserTotem(T0, 0, [1, 0], [T0[0][0] - 5, T0[0][1]]) && T0.every((t, i) => [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => { const T2 = M1.pousserTotem(T0, i, [dx, dy]); return !T2 || M1.casesTotems(T2).size === occ.size; })),
+      'horloge, étage -1 : on ne pousse un totem qu\'en étant collé à lui, et deux totems ne se chevauchent jamais');
+    {
+      const w = world.maps[M1.HORLOGE_M1], E2 = { ...E, totems: T0 }; Hm.appliquer(w, E2);
+      ok(occ.size && [...occ].every((k) => w.get(...k.split(',').map(Number)) !== T.FLOOR), 'horloge, étage -1 : les totems barrent le passage');
+    }
+    ok(M1.pasM1(E, ...M1.echelle('grande', E.grande).main, ...pied('grande', E)) && (() => { const Ls = ['grande', 'fine', 'petite'].map((q) => M1.echelle(q, E[q]).main); let n = 0; for (let y = 0; y < Hm.H; y++) for (let x = 0; x < Hm.W; x++) if (M1.caseM1(E, x, y)?.quoi === 'aiguille' && !Ls.some(([a, b]) => a === x && b === y)) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (M1.caseM1(E, x + dx, y + dy)?.quoi === 'sol') { if (M1.pasM1(E, x, y, x + dx, y + dy)) return false; n++; } return n > 10; })(),
+      'horloge, étage -1 : on ne descend d\'une aiguille que par son échelle');
     const cp = M1.resoudreContrepoids();
     ok(cp.jamaisCoince && cp.min >= 3, `horloge, étage -1 : salle des contrepoids, ${cp.min} chaînes à tirer au moins, jamais coincé`);
     const B = M1.planBalanciers(), P = B.plan, dans = (x, y) => P[y]?.[x] === '.';

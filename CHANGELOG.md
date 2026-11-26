@@ -1,5 +1,11 @@
 # Journal des versions — Arcadia
 
+## 6.62 — 26 novembre 2026
+- **TestOdyssée** — Tour de l'Horloge :
+  - Plus aucun dresseur dans la tour.
+  - Étage -1 : plus de leviers, les aiguilles ne bougent plus. Les deux portes sont fermées à clé : une vingtaine de totems de pierre se poussent avec Force, et deux d'entre eux cachent les clés.
+  - La dalle rouge de sortie se voit dans les deux salles de l'étage -1.
+
 ## 6.61 — 26 novembre 2026
 - **TestOdyssée** — On peut fuir n'importe quel combat de dresseur : le combat s'arrête et compte comme gagné, en mode test ou non.
 

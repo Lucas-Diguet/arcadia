@@ -4,10 +4,9 @@
 // en descendant avec l'horloge, et on n'en remonte qu'en s'y tenant) ; on en descend et l'on y remonte par une échelle,
 // accrochée à chaque aiguille du côté où elle tourne (sens des aiguilles d'une montre) : l'échelle de la grande mène
 // au secteur qui suit la grande, celle de la fine au secteur qui suit la fine.
-// Dans chaque secteur, un levier fait tourner l'aiguille qui borde l'autre secteur : la grande va de 1 h à 5 h, la fine
-// de 7 h à 11 h. En arrivant, la grande est sur 3 h et la fine sur 9 h : elles barrent les deux portes des salles du mur,
-// et il faut que l'autre joueur tourne l'aiguille pour qu'on y entre. Seul, on n'atteint jamais le levier de l'autre
-// secteur.
+// Pas de levier à cet étage : en arrivant, la grande est sur 1 h et la fine sur 7 h, et elles y restent. Les deux portes
+// des salles du mur (3 h et 9 h) sont fermées à clé. Sur le sol, une vingtaine de totems de pierre (deux cases sur deux)
+// qu'on pousse avec Force ; sous deux d'entre eux, les clés des deux portes (une dans chaque secteur).
 // Salles du mur : la salle des contrepoids (porte à 3 h ; des fosses en travers, des chaînes qui font descendre un poids
 // dans une fosse pendant qu'un autre remonte) mène à la pièce qui manque au mécanisme central (sans elle, l'horloge ne
 // monte pas à l'étage 1) ; la salle des balanciers (porte à 9 h ; des murs en travers, percés d'une ouverture que balaie
@@ -28,11 +27,8 @@ const O = [C[0] + 0.5, C[1] + 0.5];
 /** la case au rayon r, à l'heure h, dans la salle des aiguilles */
 export const caseRH = (r, h) => { const [dx, dy] = sens(h); return [Math.floor(O[0] + dx * r), Math.floor(O[1] + dy * r)]; };
 const rayon = (x, y) => Math.hypot(x + 0.5 - O[0], y + 0.5 - O[1]);
-/** les leviers du sol : dans le secteur du sud (celui de la grande), celui de la fine ; dans celui du nord, celui de la grande */
-export const LEVIERS_M1 = [
-  { rh: [15, 6], quoi: 'fine', nom: 'Le levier bleu (l\'aiguille fine)' },
-  { rh: [15, 0.5], quoi: 'grande', nom: 'Le levier rouge (la grande aiguille)' },
-];
+/** plus de levier à l'étage -1 (les aiguilles ne bougent pas) */
+export const LEVIERS_M1 = [];
 /** les salles du mur : de, a (heures), la porte au bout 'de' ou 'a', le coffre à l'autre bout */
 export const SALLES_M1 = [
   { id: 'contrepoids', nom: 'La salle des contrepoids', de: 3, a: 5.7, porteH: 3, porte: 'de', objet: 'piece' },
@@ -44,8 +40,10 @@ export const porteM1 = (s) => caseRH(R_SOL + 0.7, s.porteH);
 export const devantPorteM1 = (s) => caseRH(R_SOL - 0.6, s.porteH);
 
 NIVEAUX[-1] = {
-  carte: HORLOGE_M1, plateformes: [], leviers: LEVIERS_M1, arrivee: { grande: 3, fine: 9, petite: 0 },
-  bornes: { grande: [1, 5], fine: [7, 11], petite: [0, 0] }, butee: 0.35, rSol: R_SOL,
+  carte: HORLOGE_M1, plateformes: [], leviers: LEVIERS_M1, arrivee: { grande: 1, fine: 7, petite: 0 },
+  bornes: { grande: [1, 1], fine: [7, 7], petite: [0, 0] }, butee: 0.35, rSol: R_SOL,
+  // les totems occupent leurs cases (appliquer de horloge.js)
+  obstaclesE: (E) => casesTotems(totemsDe(E)),
 };
 
 /** sur le sol de l'étage -1 : 'aiguille' (le dessus d'une aiguille, sur : lesquelles), 'sol', ou null */
@@ -86,6 +84,77 @@ export function secteur(E, x, y) {
 /** depuis le pied d'une échelle, atteint-on (à côté de) la case c ? */
 export const atteint = (S, [x, y]) => S.has(cle(x, y)) || DIR4.some(([dx, dy]) => S.has(cle(x + dx, y + dy)));
 
+/* ---------------- les totems ---------------- */
+/** l'état des aiguilles à l'étage -1 (elles ne bougent plus) */
+const E_M1 = () => ({ niv: -1, ...NIVEAUX[-1].arrivee });
+/** les cases où un totem ne va jamais : le pied des échelles, le devant des portes, et autour (on y garde de la place) */
+export function interditTotems() {
+  const E = E_M1(), I = new Set(), autour = ([x, y], d) => { for (let b = -d; b <= d; b++) for (let a = -d; a <= d; a++) I.add(cle(x + a, y + b)); };
+  for (const q of ['grande', 'fine', 'petite']) autour(echelle(q, E[q]).pied, 2);
+  for (const s of SALLES_M1) autour(devantPorteM1(s), 2);
+  return I;
+}
+/** les quatre cases d'un totem dont le coin (en haut à gauche) est en (x, y) */
+export const casesTotem = ([x, y]) => [[x, y], [x + 1, y], [x, y + 1], [x + 1, y + 1]];
+export const casesTotems = (T) => new Set(T.flatMap((p) => casesTotem(p).map((c) => cle(...c))));
+/** une case où peut aller un totem : le sol (pas le dessus d'une aiguille), loin du pivot, hors des cases interdites */
+const placeTotem = (E, I, x, y) => caseM1(E, x, y)?.quoi === 'sol' && rayon(x, y) < R_SOL - 0.6 && rayon(x, y) > R_PIVOT + 4 && !I.has(cle(x, y));
+/** les cases du sol qu'on atteint à pied depuis (x, y), totems compris */
+export function aPied(E, T, x, y) {
+  const occ = casesTotems(T), vu = new Set([cle(x, y)]), f = [[x, y]];
+  while (f.length) { const [cx, cy] = f.pop(); for (const [dx, dy] of DIR4) { const a = cx + dx, b = cy + dy; if (!vu.has(cle(a, b)) && !occ.has(cle(a, b)) && caseM1(E, a, b)?.quoi === 'sol') { vu.add(cle(a, b)); f.push([a, b]); } } }
+  return vu;
+}
+/** pousser le totem i d'une case dans le sens d (depuis la case p du joueur, collée à lui) : les totems d'après, ou null */
+export function pousserTotem(T, i, [dx, dy], p = null) {
+  const E = E_M1(), I = interditTotems(), t = T[i]; if (!t) return null;
+  const n = [t[0] + dx, t[1] + dy], avant = new Set(casesTotem(t).map((c) => cle(...c)));
+  if (p && !casesTotem(t).some(([x, y]) => x === p[0] + dx && y === p[1] + dy)) return null;
+  const autres = casesTotems(T.filter((_, k) => k !== i));
+  if (!casesTotem(n).every(([x, y]) => avant.has(cle(x, y)) || (placeTotem(E, I, x, y) && !autres.has(cle(x, y))))) return null;
+  return T.map((q, k) => (k === i ? n : q));
+}
+/** l'index du totem qui couvre la case (x, y), ou -1 */
+export const totemEn = (T, x, y) => T.findIndex((p) => casesTotem(p).some(([a, b]) => a === x && b === y));
+/** les totems de départ (20, dix par secteur, espacés) et les deux qui cachent une clé (celle de la porte de leur secteur) */
+function placerTotems() {
+  const E = E_M1(), I = interditTotems();
+  const pieds = { grande: echelle('grande', E.grande).pied, fine: echelle('fine', E.fine).pied };
+  for (let g = 1; g < 200; g++) {
+    const r = alea(4100 + g), T = [];
+    for (const q of ['grande', 'fine']) {
+      const S = secteur(E, ...pieds[q]), cand = [...S].map((k) => k.split(',').map(Number)).filter(([x, y]) => casesTotem([x, y]).every(([a, b]) => S.has(cle(a, b)) && placeTotem(E, I, a, b)));
+      for (let k = cand.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [cand[k], cand[j]] = [cand[j], cand[k]]; }
+      let n = 0;
+      for (const c of cand) { if (n >= 10) break; if (T.every((t) => Math.abs(t[0] - c[0]) >= 4 || Math.abs(t[1] - c[1]) >= 4)) { T.push(c); n++; } }
+      if (n < 10) break;
+    }
+    if (T.length !== 20) continue;
+    // chaque porte reste à portée de son échelle, et dans chaque secteur un totem à clé se pousse dès le départ
+    const cles = [];
+    for (const s of SALLES_M1) {
+      const q = ['grande', 'fine'].find((k) => secteur(E, ...pieds[k]).has(cle(...devantPorteM1(s))));
+      const A = aPied(E, T, ...pieds[q]); if (!q || !A.has(cle(...devantPorteM1(s)))) break;
+      const ok = T.map((t, i) => ({ i, d: Math.hypot(t[0] - pieds[q][0], t[1] - pieds[q][1]) }))
+        .filter(({ i }) => secteur(E, ...pieds[q]).has(cle(...T[i])) && DIR4.some(([dx, dy]) => pousserTotem(T, i, [dx, dy]) && casesTotem(T[i]).some(([x, y]) => A.has(cle(x - dx, y - dy)))))
+        .sort((a, b) => b.d - a.d);
+      if (!ok.length) break;
+      cles.push({ salle: s.id, totem: ok[0].i, secteur: q });
+    }
+    if (cles.length === 2) return { T, cles };
+  }
+  throw new Error('totems de l\'étage -1 : pas de disposition');
+}
+const PLACE = placerTotems();
+/** les coins des totems au départ */
+export const TOTEMS = PLACE.T;
+/** les deux clés : sous quel totem, pour quelle porte (salle), dans quel secteur */
+export const CLES_M1 = PLACE.cles;
+/** les totems d'un état (au départ s'il n'en a pas encore) */
+export const totemsDe = (E) => E?.totems || TOTEMS;
+/** les clés trouvées : un totem à clé qui a quitté sa place a montré sa clé */
+export const clesTrouvees = (T) => CLES_M1.filter((c) => T[c.totem][0] !== TOTEMS[c.totem][0] || T[c.totem][1] !== TOTEMS[c.totem][1]).map((c) => c.salle);
+
 /* ---------------- les salles du mur ---------------- */
 /** l'arc (en cases) d'une case depuis le début de la salle */
 const position = (s, x, y) => ((heureDe(x + 0.5 - (SC + 0.5), y + 0.5 - (SC + 0.5)) - s.de) % 12 + 12) % 12;
@@ -124,7 +193,7 @@ export function planBalanciers(s = SALLES_M1[1], graine = 7) {
   }
   const P = G.map((l) => l.join(''));
   const porte = boutSalle(s, 'a', P), coffre = boutSalle(s, 'de', P);
-  return { plan: P, lignes, porte, coffre, dresseur: pointSalle((SR0 + SR1) / 2, s.de + (s.a - s.de) * 0.5) };
+  return { plan: P, lignes, porte, coffre };
 }
 /** où est le balancier d'une ligne au temps t (secondes) : les cases qu'il couvre (deux rangs du rayon, aller-retour) */
 export function balancier(L, t) {
@@ -202,6 +271,7 @@ export function construireNiveauM1(world) {
     // la sortie : au bout, vers le sol de l'étage -1
     const [tx, ty] = L.porte.mur;
     r.set(tx, ty, T.MAT); r.warp(tx, ty, { map: HORLOGE_M1, x: fx, y: fy, dir: 'down', step: true });
+    sol.delete(cle(tx, ty));   // la dalle rouge de la sortie se voit (sinon la muraille la cachait)
     r.porte = [tx, ty];
     // le coffre, à l'autre bout
     const [ox, oy] = L.coffre.case;
@@ -210,27 +280,12 @@ export function construireNiveauM1(world) {
     if (L.chaines) L.chaines.forEach(([x, y], i) => { r.set(x, y, T.BLOCK); r.object(x, y, { use: (api) => api.game.horloge?.chaine(i) }); });
     world.maps[id] = cartes[s.id] = r;
   }
-  // des dresseurs : trois sur le sol (entre les heures où passent les aiguilles), un dans chaque salle du mur
-  const dresseurs = [
-    { rh: [12, 1.5], dir: 'down', cls: 'Mécanicien', nom: 'Gaspard', equipe: [[208, 68], [82, 68], [227, 70]] },
-    { rh: [10, 10.5], dir: 'right', cls: 'Horlogère', nom: 'Clémence', equipe: [[437, 68], [375, 69], [462, 70]] },
-    { rh: [12, 6.5], dir: 'up', cls: 'Mécanicien', nom: 'Anselme', equipe: [[530, 69], [601, 70]] },
-  ];
-  for (const d of dresseurs) { const [x, y] = caseRH(...d.rh); m.npc({ id: `${HORLOGE_M1}:${d.nom}`, x, y, dir: d.dir, sprite: d.cls === 'Horlogère' ? 'scientifique' : 'montagnard', move: 'static', trainer: dresseur(d, 3) }); }
-  const bal = cartes.balanciers.planM1, [bx, by] = bal.dresseur.map(Math.floor);
-  cartes.balanciers.npc({ id: `${salleM1Id(SALLES_M1[1])}:Rouage`, x: bx, y: by, dir: 'down', sprite: 'scientifique', move: 'static', trainer: dresseur({ cls: 'Horlogère', nom: 'Pendule', equipe: [[303, 70], [707, 70], [681, 71]] }, 2) });
-  const cp = cartes.contrepoids.planM1, pal = cp.chaines[2];
-  cartes.contrepoids.npc({ id: `${salleM1Id(SALLES_M1[0])}:Plomb`, x: pal[0] + 1, y: pal[1] + 1, dir: 'left', sprite: 'montagnard', move: 'static', trainer: dresseur({ cls: 'Mécanicien', nom: 'Plomb', equipe: [[208, 70], [376, 71]] }, 2) });
-  // les leviers et le mécanisme central
+  // le mécanisme central
   for (const [x, y] of [...LEVIERS_M1.map((L) => caseRH(...L.rh)), ...casesMecanisme()]) m.object(x, y, { use: (api) => api.game.horloge?.utiliser(x, y) });
   appliquer(m, E);
   world.maps[HORLOGE_M1] = m;
   appliquerSallesM1(world, E);
 }
-const dresseur = (d, vue) => ({
-  cls: d.cls, name: d.nom, team: d.equipe, prize: 60, sight: vue, bs: 'scientifique', ai: 'smart',
-  intro: 'Ici, sous l\'horloge, tout tourne au même rythme. Voyons si tu tiens la cadence !', lose: 'Tu es en avance sur le temps...', after: 'Les aiguilles ne mentent jamais.',
-});
 /** pose l'état des chaînes (fosses comblées ou non) dans la salle des contrepoids ; renvoie les cases changées par carte */
 export function appliquerSallesM1(world, E) {
   const r = world.maps[salleM1Id(SALLES_M1[0])], changees = {};

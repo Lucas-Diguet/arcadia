@@ -9,8 +9,10 @@ import { ESCALIER, SALLES1, salle1Id, salles1, hauteurEscalier, caseEscalier, pa
 import { creerHorloge, poserHorloge } from './horloge-vue.js';
 import { HORLOGE2, HORLOGES2, PLATEFORMES2, LEVIERS2, LEVIER_PONT, MONTE, PORTE2, depart2, tourner2, emporter2, appliquer2, surPf, case2 } from './horloge-n2.js';
 import { creerHorloge2, poserHorloge2, NOMS_COULEURS2 } from './horloge2-vue.js';
-import { HORLOGE_M1, SALLES_M1, salleM1Id, devantPorteM1, pasM1, BAS_SOL, balancier, appliquerSallesM1, CHAINES_DEPART } from './horloge-m1.js';
+import { HORLOGE_M1, SALLES_M1, salleM1Id, devantPorteM1, porteM1, pasM1, BAS_SOL, balancier, appliquerSallesM1, CHAINES_DEPART, totemsDe, totemEn, pousserTotem, clesTrouvees } from './horloge-m1.js';
 import { creerEscalier } from './horloge-escalier.js';
+import { ASSETS } from '../../odyssee/js/assets.js';
+import { monName } from '../../odyssee/js/core/mon.js';
 
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
 const egal = (a, b) => a[0] === b[0] && a[1] === b[1];
@@ -140,6 +142,14 @@ export class Horloge {
     if (m.id === ESCALIER) { const a = hauteurEscalier(p.x, p.y), b = hauteurEscalier(tx, ty); if (a != null && b != null && Math.abs(a - b) > 1) return arret(); return false; }
     // étage -1 : on ne passe du dessus d'une aiguille au sol (et l'inverse) que par son échelle
     if (m.id === HORLOGE_M1 && this.E && !pasM1(this.E, p.x, p.y, tx, ty)) return arret();
+    if (m.id === HORLOGE_M1 && this.E) {
+      // les portes des salles du mur : fermées à clé, tant que la clé n'est pas sortie de sous son totem
+      const s = SALLES_M1.find((q) => egal(porteM1(q), [tx, ty]));
+      if (s && !clesTrouvees(totemsDe(this.E)).includes(s.id)) { arret(); g.ui.say(['Une lourde porte de bois cerclée de fer. Elle est fermée à clé.', 'Les totems de pierre de cette salle cachent peut-être quelque chose.']); return true; }
+      // un totem de pierre : on le pousse avec Force
+      const i = totemEn(totemsDe(this.E), tx, ty);
+      if (i >= 0) { arret(); this.totem(i, [dx, dy]); return true; }
+    }
     // une salle à tourniquets : marcher dans un bras le fait tourner (si rien ne le gêne), puis on avance
     if (m.tourniquets) {
       const rots = this.E?.tq?.[m.horlogeSalle] || [];
@@ -189,6 +199,29 @@ export class Horloge {
     if (m?.tourniquets && occupation(m.tourniquets, this.E?.tq?.[salle] || []).has((x + dx) + ',' + (y + dy))) return;
     g.sound.sfx('door');
     if (g.player.x === x && g.player.y === y && !g.player.move) g.tryStep(d);
+  }
+  /** marcher contre un totem de pierre (étage -1) : avec Force, on le pousse d'une case ; sous l'un d'eux, une clé */
+  async totem(i, d) {
+    const g = this.game, m = g.mapObj; if (this.pousse || g.busy) return;
+    if (g.strengthOn !== m.id) {
+      g.busy = true;
+      try {
+        const vu = 'Un totem de pierre, haut comme deux hommes. Un Pokémon très costaud pourrait le pousser.';
+        if (!g.canField?.('force')) { await g.ui.say(vu); return; }
+        if (!(await g.ui.yesNo(`${vu}\nUtiliser Force ?`))) return;
+        const mon = g.fieldUser?.();
+        g.strengthOn = m.id; if (mon) g.sound.cry(ASSETS.cry(mon.sp)); g.sound.sfx('ledge');
+        await g.ui.say(mon ? `${monName(mon)} utilise Force !\nIl peut désormais pousser les totems.` : 'Force est active : marche contre un totem pour le pousser.');
+      } finally { g.busy = false; }
+      return;
+    }
+    const avant = clesTrouvees(totemsDe(this.E));
+    if (!pousserTotem(totemsDe(this.E), i, d, [g.player.x, g.player.y])) { g.sound.sfx('bump'); return; }
+    this.pousse = true;
+    try { await this.demander({ a: 'totem', i, d, p: [g.player.x, g.player.y] }); } finally { this.pousse = false; }
+    g.sound.sfx('ledge');
+    const nouv = clesTrouvees(totemsDe(this.E)).filter((k) => !avant.includes(k));
+    for (const k of nouv) { g.sound.sfx('item'); await g.ui.say(['Sous le totem, dans un creux de la pierre, il y avait une clé de fer !', `Elle ouvre la porte de ${SALLES_M1.find((q) => q.id === k).nom.replace(/^La /, 'la ')}.`]); }
   }
   /** se glisser dans le tube de cuivre (depuis la salle est) : on arrive dans le vestibule, dans le tube */
   async entrerTube(x, dir) {
@@ -285,7 +318,7 @@ export class Horloge {
       }
       if (A.t >= 1) { this.anim = null; A.fin(); }
     }
-    this.D.blocs = this.E.blocs;
+    this.D.blocs = this.E.blocs; this.D.totems = totemsDe(this.E);
     if (this.anim?.fx === 'casse') this.D.blocs = true;
     // l'horloge qui part vers un autre étage reste visible ici jusqu'à la fin de son tour
     this.D.vueNiv = this.anim?.fx === 'niveau' ? this.anim.depuis : undefined;
@@ -328,6 +361,7 @@ export class Horloge {
       if (H2) { E2 = { ...E, h2: H2 }; duree = 1.1; fx = 'h2'; s = act.s; quoi = act.k; }
     }
     else if (act.a === 'pont' && !E.pont) { E2 = { ...E, pont: true }; duree = 0; }
+    else if (act.a === 'totem' && Array.isArray(act.d)) { const T2 = pousserTotem(totemsDe(E), act.i, act.d, act.p); if (T2) { E2 = { ...E, totems: T2 }; duree = 0; } }
     else if (act.a === 'coffre2' && !E.coffre2) { E2 = { ...E, coffre2: true }; duree = 0; }
     else if (act.a === 'grille' && /^grille[EO]$/.test(act.id) && !E.grilles?.[act.id]) { E2 = { ...E, grilles: { ...E.grilles, [act.id]: true } }; duree = 0; }
     else if (act.a === 'tq' && SALLES1.some((q) => q.id === act.salle) && Array.isArray(act.d)) {
@@ -349,6 +383,7 @@ export class Horloge {
     if (m.t === 'djHorE' && deHote && m.E2) {
       for (const [k, txt] of [['cle1', 'Quelqu\'un a trouvé la clé de la grille.'], ['cle', 'Quelqu\'un a trouvé la clé du mécanisme central.'], ['piece', 'Quelqu\'un a trouvé la pièce du mécanisme central.'], ['cle2', 'Quelqu\'un a trouvé la clé de la grande porte.'], ['pont', 'Les monte-charges de l\'étage 2 mènent à l\'arrivée.']]) if (m.E2[k] && !this.E[k]) this.game.ui.toast(txt, 1800);
       for (const k of ['grilleE', 'grilleO']) if (m.E2.grilles?.[k] && !this.E.grilles?.[k]) this.game.ui.toast('Une grille de fer s\'est levée dans les murs.', 1800);
+      if (m.E2.totems) for (const k of clesTrouvees(m.E2.totems)) if (!clesTrouvees(totemsDe(this.E)).includes(k)) this.game.ui.toast('Quelqu\'un a trouvé une clé sous un totem de l\'étage -1.', 1800);
       this.bouger(m.E2, m.duree, m.fx, m.s, m.quoi).then(() => { const r = this.attente; this.attente = null; r?.(); }); return;
     }
     if (m.t === 'djHorS' && deHote && m.E && !this.anim) { this.bouger(m.E, 0); }
